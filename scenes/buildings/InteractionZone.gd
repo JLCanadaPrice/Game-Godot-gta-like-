@@ -34,6 +34,13 @@ func _ready() -> void:
 	add_child(_prompt)
 	body_entered.connect(_on_body_entered)
 	body_exited.connect(_on_body_exited)
+	# Rien à faire tant que le joueur n'est pas dans la zone : _process et
+	# _unhandled_input ne sont réarmés qu'à son entrée (cf. _on_body_entered).
+	# La carte compte ~1045 zones de bâtiment ; les laisser toutes actives
+	# coûtait 1045 appels de script par frame rendue, et faisait traverser
+	# 1045 nœuds à chaque événement d'entrée, pour un seul joueur.
+	set_process(false)
+	set_process_unhandled_input(false)
 
 
 func _process(_delta: float) -> void:
@@ -57,8 +64,15 @@ func _can_interact(player: Node3D) -> bool:
 func _on_body_entered(body: Node3D) -> void:
 	if body.is_in_group("player"):
 		_player = body
+		set_process(true)
+		set_process_unhandled_input(true)
 
 
 func _on_body_exited(body: Node3D) -> void:
 	if body == _player:
 		_player = null
+		# état de sortie identique à ce que _process aurait posé (_player null
+		# -> invite masquée), donc rien ne change visuellement en se mettant en veille
+		_prompt.visible = false
+		set_process(false)
+		set_process_unhandled_input(false)

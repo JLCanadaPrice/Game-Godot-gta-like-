@@ -244,7 +244,27 @@ func direction_at(edge_idx: int, from_node: int, s: float) -> Vector3:
 	return -d if reversed else d
 
 # Position décalée latéralement (+lateral = à droite du sens de marche).
+#
+# Résout l'arête et le segment UNE seule fois, puis en tire à la fois la
+# position et la direction. La version précédente enchaînait direction_at()
+# puis sample(), qui refaisaient chacun les quatre lectures du dictionnaire
+# d'arête, le calcul de `reversed`, le clamp et la recherche de segment : soit
+# deux fois le même travail par appel, pour chaque voiture et chaque frame.
+# Résultat identique (mêmes formules, mêmes bornes), simplement calculé une fois.
 func sample_offset(edge_idx: int, from_node: int, s: float, lateral: float) -> Vector3:
-	var dir := direction_at(edge_idx, from_node, s)
-	var right := dir.cross(Vector3.UP).normalized()
-	return sample(edge_idx, from_node, s) + right * lateral
+	var e: Dictionary = edges[edge_idx]
+	var pts: PackedVector3Array = e["points"]
+	var total: float = e["length"]
+	if total <= 0.0:
+		# même repli que direction_at (Vector3.FORWARD -> right = Vector3.RIGHT) suivi de sample (pts[0])
+		return pts[0] + Vector3.RIGHT * lateral
+	var seg_len: PackedFloat32Array = e["seg_len"]
+	var cum: PackedFloat32Array = e["cum"]
+	var reversed: bool = int(e["a"]) != from_node
+	var query_s: float = clampf((total - s) if reversed else s, 0.0, total)
+	var i := _seg_index(seg_len, cum, query_s)
+	var d: Vector3 = (pts[i + 1] - pts[i]).normalized()
+	var dir := -d if reversed else d
+	var t: float = ((query_s - cum[i]) / seg_len[i]) if seg_len[i] > 0.0 else 0.0
+	var pos := pts[i].lerp(pts[i + 1], t)
+	return pos + dir.cross(Vector3.UP).normalized() * lateral

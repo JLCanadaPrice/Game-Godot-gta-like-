@@ -80,6 +80,7 @@ var _dead := false
 
 var _anim: AnimationPlayer
 var _cur_anim := ""
+var _ground_query := PhysicsRayQueryParameters3D.new()   # cf. _ground_ride_height
 
 # mode "éjecté d'une voiture" : court vers le point PedGraph le plus proche
 # puis rejoint le comportement normal (trajet aléatoire sur le graphe).
@@ -105,13 +106,17 @@ func setup(graph: PathGraph, start_node: int, _speed: float, _extra: float, budg
 # = calque du décor statique (route/trottoir/terrain/bâtiments) ; exclut
 # PNJ (2) et véhicules (4), donc jamais de faux positif sur un autre PNJ ou
 # une voiture qui passerait juste en dessous/au-dessus.
+#
+# L'objet de requête est réutilisé d'une frame à l'autre (_ground_query) : ce
+# rayon est tiré à CHAQUE frame physique par CHAQUE PNJ (315 en pointe), le
+# recréer à chaque appel allouait autant d'objets par seconde pour rien.
+# Seuls from/to changent d'un appel au suivant.
 func _ground_ride_height(at: Vector3) -> float:
 	var space_state := get_world_3d().direct_space_state
-	var from := Vector3(at.x, at.y + 5.0, at.z)
-	var to := Vector3(at.x, at.y - 5.0, at.z)
-	var params := PhysicsRayQueryParameters3D.create(from, to)
-	params.collision_mask = 1
-	var hit := space_state.intersect_ray(params)
+	_ground_query.from = Vector3(at.x, at.y + 5.0, at.z)
+	_ground_query.to = Vector3(at.x, at.y - 5.0, at.z)
+	_ground_query.collision_mask = 1
+	var hit := space_state.intersect_ray(_ground_query)
 	if hit.is_empty():
 		return DEFAULT_RIDE_HEIGHT
 	return (hit["position"] as Vector3).y + CAPSULE_HALF_HEIGHT + RIDE_MARGIN

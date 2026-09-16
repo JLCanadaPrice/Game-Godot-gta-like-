@@ -160,6 +160,28 @@ var _cached_obstacle_speed_limit := 999.0
 static var _vehicle_cache: Array = []
 static var _vehicle_cache_frame: int = -1
 
+# Index spatial des véhicules, reconstruit en même temps que la liste ci-dessus.
+#
+# Le suivi de voiture (_obstacle_speed_limit) et le cédez-le-passage du rond-point
+# parcouraient les 252 véhicules pour CHAQUE voiture, ~30 fois par seconde chacune :
+# ~32 000 itérations par frame, dont deux lectures de propriété par réflexion
+# ("_half_length" in o, puis o.get(...)) à chaque itération. Mesuré à ~15 ms par
+# frame sur les ~22 ms de scripts voiture (CityPerfTest headless, 252 voitures) :
+# de loin le premier poste de coût du jeu.
+#
+# La grille range les véhicules par cellule de GRID_CELL m ; une voiture n'examine
+# plus que les 3x3 cellules autour du point cherché. La cellule (24 m) est plus
+# large que la plus longue portée de recherche (OBSTACLE_LOOK_AHEAD = 22 m), et le
+# bloc 3x3 déborde d'au moins une cellule entière dans chaque direction : tout
+# véhicule à portée y est donc TOUJOURS présent. Le résultat est le même qu'avec le
+# parcours complet, ce n'est pas une approximation.
+#
+# Les positions servent uniquement à choisir les candidats ; le calcul lui-même relit
+# la position réelle du véhicule, donc rien ne dépend de la fraîcheur de la grille.
+# Marge : 24 - 22 = 2 m, alors qu'une voiture parcourt ~0,2 m par frame à 12 m/s.
+const GRID_CELL := 24.0
+static var _grid: Dictionary = {}   # clé entière de cellule (cf. _cell_key) -> Array d'indices dans _vehicle_cache
+
 var driven_by_player := false
 var has_npc_driver := false
 # Vrai pour une voiture achetée au concessionnaire (CarDealershipPanel) :
@@ -464,25 +486,78 @@ static func _turn_toward(current_deg: float, target_deg: float, max_step_deg: fl
 	var diff := wrapf(target_deg - current_deg, -180.0, 180.0)
 	return current_deg + clampf(diff, -max_step_deg, max_step_deg)
 
-func _get_vehicle_list() -> Array:
+# Cellule encodée en un seul entier plutôt qu'en Vector2i : clé de dictionnaire
+# nettement moins chère à hacher, et cette fonction est appelée pour chaque
+# véhicule à chaque frame. CELL_BIAS recentre les coordonnées négatives (la ville
+# est en X/Z négatifs) ; sa plage couvre +/- 49 km, très au-delà de la carte.
+const CELL_BIAS := 2048
+const CELL_STRIDE := 4096
+
+static func _cell_key(p: Vector3) -> int:
+	return (floori(p.x / GRID_CELL) + CELL_BIAS) * CELL_STRIDE + floori(p.z / GRID_CELL) + CELL_BIAS
+
+static func _cell_key_xz(cx: int, cz: int) -> int:
+	return (cx + CELL_BIAS) * CELL_STRIDE + cz + CELL_BIAS
+
+# Reconstruit liste + grille, une seule fois par frame physique pour toutes les
+# voitures. Volontairement réduit au strict minimum (une position + un rangement
+# par véhicule) : cette passe court sur les 252 véhicules, y compris ceux que
+# SimulationCuller a endormis, alors qu'en jeu seule une dizaine de voitures est
+# active. Tout ce qui peut n'être lu que pour les quelques candidats réellement
+# retenus (la demi-longueur, par exemple) est laissé aux boucles appelantes.
+func _refresh_vehicle_index() -> void:
 	var f := Engine.get_physics_frames()
-	if f != _vehicle_cache_frame:
-		_vehicle_cache_frame = f
-		_vehicle_cache = get_tree().get_nodes_in_group("vehicle")
-	return _vehicle_cache
+	if f == _vehicle_cache_frame:
+		return
+	_vehicle_cache_frame = f
+	_vehicle_cache = get_tree().get_nodes_in_group("vehicle")
+	# Les paniers sont VIDÉS, pas détruits : _grid.clear() relâchait chaque frame
+	# la centaine de tableaux des cellules occupées, qu'il fallait ensuite
+	# réallouer un par un. Les cellules restent d'une frame à l'autre.
+	for bucket in _grid.values():
+		(bucket as Array).clear()
+	for i in _vehicle_cache.size():
+		var o := _vehicle_cache[i] as Node3D
+		if o == null:
+			continue
+		var key := _cell_key(o.global_position)
+		var bucket: Variant = _grid.get(key)
+		if bucket == null:
+			bucket = []
+			_grid[key] = bucket
+		(bucket as Array).append(i)
+
+# Indices des véhicules des cellules autour de `center`, `rings` anneaux autour de
+# la cellule centrale (1 -> bloc 3x3, 2 -> 5x5). Le bloc couvre toujours au moins
+# `rings * GRID_CELL` mètres dans chaque direction depuis `center`, puisque celui-ci
+# est quelque part dans la cellule centrale : 24 m avec 1 anneau, 48 m avec 2.
+func _nearby_indices(center: Vector3, rings: int = 1) -> Array:
+	var cx := floori(center.x / GRID_CELL)
+	var cz := floori(center.z / GRID_CELL)
+	var side := rings * 2 + 1
+	var out: Array = []
+	for dx in side:
+		for dz in side:
+			var bucket: Variant = _grid.get(_cell_key_xz(cx + dx - rings, cz + dz - rings))
+			if bucket != null and not (bucket as Array).is_empty():
+				out.append_array(bucket as Array)
+	return out
 
 # Vitesse maximale sûre compte tenu des véhicules devant soi sur la voie
 # (autre voiture IA arrêtée, épave, OU la voiture du joueur qui bloque le
 # passage — toutes dans le groupe "vehicle"). Ralentit progressivement en
 # approche puis s'arrête à une distance de sécurité ; ne dépasse jamais.
 func _obstacle_speed_limit(heading_dir: Vector3, cruise_speed: float) -> float:
+	_refresh_vehicle_index()
 	var right := heading_dir.cross(Vector3.UP).normalized()
 	var nearest := INF
 	var nearest_body: Object = null
-	for o in _get_vehicle_list():
-		if o == self:
+	var my_pos := global_position
+	for idx in _nearby_indices(my_pos):
+		var o := _vehicle_cache[idx] as Node3D
+		if o == self or o == null:
 			continue
-		var rel: Vector3 = (o as Node3D).global_position - global_position
+		var rel: Vector3 = o.global_position - my_pos
 		rel.y = 0.0
 		var fwd_dist := rel.dot(heading_dir)
 		if fwd_dist <= 0.0 or fwd_dist > OBSTACLE_LOOK_AHEAD:
@@ -570,10 +645,12 @@ func _intersection_speed_limit(cruise_speed: float) -> float:
 		var stop_margin := _half_length + YIELD_STOP_BUFFER
 		var must_stop := false
 		var entry_pos := _path.node_pos(next_node)
-		for o in _get_vehicle_list():
-			if o == self or not (o.has_method("is_on_ring") and o.is_on_ring()):
+		_refresh_vehicle_index()
+		for idx in _nearby_indices(entry_pos):
+			var o := _vehicle_cache[idx] as Node3D
+			if o == self or o == null or not (o.has_method("is_on_ring") and o.is_on_ring()):
 				continue
-			if (o as Node3D).global_position.distance_to(entry_pos) <= YIELD_RING_RADIUS:
+			if o.global_position.distance_to(entry_pos) <= YIELD_RING_RADIUS:
 				must_stop = true
 				_keep_awake(o)
 				break
@@ -623,13 +700,17 @@ func _intersection_speed_limit(cruise_speed: float) -> float:
 		var own_stop_t := (_ai_speed * _ai_speed) / (2.0 * AI_DECEL)
 		if remaining <= stop_margin2 + own_stop_t:
 			var must_yield_for_turn := false
-			for o in _get_vehicle_list():
-				if o == self or not o.has_method("active_turn_priority"):
+			# Seules les voitures qui approchent CE carrefour peuvent avoir la
+			# priorité dessus, et aucune ne le surveille au-delà de
+			# INTERSECTION_CHECK_DIST (28 m) : 2 anneaux de grille (>= 48 m autour
+			# du noeud) les contiennent donc toutes. Même résultat que le parcours
+			# des 252 véhicules, sans le parcourir.
+			_refresh_vehicle_index()
+			for idx in _nearby_indices(_path.node_pos(next_node), 2):
+				var o := _vehicle_cache[idx] as Node3D
+				if o == self or o == null or not o.has_method("blocks_turn_at"):
 					continue
-				var info: Dictionary = o.active_turn_priority()
-				if info.is_empty() or int(info.get("node", -1)) != next_node:
-					continue
-				if bool(info.get("is_turn", false)) and int(info.get("seq", -1)) < _turn_priority_seq:
+				if o.blocks_turn_at(next_node, _turn_priority_seq):
 					must_yield_for_turn = true
 					break
 			if must_yield_for_turn:
@@ -674,11 +755,16 @@ func _intersection_speed_limit(cruise_speed: float) -> float:
 # toujours -- sinon deux voitures qui arrivent en même temps se
 # "doubleraient" l'une l'autre au lieu de respecter l'ordre d'arrivée, le
 # rang le plus bas n'ayant pas encore eu la CHANCE de committed_to_cross.
-func active_turn_priority() -> Dictionary:
+# Répond directement à la seule question que l'appelant se posait ("cette
+# voiture-ci me bloque-t-elle ?") au lieu de renvoyer un Dictionary que
+# l'appelant décortiquait : la version précédente allouait un Dictionary par
+# voiture comparée, pour chaque voiture qui tourne, à chaque revérification.
+# Mêmes conditions, lues en direct : aucun décalage d'une frame sur l'arbitrage.
+func blocks_turn_at(node: int, seq: int) -> bool:
 	# Figée par SimulationCuller : ne bloque personne pendant la pause, garde son rang pour la reprise.
 	if _turn_priority_node < 0 or _committed_to_stop or not is_physics_processing():
-		return {}
-	return {"node": _turn_priority_node, "seq": _turn_priority_seq, "is_turn": _turn_priority_is_turn}
+		return false
+	return _turn_priority_node == node and _turn_priority_is_turn and _turn_priority_seq < seq
 
 # Utilisé par les AUTRES voitures pour savoir si celle-ci est déjà engagée
 # sur l'anneau du rond-point (priorité), pour le cédez-le-passage ci-dessus.

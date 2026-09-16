@@ -1,0 +1,332 @@
+diff --git a/scenes/buildings/InteractionZone.gd b/scenes/buildings/InteractionZone.gd
+index eca035c..cc65ed9 100644
+--- a/scenes/buildings/InteractionZone.gd
++++ b/scenes/buildings/InteractionZone.gd
+@@ -34,6 +34,13 @@ func _ready() -> void:
+ 	add_child(_prompt)
+ 	body_entered.connect(_on_body_entered)
+ 	body_exited.connect(_on_body_exited)
++	# Rien à faire tant que le joueur n'est pas dans la zone : _process et
++	# _unhandled_input ne sont réarmés qu'à son entrée (cf. _on_body_entered).
++	# La carte compte ~1045 zones de bâtiment ; les laisser toutes actives
++	# coûtait 1045 appels de script par frame rendue, et faisait traverser
++	# 1045 nœuds à chaque événement d'entrée, pour un seul joueur.
++	set_process(false)
++	set_process_unhandled_input(false)
+ 
+ 
+ func _process(_delta: float) -> void:
+@@ -57,8 +64,15 @@ func _can_interact(player: Node3D) -> bool:
+ func _on_body_entered(body: Node3D) -> void:
+ 	if body.is_in_group("player"):
+ 		_player = body
++		set_process(true)
++		set_process_unhandled_input(true)
+ 
+ 
+ func _on_body_exited(body: Node3D) -> void:
+ 	if body == _player:
+ 		_player = null
++		# état de sortie identique à ce que _process aurait posé (_player null
++		# -> invite masquée), donc rien ne change visuellement en se mettant en veille
++		_prompt.visible = false
++		set_process(false)
++		set_process_unhandled_input(false)
+diff --git a/scenes/npc/NPC.gd b/scenes/npc/NPC.gd
+index 7df448e..7cd4777 100644
+--- a/scenes/npc/NPC.gd
++++ b/scenes/npc/NPC.gd
+@@ -80,6 +80,7 @@ var _dead := false
+ 
+ var _anim: AnimationPlayer
+ var _cur_anim := ""
++var _ground_query := PhysicsRayQueryParameters3D.new()   # cf. _ground_ride_height
+ 
+ # mode "éjecté d'une voiture" : court vers le point PedGraph le plus proche
+ # puis rejoint le comportement normal (trajet aléatoire sur le graphe).
+@@ -105,13 +106,17 @@ func setup(graph: PathGraph, start_node: int, _speed: float, _extra: float, budg
+ # = calque du décor statique (route/trottoir/terrain/bâtiments) ; exclut
+ # PNJ (2) et véhicules (4), donc jamais de faux positif sur un autre PNJ ou
+ # une voiture qui passerait juste en dessous/au-dessus.
++#
++# L'objet de requête est réutilisé d'une frame à l'autre (_ground_query) : ce
++# rayon est tiré à CHAQUE frame physique par CHAQUE PNJ (315 en pointe), le
++# recréer à chaque appel allouait autant d'objets par seconde pour rien.
++# Seuls from/to changent d'un appel au suivant.
+ func _ground_ride_height(at: Vector3) -> float:
+ 	var space_state := get_world_3d().direct_space_state
+-	var from := Vector3(at.x, at.y + 5.0, at.z)
+-	var to := Vector3(at.x, at.y - 5.0, at.z)
+-	var params := PhysicsRayQueryParameters3D.create(from, to)
+-	params.collision_mask = 1
+-	var hit := space_state.intersect_ray(params)
++	_ground_query.from = Vector3(at.x, at.y + 5.0, at.z)
++	_ground_query.to = Vector3(at.x, at.y - 5.0, at.z)
++	_ground_query.collision_mask = 1
++	var hit := space_state.intersect_ray(_ground_query)
+ 	if hit.is_empty():
+ 		return DEFAULT_RIDE_HEIGHT
+ 	return (hit["position"] as Vector3).y + CAPSULE_HALF_HEIGHT + RIDE_MARGIN
+diff --git a/scenes/vehicles/Car.gd b/scenes/vehicles/Car.gd
+index ca69dce..78885f9 100644
+--- a/scenes/vehicles/Car.gd
++++ b/scenes/vehicles/Car.gd
+@@ -160,6 +160,28 @@ var _cached_obstacle_speed_limit := 999.0
+ static var _vehicle_cache: Array = []
+ static var _vehicle_cache_frame: int = -1
+ 
++# Index spatial des véhicules, reconstruit en même temps que la liste ci-dessus.
++#
++# Le suivi de voiture (_obstacle_speed_limit) et le cédez-le-passage du rond-point
++# parcouraient les 252 véhicules pour CHAQUE voiture, ~30 fois par seconde chacune :
++# ~32 000 itérations par frame, dont deux lectures de propriété par réflexion
++# ("_half_length" in o, puis o.get(...)) à chaque itération. Mesuré à ~15 ms par
++# frame sur les ~22 ms de scripts voiture (CityPerfTest headless, 252 voitures) :
++# de loin le premier poste de coût du jeu.
++#
++# La grille range les véhicules par cellule de GRID_CELL m ; une voiture n'examine
++# plus que les 3x3 cellules autour du point cherché. La cellule (24 m) est plus
++# large que la plus longue portée de recherche (OBSTACLE_LOOK_AHEAD = 22 m), et le
++# bloc 3x3 déborde d'au moins une cellule entière dans chaque direction : tout
++# véhicule à portée y est donc TOUJOURS présent. Le résultat est le même qu'avec le
++# parcours complet, ce n'est pas une approximation.
++#
++# Les positions servent uniquement à choisir les candidats ; le calcul lui-même relit
++# la position réelle du véhicule, donc rien ne dépend de la fraîcheur de la grille.
++# Marge : 24 - 22 = 2 m, alors qu'une voiture parcourt ~0,2 m par frame à 12 m/s.
++const GRID_CELL := 24.0
++static var _grid: Dictionary = {}   # clé entière de cellule (cf. _cell_key) -> Array d'indices dans _vehicle_cache
++
+ var driven_by_player := false
+ var has_npc_driver := false
+ # Vrai pour une voiture achetée au concessionnaire (CarDealershipPanel) :
+@@ -464,25 +486,78 @@ static func _turn_toward(current_deg: float, target_deg: float, max_step_deg: fl
+ 	var diff := wrapf(target_deg - current_deg, -180.0, 180.0)
+ 	return current_deg + clampf(diff, -max_step_deg, max_step_deg)
+ 
+-func _get_vehicle_list() -> Array:
++# Cellule encodée en un seul entier plutôt qu'en Vector2i : clé de dictionnaire
++# nettement moins chère à hacher, et cette fonction est appelée pour chaque
++# véhicule à chaque frame. CELL_BIAS recentre les coordonnées négatives (la ville
++# est en X/Z négatifs) ; sa plage couvre +/- 49 km, très au-delà de la carte.
++const CELL_BIAS := 2048
++const CELL_STRIDE := 4096
++
++static func _cell_key(p: Vector3) -> int:
++	return (floori(p.x / GRID_CELL) + CELL_BIAS) * CELL_STRIDE + floori(p.z / GRID_CELL) + CELL_BIAS
++
++static func _cell_key_xz(cx: int, cz: int) -> int:
++	return (cx + CELL_BIAS) * CELL_STRIDE + cz + CELL_BIAS
++
++# Reconstruit liste + grille, une seule fois par frame physique pour toutes les
++# voitures. Volontairement réduit au strict minimum (une position + un rangement
++# par véhicule) : cette passe court sur les 252 véhicules, y compris ceux que
++# SimulationCuller a endormis, alors qu'en jeu seule une dizaine de voitures est
++# active. Tout ce qui peut n'être lu que pour les quelques candidats réellement
++# retenus (la demi-longueur, par exemple) est laissé aux boucles appelantes.
++func _refresh_vehicle_index() -> void:
+ 	var f := Engine.get_physics_frames()
+-	if f != _vehicle_cache_frame:
+-		_vehicle_cache_frame = f
+-		_vehicle_cache = get_tree().get_nodes_in_group("vehicle")
+-	return _vehicle_cache
++	if f == _vehicle_cache_frame:
++		return
++	_vehicle_cache_frame = f
++	_vehicle_cache = get_tree().get_nodes_in_group("vehicle")
++	# Les paniers sont VIDÉS, pas détruits : _grid.clear() relâchait chaque frame
++	# la centaine de tableaux des cellules occupées, qu'il fallait ensuite
++	# réallouer un par un. Les cellules restent d'une frame à l'autre.
++	for bucket in _grid.values():
++		(bucket as Array).clear()
++	for i in _vehicle_cache.size():
++		var o := _vehicle_cache[i] as Node3D
++		if o == null:
++			continue
++		var key := _cell_key(o.global_position)
++		var bucket: Variant = _grid.get(key)
++		if bucket == null:
++			bucket = []
++			_grid[key] = bucket
++		(bucket as Array).append(i)
++
++# Indices des véhicules des cellules autour de `center`, `rings` anneaux autour de
++# la cellule centrale (1 -> bloc 3x3, 2 -> 5x5). Le bloc couvre toujours au moins
++# `rings * GRID_CELL` mètres dans chaque direction depuis `center`, puisque celui-ci
++# est quelque part dans la cellule centrale : 24 m avec 1 anneau, 48 m avec 2.
++func _nearby_indices(center: Vector3, rings: int = 1) -> Array:
++	var cx := floori(center.x / GRID_CELL)
++	var cz := floori(center.z / GRID_CELL)
++	var side := rings * 2 + 1
++	var out: Array = []
++	for dx in side:
++		for dz in side:
++			var bucket: Variant = _grid.get(_cell_key_xz(cx + dx - rings, cz + dz - rings))
++			if bucket != null and not (bucket as Array).is_empty():
++				out.append_array(bucket as Array)
++	return out
+ 
+ # Vitesse maximale sûre compte tenu des véhicules devant soi sur la voie
+ # (autre voiture IA arrêtée, épave, OU la voiture du joueur qui bloque le
+ # passage — toutes dans le groupe "vehicle"). Ralentit progressivement en
+ # approche puis s'arrête à une distance de sécurité ; ne dépasse jamais.
+ func _obstacle_speed_limit(heading_dir: Vector3, cruise_speed: float) -> float:
++	_refresh_vehicle_index()
+ 	var right := heading_dir.cross(Vector3.UP).normalized()
+ 	var nearest := INF
+ 	var nearest_body: Object = null
+-	for o in _get_vehicle_list():
+-		if o == self:
++	var my_pos := global_position
++	for idx in _nearby_indices(my_pos):
++		var o := _vehicle_cache[idx] as Node3D
++		if o == self or o == null:
+ 			continue
+-		var rel: Vector3 = (o as Node3D).global_position - global_position
++		var rel: Vector3 = o.global_position - my_pos
+ 		rel.y = 0.0
+ 		var fwd_dist := rel.dot(heading_dir)
+ 		if fwd_dist <= 0.0 or fwd_dist > OBSTACLE_LOOK_AHEAD:
+@@ -570,10 +645,12 @@ func _intersection_speed_limit(cruise_speed: float) -> float:
+ 		var stop_margin := _half_length + YIELD_STOP_BUFFER
+ 		var must_stop := false
+ 		var entry_pos := _path.node_pos(next_node)
+-		for o in _get_vehicle_list():
+-			if o == self or not (o.has_method("is_on_ring") and o.is_on_ring()):
++		_refresh_vehicle_index()
++		for idx in _nearby_indices(entry_pos):
++			var o := _vehicle_cache[idx] as Node3D
++			if o == self or o == null or not (o.has_method("is_on_ring") and o.is_on_ring()):
+ 				continue
+-			if (o as Node3D).global_position.distance_to(entry_pos) <= YIELD_RING_RADIUS:
++			if o.global_position.distance_to(entry_pos) <= YIELD_RING_RADIUS:
+ 				must_stop = true
+ 				_keep_awake(o)
+ 				break
+@@ -623,13 +700,17 @@ func _intersection_speed_limit(cruise_speed: float) -> float:
+ 		var own_stop_t := (_ai_speed * _ai_speed) / (2.0 * AI_DECEL)
+ 		if remaining <= stop_margin2 + own_stop_t:
+ 			var must_yield_for_turn := false
+-			for o in _get_vehicle_list():
+-				if o == self or not o.has_method("active_turn_priority"):
+-					continue
+-				var info: Dictionary = o.active_turn_priority()
+-				if info.is_empty() or int(info.get("node", -1)) != next_node:
++			# Seules les voitures qui approchent CE carrefour peuvent avoir la
++			# priorité dessus, et aucune ne le surveille au-delà de
++			# INTERSECTION_CHECK_DIST (28 m) : 2 anneaux de grille (>= 48 m autour
++			# du noeud) les contiennent donc toutes. Même résultat que le parcours
++			# des 252 véhicules, sans le parcourir.
++			_refresh_vehicle_index()
++			for idx in _nearby_indices(_path.node_pos(next_node), 2):
++				var o := _vehicle_cache[idx] as Node3D
++				if o == self or o == null or not o.has_method("blocks_turn_at"):
+ 					continue
+-				if bool(info.get("is_turn", false)) and int(info.get("seq", -1)) < _turn_priority_seq:
++				if o.blocks_turn_at(next_node, _turn_priority_seq):
+ 					must_yield_for_turn = true
+ 					break
+ 			if must_yield_for_turn:
+@@ -674,11 +755,16 @@ func _intersection_speed_limit(cruise_speed: float) -> float:
+ # toujours -- sinon deux voitures qui arrivent en même temps se
+ # "doubleraient" l'une l'autre au lieu de respecter l'ordre d'arrivée, le
+ # rang le plus bas n'ayant pas encore eu la CHANCE de committed_to_cross.
+-func active_turn_priority() -> Dictionary:
++# Répond directement à la seule question que l'appelant se posait ("cette
++# voiture-ci me bloque-t-elle ?") au lieu de renvoyer un Dictionary que
++# l'appelant décortiquait : la version précédente allouait un Dictionary par
++# voiture comparée, pour chaque voiture qui tourne, à chaque revérification.
++# Mêmes conditions, lues en direct : aucun décalage d'une frame sur l'arbitrage.
++func blocks_turn_at(node: int, seq: int) -> bool:
+ 	# Figée par SimulationCuller : ne bloque personne pendant la pause, garde son rang pour la reprise.
+ 	if _turn_priority_node < 0 or _committed_to_stop or not is_physics_processing():
+-		return {}
+-	return {"node": _turn_priority_node, "seq": _turn_priority_seq, "is_turn": _turn_priority_is_turn}
++		return false
++	return _turn_priority_node == node and _turn_priority_is_turn and _turn_priority_seq < seq
+ 
+ # Utilisé par les AUTRES voitures pour savoir si celle-ci est déjà engagée
+ # sur l'anneau du rond-point (priorité), pour le cédez-le-passage ci-dessus.
+diff --git a/scenes/world/CircuitPath.gd b/scenes/world/CircuitPath.gd
+index 8b79126..79a40ec 100644
+--- a/scenes/world/CircuitPath.gd
++++ b/scenes/world/CircuitPath.gd
+@@ -244,7 +244,27 @@ func direction_at(edge_idx: int, from_node: int, s: float) -> Vector3:
+ 	return -d if reversed else d
+ 
+ # Position décalée latéralement (+lateral = à droite du sens de marche).
++#
++# Résout l'arête et le segment UNE seule fois, puis en tire à la fois la
++# position et la direction. La version précédente enchaînait direction_at()
++# puis sample(), qui refaisaient chacun les quatre lectures du dictionnaire
++# d'arête, le calcul de `reversed`, le clamp et la recherche de segment : soit
++# deux fois le même travail par appel, pour chaque voiture et chaque frame.
++# Résultat identique (mêmes formules, mêmes bornes), simplement calculé une fois.
+ func sample_offset(edge_idx: int, from_node: int, s: float, lateral: float) -> Vector3:
+-	var dir := direction_at(edge_idx, from_node, s)
+-	var right := dir.cross(Vector3.UP).normalized()
+-	return sample(edge_idx, from_node, s) + right * lateral
++	var e: Dictionary = edges[edge_idx]
++	var pts: PackedVector3Array = e["points"]
++	var total: float = e["length"]
++	if total <= 0.0:
++		# même repli que direction_at (Vector3.FORWARD -> right = Vector3.RIGHT) suivi de sample (pts[0])
++		return pts[0] + Vector3.RIGHT * lateral
++	var seg_len: PackedFloat32Array = e["seg_len"]
++	var cum: PackedFloat32Array = e["cum"]
++	var reversed: bool = int(e["a"]) != from_node
++	var query_s: float = clampf((total - s) if reversed else s, 0.0, total)
++	var i := _seg_index(seg_len, cum, query_s)
++	var d: Vector3 = (pts[i + 1] - pts[i]).normalized()
++	var dir := -d if reversed else d
++	var t: float = ((query_s - cum[i]) / seg_len[i]) if seg_len[i] > 0.0 else 0.0
++	var pos := pts[i].lerp(pts[i + 1], t)
++	return pos + dir.cross(Vector3.UP).normalized() * lateral
+diff --git a/scripts/movement/StepClimb.gd b/scripts/movement/StepClimb.gd
+index 8a8eaef..f511148 100644
+--- a/scripts/movement/StepClimb.gd
++++ b/scripts/movement/StepClimb.gd
+@@ -21,6 +21,14 @@ const PROBE_DIST := 0.6
+ # height 1.8) -> demi-hauteur 0.9, capsule centrée sur global_position.
+ const DEFAULT_CAPSULE_HALF_HEIGHT := 0.9
+ 
++# Objets de requête partagés par tous les appelants : try_climb() est appelé à
++# chaque frame physique par chaque PNJ (315 en pointe) et par le joueur. Les
++# recréer à chaque appel allouait 2 objets + 1 tableau par appel pour rien.
++# Sans état entre deux appels : tous les champs lus sont réécrits avant usage.
++static var _low_params := PhysicsRayQueryParameters3D.new()
++static var _high_params := PhysicsRayQueryParameters3D.new()
++static var _exclude: Array[RID] = [RID()]
++
+ static func try_climb(body: CharacterBody3D, move_dir: Vector3, capsule_half_height: float = DEFAULT_CAPSULE_HALF_HEIGHT) -> void:
+ 	var flat_dir := Vector3(move_dir.x, 0.0, move_dir.z)
+ 	if flat_dir.length_squared() < 0.0001:
+@@ -35,17 +43,20 @@ static func try_climb(body: CharacterBody3D, move_dir: Vector3, capsule_half_hei
+ 	var foot_y := origin.y - capsule_half_height
+ 
+ 	var low_from := Vector3(origin.x, foot_y + LOW_PROBE_Y, origin.z)
+-	var low_params := PhysicsRayQueryParameters3D.create(low_from, low_from + flat_dir * PROBE_DIST)
+-	low_params.collision_mask = 1
+-	low_params.exclude = [body.get_rid()]
+-	if space_state.intersect_ray(low_params).is_empty():
++	_exclude[0] = body.get_rid()
++	_low_params.from = low_from
++	_low_params.to = low_from + flat_dir * PROBE_DIST
++	_low_params.collision_mask = 1
++	_low_params.exclude = _exclude
++	if space_state.intersect_ray(_low_params).is_empty():
+ 		return   # rien au ras du sol devant -> pas de marche à franchir
+ 
+ 	var high_from := Vector3(origin.x, foot_y + MAX_STEP_HEIGHT, origin.z)
+-	var high_params := PhysicsRayQueryParameters3D.create(high_from, high_from + flat_dir * PROBE_DIST)
+-	high_params.collision_mask = 1
+-	high_params.exclude = [body.get_rid()]
+-	if not space_state.intersect_ray(high_params).is_empty():
++	_high_params.from = high_from
++	_high_params.to = high_from + flat_dir * PROBE_DIST
++	_high_params.collision_mask = 1
++	_high_params.exclude = _exclude
++	if not space_state.intersect_ray(_high_params).is_empty():
+ 		return   # obstacle encore présent en hauteur -> un mur, pas une marche
+ 
+ 	body.global_position.y += MAX_STEP_HEIGHT
