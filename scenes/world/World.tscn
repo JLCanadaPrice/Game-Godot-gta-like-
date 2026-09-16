@@ -43,6 +43,7 @@
 [ext_resource type="Texture2D" uid="uid://pcc33s6b5ecn" path="res://assets/city_kit/models_active/T_Concrete_ORM.png" id="43_qwnft"]
 [ext_resource type="Texture2D" uid="uid://dtph7404adv42" path="res://assets/city_kit/models_active/T_Concrete_Normal.png" id="44_vgjkm"]
 [ext_resource type="Script" uid="uid://yeshwryih4c5" path="res://scripts/world/SimulationCuller.gd" id="55_h1p51"]
+[ext_resource type="Script" path="res://scripts/world/CityRenderOptimizer.gd" id="56_crdopt"]
 [ext_resource type="PackedScene" uid="uid://o5pf2w3wgjoy" path="res://assets/modular_roads/Road11_Y_Splitter_45.glb" id="60_p5sbp"]
 [ext_resource type="Texture2D" uid="uid://bxmyk7yfb4hr8" path="res://assets/modular_roads/Road11_Y_Splitter_45_Road6_A.png" id="61_1rh5a"]
 [ext_resource type="PackedScene" uid="uid://cxbccbdnpycvw" path="res://assets/modular_roads/Road2_X.glb" id="61_my3ih"]
@@ -105579,6 +105580,9 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -460, 0, 44)
 
 [node name="SimulationCuller" type="Node" parent="." unique_id=1935290176]
 script = ExtResource("55_h1p51")
+
+[node name="CityRenderOptimizer" type="Node3D" parent="." unique_id=1418350213]
+script = ExtResource("56_crdopt")
 
 [editable path="District/Road11_Y_Splitter_452"]
 [editable path="District_W/Road11_Y_Splitter_452"]

@@ -1,11 +1,14 @@
 extends Node3D
 class_name TrafficLight
 
-# Feu tricolore visuel : bascule l'albedo_texture du matériau du modèle
-# selon l'état (rouge/orange/vert), matériau dupliqué par instance pour ne
-# jamais partager l'état visuel entre plusieurs feux (sinon en changer un
-# changerait TOUS les feux de la carte, puisque le FBX n'a qu'un seul
-# matériau partagé par défaut).
+# Feu tricolore visuel : bascule le matériau du modèle selon l'état
+# (rouge/orange/vert). Trois matériaux, un par état, partagés par TOUS les
+# feux (cf. _state_materials) : un feu change d'état en changeant de
+# matériau, jamais en modifiant un matériau, donc l'état visuel d'un feu
+# reste indépendant des autres. Auparavant un matériau dupliqué par feu dont
+# on changeait la texture : 378 matériaux distincts = 378 appels de dessin ;
+# partagés, les feux d'un même état sont dessinés ensemble (instanciation
+# automatique du moteur).
 #
 # Ancienne approche (abandonnée) : garder tl_texture.png comme albedo fixe
 # et superposer une texture d'émission (masque couleur) par-dessus. Cause
@@ -34,9 +37,12 @@ const POLL_INTERVAL := 0.25   # l'état ne change que toutes les quelques second
 @export var circuit_node: int = -1      # index du noeud de carrefour contrôlé
 @export var circuit_edge: int = -1      # index de l'arête (direction d'approche) contrôlée
 
+# matériau importé du FBX -> [rouge, orange, vert] (indexé par State), créé au premier feu
+static var _state_materials := {}
+
 var _circuit: CircuitPath
 var _mesh: MeshInstance3D
-var _material: StandardMaterial3D
+var _materials: Array = []              # les 3 matériaux partagés de ce modèle
 var _current_state := -1
 var _poll_timer := 0.0
 
@@ -57,12 +63,18 @@ func _ready() -> void:
 	if base == null:
 		push_warning("TrafficLight: matériau de base introuvable")
 		return
-	_material = base.duplicate() as StandardMaterial3D
-	_mesh.set_surface_override_material(0, _material)
-	# Émission plus utilisée du tout : la couleur vient désormais directement
-	# de l'albedo_texture (cf. set_state), qui contient déjà le boîtier ET la
-	# lentille allumée fusionnés dans une seule image par état.
-	_material.emission_enabled = false
+	if not _state_materials.has(base):
+		var mats := []
+		for tex in [TEX_RED, TEX_YELLOW, TEX_GREEN]:
+			var mat := base.duplicate() as StandardMaterial3D
+			# Émission plus utilisée du tout : la couleur vient désormais directement
+			# de l'albedo_texture, qui contient déjà le boîtier ET la lentille
+			# allumée fusionnés dans une seule image par état.
+			mat.emission_enabled = false
+			mat.albedo_texture = tex
+			mats.append(mat)
+		_state_materials[base] = mats
+	_materials = _state_materials[base]
 
 	_circuit = get_node_or_null(circuit_path) as CircuitPath
 	set_state(State.RED)   # état de repli tant que le premier sondage n'a pas eu lieu
@@ -77,18 +89,14 @@ func _process(delta: float) -> void:
 	_poll_timer = POLL_INTERVAL
 	set_state(_circuit.light_color(circuit_edge, circuit_node))
 
-# Change l'albedo_texture selon l'état (rouge/orange/vert) : chaque texture
-# contient déjà le boîtier complet avec la bonne lentille allumée intégrée.
+# Pose le matériau de l'état (rouge/orange/vert) : chaque texture contient
+# déjà le boîtier complet avec la bonne lentille allumée intégrée.
 # N'agit que si l'état a réellement changé, pour éviter une réaffectation de
-# texture inutile à chaque sondage.
+# matériau inutile à chaque sondage.
 func set_state(state: int) -> void:
-	if state == _current_state or _material == null:
+	if state == _current_state or _materials.is_empty():
 		return
 	_current_state = state
 	match state:
-		State.RED:
-			_material.albedo_texture = TEX_RED
-		State.YELLOW:
-			_material.albedo_texture = TEX_YELLOW
-		State.GREEN:
-			_material.albedo_texture = TEX_GREEN
+		State.RED, State.YELLOW, State.GREEN:
+			_mesh.set_surface_override_material(0, _materials[state])
