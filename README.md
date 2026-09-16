@@ -56,8 +56,4 @@ Player, NPC, Building et le monde utilisent les nodes 3D de Godot (`CharacterBod
 ## Prochaine étape
 
 HUD qui affiche argent + réputation en direct (connecté aux signaux `money_changed`/`reputation_changed` de GameManager), ou on attaque l'économie criminelle stylisée (EconomyManager) — dis-moi.
-# Game-Godot-gta-like-
-# Game-Godot-gta-like-
-# Game-Godot-gta-like-
-# Game-Godot-gta-like-
-# Game-Godot-gta-like-
+
