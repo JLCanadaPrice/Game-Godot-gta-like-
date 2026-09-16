@@ -215,12 +215,6 @@ func _check_world() -> void:
 			% [circuit.node_count(), traffic.merged_nodes, circuit.edges.size(), traffic.merged_edges, reach_fwd, reach_back])
 	if traffic.merged_edges == 0:
 		_errors.append("graphe de la carte non fusionné au Circuit")
-	var lit_expected := 0
-	for i in (traffic.graph as MapTrafficGraph).lit:
-		lit_expected += 1
-	print("MAP_ROADS_WORLD feux visibles posés par la carte : %d (%d carrefours à feux)" % [traffic.added_lights, lit_expected])
-	if lit_expected > 0 and traffic.added_lights < lit_expected * 2:
-		_errors.append("feux visibles manquants aux carrefours de la carte (%d)" % traffic.added_lights)
 	if reach_fwd != circuit.node_count() or reach_back != circuit.node_count():
 		_errors.append("Circuit du monde non fortement connexe après fusion")
 	# voitures au départ des raccords du centre-ville, vers l'extérieur

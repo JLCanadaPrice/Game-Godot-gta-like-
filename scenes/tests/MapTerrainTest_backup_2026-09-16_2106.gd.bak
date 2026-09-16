@@ -124,7 +124,6 @@ func _check_swimming() -> void:
 		["rivière au sud", Vector2(-760, 652), Spec.WATER_LEVEL],
 		["Willow Lake", Vector2(-1760, -90), float(model.lake_levels["willow_lake"])],
 		["bassin existant", Vector2(-250, -575), Spec.WATER_LEVEL],
-		["sous le pont de l'Autoroute Nord", Vector2(-1230, -700), Spec.WATER_LEVEL],
 	]
 	for place: Array in places:
 		var p: Vector2 = place[1]

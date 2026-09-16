@@ -28,6 +28,8 @@ const VIEWS := [
 	["rond_point_echo", Vector3(175, 45, -255), Vector3(110, 0, -316)],
 	["losange_aeroport", Vector3(170, 60, -560), Vector3(60, 0, -700)],
 	["entree_ouest_centre_ville", Vector3(-1000, 10, -195), Vector3(-892, 1, -172)],
+	["lampadaires_artere_urbaine", Vector3(-1606, 18, -8), Vector3(-1624, 8, -80)],
+	["lampadaires_echangeur", Vector3(-330, 22, 690), Vector3(-380, 8, 770)],
 ]
 const SETTLE_FRAMES := 40
 

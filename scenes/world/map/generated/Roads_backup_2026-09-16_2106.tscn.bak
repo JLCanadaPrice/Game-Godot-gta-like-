@@ -1,0 +1,2488 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_00_07.res" id="1_fl1br"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_00_07.res" id="2_dxsmy"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_00_07.res" id="3_or0ry"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_00_08.res" id="4_dlu7d"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_00_08.res" id="5_t2ysg"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_00_12.res" id="6_q0ltw"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_00_12.res" id="7_whckc"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_00_12.res" id="8_8k3ds"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_01_07.res" id="9_apnm8"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_01_07.res" id="10_kmnj0"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_01_07.res" id="11_qgo8o"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_01_08.res" id="12_qgply"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_01_08.res" id="13_n211f"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_01_12.res" id="14_d1efh"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_01_12.res" id="15_ofltq"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_01_12.res" id="16_t81ek"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_02_07.res" id="17_opphb"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_02_07.res" id="18_vond8"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_02_07.res" id="19_r001w"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_02_09.res" id="20_ct3og"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_02_09.res" id="21_c2fao"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_02_09.res" id="22_uqjko"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_02_12.res" id="23_6o3ds"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_02_12.res" id="24_dbkc5"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_02_12.res" id="25_4jjic"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_03_07.res" id="26_lpev8"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_03_07.res" id="27_0qubm"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_03_07.res" id="28_etcfu"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_03_08.res" id="29_lbkx1"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_03_08.res" id="30_ni6br"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_03_08.res" id="31_ffbcy"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_03_09.res" id="32_p6suj"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_03_09.res" id="33_jq2ub"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_03_09.res" id="34_llvm8"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_03_10.res" id="35_ng7k6"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_03_10.res" id="36_cvnq3"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_03_10.res" id="37_81gku"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_03_11.res" id="38_m8c5l"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_03_11.res" id="39_6nqaq"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_03_11.res" id="40_gqhx0"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_03_12.res" id="41_y2ili"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_03_12.res" id="42_q3r4f"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_03_12.res" id="43_wdgnf"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_04_07.res" id="44_r5udi"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_04_07.res" id="45_nrlxc"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_04_07.res" id="46_26aby"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_04_08.res" id="47_eouki"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_04_08.res" id="48_gpc13"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_04_08.res" id="49_m11bs"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_04_09.res" id="50_t3sjr"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_04_09.res" id="51_7c8ri"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_04_09.res" id="52_hmcmj"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_04_10.res" id="53_larj5"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_04_10.res" id="54_wefy4"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_04_10.res" id="55_d58d3"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_04_11.res" id="56_uo1lf"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_04_11.res" id="57_eug1o"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_04_11.res" id="58_d4l4r"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_04_12.res" id="59_ep1xp"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_04_12.res" id="60_v2nd6"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_04_12.res" id="61_fwntc"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_05_04.res" id="62_xcpty"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_05_04.res" id="63_bgxwh"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_05_04.res" id="64_tfyfd"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_05_07.res" id="65_hhpsu"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_05_07.res" id="66_kkokd"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_05_07.res" id="67_cavfm"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_05_08.res" id="68_g8p2v"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_05_08.res" id="69_4pgc1"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_05_08.res" id="70_si1ud"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_05_09.res" id="71_6bvws"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_05_09.res" id="72_q7177"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_05_09.res" id="73_tyop1"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_05_10.res" id="74_035bq"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_05_10.res" id="75_l1m7s"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_05_10.res" id="76_1bxuw"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_05_12.res" id="77_kjgjg"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_05_12.res" id="78_022bl"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_05_12.res" id="79_pxe28"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_05_13.res" id="80_x1apw"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_05_13.res" id="81_yal0f"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_05_13.res" id="82_yowci"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_05_14.res" id="83_7ov30"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_05_14.res" id="84_o72li"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_05_14.res" id="85_um38r"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_06_04.res" id="86_8if5s"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_06_04.res" id="87_m4j1c"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_06_04.res" id="88_qoh7b"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_06_05.res" id="89_n7gq2"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_06_05.res" id="90_ba46f"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_06_05.res" id="91_q652o"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_06_06.res" id="92_caexb"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_06_06.res" id="93_xqxbr"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_06_06.res" id="94_3un7o"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_06_07.res" id="95_m5eqj"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_06_07.res" id="96_q5ohf"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_06_07.res" id="97_ontnn"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_06_08.res" id="98_v7ov2"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_06_08.res" id="99_t6j66"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_06_08.res" id="100_fk4ee"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_06_09.res" id="101_x6rmm"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_06_09.res" id="102_v4gqe"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_06_09.res" id="103_a2u7w"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_06_10.res" id="104_p6rgm"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_06_10.res" id="105_a67fp"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_06_10.res" id="106_hes5p"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_06_11.res" id="107_f8xnx"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_06_11.res" id="108_jbvfi"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_06_11.res" id="109_ajkgt"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_06_12.res" id="110_yx68j"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_06_12.res" id="111_cf10o"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_06_12.res" id="112_v1km4"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_06_13.res" id="113_r7h1g"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_06_13.res" id="114_3f1e2"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_06_13.res" id="115_22ukf"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_06_14.res" id="116_3ea12"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_06_14.res" id="117_kpsyb"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_06_14.res" id="118_v33cg"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_07_03.res" id="119_fu2gb"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_07_03.res" id="120_htkop"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_07_03.res" id="121_60r73"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_07_04.res" id="122_ak2by"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_07_04.res" id="123_xsjdm"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_07_04.res" id="124_8j47x"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_07_05.res" id="125_2g1pe"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_07_05.res" id="126_d5l7m"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_07_05.res" id="127_foqf4"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_07_06.res" id="128_vqmdt"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_07_06.res" id="129_yh077"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_07_06.res" id="130_rgegh"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_07_07.res" id="131_3wp3k"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_07_07.res" id="132_uc4ff"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_07_07.res" id="133_ueb1p"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_07_08.res" id="134_n7ohs"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_07_08.res" id="135_5m5n0"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_07_08.res" id="136_53sfu"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_07_11.res" id="137_oqdxe"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_07_11.res" id="138_iwf04"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_07_11.res" id="139_xa06g"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_07_12.res" id="140_7ql63"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_07_12.res" id="141_ehmu5"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_07_12.res" id="142_6otiq"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_07_13.res" id="143_why20"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_07_13.res" id="144_hvonq"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_07_13.res" id="145_cubn3"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_08_04.res" id="146_33vg3"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_08_04.res" id="147_otr0f"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_08_04.res" id="148_agem5"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_08_05.res" id="149_w3iq6"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_08_05.res" id="150_esmoe"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_08_05.res" id="151_5j0d3"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_08_06.res" id="152_r0vnm"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_08_06.res" id="153_co8qc"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_08_06.res" id="154_yx2mi"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_08_07.res" id="155_h3xfv"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_08_07.res" id="156_n4c74"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_08_07.res" id="157_woo1l"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_08_10.res" id="158_lork0"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_08_10.res" id="159_xjxfl"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_08_10.res" id="160_04mub"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_08_11.res" id="161_otlqw"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_08_11.res" id="162_j6ghb"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_08_11.res" id="163_yphpq"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_08_12.res" id="164_db5w6"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_08_12.res" id="165_fa5iv"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_08_12.res" id="166_7p0r2"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_08_13.res" id="167_r1dv7"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_08_13.res" id="168_hfibn"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_08_13.res" id="169_nqx5k"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_08_14.res" id="170_i6n0u"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_08_14.res" id="171_es8ov"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_08_14.res" id="172_wkto8"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_09_07.res" id="173_hc1wx"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_09_07.res" id="174_vuevx"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_09_07.res" id="175_m5xe5"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_09_08.res" id="176_sfdpt"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_09_08.res" id="177_jcfnp"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_09_08.res" id="178_w4yal"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_09_10.res" id="179_1nrnv"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_09_10.res" id="180_jxfko"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_09_10.res" id="181_lti8j"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_09_11.res" id="182_32jbj"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_09_11.res" id="183_bgyog"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_09_11.res" id="184_fumcm"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_09_12.res" id="185_m6jeb"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_09_12.res" id="186_m6pgs"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_09_12.res" id="187_jqb8q"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_09_13.res" id="188_6fvco"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_09_13.res" id="189_inftc"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_09_13.res" id="190_0objd"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_10_05.res" id="191_d053v"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_10_05.res" id="192_u3spc"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_10_05.res" id="193_1aocc"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_10_06.res" id="194_64cty"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_10_06.res" id="195_uiool"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_10_06.res" id="196_ou8oa"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_10_07.res" id="197_rpc32"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_10_07.res" id="198_ckklp"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_10_07.res" id="199_4gdpl"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_10_08.res" id="200_yvce8"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_10_08.res" id="201_2iu7e"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/roof_10_08.res" id="202_hmsyy"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_10_08.res" id="203_khfvu"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_10_11.res" id="204_f5pmc"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_10_11.res" id="205_om1e7"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_10_11.res" id="206_7efp6"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_10_12.res" id="207_m6tbw"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_10_12.res" id="208_tdb4x"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_10_12.res" id="209_pgvkb"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_10_13.res" id="210_iojqd"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_10_13.res" id="211_ljhj6"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_10_13.res" id="212_nnyjq"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_11_05.res" id="213_umq7y"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_11_05.res" id="214_6g4ki"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_11_05.res" id="215_htowq"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_11_07.res" id="216_x5rl7"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_11_07.res" id="217_jpkma"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_11_07.res" id="218_whibj"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_11_08.res" id="219_48nwr"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_11_08.res" id="220_l5oqm"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_11_08.res" id="221_j2a36"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_11_11.res" id="222_tywmm"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_11_11.res" id="223_kcvjc"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_11_11.res" id="224_6pxi4"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_11_12.res" id="225_y5cs0"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_11_12.res" id="226_1xihl"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_11_12.res" id="227_hopcq"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_12_07.res" id="228_45043"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_12_07.res" id="229_kl3vg"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_12_07.res" id="230_ssk7q"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_12_08.res" id="231_l3yhq"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_12_08.res" id="232_ebhks"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_12_08.res" id="233_4n1m7"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_12_09.res" id="234_gdr23"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_12_09.res" id="235_ogspb"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_12_09.res" id="236_nkuug"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_12_11.res" id="237_a4ylx"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_12_11.res" id="238_8j025"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_12_11.res" id="239_ldd01"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_12_12.res" id="240_3v8l6"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_12_12.res" id="241_jom0c"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_12_12.res" id="242_3d3xu"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_13_07.res" id="243_hqrjj"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_13_07.res" id="244_axg42"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_13_07.res" id="245_lmlfq"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_13_08.res" id="246_6xk7o"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_13_08.res" id="247_8xihu"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_13_08.res" id="248_6xa5j"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_13_09.res" id="249_hd5rt"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_13_09.res" id="250_y8ylq"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_13_09.res" id="251_xqwnh"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_13_10.res" id="252_573sw"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_13_10.res" id="253_lhybn"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_13_10.res" id="254_vojt3"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_13_11.res" id="255_0ji7g"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_13_11.res" id="256_578ua"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_13_11.res" id="257_lmwfq"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_14_03.res" id="258_n8tqh"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_14_03.res" id="259_8m0st"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_14_03.res" id="260_nhx7t"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_14_04.res" id="261_tcuvj"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_14_04.res" id="262_tvn14"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_14_04.res" id="263_ltmcy"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_14_05.res" id="264_0i14y"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_14_05.res" id="265_g06ct"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_14_05.res" id="266_uvf4l"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_14_06.res" id="267_xtwns"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_14_06.res" id="268_v7wqx"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_14_06.res" id="269_rx4ek"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_14_07.res" id="270_w0hw5"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_14_07.res" id="271_fdy7o"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_14_07.res" id="272_ha2oo"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_14_08.res" id="273_5sqjc"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_14_08.res" id="274_nlcyh"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_14_08.res" id="275_xgc5v"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_14_09.res" id="276_gg611"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_14_09.res" id="277_vtkbr"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_14_09.res" id="278_ioji7"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_14_11.res" id="279_jaauv"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_14_11.res" id="280_5loiw"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_14_11.res" id="281_afd47"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_15_07.res" id="282_81u5q"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_15_07.res" id="283_dfwyd"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_15_07.res" id="284_h0lig"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_15_09.res" id="285_w4706"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_15_09.res" id="286_rbpro"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_15_09.res" id="287_5tveh"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_15_11.res" id="288_fttgg"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_15_11.res" id="289_5gcpg"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_15_11.res" id="290_28l51"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_15_12.res" id="291_kl57f"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_15_12.res" id="292_6jyta"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_15_12.res" id="293_dnqls"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_15_13.res" id="294_f31uw"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_15_13.res" id="295_1npur"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_15_13.res" id="296_ms55c"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_16_07.res" id="297_3lvbm"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_16_07.res" id="298_2gbm1"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_16_07.res" id="299_hmebw"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_16_09.res" id="300_kpqxb"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_16_09.res" id="301_pxv2q"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_16_09.res" id="302_2q3wq"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_16_11.res" id="303_cp5r4"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_16_11.res" id="304_svm10"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_16_11.res" id="305_mspo7"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_16_13.res" id="306_0p1yr"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_16_13.res" id="307_epf34"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_16_13.res" id="308_uikhh"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_16_14.res" id="309_npcwt"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_16_14.res" id="310_krll3"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_16_14.res" id="311_30grl"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_17_07.res" id="312_h8t55"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_17_07.res" id="313_iw0ea"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_17_07.res" id="314_43tua"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_17_09.res" id="315_5kgpu"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_17_09.res" id="316_xoiw0"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_17_09.res" id="317_vffnh"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_17_11.res" id="318_mdueh"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_17_11.res" id="319_0ceuk"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_17_11.res" id="320_ld7xm"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_18_07.res" id="321_yctq0"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_18_07.res" id="322_tjr2d"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_18_07.res" id="323_udfme"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_18_09.res" id="324_2fjvu"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_18_09.res" id="325_y0t5f"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_18_09.res" id="326_2vk8i"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_18_11.res" id="327_spfvn"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_18_11.res" id="328_ot5ev"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_18_11.res" id="329_ddiyt"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_19_07.res" id="330_p8rdh"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_19_07.res" id="331_7s0t0"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_19_07.res" id="332_gun3n"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_19_09.res" id="333_0ssrb"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_19_09.res" id="334_cxd0m"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_19_09.res" id="335_ysklm"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/asphalt_19_11.res" id="336_2ctb1"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/roads/concrete_19_11.res" id="337_2xn07"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/roads/shape_19_11.res" id="338_hqovl"]
+[ext_resource type="Script" path="res://scenes/world/map/MapTraffic.gd" id="339_jyyqd"]
+[ext_resource type="Resource" path="res://scenes/world/map/generated/roads/traffic_graph.tres" id="340_15obj"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_rsj83"]
+size = Vector3(1, 12, 25.999739)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_pblig"]
+size = Vector3(1, 12, 25.999739)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_7kgfk"]
+size = Vector3(1, 12, 26.000063)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_h22n2"]
+size = Vector3(1, 12, 26.000063)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_8vxkq"]
+size = Vector3(1, 12, 13.999929)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_eyvnx"]
+size = Vector3(1, 12, 13.999929)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_3cd3k"]
+size = Vector3(1, 12, 25.999968)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_s272m"]
+size = Vector3(1, 12, 25.999968)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_g1l7o"]
+size = Vector3(1, 12, 26.000105)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_dak2y"]
+size = Vector3(1, 12, 26.000105)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_uqifx"]
+size = Vector3(1, 12, 9.999807)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_8mbck"]
+size = Vector3(1, 12, 9.999807)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_ijo3c"]
+size = Vector3(1, 12, 26)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_mso8a"]
+size = Vector3(1, 12, 26)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_eg6gf"]
+size = Vector3(1, 12, 26)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_nbes4"]
+size = Vector3(1, 12, 26)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_eeipu"]
+size = Vector3(1, 12, 6)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_kwdoa"]
+size = Vector3(1, 12, 6)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_34ooi"]
+size = Vector3(1, 12, 25.998838)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_e0iim"]
+size = Vector3(1, 12, 25.998838)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_17bks"]
+size = Vector3(1, 12, 13.999917)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_70vmy"]
+size = Vector3(1, 12, 13.999917)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_8t7sc"]
+size = Vector3(1, 12, 26.000078)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_nw6bp"]
+size = Vector3(1, 12, 26.000078)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_8axa1"]
+size = Vector3(1, 12, 25.999811)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_t3y7h"]
+size = Vector3(1, 12, 25.999811)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_kjvbp"]
+size = Vector3(1, 12, 10.000148)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_vkawr"]
+size = Vector3(1, 12, 10.000148)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_dmdru"]
+size = Vector3(1, 12, 25.999939)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_6vp0f"]
+size = Vector3(1, 12, 25.999939)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_vbaev"]
+size = Vector3(1, 12, 25.999754)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_yfc2x"]
+size = Vector3(1, 12, 25.999754)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_kt71h"]
+size = Vector3(1, 12, 14.000025)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_f6hdr"]
+size = Vector3(1, 12, 14.000025)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_cbf4b"]
+size = Vector3(1, 12, 26.000175)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_hfa61"]
+size = Vector3(1, 12, 26.000175)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_e1r1j"]
+size = Vector3(1, 12, 25.99984)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_lymad"]
+size = Vector3(1, 12, 25.99984)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_ykwbb"]
+size = Vector3(1, 12, 10.000037)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_8vdgp"]
+size = Vector3(1, 12, 10.000037)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_c1uyq"]
+size = Vector3(1, 12, 25.999567)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_ehwec"]
+size = Vector3(1, 12, 25.999567)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_4wf1g"]
+size = Vector3(1, 12, 25.999483)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_aniso"]
+size = Vector3(1, 12, 25.999483)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_usd8f"]
+size = Vector3(1, 12, 21.999758)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_88v02"]
+size = Vector3(1, 12, 21.999758)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_xq1t5"]
+size = Vector3(1, 12, 25.999996)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_qln5c"]
+size = Vector3(1, 12, 25.999996)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_3kv8y"]
+size = Vector3(1, 12, 26.000011)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_rhmmo"]
+size = Vector3(1, 12, 26.000011)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_7075d"]
+size = Vector3(1, 12, 14.000012)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_w1m6h"]
+size = Vector3(1, 12, 14.000012)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_i6bgj"]
+size = Vector3(1, 12, 25.999928)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_8j733"]
+size = Vector3(1, 12, 25.999928)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_biddd"]
+size = Vector3(1, 12, 25.997423)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_166ij"]
+size = Vector3(1, 12, 25.997423)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_qxppn"]
+size = Vector3(1, 12, 25.988087)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_6pbnw"]
+size = Vector3(1, 12, 25.988087)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_ayfw2"]
+size = Vector3(1, 12, 25.971298)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_8d6xh"]
+size = Vector3(1, 12, 25.971298)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_dpkyo"]
+size = Vector3(1, 12, 25.953419)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_62ift"]
+size = Vector3(1, 12, 25.953419)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_t4yad"]
+size = Vector3(1, 12, 13.996217)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_1tdmo"]
+size = Vector3(1, 12, 13.996217)
+
+[node name="Roads" type="Node3D" unique_id=1118721147]
+
+[node name="RoadCell_00_07" type="StaticBody3D" parent="." unique_id=1947757726]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_00_07" unique_id=512974675]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("1_fl1br")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_00_07" unique_id=3328148]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("2_dxsmy")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_00_07" unique_id=516779932]
+shape = ExtResource("3_or0ry")
+
+[node name="RoadCell_00_08" type="StaticBody3D" parent="." unique_id=1121052492]
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_00_08" unique_id=91998890]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("4_dlu7d")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_00_08" unique_id=978875616]
+shape = ExtResource("5_t2ysg")
+
+[node name="RoadCell_00_12" type="StaticBody3D" parent="." unique_id=1179419675]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_00_12" unique_id=1534717462]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("6_q0ltw")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_00_12" unique_id=1394936096]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("7_whckc")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_00_12" unique_id=1478823160]
+shape = ExtResource("8_8k3ds")
+
+[node name="RoadCell_01_07" type="StaticBody3D" parent="." unique_id=1603259417]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_01_07" unique_id=995655814]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("9_apnm8")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_01_07" unique_id=671278257]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("10_kmnj0")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_01_07" unique_id=1773075103]
+shape = ExtResource("11_qgo8o")
+
+[node name="RoadCell_01_08" type="StaticBody3D" parent="." unique_id=1459422057]
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_01_08" unique_id=324648677]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("12_qgply")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_01_08" unique_id=1802297278]
+shape = ExtResource("13_n211f")
+
+[node name="RoadCell_01_12" type="StaticBody3D" parent="." unique_id=396996138]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_01_12" unique_id=1313990242]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("14_d1efh")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_01_12" unique_id=736687163]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("15_ofltq")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_01_12" unique_id=1481304489]
+shape = ExtResource("16_t81ek")
+
+[node name="RoadCell_02_07" type="StaticBody3D" parent="." unique_id=665472047]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_02_07" unique_id=130036759]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("17_opphb")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_02_07" unique_id=300085164]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("18_vond8")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_02_07" unique_id=1451085636]
+shape = ExtResource("19_r001w")
+
+[node name="RoadCell_02_09" type="StaticBody3D" parent="." unique_id=1351218569]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_02_09" unique_id=418944811]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("20_ct3og")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_02_09" unique_id=1227781928]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("21_c2fao")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_02_09" unique_id=199379918]
+shape = ExtResource("22_uqjko")
+
+[node name="RoadCell_02_12" type="StaticBody3D" parent="." unique_id=1167302155]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_02_12" unique_id=374956968]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("23_6o3ds")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_02_12" unique_id=1344367995]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("24_dbkc5")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_02_12" unique_id=1209360314]
+shape = ExtResource("25_4jjic")
+
+[node name="RoadCell_03_07" type="StaticBody3D" parent="." unique_id=1432610051]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_03_07" unique_id=926551680]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("26_lpev8")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_03_07" unique_id=1464699681]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("27_0qubm")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_03_07" unique_id=711739776]
+shape = ExtResource("28_etcfu")
+
+[node name="RoadCell_03_08" type="StaticBody3D" parent="." unique_id=122630758]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_03_08" unique_id=701353505]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("29_lbkx1")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_03_08" unique_id=1814633884]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("30_ni6br")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_03_08" unique_id=710509319]
+shape = ExtResource("31_ffbcy")
+
+[node name="RoadCell_03_09" type="StaticBody3D" parent="." unique_id=254890598]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_03_09" unique_id=553439326]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("32_p6suj")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_03_09" unique_id=1773160166]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("33_jq2ub")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_03_09" unique_id=805304574]
+shape = ExtResource("34_llvm8")
+
+[node name="RoadCell_03_10" type="StaticBody3D" parent="." unique_id=926351758]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_03_10" unique_id=1487204233]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("35_ng7k6")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_03_10" unique_id=68734151]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("36_cvnq3")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_03_10" unique_id=2072180460]
+shape = ExtResource("37_81gku")
+
+[node name="RoadCell_03_11" type="StaticBody3D" parent="." unique_id=129842889]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_03_11" unique_id=184657586]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("38_m8c5l")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_03_11" unique_id=1041923126]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("39_6nqaq")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_03_11" unique_id=1873803385]
+shape = ExtResource("40_gqhx0")
+
+[node name="RoadCell_03_12" type="StaticBody3D" parent="." unique_id=1912379636]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_03_12" unique_id=352446543]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("41_y2ili")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_03_12" unique_id=462586368]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("42_q3r4f")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_03_12" unique_id=1340428591]
+shape = ExtResource("43_wdgnf")
+
+[node name="RoadCell_04_07" type="StaticBody3D" parent="." unique_id=2134248996]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_04_07" unique_id=61094440]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("44_r5udi")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_04_07" unique_id=1428665639]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("45_nrlxc")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_04_07" unique_id=1536999986]
+shape = ExtResource("46_26aby")
+
+[node name="RoadCell_04_08" type="StaticBody3D" parent="." unique_id=1067890731]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_04_08" unique_id=1735696506]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("47_eouki")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_04_08" unique_id=1751118949]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("48_gpc13")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_04_08" unique_id=1505167233]
+shape = ExtResource("49_m11bs")
+
+[node name="RoadCell_04_09" type="StaticBody3D" parent="." unique_id=55261921]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_04_09" unique_id=618496467]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("50_t3sjr")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_04_09" unique_id=604501971]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("51_7c8ri")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_04_09" unique_id=1333190612]
+shape = ExtResource("52_hmcmj")
+
+[node name="RoadCell_04_10" type="StaticBody3D" parent="." unique_id=2073828211]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_04_10" unique_id=210493082]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("53_larj5")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_04_10" unique_id=1858572130]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("54_wefy4")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_04_10" unique_id=1820133520]
+shape = ExtResource("55_d58d3")
+
+[node name="RoadCell_04_11" type="StaticBody3D" parent="." unique_id=2016972122]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_04_11" unique_id=460147291]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("56_uo1lf")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_04_11" unique_id=1915508502]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("57_eug1o")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_04_11" unique_id=2090304092]
+shape = ExtResource("58_d4l4r")
+
+[node name="RoadCell_04_12" type="StaticBody3D" parent="." unique_id=1545281930]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_04_12" unique_id=355940281]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("59_ep1xp")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_04_12" unique_id=1273521239]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("60_v2nd6")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_04_12" unique_id=1241855041]
+shape = ExtResource("61_fwntc")
+
+[node name="RoadCell_05_04" type="StaticBody3D" parent="." unique_id=199957898]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_05_04" unique_id=1377590115]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("62_xcpty")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_05_04" unique_id=341622093]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("63_bgxwh")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_05_04" unique_id=1729743443]
+shape = ExtResource("64_tfyfd")
+
+[node name="RoadCell_05_07" type="StaticBody3D" parent="." unique_id=356535154]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_05_07" unique_id=1146383890]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("65_hhpsu")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_05_07" unique_id=10930123]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("66_kkokd")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_05_07" unique_id=389214195]
+shape = ExtResource("67_cavfm")
+
+[node name="RoadCell_05_08" type="StaticBody3D" parent="." unique_id=2078676175]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_05_08" unique_id=1194922132]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("68_g8p2v")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_05_08" unique_id=172363267]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("69_4pgc1")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_05_08" unique_id=1697555272]
+shape = ExtResource("70_si1ud")
+
+[node name="RoadCell_05_09" type="StaticBody3D" parent="." unique_id=516050732]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_05_09" unique_id=2135028824]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("71_6bvws")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_05_09" unique_id=476009729]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("72_q7177")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_05_09" unique_id=1759177618]
+shape = ExtResource("73_tyop1")
+
+[node name="RoadCell_05_10" type="StaticBody3D" parent="." unique_id=993144879]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_05_10" unique_id=221980504]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("74_035bq")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_05_10" unique_id=1245259597]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("75_l1m7s")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_05_10" unique_id=1912386419]
+shape = ExtResource("76_1bxuw")
+
+[node name="RoadCell_05_12" type="StaticBody3D" parent="." unique_id=2061696118]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_05_12" unique_id=869148077]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("77_kjgjg")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_05_12" unique_id=603185558]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("78_022bl")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_05_12" unique_id=1762593672]
+shape = ExtResource("79_pxe28")
+
+[node name="RoadCell_05_13" type="StaticBody3D" parent="." unique_id=259789191]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_05_13" unique_id=1961422581]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("80_x1apw")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_05_13" unique_id=1525528281]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("81_yal0f")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_05_13" unique_id=1503104024]
+shape = ExtResource("82_yowci")
+
+[node name="RoadCell_05_14" type="StaticBody3D" parent="." unique_id=245277754]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_05_14" unique_id=1922859238]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("83_7ov30")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_05_14" unique_id=1498755628]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("84_o72li")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_05_14" unique_id=388671735]
+shape = ExtResource("85_um38r")
+
+[node name="RoadCell_06_04" type="StaticBody3D" parent="." unique_id=870586025]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_06_04" unique_id=391098698]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("86_8if5s")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_06_04" unique_id=1084213326]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("87_m4j1c")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_06_04" unique_id=1653920882]
+shape = ExtResource("88_qoh7b")
+
+[node name="RoadCell_06_05" type="StaticBody3D" parent="." unique_id=402423784]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_06_05" unique_id=1579651285]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("89_n7gq2")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_06_05" unique_id=2012081815]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("90_ba46f")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_06_05" unique_id=1328940785]
+shape = ExtResource("91_q652o")
+
+[node name="RoadCell_06_06" type="StaticBody3D" parent="." unique_id=465887930]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_06_06" unique_id=591479137]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("92_caexb")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_06_06" unique_id=686435379]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("93_xqxbr")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_06_06" unique_id=796054473]
+shape = ExtResource("94_3un7o")
+
+[node name="RoadCell_06_07" type="StaticBody3D" parent="." unique_id=541637290]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_06_07" unique_id=1691466023]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("95_m5eqj")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_06_07" unique_id=645484386]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("96_q5ohf")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_06_07" unique_id=1582651227]
+shape = ExtResource("97_ontnn")
+
+[node name="RoadCell_06_08" type="StaticBody3D" parent="." unique_id=881318420]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_06_08" unique_id=576466573]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("98_v7ov2")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_06_08" unique_id=510838136]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("99_t6j66")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_06_08" unique_id=199122051]
+shape = ExtResource("100_fk4ee")
+
+[node name="RoadCell_06_09" type="StaticBody3D" parent="." unique_id=590428684]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_06_09" unique_id=379988478]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("101_x6rmm")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_06_09" unique_id=1475810327]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("102_v4gqe")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_06_09" unique_id=1962222941]
+shape = ExtResource("103_a2u7w")
+
+[node name="RoadCell_06_10" type="StaticBody3D" parent="." unique_id=1123536456]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_06_10" unique_id=1744262340]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("104_p6rgm")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_06_10" unique_id=526554315]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("105_a67fp")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_06_10" unique_id=598031082]
+shape = ExtResource("106_hes5p")
+
+[node name="RoadCell_06_11" type="StaticBody3D" parent="." unique_id=1320620495]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_06_11" unique_id=479670023]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("107_f8xnx")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_06_11" unique_id=1583256708]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("108_jbvfi")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_06_11" unique_id=1956580035]
+shape = ExtResource("109_ajkgt")
+
+[node name="RoadCell_06_12" type="StaticBody3D" parent="." unique_id=998080612]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_06_12" unique_id=1772481331]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("110_yx68j")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_06_12" unique_id=582700028]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("111_cf10o")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_06_12" unique_id=763518509]
+shape = ExtResource("112_v1km4")
+
+[node name="RoadCell_06_13" type="StaticBody3D" parent="." unique_id=378545514]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_06_13" unique_id=1510484754]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("113_r7h1g")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_06_13" unique_id=1904299435]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("114_3f1e2")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_06_13" unique_id=1806325649]
+shape = ExtResource("115_22ukf")
+
+[node name="RoadCell_06_14" type="StaticBody3D" parent="." unique_id=1814220571]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_06_14" unique_id=1664141616]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("116_3ea12")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_06_14" unique_id=531326995]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("117_kpsyb")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_06_14" unique_id=1305265415]
+shape = ExtResource("118_v33cg")
+
+[node name="RoadCell_07_03" type="StaticBody3D" parent="." unique_id=1925470893]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_07_03" unique_id=2021379365]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("119_fu2gb")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_07_03" unique_id=1875044890]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("120_htkop")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_07_03" unique_id=1650896100]
+shape = ExtResource("121_60r73")
+
+[node name="RoadCell_07_04" type="StaticBody3D" parent="." unique_id=319971224]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_07_04" unique_id=1864226808]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("122_ak2by")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_07_04" unique_id=2117518687]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("123_xsjdm")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_07_04" unique_id=1697733297]
+shape = ExtResource("124_8j47x")
+
+[node name="RoadCell_07_05" type="StaticBody3D" parent="." unique_id=1499579240]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_07_05" unique_id=1800904358]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("125_2g1pe")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_07_05" unique_id=745421529]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("126_d5l7m")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_07_05" unique_id=623863703]
+shape = ExtResource("127_foqf4")
+
+[node name="RoadCell_07_06" type="StaticBody3D" parent="." unique_id=1033440395]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_07_06" unique_id=1273948816]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("128_vqmdt")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_07_06" unique_id=1944193605]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("129_yh077")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_07_06" unique_id=806019002]
+shape = ExtResource("130_rgegh")
+
+[node name="RoadCell_07_07" type="StaticBody3D" parent="." unique_id=39362322]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_07_07" unique_id=1700180202]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("131_3wp3k")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_07_07" unique_id=1662178220]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("132_uc4ff")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_07_07" unique_id=699142065]
+shape = ExtResource("133_ueb1p")
+
+[node name="RoadCell_07_08" type="StaticBody3D" parent="." unique_id=994043282]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_07_08" unique_id=368124647]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("134_n7ohs")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_07_08" unique_id=884409849]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("135_5m5n0")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_07_08" unique_id=732564614]
+shape = ExtResource("136_53sfu")
+
+[node name="RoadCell_07_11" type="StaticBody3D" parent="." unique_id=1449929176]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_07_11" unique_id=1827424693]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("137_oqdxe")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_07_11" unique_id=1532162472]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("138_iwf04")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_07_11" unique_id=1465839521]
+shape = ExtResource("139_xa06g")
+
+[node name="RoadCell_07_12" type="StaticBody3D" parent="." unique_id=989592044]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_07_12" unique_id=351903158]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("140_7ql63")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_07_12" unique_id=256734970]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("141_ehmu5")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_07_12" unique_id=2119372400]
+shape = ExtResource("142_6otiq")
+
+[node name="RoadCell_07_13" type="StaticBody3D" parent="." unique_id=1679900864]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_07_13" unique_id=1571185424]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("143_why20")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_07_13" unique_id=1747925959]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("144_hvonq")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_07_13" unique_id=266888252]
+shape = ExtResource("145_cubn3")
+
+[node name="RoadCell_08_04" type="StaticBody3D" parent="." unique_id=1732442701]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_08_04" unique_id=231966778]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("146_33vg3")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_08_04" unique_id=1678091173]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("147_otr0f")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_08_04" unique_id=951667040]
+shape = ExtResource("148_agem5")
+
+[node name="RoadCell_08_05" type="StaticBody3D" parent="." unique_id=2026725108]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_08_05" unique_id=1322966031]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("149_w3iq6")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_08_05" unique_id=416443256]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("150_esmoe")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_08_05" unique_id=1976376474]
+shape = ExtResource("151_5j0d3")
+
+[node name="RoadCell_08_06" type="StaticBody3D" parent="." unique_id=1900282341]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_08_06" unique_id=681885381]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("152_r0vnm")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_08_06" unique_id=1713152732]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("153_co8qc")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_08_06" unique_id=348702365]
+shape = ExtResource("154_yx2mi")
+
+[node name="RoadCell_08_07" type="StaticBody3D" parent="." unique_id=373924227]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_08_07" unique_id=199201673]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("155_h3xfv")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_08_07" unique_id=2054592350]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("156_n4c74")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_08_07" unique_id=1421339085]
+shape = ExtResource("157_woo1l")
+
+[node name="RoadCell_08_10" type="StaticBody3D" parent="." unique_id=1602603318]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_08_10" unique_id=905063685]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("158_lork0")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_08_10" unique_id=1761070588]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("159_xjxfl")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_08_10" unique_id=1535399916]
+shape = ExtResource("160_04mub")
+
+[node name="RoadCell_08_11" type="StaticBody3D" parent="." unique_id=1014570685]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_08_11" unique_id=1401628410]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("161_otlqw")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_08_11" unique_id=103234587]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("162_j6ghb")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_08_11" unique_id=1019949901]
+shape = ExtResource("163_yphpq")
+
+[node name="RoadCell_08_12" type="StaticBody3D" parent="." unique_id=551210510]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_08_12" unique_id=1296347116]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("164_db5w6")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_08_12" unique_id=1121715149]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("165_fa5iv")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_08_12" unique_id=170205398]
+shape = ExtResource("166_7p0r2")
+
+[node name="RoadCell_08_13" type="StaticBody3D" parent="." unique_id=921073122]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_08_13" unique_id=42115105]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("167_r1dv7")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_08_13" unique_id=525734944]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("168_hfibn")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_08_13" unique_id=792726944]
+shape = ExtResource("169_nqx5k")
+
+[node name="RoadCell_08_14" type="StaticBody3D" parent="." unique_id=1736503476]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_08_14" unique_id=1898102616]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("170_i6n0u")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_08_14" unique_id=607770498]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("171_es8ov")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_08_14" unique_id=668791496]
+shape = ExtResource("172_wkto8")
+
+[node name="RoadCell_09_07" type="StaticBody3D" parent="." unique_id=363446180]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_09_07" unique_id=1040928382]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("173_hc1wx")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_09_07" unique_id=1880189364]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("174_vuevx")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_09_07" unique_id=448766023]
+shape = ExtResource("175_m5xe5")
+
+[node name="RoadCell_09_08" type="StaticBody3D" parent="." unique_id=2100288625]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_09_08" unique_id=1825534394]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("176_sfdpt")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_09_08" unique_id=823611753]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("177_jcfnp")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_09_08" unique_id=541544018]
+shape = ExtResource("178_w4yal")
+
+[node name="RoadCell_09_10" type="StaticBody3D" parent="." unique_id=1068198889]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_09_10" unique_id=1272867941]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("179_1nrnv")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_09_10" unique_id=562306603]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("180_jxfko")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_09_10" unique_id=46064703]
+shape = ExtResource("181_lti8j")
+
+[node name="RoadCell_09_11" type="StaticBody3D" parent="." unique_id=828527295]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_09_11" unique_id=1212377716]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("182_32jbj")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_09_11" unique_id=1395168624]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("183_bgyog")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_09_11" unique_id=436673627]
+shape = ExtResource("184_fumcm")
+
+[node name="RoadCell_09_12" type="StaticBody3D" parent="." unique_id=293041477]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_09_12" unique_id=1094995439]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("185_m6jeb")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_09_12" unique_id=1329961405]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("186_m6pgs")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_09_12" unique_id=2022742840]
+shape = ExtResource("187_jqb8q")
+
+[node name="RoadCell_09_13" type="StaticBody3D" parent="." unique_id=1682596201]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_09_13" unique_id=1931717770]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("188_6fvco")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_09_13" unique_id=1752013360]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("189_inftc")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_09_13" unique_id=236238409]
+shape = ExtResource("190_0objd")
+
+[node name="RoadCell_10_05" type="StaticBody3D" parent="." unique_id=325674495]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_10_05" unique_id=1432974826]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("191_d053v")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_10_05" unique_id=578771132]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("192_u3spc")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_10_05" unique_id=2099633269]
+shape = ExtResource("193_1aocc")
+
+[node name="RoadCell_10_06" type="StaticBody3D" parent="." unique_id=927503976]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_10_06" unique_id=537602767]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("194_64cty")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_10_06" unique_id=1421264351]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("195_uiool")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_10_06" unique_id=602513178]
+shape = ExtResource("196_ou8oa")
+
+[node name="RoadCell_10_07" type="StaticBody3D" parent="." unique_id=1481092378]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_10_07" unique_id=786868657]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("197_rpc32")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_10_07" unique_id=186177480]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("198_ckklp")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_10_07" unique_id=1811608372]
+shape = ExtResource("199_4gdpl")
+
+[node name="RoadCell_10_08" type="StaticBody3D" parent="." unique_id=2074642263]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_10_08" unique_id=185215380]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("200_yvce8")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_10_08" unique_id=1841075114]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("201_2iu7e")
+
+[node name="Roof" type="MeshInstance3D" parent="RoadCell_10_08" unique_id=672092066]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("202_hmsyy")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_10_08" unique_id=970171022]
+shape = ExtResource("203_khfvu")
+
+[node name="RoadCell_10_11" type="StaticBody3D" parent="." unique_id=1052847638]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_10_11" unique_id=1881356919]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("204_f5pmc")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_10_11" unique_id=624731355]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("205_om1e7")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_10_11" unique_id=212920971]
+shape = ExtResource("206_7efp6")
+
+[node name="RoadCell_10_12" type="StaticBody3D" parent="." unique_id=2060859641]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_10_12" unique_id=187119137]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("207_m6tbw")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_10_12" unique_id=202494889]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("208_tdb4x")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_10_12" unique_id=2076633977]
+shape = ExtResource("209_pgvkb")
+
+[node name="RoadCell_10_13" type="StaticBody3D" parent="." unique_id=1882084213]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_10_13" unique_id=1710919002]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("210_iojqd")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_10_13" unique_id=1880510830]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("211_ljhj6")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_10_13" unique_id=577741461]
+shape = ExtResource("212_nnyjq")
+
+[node name="RoadCell_11_05" type="StaticBody3D" parent="." unique_id=1017177912]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_11_05" unique_id=649854866]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("213_umq7y")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_11_05" unique_id=1894889432]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("214_6g4ki")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_11_05" unique_id=973243591]
+shape = ExtResource("215_htowq")
+
+[node name="RoadCell_11_07" type="StaticBody3D" parent="." unique_id=136111949]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_11_07" unique_id=143625423]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("216_x5rl7")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_11_07" unique_id=619811432]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("217_jpkma")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_11_07" unique_id=612241199]
+shape = ExtResource("218_whibj")
+
+[node name="RoadCell_11_08" type="StaticBody3D" parent="." unique_id=1275301137]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_11_08" unique_id=721188826]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("219_48nwr")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_11_08" unique_id=1993721816]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("220_l5oqm")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_11_08" unique_id=664185436]
+shape = ExtResource("221_j2a36")
+
+[node name="RoadCell_11_11" type="StaticBody3D" parent="." unique_id=231139120]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_11_11" unique_id=658563365]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("222_tywmm")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_11_11" unique_id=687876496]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("223_kcvjc")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_11_11" unique_id=559726035]
+shape = ExtResource("224_6pxi4")
+
+[node name="RoadCell_11_12" type="StaticBody3D" parent="." unique_id=1126958415]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_11_12" unique_id=1213636781]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("225_y5cs0")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_11_12" unique_id=1828255976]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("226_1xihl")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_11_12" unique_id=706259218]
+shape = ExtResource("227_hopcq")
+
+[node name="RoadCell_12_07" type="StaticBody3D" parent="." unique_id=1052894602]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_12_07" unique_id=511430019]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("228_45043")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_12_07" unique_id=462070350]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("229_kl3vg")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_12_07" unique_id=1748161268]
+shape = ExtResource("230_ssk7q")
+
+[node name="RoadCell_12_08" type="StaticBody3D" parent="." unique_id=2017781629]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_12_08" unique_id=746107088]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("231_l3yhq")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_12_08" unique_id=1589462711]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("232_ebhks")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_12_08" unique_id=2041703813]
+shape = ExtResource("233_4n1m7")
+
+[node name="RoadCell_12_09" type="StaticBody3D" parent="." unique_id=248641834]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_12_09" unique_id=1645223007]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("234_gdr23")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_12_09" unique_id=1624773808]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("235_ogspb")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_12_09" unique_id=1417676106]
+shape = ExtResource("236_nkuug")
+
+[node name="RoadCell_12_11" type="StaticBody3D" parent="." unique_id=626593028]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_12_11" unique_id=620218911]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("237_a4ylx")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_12_11" unique_id=1500993487]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("238_8j025")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_12_11" unique_id=1319003797]
+shape = ExtResource("239_ldd01")
+
+[node name="RoadCell_12_12" type="StaticBody3D" parent="." unique_id=68110404]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_12_12" unique_id=1663875549]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("240_3v8l6")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_12_12" unique_id=1516956552]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("241_jom0c")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_12_12" unique_id=427454742]
+shape = ExtResource("242_3d3xu")
+
+[node name="RoadCell_13_07" type="StaticBody3D" parent="." unique_id=1233178930]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_13_07" unique_id=13020262]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("243_hqrjj")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_13_07" unique_id=1017910091]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("244_axg42")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_13_07" unique_id=101584912]
+shape = ExtResource("245_lmlfq")
+
+[node name="RoadCell_13_08" type="StaticBody3D" parent="." unique_id=1611898507]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_13_08" unique_id=863342694]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("246_6xk7o")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_13_08" unique_id=531028904]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("247_8xihu")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_13_08" unique_id=150579899]
+shape = ExtResource("248_6xa5j")
+
+[node name="RoadCell_13_09" type="StaticBody3D" parent="." unique_id=1773008634]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_13_09" unique_id=1963513903]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("249_hd5rt")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_13_09" unique_id=1800933583]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("250_y8ylq")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_13_09" unique_id=539054769]
+shape = ExtResource("251_xqwnh")
+
+[node name="RoadCell_13_10" type="StaticBody3D" parent="." unique_id=622541736]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_13_10" unique_id=1747544190]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("252_573sw")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_13_10" unique_id=1919092978]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("253_lhybn")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_13_10" unique_id=2100163957]
+shape = ExtResource("254_vojt3")
+
+[node name="RoadCell_13_11" type="StaticBody3D" parent="." unique_id=1672969441]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_13_11" unique_id=1713927725]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("255_0ji7g")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_13_11" unique_id=1806658461]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("256_578ua")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_13_11" unique_id=2027734498]
+shape = ExtResource("257_lmwfq")
+
+[node name="RoadCell_14_03" type="StaticBody3D" parent="." unique_id=1497066085]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_14_03" unique_id=1388015674]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("258_n8tqh")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_14_03" unique_id=115807975]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("259_8m0st")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_14_03" unique_id=252439533]
+shape = ExtResource("260_nhx7t")
+
+[node name="RoadCell_14_04" type="StaticBody3D" parent="." unique_id=1353761192]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_14_04" unique_id=151442999]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("261_tcuvj")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_14_04" unique_id=1174937142]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("262_tvn14")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_14_04" unique_id=1082233907]
+shape = ExtResource("263_ltmcy")
+
+[node name="RoadCell_14_05" type="StaticBody3D" parent="." unique_id=1941911530]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_14_05" unique_id=780483776]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("264_0i14y")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_14_05" unique_id=2086237465]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("265_g06ct")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_14_05" unique_id=1070114056]
+shape = ExtResource("266_uvf4l")
+
+[node name="RoadCell_14_06" type="StaticBody3D" parent="." unique_id=1648046718]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_14_06" unique_id=711461723]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("267_xtwns")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_14_06" unique_id=1684573598]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("268_v7wqx")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_14_06" unique_id=384040955]
+shape = ExtResource("269_rx4ek")
+
+[node name="RoadCell_14_07" type="StaticBody3D" parent="." unique_id=900595028]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_14_07" unique_id=1909953997]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("270_w0hw5")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_14_07" unique_id=1539734371]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("271_fdy7o")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_14_07" unique_id=401650040]
+shape = ExtResource("272_ha2oo")
+
+[node name="RoadCell_14_08" type="StaticBody3D" parent="." unique_id=1656618065]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_14_08" unique_id=2123516395]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("273_5sqjc")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_14_08" unique_id=1854139637]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("274_nlcyh")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_14_08" unique_id=838291816]
+shape = ExtResource("275_xgc5v")
+
+[node name="RoadCell_14_09" type="StaticBody3D" parent="." unique_id=756897433]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_14_09" unique_id=412663184]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("276_gg611")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_14_09" unique_id=1096100630]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("277_vtkbr")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_14_09" unique_id=1726582078]
+shape = ExtResource("278_ioji7")
+
+[node name="RoadCell_14_11" type="StaticBody3D" parent="." unique_id=1402370710]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_14_11" unique_id=435517123]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("279_jaauv")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_14_11" unique_id=1847283176]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("280_5loiw")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_14_11" unique_id=1414644308]
+shape = ExtResource("281_afd47")
+
+[node name="RoadCell_15_07" type="StaticBody3D" parent="." unique_id=1508303145]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_15_07" unique_id=883691478]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("282_81u5q")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_15_07" unique_id=538381629]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("283_dfwyd")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_15_07" unique_id=843480428]
+shape = ExtResource("284_h0lig")
+
+[node name="RoadCell_15_09" type="StaticBody3D" parent="." unique_id=2028771508]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_15_09" unique_id=1762864679]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("285_w4706")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_15_09" unique_id=1005786473]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("286_rbpro")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_15_09" unique_id=1450139659]
+shape = ExtResource("287_5tveh")
+
+[node name="RoadCell_15_11" type="StaticBody3D" parent="." unique_id=1662176119]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_15_11" unique_id=1245631917]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("288_fttgg")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_15_11" unique_id=1730173566]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("289_5gcpg")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_15_11" unique_id=88185271]
+shape = ExtResource("290_28l51")
+
+[node name="RoadCell_15_12" type="StaticBody3D" parent="." unique_id=1645941203]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_15_12" unique_id=981109466]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("291_kl57f")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_15_12" unique_id=972596195]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("292_6jyta")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_15_12" unique_id=1173497906]
+shape = ExtResource("293_dnqls")
+
+[node name="RoadCell_15_13" type="StaticBody3D" parent="." unique_id=2087846129]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_15_13" unique_id=1585454669]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("294_f31uw")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_15_13" unique_id=357939917]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("295_1npur")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_15_13" unique_id=171443979]
+shape = ExtResource("296_ms55c")
+
+[node name="RoadCell_16_07" type="StaticBody3D" parent="." unique_id=534159398]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_16_07" unique_id=10957420]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("297_3lvbm")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_16_07" unique_id=1759336352]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("298_2gbm1")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_16_07" unique_id=249101765]
+shape = ExtResource("299_hmebw")
+
+[node name="RoadCell_16_09" type="StaticBody3D" parent="." unique_id=2142921420]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_16_09" unique_id=1077109195]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("300_kpqxb")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_16_09" unique_id=2089221123]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("301_pxv2q")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_16_09" unique_id=867859162]
+shape = ExtResource("302_2q3wq")
+
+[node name="RoadCell_16_11" type="StaticBody3D" parent="." unique_id=1391865731]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_16_11" unique_id=127267863]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("303_cp5r4")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_16_11" unique_id=1571986511]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("304_svm10")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_16_11" unique_id=196294302]
+shape = ExtResource("305_mspo7")
+
+[node name="RoadCell_16_13" type="StaticBody3D" parent="." unique_id=1491208649]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_16_13" unique_id=482129295]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("306_0p1yr")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_16_13" unique_id=1585568491]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("307_epf34")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_16_13" unique_id=165423476]
+shape = ExtResource("308_uikhh")
+
+[node name="RoadCell_16_14" type="StaticBody3D" parent="." unique_id=1253916433]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_16_14" unique_id=1220696898]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("309_npcwt")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_16_14" unique_id=856733440]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("310_krll3")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_16_14" unique_id=30496028]
+shape = ExtResource("311_30grl")
+
+[node name="RoadCell_17_07" type="StaticBody3D" parent="." unique_id=867888578]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_17_07" unique_id=51442483]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("312_h8t55")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_17_07" unique_id=424716534]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("313_iw0ea")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_17_07" unique_id=1495218017]
+shape = ExtResource("314_43tua")
+
+[node name="RoadCell_17_09" type="StaticBody3D" parent="." unique_id=408376994]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_17_09" unique_id=1108318141]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("315_5kgpu")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_17_09" unique_id=1421426210]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("316_xoiw0")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_17_09" unique_id=2073933853]
+shape = ExtResource("317_vffnh")
+
+[node name="RoadCell_17_11" type="StaticBody3D" parent="." unique_id=2054232224]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_17_11" unique_id=155645119]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("318_mdueh")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_17_11" unique_id=1911584991]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("319_0ceuk")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_17_11" unique_id=1210340147]
+shape = ExtResource("320_ld7xm")
+
+[node name="RoadCell_18_07" type="StaticBody3D" parent="." unique_id=1416868318]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_18_07" unique_id=305684238]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("321_yctq0")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_18_07" unique_id=2105097396]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("322_tjr2d")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_18_07" unique_id=1742085854]
+shape = ExtResource("323_udfme")
+
+[node name="RoadCell_18_09" type="StaticBody3D" parent="." unique_id=1274748627]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_18_09" unique_id=260140118]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("324_2fjvu")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_18_09" unique_id=515312935]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("325_y0t5f")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_18_09" unique_id=1355038736]
+shape = ExtResource("326_2vk8i")
+
+[node name="RoadCell_18_11" type="StaticBody3D" parent="." unique_id=23899862]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_18_11" unique_id=2001764129]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("327_spfvn")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_18_11" unique_id=662194527]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("328_ot5ev")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_18_11" unique_id=429276840]
+shape = ExtResource("329_ddiyt")
+
+[node name="RoadCell_19_07" type="StaticBody3D" parent="." unique_id=1980937440]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_19_07" unique_id=2119310143]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("330_p8rdh")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_19_07" unique_id=721431092]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("331_7s0t0")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_19_07" unique_id=1035381135]
+shape = ExtResource("332_gun3n")
+
+[node name="RoadCell_19_09" type="StaticBody3D" parent="." unique_id=1372751536]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_19_09" unique_id=1361105955]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("333_0ssrb")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_19_09" unique_id=258666745]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("334_cxd0m")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_19_09" unique_id=705552019]
+shape = ExtResource("335_ysklm")
+
+[node name="RoadCell_19_11" type="StaticBody3D" parent="." unique_id=1178857818]
+
+[node name="Asphalt" type="MeshInstance3D" parent="RoadCell_19_11" unique_id=2125258969]
+cast_shadow = 0
+visibility_range_end = 2000.0
+mesh = ExtResource("336_2ctb1")
+
+[node name="Concrete" type="MeshInstance3D" parent="RoadCell_19_11" unique_id=180100969]
+cast_shadow = 0
+visibility_range_end = 1500.0
+mesh = ExtResource("337_2xn07")
+
+[node name="Shape" type="CollisionShape3D" parent="RoadCell_19_11" unique_id=1181495123]
+shape = ExtResource("338_hqovl")
+
+[node name="Traffic" type="Node" parent="." unique_id=1875782904]
+script = ExtResource("339_jyyqd")
+graph = ExtResource("340_15obj")
+
+[node name="TunnelCorridors" type="StaticBody3D" parent="." unique_id=1072780436]
+
+[node name="Wall_0" type="CollisionShape3D" parent="TunnelCorridors" unique_id=979435927]
+transform = Transform3D(0.12369421, 0, -0.99232036, 0, 1, 0, 0.99232036, 0, 0.12369421, -2183.0518, 6.6174192, -529.4741)
+shape = SubResource("BoxShape3D_rsj83")
+
+[node name="Wall_1" type="CollisionShape3D" parent="TunnelCorridors" unique_id=957235418]
+transform = Transform3D(0.12369421, 0, -0.99232036, 0, 1, 0, 0.99232036, 0, 0.12369421, -2186.3418, 6.6174192, -555.8699)
+shape = SubResource("BoxShape3D_pblig")
+
+[node name="Wall_2" type="CollisionShape3D" parent="TunnelCorridors" unique_id=1151850504]
+transform = Transform3D(0.11456523, 0, -0.9934157, 0, 1, 0, 0.9934157, 0, 0.11456523, -2207.0017, 6.32303, -526.60046)
+shape = SubResource("BoxShape3D_7kgfk")
+
+[node name="Wall_3" type="CollisionShape3D" parent="TunnelCorridors" unique_id=1721960547]
+transform = Transform3D(0.11456523, 0, -0.9934157, 0, 1, 0, 0.9934157, 0, 0.11456523, -2210.049, 6.32303, -553.02527)
+shape = SubResource("BoxShape3D_h22n2")
+
+[node name="Wall_4" type="CollisionShape3D" parent="TunnelCorridors" unique_id=938134084]
+transform = Transform3D(0.10841436, 0, -0.9941058, 0, 1, 0, 0.9941058, 0, 0.10841436, -2224.9692, 6.104962, -524.566)
+shape = SubResource("BoxShape3D_8vxkq")
+
+[node name="Wall_5" type="CollisionShape3D" parent="TunnelCorridors" unique_id=920900149]
+transform = Transform3D(0.10841436, 0, -0.9941058, 0, 1, 0, 0.9941058, 0, 0.10841436, -2227.853, 6.104962, -551.0092)
+shape = SubResource("BoxShape3D_eyvnx")
+
+[node name="Wall_6" type="CollisionShape3D" parent="TunnelCorridors" unique_id=2018338546]
+transform = Transform3D(-0.03430687, 0, 0.99941134, 0, 1, 0, -0.99941134, 0, -0.03430687, 2181.9617, 5.6048017, -685.6143)
+shape = SubResource("BoxShape3D_3cd3k")
+
+[node name="Wall_7" type="CollisionShape3D" parent="TunnelCorridors" unique_id=1863979717]
+transform = Transform3D(-0.03430687, 0, 0.99941134, 0, 1, 0, -0.99941134, 0, -0.03430687, 2182.8743, 5.6048017, -659.02997)
+shape = SubResource("BoxShape3D_s272m")
+
+[node name="Wall_8" type="CollisionShape3D" parent="TunnelCorridors" unique_id=632162183]
+transform = Transform3D(-0.03265615, 0, 0.99946666, 0, 1, 0, -0.99946666, 0, -0.03265615, 2205.9702, 5.6728463, -686.41864)
+shape = SubResource("BoxShape3D_g1l7o")
+
+[node name="Wall_9" type="CollisionShape3D" parent="TunnelCorridors" unique_id=30071279]
+transform = Transform3D(-0.03265615, 0, 0.99946666, 0, 1, 0, -0.99946666, 0, -0.03265615, 2206.8389, 5.6728463, -659.8328)
+shape = SubResource("BoxShape3D_dak2y")
+
+[node name="Wall_10" type="CollisionShape3D" parent="TunnelCorridors" unique_id=2142975898]
+transform = Transform3D(-0.031449184, 0, 0.99950534, 0, 1, 0, -0.99950534, 0, -0.031449184, 2221.9778, 5.722226, -686.93677)
+shape = SubResource("BoxShape3D_uqifx")
+
+[node name="Wall_11" type="CollisionShape3D" parent="TunnelCorridors" unique_id=928197894]
+transform = Transform3D(-0.031449184, 0, 0.99950534, 0, 1, 0, -0.99950534, 0, -0.031449184, 2222.8142, 5.722226, -660.35)
+shape = SubResource("BoxShape3D_8mbck")
+
+[node name="Wall_12" type="CollisionShape3D" parent="TunnelCorridors" unique_id=1770276864]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -713.3, 5.6436443, -1492)
+shape = SubResource("BoxShape3D_ijo3c")
+
+[node name="Wall_13" type="CollisionShape3D" parent="TunnelCorridors" unique_id=2101383611]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -686.7, 5.6436443, -1492)
+shape = SubResource("BoxShape3D_mso8a")
+
+[node name="Wall_14" type="CollisionShape3D" parent="TunnelCorridors" unique_id=690205935]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -713.3, 5.640269, -1516)
+shape = SubResource("BoxShape3D_eg6gf")
+
+[node name="Wall_15" type="CollisionShape3D" parent="TunnelCorridors" unique_id=625484298]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -686.7, 5.640269, -1516)
+shape = SubResource("BoxShape3D_nbes4")
+
+[node name="Wall_16" type="CollisionShape3D" parent="TunnelCorridors" unique_id=955533752]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -713.3, 5.6307325, -1530)
+shape = SubResource("BoxShape3D_eeipu")
+
+[node name="Wall_17" type="CollisionShape3D" parent="TunnelCorridors" unique_id=576851176]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -686.7, 5.6307325, -1530)
+shape = SubResource("BoxShape3D_kwdoa")
+
+[node name="Wall_18" type="CollisionShape3D" parent="TunnelCorridors" unique_id=548875795]
+transform = Transform3D(0.9954579, 0, 0.09520293, 0, 1, 0, -0.09520293, 0, 0.9954579, -323.75467, -1.4300008, 975.42303)
+shape = SubResource("BoxShape3D_34ooi")
+
+[node name="Wall_19" type="CollisionShape3D" parent="TunnelCorridors" unique_id=1663728443]
+transform = Transform3D(0.9954579, 0, 0.09520293, 0, 1, 0, -0.09520293, 0, 0.9954579, -350.23386, -1.4300008, 977.9554)
+shape = SubResource("BoxShape3D_e0iim")
+
+[node name="Wall_20" type="CollisionShape3D" parent="TunnelCorridors" unique_id=1831901775]
+transform = Transform3D(0.99742305, 0, 0.07174478, 0, 1, 0, -0.07174478, 0, 0.99742305, -322.15567, -0.62000155, 993.66437)
+shape = SubResource("BoxShape3D_17bks")
+
+[node name="Wall_21" type="CollisionShape3D" parent="TunnelCorridors" unique_id=1444857833]
+transform = Transform3D(0.99742305, 0, 0.07174478, 0, 1, 0, -0.07174478, 0, 0.99742305, -348.6871, -0.62000155, 995.5728)
+shape = SubResource("BoxShape3D_70vmy")
+
+[node name="Wall_22" type="CollisionShape3D" parent="TunnelCorridors" unique_id=1782060219]
+transform = Transform3D(0.057794966, 0, -0.99832845, 0, 1, 0, 0.99832845, 0, 0.057794966, -2183.4685, 4.7041597, 587.87305)
+shape = SubResource("BoxShape3D_8t7sc")
+
+[node name="Wall_23" type="CollisionShape3D" parent="TunnelCorridors" unique_id=612066243]
+transform = Transform3D(0.057794966, 0, -0.99832845, 0, 1, 0, 0.99832845, 0, 0.057794966, -2185.0056, 4.7041597, 561.3175)
+shape = SubResource("BoxShape3D_nw6bp")
+
+[node name="Wall_24" type="CollisionShape3D" parent="TunnelCorridors" unique_id=2011163980]
+transform = Transform3D(0.061358586, 0, -0.9981158, 0, 1, 0, 0.9981158, 0, 0.061358586, -2207.3782, 4.703822, 589.3001)
+shape = SubResource("BoxShape3D_8axa1")
+
+[node name="Wall_25" type="CollisionShape3D" parent="TunnelCorridors" unique_id=1318070277]
+transform = Transform3D(0.061358586, 0, -0.9981158, 0, 1, 0, 0.9981158, 0, 0.061358586, -2209.0105, 4.703822, 562.7502)
+shape = SubResource("BoxShape3D_t3y7h")
+
+[node name="Wall_26" type="CollisionShape3D" parent="TunnelCorridors" unique_id=1343758423]
+transform = Transform3D(0.063727155, 0, -0.99796736, 0, 1, 0, 0.99796736, 0, 0.063727155, -2223.316, 4.704021, 590.2893)
+shape = SubResource("BoxShape3D_kjvbp")
+
+[node name="Wall_27" type="CollisionShape3D" parent="TunnelCorridors" unique_id=1659459930]
+transform = Transform3D(0.063727155, 0, -0.99796736, 0, 1, 0, 0.99796736, 0, 0.063727155, -2225.0112, 4.704021, 563.7434)
+shape = SubResource("BoxShape3D_vkawr")
+
+[node name="Wall_28" type="CollisionShape3D" parent="TunnelCorridors" unique_id=2115034503]
+transform = Transform3D(-0.9996363, 0, 0.026967507, 0, 1, 0, -0.026967507, 0, -0.9996363, 1166.9054, 5.9815803, -1488.3713)
+shape = SubResource("BoxShape3D_dmdru")
+
+[node name="Wall_29" type="CollisionShape3D" parent="TunnelCorridors" unique_id=123859635]
+transform = Transform3D(-0.9996363, 0, 0.026967507, 0, 1, 0, -0.026967507, 0, -0.9996363, 1193.4957, 5.9815803, -1487.654)
+shape = SubResource("BoxShape3D_6vp0f")
+
+[node name="Wall_30" type="CollisionShape3D" parent="TunnelCorridors" unique_id=1664942254]
+transform = Transform3D(-0.99989325, 0, 0.014613021, 0, 1, 0, -0.014613021, 0, -0.99989325, 1167.4009, 5.945328, -1512.2012)
+shape = SubResource("BoxShape3D_vbaev")
+
+[node name="Wall_31" type="CollisionShape3D" parent="TunnelCorridors" unique_id=1861934779]
+transform = Transform3D(-0.99989325, 0, 0.014613021, 0, 1, 0, -0.014613021, 0, -0.99989325, 1193.998, 5.945328, -1511.8125)
+shape = SubResource("BoxShape3D_yfc2x")
+
+[node name="Wall_32" type="CollisionShape3D" parent="TunnelCorridors" unique_id=401889433]
+transform = Transform3D(-0.9999878, 0, 0.00494374, 0, 1, 0, -0.00494374, 0, -0.9999878, 1167.6047, 5.9060435, -1530.0712)
+shape = SubResource("BoxShape3D_kt71h")
+
+[node name="Wall_33" type="CollisionShape3D" parent="TunnelCorridors" unique_id=1417101598]
+transform = Transform3D(-0.9999878, 0, 0.00494374, 0, 1, 0, -0.00494374, 0, -0.9999878, 1194.2043, 5.9060435, -1529.9396)
+shape = SubResource("BoxShape3D_f6hdr")
+
+[node name="Wall_34" type="CollisionShape3D" parent="TunnelCorridors" unique_id=936328491]
+transform = Transform3D(0.04342235, 0, 0.9990568, 0, 1, 0, -0.9990568, 0, 0.04342235, 2183.5896, 4.851312, -185.14679)
+shape = SubResource("BoxShape3D_cbf4b")
+
+[node name="Wall_35" type="CollisionShape3D" parent="TunnelCorridors" unique_id=908196209]
+transform = Transform3D(0.04342235, 0, 0.9990568, 0, 1, 0, -0.9990568, 0, 0.04342235, 2183.1033, 4.851312, -173.95737)
+shape = SubResource("BoxShape3D_hfa61")
+
+[node name="Wall_36" type="CollisionShape3D" parent="TunnelCorridors" unique_id=1232716065]
+transform = Transform3D(0.040921777, 0, 0.9991624, 0, 1, 0, -0.9991624, 0, 0.040921777, 2207.5544, 4.8906054, -184.13525)
+shape = SubResource("BoxShape3D_e1r1j")
+
+[node name="Wall_37" type="CollisionShape3D" parent="TunnelCorridors" unique_id=106783141]
+transform = Transform3D(0.040921777, 0, 0.9991624, 0, 1, 0, -0.9991624, 0, 0.040921777, 2207.096, 4.8906054, -172.94464)
+shape = SubResource("BoxShape3D_lymad")
+
+[node name="Wall_38" type="CollisionShape3D" parent="TunnelCorridors" unique_id=182630117]
+transform = Transform3D(0.03917295, 0, 0.9992325, 0, 1, 0, -0.9992325, 0, 0.03917295, 2223.5315, 4.9120812, -183.4879)
+shape = SubResource("BoxShape3D_ykwbb")
+
+[node name="Wall_39" type="CollisionShape3D" parent="TunnelCorridors" unique_id=444758661]
+transform = Transform3D(0.03917295, 0, 0.9992325, 0, 1, 0, -0.9992325, 0, 0.03917295, 2223.0925, 4.9120812, -172.2965)
+shape = SubResource("BoxShape3D_8vdgp")
+
+[node name="Wall_40" type="CollisionShape3D" parent="TunnelCorridors" unique_id=473344753]
+transform = Transform3D(-0.03259205, 0, 0.99946874, 0, 1, 0, -0.99946874, 0, -0.03259205, 2181.395, 14.532298, 406.1547)
+shape = SubResource("BoxShape3D_c1uyq")
+
+[node name="Wall_41" type="CollisionShape3D" parent="TunnelCorridors" unique_id=1359489135]
+transform = Transform3D(-0.03259205, 0, 0.99946874, 0, 1, 0, -0.99946874, 0, -0.03259205, 2181.7603, 14.532298, 417.34872)
+shape = SubResource("BoxShape3D_ehwec")
+
+[node name="Wall_42" type="CollisionShape3D" parent="TunnelCorridors" unique_id=863527494]
+transform = Transform3D(-0.012667599, 0, 0.9999198, 0, 1, 0, -0.9999198, 0, -0.012667599, 2205.4988, 14.142268, 405.60904)
+shape = SubResource("BoxShape3D_4wf1g")
+
+[node name="Wall_43" type="CollisionShape3D" parent="TunnelCorridors" unique_id=1353629869]
+transform = Transform3D(-0.012667599, 0, 0.9999198, 0, 1, 0, -0.9999198, 0, -0.012667599, 2205.6409, 14.142268, 416.80814)
+shape = SubResource("BoxShape3D_aniso")
+
+[node name="Wall_44" type="CollisionShape3D" parent="TunnelCorridors" unique_id=2139596652]
+transform = Transform3D(0.0049560624, 0, 0.9999877, 0, 1, 0, -0.9999877, 0, 0.0049560624, 2227.5962, 13.998981, 405.5062)
+shape = SubResource("BoxShape3D_usd8f")
+
+[node name="Wall_45" type="CollisionShape3D" parent="TunnelCorridors" unique_id=2007864411]
+transform = Transform3D(0.0049560624, 0, 0.9999877, 0, 1, 0, -0.9999877, 0, 0.0049560624, 2227.5405, 13.998981, 416.7061)
+shape = SubResource("BoxShape3D_88v02")
+
+[node name="Wall_46" type="CollisionShape3D" parent="TunnelCorridors" unique_id=980964658]
+transform = Transform3D(0.9631196, 0, 0.26907355, 0, 1, 0, -0.26907355, 0, 0.9631196, 1585.2975, 4.779165, 975.0798)
+shape = SubResource("BoxShape3D_xq1t5")
+
+[node name="Wall_47" type="CollisionShape3D" parent="TunnelCorridors" unique_id=2085895550]
+transform = Transform3D(0.9631196, 0, 0.26907355, 0, 1, 0, -0.26907355, 0, 0.9631196, 1574.5106, 4.779165, 978.09344)
+shape = SubResource("BoxShape3D_qln5c")
+
+[node name="Wall_48" type="CollisionShape3D" parent="TunnelCorridors" unique_id=1079454076]
+transform = Transform3D(0.963114, 0, 0.26909372, 0, 1, 0, -0.26909372, 0, 0.963114, 1591.7555, 4.7109222, 998.1945)
+shape = SubResource("BoxShape3D_3kv8y")
+
+[node name="Wall_49" type="CollisionShape3D" parent="TunnelCorridors" unique_id=1412176486]
+transform = Transform3D(0.963114, 0, 0.26909372, 0, 1, 0, -0.26909372, 0, 0.963114, 1580.9686, 4.7109222, 1001.2083)
+shape = SubResource("BoxShape3D_rhmmo")
+
+[node name="Wall_50" type="CollisionShape3D" parent="TunnelCorridors" unique_id=1819822146]
+transform = Transform3D(0.96310836, 0, 0.26911393, 0, 1, 0, -0.26911393, 0, 0.96310836, 1596.5992, 4.7, 1015.53046)
+shape = SubResource("BoxShape3D_7075d")
+
+[node name="Wall_51" type="CollisionShape3D" parent="TunnelCorridors" unique_id=706038271]
+transform = Transform3D(0.96310836, 0, 0.26911393, 0, 1, 0, -0.26911393, 0, 0.96310836, 1585.8124, 4.7, 1018.5445)
+shape = SubResource("BoxShape3D_w1m6h")
+
+[node name="Wall_52" type="CollisionShape3D" parent="TunnelCorridors" unique_id=555232967]
+transform = Transform3D(0.23003201, 0, -0.97318304, 0, 1, 0, 0.97318304, 0, 0.23003201, -910.74927, 5.1490884, 974.9699)
+shape = SubResource("BoxShape3D_i6bgj")
+
+[node name="Wall_53" type="CollisionShape3D" parent="TunnelCorridors" unique_id=1150996233]
+transform = Transform3D(0.23003201, 0, -0.97318304, 0, 1, 0, 0.97318304, 0, 0.23003201, -913.3257, 5.1490884, 964.07025)
+shape = SubResource("BoxShape3D_8j733")
+
+[node name="Wall_54" type="CollisionShape3D" parent="TunnelCorridors" unique_id=419268534]
+transform = Transform3D(0.25549012, 0, -0.96681166, 0, 1, 0, 0.96681166, 0, 0.25549012, -933.88544, 4.957465, 980.76013)
+shape = SubResource("BoxShape3D_biddd")
+
+[node name="Wall_55" type="CollisionShape3D" parent="TunnelCorridors" unique_id=1667978532]
+transform = Transform3D(0.25549012, 0, -0.96681166, 0, 1, 0, 0.96681166, 0, 0.25549012, -936.7469, 4.957465, 969.9319)
+shape = SubResource("BoxShape3D_166ij")
+
+[node name="Wall_56" type="CollisionShape3D" parent="TunnelCorridors" unique_id=51342817]
+transform = Transform3D(0.33097488, 0, -0.9436396, 0, 1, 0, 0.9436396, 0, 0.33097488, -956.3812, 4.824469, 987.66565)
+shape = SubResource("BoxShape3D_qxppn")
+
+[node name="Wall_57" type="CollisionShape3D" parent="TunnelCorridors" unique_id=839919706]
+transform = Transform3D(0.33097488, 0, -0.9436396, 0, 1, 0, 0.9436396, 0, 0.33097488, -960.08813, 4.824469, 977.0969)
+shape = SubResource("BoxShape3D_6pbnw")
+
+[node name="Wall_58" type="CollisionShape3D" parent="TunnelCorridors" unique_id=1483648107]
+transform = Transform3D(0.45880067, 0, -0.8885392, 0, 1, 0, 0.8885392, 0, 0.45880067, -977.6332, 4.8158774, 996.82587)
+shape = SubResource("BoxShape3D_ayfw2")
+
+[node name="Wall_59" type="CollisionShape3D" parent="TunnelCorridors" unique_id=997196106]
+transform = Transform3D(0.45880067, 0, -0.8885392, 0, 1, 0, 0.8885392, 0, 0.45880067, -982.7717, 4.8158774, 986.8742)
+shape = SubResource("BoxShape3D_8d6xh")
+
+[node name="Wall_60" type="CollisionShape3D" parent="TunnelCorridors" unique_id=1099098277]
+transform = Transform3D(0.62092817, 0, -0.7838675, 0, 1, 0, 0.7838675, 0, 0.62092817, -996.7632, 4.9355, 1009.1754)
+shape = SubResource("BoxShape3D_dpkyo")
+
+[node name="Wall_61" type="CollisionShape3D" parent="TunnelCorridors" unique_id=241332127]
+transform = Transform3D(0.62092817, 0, -0.7838675, 0, 1, 0, 0.7838675, 0, 0.62092817, -1003.7175, 4.9355, 1000.3961)
+shape = SubResource("BoxShape3D_62ift")
+
+[node name="Wall_62" type="CollisionShape3D" parent="TunnelCorridors" unique_id=303980806]
+transform = Transform3D(0.7322306, 0, -0.6810568, 0, 1, 0, 0.6810568, 0, 0.7322306, -1009.61304, 5.0783443, 1020.4283)
+shape = SubResource("BoxShape3D_t4yad")
+
+[node name="Wall_63" type="CollisionShape3D" parent="TunnelCorridors" unique_id=1531996074]
+transform = Transform3D(0.7322306, 0, -0.6810568, 0, 1, 0, 0.6810568, 0, 0.7322306, -1017.81396, 5.0783443, 1012.8005)
+shape = SubResource("BoxShape3D_1tdmo")

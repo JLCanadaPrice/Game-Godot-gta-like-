@@ -9,5 +9,4 @@ extends Resource
 @export var roundabout := PackedInt32Array()       # noeuds d'anneau (cédez-le-passage à l'entrée, priorité sur l'anneau)
 @export var unlit := PackedInt32Array()            # noeuds sans feu tricolore
 @export var grid := PackedInt32Array()             # noeuds confondus avec la grille du centre-ville (déjà dans le Circuit)
-@export var lit := PackedInt32Array()              # carrefours à feux de la carte (feux visibles posés par MapTraffic)
 @export var yields := {}                           # "%d_%d" % [arête, noeud] : approche qui cède le passage

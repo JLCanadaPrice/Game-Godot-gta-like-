@@ -97,6 +97,14 @@ func _initialize() -> void:
 			var pts: PackedVector3Array = rb.points
 			for k in pts.size() - 1:
 				_line(Vector2(pts[k].x, pts[k].z), Vector2(pts[k + 1].x, pts[k + 1].z), maxf(rb.width * 0.5, 3.0), color)
+	# image inchangée : rien n'est réécrit (évite un réimport inutile du fond de carte)
+	var previous := Image.load_from_file(ProjectSettings.globalize_path(PATH)) if FileAccess.file_exists(PATH) else null
+	if previous != null and previous.get_size() == img.get_size():
+		previous.convert(Image.FORMAT_RGB8)
+		if previous.get_data() == img.get_data():
+			print("MAP_BACKGROUND %s : inchangé" % PATH)
+			quit(0)
+			return
 	img.save_png(PATH)
 	var f := FileAccess.open(PATH + ".import", FileAccess.WRITE)
 	f.store_string(IMPORT_TEMPLATE % PATH)

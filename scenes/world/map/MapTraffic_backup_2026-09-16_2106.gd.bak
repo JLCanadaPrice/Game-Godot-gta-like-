@@ -8,8 +8,6 @@ extends Node
 # chargée seule), ne fait rien.
 
 const TRAFFIC_LIGHT := preload("res://scenes/world/TrafficLight.tscn")
-const LAMP_POST := preload("res://assets/modular_roads/lamp_1.glb")   # mât qui porte le feu, comme au centre-ville
-const POST_BELOW_LIGHT := 3.785
 
 @export var graph: MapTrafficGraph
 
@@ -84,42 +82,29 @@ func merge_into(circuit: CircuitPath) -> void:
 		if int(city_degree[node]) < 3:
 			circuit.unlit_nodes.append(node)   # coin du centre-ville devenu carrefour : pas de feu invisible
 	circuit._setup_lights()
-	var lights := _world_lights(circuit)
 	for node: int in city_degree:
 		if int(city_degree[node]) >= 3:
 			for e in circuit.node_edges(node):
 				if e >= first_edge:
-					_add_light(circuit, lights, node, e)
-	# carrefours à feux de la carte : un feu par approche (arêtes qui arrivent au carrefour)
-	for i in graph.lit:
-		var node := remap[i]
-		for e in circuit.node_edges(node):
-			if bool(circuit.edges[e].get("one_way", false)) and int(circuit.edges[e]["a"]) == node:
-				continue
-			_add_light(circuit, lights, node, e)
+					_add_light(circuit, node, e)
 
 
 # Feu visible pour l'arête `edge` du carrefour `node` : même pose, relative à sa branche, qu'un feu existant du
-# carrefour (enfant d'une tuile de route du centre-ville) ou, à défaut, que le premier feu du centre-ville, tournée
-# vers la branche ; recul borné pour rester au bord du plateau.
-func _add_light(circuit: CircuitPath, lights: Array[TrafficLight], node: int, edge: int) -> void:
-	if lights.is_empty():
-		return
-	var model: TrafficLight = lights[0]
-	for light in lights:
+# carrefour (enfant d'une tuile de route du centre-ville), tournée vers la nouvelle branche.
+func _add_light(circuit: CircuitPath, node: int, edge: int) -> void:
+	var model: TrafficLight = null
+	for light in _world_lights(circuit):
 		if light.circuit_node == node:
 			model = light
 			break
-	var model_center := circuit.node_pos(model.circuit_node)
+	if model == null:
+		return
 	var center := circuit.node_pos(node)
-	var model_dir := _arm_direction(circuit, model.circuit_node, model.circuit_edge)
+	var model_dir := _arm_direction(circuit, node, model.circuit_edge)
 	var new_dir := _arm_direction(circuit, node, edge)
 	var turn := Basis(Vector3.UP, atan2(new_dir.x, new_dir.z) - atan2(model_dir.x, model_dir.z))
 	var relative: Transform3D = model.global_transform
-	relative.origin -= model_center
-	if model.circuit_node != node:
-		var back := relative.origin.dot(model_dir)
-		relative.origin += model_dir * (clampf(back, 12.0, 20.0) - back)
+	relative.origin -= center
 	var light := TRAFFIC_LIGHT.instantiate() as TrafficLight
 	light.name = "MapTrafficLight_%d" % edge
 	light.circuit_node = node
@@ -128,24 +113,15 @@ func _add_light(circuit: CircuitPath, lights: Array[TrafficLight], node: int, ed
 	light.global_transform = Transform3D(turn * relative.basis, center + turn * relative.origin)
 	light.circuit_path = light.get_path_to(circuit)
 	light._circuit = circuit
-	var post := LAMP_POST.instantiate() as Node3D
-	post.name = "MapTrafficLightPost_%d" % edge
-	add_child(post)
-	post.global_transform = Transform3D(light.global_transform.basis, light.global_transform.origin - Vector3(0, POST_BELOW_LIGHT, 0))
 	added_lights += 1
 
 
-# Feux du centre-ville : enfants des tuiles de route des districts (find_children ne filtre pas les class_name).
 func _world_lights(circuit: CircuitPath) -> Array[TrafficLight]:
 	var out: Array[TrafficLight] = []
-	for district in circuit.get_parent().get_children():
-		var roads := district.get_node_or_null("Roads") if String(district.name).begins_with("District") else null
-		if roads == null:
-			continue
-		for tile in roads.get_children():
-			for child in tile.get_children():
-				if child is TrafficLight and (child as TrafficLight).circuit_edge >= 0:
-					out.append(child as TrafficLight)
+	var world := circuit.get_parent()
+	for n in world.find_children("*", "TrafficLight", true, false):
+		if n.get_parent() != self:
+			out.append(n as TrafficLight)
 	return out
 
 

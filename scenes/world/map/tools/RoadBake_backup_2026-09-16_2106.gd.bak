@@ -57,13 +57,6 @@ const ATLAS := {"highway": Vector2(0.0, 0.125), "ramp": Vector2(0.125, 0.206787)
 		"urban": Vector2(0.25, 0.372559), "arterial": Vector2(0.375, 0.480225), "access": Vector2(0.488281, 0.564209),
 		"dirt": Vector2(0.572266, 0.630615), "sidewalk": Vector2(0.638672, 0.673828)}
 const ISLAND_RISE := 0.25
-# lampadaires du kit de routes (sans lumière, en MultiMesh par cellule) : trottoirs des artères urbaines en quinconce,
-# terre-plein des viaducs et des approches d'échangeur (double crosse), bord extérieur des anneaux
-const LAMP_SINGLE := "res://assets/modular_roads/lamp_1.glb"
-const LAMP_DOUBLE := "res://assets/modular_roads/lamp_2.glb"
-const LAMP_SPACING := {"sidewalk": 30.0, "median": 45.0, "ring": 36.0}
-const LAMP_NEAR_RING := 320.0
-const LAMP_RANGE := 650.0           # mesurée au centre de la cellule de 256 m : ~350 m pour le lampadaire le plus loin
 const TrafficGraph := preload("res://scenes/world/map/MapTrafficGraph.gd")
 const TRAFFIC_SCRIPT := preload("res://scenes/world/map/MapTraffic.gd")
 const JERSEY := [Vector2(-0.3, 0.0), Vector2(-0.22, 0.28), Vector2(-0.1, 0.85), Vector2(0.1, 0.85), Vector2(0.22, 0.28), Vector2(0.3, 0.0)]
@@ -123,7 +116,6 @@ func _initialize() -> void:
 		_ribbon(rb, modes[rb])
 	for pad: Dictionary in net.pads:
 		_pad(pad)
-	_place_lamps(modes)
 	var roof := PackedByteArray()
 	roof.resize(model.width * model.depth)
 	for t: Dictionary in net.tunnels:
@@ -525,58 +517,6 @@ func _tri(part: String, a: Vector3, b: Vector3, c: Vector3, normal: Vector3, uv:
 	stats["triangles"] += 1
 
 
-func _place_lamps(modes: Dictionary) -> void:
-	var ring_centers: Array[Vector2] = []
-	for node_id: String in Spec.NODES:
-		if Network.shape(node_id) == "ring":
-			ring_centers.append(Spec.node_pos(node_id))
-	for rb in modes:
-		var kind: String = rb.kind
-		if not LAMP_SPACING.has(kind) or (kind == "ring" and rb.width < Network.RING_WIDTH):
-			continue
-		var pts: PackedVector3Array = rb.points
-		var mode: PackedByteArray = modes[rb]
-		var spacing: float = LAMP_SPACING[kind]
-		var outer_sign := 1.0
-		var since := spacing * 0.5
-		if kind == "sidewalk":
-			outer_sign = 1.0 if String(rb.id).ends_with("trottoir1") else -1.0
-			since = spacing * (0.5 if outer_sign > 0.0 else 0.0)   # quinconce d'un trottoir à l'autre
-		for k in pts.size():
-			if k > 0:
-				since += Vector2(pts[k].x - pts[k - 1].x, pts[k].z - pts[k - 1].z).length()
-			if since < spacing or mode[k] >= 2:
-				continue
-			var a := pts[maxi(k - 1, 0)]
-			var b := pts[mini(k + 1, pts.size() - 1)]
-			var dir := Vector3(b.x - a.x, 0.0, b.z - a.z).normalized()
-			var side := Vector3(-dir.z, 0.0, dir.x)
-			match kind:
-				"sidewalk":
-					# bord extérieur du trottoir, crosse vers la chaussée
-					var base: Vector3 = pts[k] + side * outer_sign * (float(rb.width) * 0.5 - 0.5)
-					_lamp("lamp_single", base, -side * outer_sign)
-				"median":
-					var near_ring := false
-					for c in ring_centers:
-						near_ring = near_ring or c.distance_to(Vector2(pts[k].x, pts[k].z)) < LAMP_NEAR_RING
-					if mode[k] != 1 and not near_ring:
-						continue
-					_lamp("lamp_double", pts[k] + Vector3(0, 0.85, 0), side)
-				"ring":
-					# anneau parcouru dans le sens trigonométrique : l'extérieur est à droite
-					_lamp("lamp_single", pts[k] + side * (rb.width * 0.5 + 0.8), -side)
-			since = 0.0
-
-
-func _lamp(part: String, base: Vector3, arm: Vector3) -> void:
-	var g := _group(base)
-	if not g.has(part):
-		g[part] = []
-	(g[part] as Array).append(Transform3D(Basis(arm, Vector3.UP, arm.cross(Vector3.UP)), base))
-	stats["lampadaires"] = int(stats.get("lampadaires", 0)) + 1
-
-
 # Graphe de circulation de la carte pour MapTraffic : noeuds, arêtes (trajet, voies, sens unique), anneaux, noeuds sans
 # feu, noeuds de la grille du centre-ville, approches qui cèdent le passage.
 func _write_traffic_graph() -> void:
@@ -589,7 +529,6 @@ func _write_traffic_graph() -> void:
 	graph.roundabout = PackedInt32Array(net.g_roundabout)
 	graph.unlit = PackedInt32Array(net.g_unlit)
 	graph.grid = PackedInt32Array(net.g_grid)
-	graph.lit = PackedInt32Array(net.g_lit)
 	graph.yields = net.g_yield.duplicate()
 	var path := OUT.path_join("traffic_graph.tres")
 	ResourceSaver.save(graph, path)
@@ -790,21 +729,8 @@ func _materials() -> Dictionary:
 	return out
 
 
-var lamp_meshes := {}
-var pole_shape: CylinderShape3D
-
-
 func _write_scene() -> void:
 	var mats := _materials()
-	for pair in [["lamp_single", LAMP_SINGLE], ["lamp_double", LAMP_DOUBLE]]:
-		var inst: Node = (load(pair[1]) as PackedScene).instantiate()
-		lamp_meshes[pair[0]] = (inst.find_children("*", "MeshInstance3D", true, false)[0] as MeshInstance3D).mesh
-		inst.free()
-	pole_shape = CylinderShape3D.new()
-	pole_shape.radius = 0.15
-	pole_shape.height = 6.0
-	ResourceSaver.save(pole_shape, OUT.path_join("lamp_pole_shape.tres"))
-	pole_shape = load(OUT.path_join("lamp_pole_shape.tres"))
 	var root := Node3D.new()
 	root.name = "Roads"
 	var keys := groups.keys()
@@ -846,54 +772,6 @@ func _write_scene() -> void:
 		cs.name = "Shape"
 		cs.shape = load(shape_path)
 		body.add_child(cs)
-		for part in ["lamp_single", "lamp_double"]:
-			if not g.has(part):
-				continue
-			# copies du lampadaire fusionnées en un maillage statique (un MultiMesh cuit sans rendu perd ses positions)
-			var transforms: Array = g[part]
-			var source: Mesh = lamp_meshes[part]
-			var src := source.surface_get_arrays(0)
-			var src_verts: PackedVector3Array = src[Mesh.ARRAY_VERTEX]
-			var src_normals: PackedVector3Array = src[Mesh.ARRAY_NORMAL]
-			var src_uvs: PackedVector2Array = src[Mesh.ARRAY_TEX_UV] if src[Mesh.ARRAY_TEX_UV] != null else PackedVector2Array()
-			var src_indices: PackedInt32Array = src[Mesh.ARRAY_INDEX] if src[Mesh.ARRAY_INDEX] != null else PackedInt32Array(range(src_verts.size()))
-			var verts := PackedVector3Array()
-			var normals := PackedVector3Array()
-			var uvs := PackedVector2Array()
-			var indices := PackedInt32Array()
-			for t: Transform3D in transforms:
-				var base := verts.size()
-				for v in src_verts.size():
-					verts.append(t * src_verts[v])
-					normals.append((t.basis * src_normals[v]).normalized())
-					if not src_uvs.is_empty():
-						uvs.append(src_uvs[v])
-				for idx in src_indices:
-					indices.append(base + idx)
-			var arrays := []
-			arrays.resize(Mesh.ARRAY_MAX)
-			arrays[Mesh.ARRAY_VERTEX] = verts
-			arrays[Mesh.ARRAY_NORMAL] = normals
-			if not uvs.is_empty():
-				arrays[Mesh.ARRAY_TEX_UV] = uvs
-			arrays[Mesh.ARRAY_INDEX] = indices
-			var merged := ArrayMesh.new()
-			merged.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
-			merged.surface_set_material(0, source.surface_get_material(0))
-			var lamp_path := OUT.path_join("%s_%02d_%02d.res" % [part, key.x + 10, key.y + 10])
-			ResourceSaver.save(merged, lamp_path)
-			var lamps := MeshInstance3D.new()
-			lamps.name = "Lamps" + ("Double" if part == "lamp_double" else "")
-			lamps.mesh = load(lamp_path)
-			lamps.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-			lamps.visibility_range_end = LAMP_RANGE
-			body.add_child(lamps)
-			for i in transforms.size():
-				var pole := CollisionShape3D.new()
-				pole.name = "%s_%d" % [lamps.name, i]
-				pole.shape = pole_shape
-				pole.position = (transforms[i] as Transform3D).origin + Vector3(0, 3.0, 0)
-				body.add_child(pole)
 		stats["cellules"] += 1
 	var traffic := Node.new()
 	traffic.name = "Traffic"
