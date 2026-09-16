@@ -82,12 +82,16 @@ const TERMINAL_OFFSET := 48.0       # distance entre l'axe de l'autoroute et le 
 const DIAMOND_BEND := 110.0         # courbe en S d'une bretelle de losange, avant le carrefour d'extrémité
 const MINI_RING := {"ring": 30.0, "pad": 42.0, "island": 24.0, "angle": 0.436332, "width": 8.0}   # angle 25°
 # rues locales (étape 4) : impasses perpendiculaires aux artères dans les quartiers, bordées de maisons
-const DEVELOPED_ZONES := ["suburb", "residential", "mixed"]
-const LOCAL_SPACING := 150.0        # le long de l'artère, entre deux rues d'un même côté
-const LOCAL_LENGTHS := [240.0, 210.0, 180.0, 150.0, 120.0, 90.0]
-const LOCAL_CLEAR := 36.0           # couloir libre de part et d'autre de la rue (maisons et jardins)
+const DEVELOPED_ZONES := ["suburb", "residential", "mixed", "industrial"]
+const LOCAL_SPACING := 110.0        # le long de la rue source, entre deux rues d'un même côté
+const LOCAL_LENGTHS := [320.0, 280.0, 240.0, 200.0, 170.0, 140.0, 110.0, 90.0]
+const BRANCH_LENGTHS := [160.0, 130.0, 100.0, 80.0]
+const BRANCH_START_MARGIN := 60.0   # embranchement : pas trop près de l'artère...
+const BRANCH_END_MARGIN := 45.0     # ... ni du plateau du cul-de-sac
+const LOCAL_CLEAR := 32.0           # couloir libre de part et d'autre de la rue (maisons et jardins)
 const LOCAL_END_MARGIN := 70.0      # pas de rue trop près des bouts d'un ruban d'artère (carrefours)
 const LOCAL_END_FLAT := 14.0        # m de rue à plat avant le plateau du cul-de-sac
+const LOCAL_TURN_RADIUS := 3.8      # boucle de demi-tour du graphe sur le plateau (rayon ~8 m)
 
 
 class Ribbon:
@@ -1081,7 +1085,8 @@ func _register_end(station: Dictionary, rb: Ribbon, k: int) -> void:
 		_:
 			var a := Vector3(p.x, p.y - ROAD_TOP, p.z)
 			var c := Vector3(center.x, center.y - ROAD_TOP, center.z)
-			connectors.append({"points": PackedVector3Array([a, c]), "one_way": false, "lanes": PackedFloat32Array(), "station": station["id"]})
+			if a.distance_to(c) > 0.75:   # bout de cul-de-sac confondu avec la station : boucle de demi-tour (_build_graph)
+				connectors.append({"points": PackedVector3Array([a, c]), "one_way": false, "lanes": PackedFloat32Array(), "station": station["id"]})
 
 
 # Bretelles d'un losange : sortie et entrée par chaussée, en S entre la chaussée et le carrefour d'extrémité.
@@ -1139,8 +1144,8 @@ func _diamond_ramps(node_id: String) -> void:
 
 # Rues locales : depuis les artères des quartiers (hors chemins), tous les LOCAL_SPACING m de chaque côté, une impasse
 # perpendiculaire aussi longue que possible (LOCAL_LENGTHS) dont le couloir reste dans la zone, loin de l'eau et des
-# autres routes, sur un relief modéré. Raccord : noeud coupé sur l'artère, trajet qui traverse le trottoir ;
-# cul-de-sac au bout (plateau).
+# autres routes, sur un relief modéré ; puis des embranchements plus courts (BRANCH_LENGTHS) sur les rues assez
+# longues. Raccord : noeud coupé sur la rue source, trajet qui traverse le trottoir ; cul-de-sac au bout (plateau).
 func _build_local_streets() -> void:
 	var obstacles := {}
 	for rb in ribbons:
@@ -1156,27 +1161,38 @@ func _build_local_streets() -> void:
 			continue
 		var poly := Spec.zone_polygon(zone)
 		for rb: Ribbon in sources:
-			var pts: PackedVector3Array = rb.points
-			var arc := PackedFloat32Array([0.0])
-			for k in range(1, pts.size()):
-				arc.append(arc[k - 1] + Vector2(pts[k].x - pts[k - 1].x, pts[k].z - pts[k - 1].z).length())
-			var total: float = arc[arc.size() - 1]
-			for side_sign: float in [-1.0, 1.0]:
-				var last := -INF
-				for k in pts.size():
-					if arc[k] < LOCAL_END_MARGIN or total - arc[k] < LOCAL_END_MARGIN or arc[k] - last < LOCAL_SPACING:
-						continue
-					var p := Vector2(pts[k].x, pts[k].z)
-					if not Geometry2D.is_point_in_polygon(p, poly):
-						continue
-					var normal := right_of(_ribbon_dir(rb, k)) * side_sign
-					var start := p + normal * (rb.width * 0.5 + (SIDEWALK_WIDTH if rb.style == "urban" else 0.0))
-					for length: float in LOCAL_LENGTHS:
-						if _street_fits(start, normal, length, poly, obstacles, rb):
-							var street := _add_local_street(zone, rb, k, start, start + normal * length)
-							_index_obstacle(obstacles, street)
-							last = arc[k]
-							break
+			_grow_streets(zone, poly, rb, LOCAL_LENGTHS, LOCAL_END_MARGIN, LOCAL_END_MARGIN, obstacles)
+	var first_pass := local_streets.duplicate()
+	for street: Dictionary in first_pass:
+		var zone: Dictionary = {}
+		for z: Dictionary in Spec.ZONES:
+			if z["id"] == street["zone"]:
+				zone = z
+		_grow_streets(zone, Spec.zone_polygon(zone), street["ribbon"], BRANCH_LENGTHS, BRANCH_START_MARGIN, BRANCH_END_MARGIN, obstacles)
+
+
+func _grow_streets(zone: Dictionary, poly: PackedVector2Array, rb: Ribbon, lengths: Array, start_margin: float, end_margin: float, obstacles: Dictionary) -> void:
+	var pts: PackedVector3Array = rb.points
+	var arc := PackedFloat32Array([0.0])
+	for k in range(1, pts.size()):
+		arc.append(arc[k - 1] + Vector2(pts[k].x - pts[k - 1].x, pts[k].z - pts[k - 1].z).length())
+	var total: float = arc[arc.size() - 1]
+	for side_sign: float in [-1.0, 1.0]:
+		var last := -INF
+		for k in pts.size():
+			if arc[k] < start_margin or total - arc[k] < end_margin or arc[k] - last < LOCAL_SPACING:
+				continue
+			var p := Vector2(pts[k].x, pts[k].z)
+			if not Geometry2D.is_point_in_polygon(p, poly):
+				continue
+			var normal := right_of(_ribbon_dir(rb, k)) * side_sign
+			var start := p + normal * (rb.width * 0.5 + (SIDEWALK_WIDTH if rb.style == "urban" else 0.0))
+			for length: float in lengths:
+				if _street_fits(start, normal, length, poly, obstacles, rb):
+					var street := _add_local_street(zone, rb, k, start, start + normal * length)
+					_index_obstacle(obstacles, street)
+					last = arc[k]
+					break
 
 
 func _index_obstacle(obstacles: Dictionary, rb: Ribbon) -> void:
@@ -1209,7 +1225,9 @@ func _street_fits(start: Vector2, normal: Vector2, length: float, poly: PackedVe
 		for dz in range(-2, 3):
 			for dx in range(-2, 3):
 				for entry: Array in obstacles.get(key + Vector2i(dx, dz), []):
-					if entry[2] == source and q.distance_to(start) < 30.0:
+					# la rue source et ses trottoirs, que la rue traverse au raccord
+					var own: bool = entry[2] == source or (entry[2] != null and entry[2].kind == "sidewalk" and entry[2].chain == source.chain)
+					if own and q.distance_to(start) < 30.0:
 						continue
 					if q.distance_to(entry[0]) < LOCAL_CLEAR + float(entry[1]):
 						return false
@@ -1699,6 +1717,31 @@ func _build_graph() -> void:
 		link.one_way = c["one_way"]
 		link.lanes = c["lanes"]
 		_add_edge((c["points"] as PackedVector3Array).duplicate(), link)
+	# culs-de-sac (un seul bras arrivé sur la station) : boucle de demi-tour sur le plateau, cercle qui passe par le bout
+	# du trajet, au lieu d'un demi-tour sur place où deux véhicules qui se suivent se chevauchent
+	for sid: String in stations:
+		var station: Dictionary = stations[sid]
+		if station["kind"] != "end" or (station["ends"] as Array).size() != 1:
+			continue
+		var end: Dictionary = station["ends"][0]
+		var tip_p: Vector3 = end["tip"]
+		var tip := Vector3(tip_p.x, tip_p.y - ROAD_TOP, tip_p.z)
+		var station_pos: Vector3 = station["pos"]
+		if station_pos.distance_to(tip_p) > 0.75 or _find_graph_node(tip) < 0:
+			continue
+		var dir: Vector2 = end["dir"]
+		var right := right_of(dir)
+		var center := Vector2(tip.x, tip.z) + dir * LOCAL_TURN_RADIUS
+		var loop_pts := PackedVector3Array([tip])
+		for s in range(1, 16):
+			var angle := TAU * s / 16.0   # vers la droite d'abord : le centre du plateau reste à gauche (circulation à droite)
+			var q := center + (-dir * cos(angle) + right * sin(angle)) * LOCAL_TURN_RADIUS
+			loop_pts.append(Vector3(q.x, tip.y, q.y))
+		loop_pts.append(tip)
+		var loop := Ribbon.new()
+		loop.one_way = true
+		loop.lanes = PackedFloat32Array([0.0])
+		_add_edge(loop_pts, loop)
 	# feux : carrefours éclairés et extrémités de losange ; noeuds de la grille laissés au centre-ville ; les autres sans feu
 	var lit := {}
 	var grid := {}

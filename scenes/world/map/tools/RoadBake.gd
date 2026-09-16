@@ -578,8 +578,14 @@ func _place_lamps(modes: Dictionary) -> void:
 			var side := Vector3(-dir.z, 0.0, dir.x)
 			match kind:
 				"sidewalk":
-					# bord extérieur du trottoir, crosse vers la chaussée
+					# bord extérieur du trottoir, crosse vers la chaussée ; jamais dans l'entrée d'une rue locale
 					var base: Vector3 = pts[k] + side * outer_sign * (float(rb.width) * 0.5 - 0.5)
+					var in_entrance := false
+					for street: Dictionary in net.local_streets:
+						var start: Vector3 = street["ribbon"].points[0]
+						in_entrance = in_entrance or Vector2(start.x - base.x, start.z - base.z).length() < 6.5
+					if in_entrance:
+						continue
 					_lamp("lamp_single", base, -side * outer_sign)
 				"median":
 					var near_ring := false

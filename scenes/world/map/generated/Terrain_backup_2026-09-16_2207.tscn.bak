@@ -1,0 +1,3102 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_00_00.res" id="1_aqbgw"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_00_00_shape.res" id="2_cpmrj"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_01_00.res" id="3_k3jpu"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_01_00_shape.res" id="4_wq716"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_02_00.res" id="5_ylmhf"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_02_00_shape.res" id="6_ro6u8"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_03_00.res" id="7_cjsed"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_03_00_shape.res" id="8_tdff5"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_04_00.res" id="9_ymgaw"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_04_00_shape.res" id="10_336yg"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_05_00.res" id="11_2istn"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_05_00_shape.res" id="12_bk7ba"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_06_00.res" id="13_77g6t"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_06_00_shape.res" id="14_htffs"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/roof_06_00.res" id="15_8h6e0"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/roof_06_00_shape.res" id="16_ivoao"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_07_00.res" id="17_3404b"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_07_00_shape.res" id="18_6qvln"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_08_00.res" id="19_n64jf"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_08_00_shape.res" id="20_dhcs1"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_09_00.res" id="21_3cg0x"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_09_00_shape.res" id="22_50edw"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_10_00.res" id="23_h4mq6"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_10_00_shape.res" id="24_18xq6"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_11_00.res" id="25_hmdab"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_11_00_shape.res" id="26_w5hsm"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_12_00.res" id="27_h7cmg"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_12_00_shape.res" id="28_j3lyg"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_13_00.res" id="29_8d7sh"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_13_00_shape.res" id="30_e15u1"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_14_00.res" id="31_wh4lc"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_14_00_shape.res" id="32_bfp5j"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/roof_14_00.res" id="33_dqons"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/roof_14_00_shape.res" id="34_hhm3n"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_15_00.res" id="35_1xav1"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_15_00_shape.res" id="36_8iu0m"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_16_00.res" id="37_c4eo0"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_16_00_shape.res" id="38_qn10y"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_17_00.res" id="39_t7rpl"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_17_00_shape.res" id="40_8bvgv"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_18_00.res" id="41_bbd2t"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_18_00_shape.res" id="42_lpfgj"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_00_01.res" id="43_vuhcc"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_00_01_shape.res" id="44_ld64u"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_01_01.res" id="45_77dnj"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_01_01_shape.res" id="46_yh0df"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_02_01.res" id="47_ocwkc"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_02_01_shape.res" id="48_7238b"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_03_01.res" id="49_aasa5"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_03_01_shape.res" id="50_x8o2b"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_04_01.res" id="51_jpnkj"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_04_01_shape.res" id="52_yaf06"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_05_01.res" id="53_gf2of"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_05_01_shape.res" id="54_56683"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_06_01.res" id="55_81o0u"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_06_01_shape.res" id="56_k8m5n"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/roof_06_01.res" id="57_qbmt8"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/roof_06_01_shape.res" id="58_t1nis"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_07_01.res" id="59_rf7wi"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_07_01_shape.res" id="60_opwyi"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_08_01.res" id="61_0b6pj"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_08_01_shape.res" id="62_0xtru"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_09_01.res" id="63_ub1ea"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_09_01_shape.res" id="64_4b1mo"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_10_01.res" id="65_ygpyv"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_10_01_shape.res" id="66_bounl"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_11_01.res" id="67_lpeaj"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_11_01_shape.res" id="68_s7fs5"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_12_01.res" id="69_mbic2"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_12_01_shape.res" id="70_8nhgy"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_13_01.res" id="71_xu2ty"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_13_01_shape.res" id="72_jdx2g"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_14_01.res" id="73_hdmmg"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_14_01_shape.res" id="74_w6agw"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_15_01.res" id="75_a2xx1"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_15_01_shape.res" id="76_6npi7"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_16_01.res" id="77_b44a6"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_16_01_shape.res" id="78_6ja3s"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_17_01.res" id="79_sa1hw"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_17_01_shape.res" id="80_qjopg"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_18_01.res" id="81_wueua"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_18_01_shape.res" id="82_613ih"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_00_02.res" id="83_t70ru"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_00_02_shape.res" id="84_bblo7"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_01_02.res" id="85_g1ruh"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_01_02_shape.res" id="86_411up"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_02_02.res" id="87_luyjc"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_02_02_shape.res" id="88_c73ql"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_03_02.res" id="89_3vkdx"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_03_02_shape.res" id="90_bke2q"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_04_02.res" id="91_lb3s3"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_04_02_shape.res" id="92_eq3br"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_05_02.res" id="93_jfxhv"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_05_02_shape.res" id="94_e4h8p"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_06_02.res" id="95_i861r"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_06_02_shape.res" id="96_78m13"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_07_02.res" id="97_hf10s"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_07_02_shape.res" id="98_gefdh"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_08_02.res" id="99_61pbf"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_08_02_shape.res" id="100_ppq7c"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_09_02.res" id="101_g86gg"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_09_02_shape.res" id="102_m43hh"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_10_02.res" id="103_miwhp"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_10_02_shape.res" id="104_enmx1"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_11_02.res" id="105_vn0gb"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_11_02_shape.res" id="106_gky3d"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_12_02.res" id="107_gjc0n"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_12_02_shape.res" id="108_xfh4u"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_13_02.res" id="109_ma0c4"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_13_02_shape.res" id="110_3o8bx"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_14_02.res" id="111_4b4qx"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_14_02_shape.res" id="112_f8xdg"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_15_02.res" id="113_gl22l"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_15_02_shape.res" id="114_0stc7"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_16_02.res" id="115_iupbq"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_16_02_shape.res" id="116_nqmw8"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_17_02.res" id="117_vkhss"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_17_02_shape.res" id="118_5007t"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_18_02.res" id="119_5xxbq"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_18_02_shape.res" id="120_boj3t"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_00_03.res" id="121_l1dl4"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_00_03_shape.res" id="122_uw63m"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_01_03.res" id="123_yv3n4"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_01_03_shape.res" id="124_74be5"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_02_03.res" id="125_xia6m"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_02_03_shape.res" id="126_4ptw6"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_03_03.res" id="127_28cxt"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_03_03_shape.res" id="128_bkquh"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_04_03.res" id="129_qaime"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_04_03_shape.res" id="130_waenl"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_05_03.res" id="131_48js3"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_05_03_shape.res" id="132_gjppf"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_06_03.res" id="133_y25fl"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_06_03_shape.res" id="134_2ir7l"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_07_03.res" id="135_ot4b8"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_07_03_shape.res" id="136_gynma"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_08_03.res" id="137_as2ut"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_08_03_shape.res" id="138_be10f"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_09_03.res" id="139_mgb8g"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_09_03_shape.res" id="140_hm13s"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_10_03.res" id="141_40kx5"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_10_03_shape.res" id="142_m1vg1"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_11_03.res" id="143_8qyfn"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_11_03_shape.res" id="144_bfavl"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_12_03.res" id="145_voy70"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_12_03_shape.res" id="146_c7so4"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_13_03.res" id="147_fx7il"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_13_03_shape.res" id="148_xlvgp"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_14_03.res" id="149_5kbtc"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_14_03_shape.res" id="150_smdes"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_15_03.res" id="151_tdd08"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_15_03_shape.res" id="152_gcwlt"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_16_03.res" id="153_gkv7h"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_16_03_shape.res" id="154_jbss8"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_17_03.res" id="155_y4s00"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_17_03_shape.res" id="156_trqoa"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_18_03.res" id="157_vdls7"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_18_03_shape.res" id="158_ha2pu"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_00_04.res" id="159_dbr8q"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_00_04_shape.res" id="160_31ode"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/roof_00_04.res" id="161_yx7lf"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/roof_00_04_shape.res" id="162_3sc2q"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_01_04.res" id="163_pnfh8"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_01_04_shape.res" id="164_jwvch"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_02_04.res" id="165_h6wsu"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_02_04_shape.res" id="166_jqcxn"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_03_04.res" id="167_0b2ul"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_03_04_shape.res" id="168_nt4vo"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_04_04.res" id="169_ex23v"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_04_04_shape.res" id="170_1wnt4"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_05_04.res" id="171_3bs1c"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_05_04_shape.res" id="172_qnpou"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_06_04.res" id="173_k5mhl"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_06_04_shape.res" id="174_7ft56"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_07_04.res" id="175_fsq0k"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_07_04_shape.res" id="176_m8qlw"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_08_04.res" id="177_xqwum"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_08_04_shape.res" id="178_j8o28"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_09_04.res" id="179_nixya"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_09_04_shape.res" id="180_bap55"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_10_04.res" id="181_5gf75"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_10_04_shape.res" id="182_rh1aq"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_11_04.res" id="183_syog2"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_11_04_shape.res" id="184_u7pei"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_12_04.res" id="185_mttlj"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_12_04_shape.res" id="186_6uqqf"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_13_04.res" id="187_5nl8y"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_13_04_shape.res" id="188_c3mo5"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_14_04.res" id="189_06hgv"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_14_04_shape.res" id="190_10o05"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_15_04.res" id="191_ym2yr"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_15_04_shape.res" id="192_gc7en"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_16_04.res" id="193_apogm"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_16_04_shape.res" id="194_2n2fx"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_17_04.res" id="195_lwv7q"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_17_04_shape.res" id="196_koeap"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_18_04.res" id="197_ncpjc"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_18_04_shape.res" id="198_vdmst"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/roof_18_04.res" id="199_06ma2"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/roof_18_04_shape.res" id="200_wxsbc"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_00_05.res" id="201_r412w"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_00_05_shape.res" id="202_13p6q"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/roof_00_05.res" id="203_5q8gn"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/roof_00_05_shape.res" id="204_pcqsi"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_01_05.res" id="205_r53kj"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_01_05_shape.res" id="206_13kyc"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_02_05.res" id="207_simbr"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_02_05_shape.res" id="208_w1vuh"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_03_05.res" id="209_57v4d"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_03_05_shape.res" id="210_eyd54"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_04_05.res" id="211_tt07s"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_04_05_shape.res" id="212_0llhq"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_05_05.res" id="213_s3gtx"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_05_05_shape.res" id="214_ckqai"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_06_05.res" id="215_4ui4a"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_06_05_shape.res" id="216_ahcb6"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_07_05.res" id="217_pp6ox"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_07_05_shape.res" id="218_if1lb"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_09_05.res" id="219_xfedk"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_09_05_shape.res" id="220_wno8e"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_10_05.res" id="221_1uoje"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_10_05_shape.res" id="222_sc655"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_11_05.res" id="223_f6ey7"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_11_05_shape.res" id="224_wqa6g"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_12_05.res" id="225_4tiaa"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_12_05_shape.res" id="226_6kywv"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_13_05.res" id="227_qiitj"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_13_05_shape.res" id="228_0b7db"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_14_05.res" id="229_psvne"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_14_05_shape.res" id="230_m4esc"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_15_05.res" id="231_wl471"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_15_05_shape.res" id="232_41kg6"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_16_05.res" id="233_2oune"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_16_05_shape.res" id="234_pwcqb"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_17_05.res" id="235_ph2e4"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_17_05_shape.res" id="236_f5t26"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_18_05.res" id="237_ne8us"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_18_05_shape.res" id="238_d6ysu"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_00_06.res" id="239_mlqwe"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_00_06_shape.res" id="240_0xk25"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_01_06.res" id="241_fttph"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_01_06_shape.res" id="242_t0vve"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_02_06.res" id="243_y1p1k"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_02_06_shape.res" id="244_awae4"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_03_06.res" id="245_cxdim"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_03_06_shape.res" id="246_g1hoc"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_04_06.res" id="247_c0ooa"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_04_06_shape.res" id="248_p3t2s"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_05_06.res" id="249_hg2fs"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_05_06_shape.res" id="250_j8qhl"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_09_06.res" id="251_1fle0"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_09_06_shape.res" id="252_bvn31"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_10_06.res" id="253_w6i4e"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_10_06_shape.res" id="254_liymu"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_11_06.res" id="255_dupq0"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_11_06_shape.res" id="256_rdu8n"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_12_06.res" id="257_7wbjr"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_12_06_shape.res" id="258_1s26m"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_13_06.res" id="259_ml4so"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_13_06_shape.res" id="260_jg6mn"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_14_06.res" id="261_yi0dh"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_14_06_shape.res" id="262_7mqmr"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_15_06.res" id="263_4cwjy"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_15_06_shape.res" id="264_fftg6"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_16_06.res" id="265_a2r10"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_16_06_shape.res" id="266_4jdki"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_17_06.res" id="267_chuqf"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_17_06_shape.res" id="268_6x3s8"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_18_06.res" id="269_3t82p"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_18_06_shape.res" id="270_7jjbg"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/roof_18_06.res" id="271_r4pm5"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/roof_18_06_shape.res" id="272_qubs3"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_00_07.res" id="273_niiva"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_00_07_shape.res" id="274_dkfyx"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_01_07.res" id="275_ailc6"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_01_07_shape.res" id="276_xmr6f"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_02_07.res" id="277_q1vcf"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_02_07_shape.res" id="278_x3j54"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_03_07.res" id="279_jm8s6"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_03_07_shape.res" id="280_f3m72"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_04_07.res" id="281_jxmsd"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_04_07_shape.res" id="282_qy2li"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_05_07.res" id="283_un7dw"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_05_07_shape.res" id="284_obf2m"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_06_07.res" id="285_8joxv"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_06_07_shape.res" id="286_0ne01"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_07_07.res" id="287_a3tfm"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_07_07_shape.res" id="288_vvbcs"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_08_07.res" id="289_b6lxw"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_08_07_shape.res" id="290_8dwik"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_09_07.res" id="291_a4amt"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_09_07_shape.res" id="292_keca7"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_10_07.res" id="293_sf44q"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_10_07_shape.res" id="294_x4mtm"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_11_07.res" id="295_nksko"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_11_07_shape.res" id="296_ie87w"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_12_07.res" id="297_nqguc"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_12_07_shape.res" id="298_u6c75"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_13_07.res" id="299_1vdtf"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_13_07_shape.res" id="300_hrqed"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_14_07.res" id="301_ui85x"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_14_07_shape.res" id="302_im7v3"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_15_07.res" id="303_milwp"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_15_07_shape.res" id="304_hm8b5"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_16_07.res" id="305_brcwy"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_16_07_shape.res" id="306_xq6ju"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_17_07.res" id="307_qupo0"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_17_07_shape.res" id="308_wsjvf"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_18_07.res" id="309_p3n0b"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_18_07_shape.res" id="310_y5yn6"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_00_08.res" id="311_qxpwx"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_00_08_shape.res" id="312_i8b8v"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_01_08.res" id="313_366f5"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_01_08_shape.res" id="314_qrmgq"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_02_08.res" id="315_goe0n"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_02_08_shape.res" id="316_6epjc"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_03_08.res" id="317_sklho"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_03_08_shape.res" id="318_i65n2"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_04_08.res" id="319_uv0ho"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_04_08_shape.res" id="320_fbm58"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_05_08.res" id="321_kqbit"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_05_08_shape.res" id="322_c5jqy"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_06_08.res" id="323_1gnxd"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_06_08_shape.res" id="324_wws86"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_07_08.res" id="325_p07r2"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_07_08_shape.res" id="326_jxsm7"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_08_08.res" id="327_ygy05"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_08_08_shape.res" id="328_et6gk"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_09_08.res" id="329_bkgof"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_09_08_shape.res" id="330_xw6nd"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_10_08.res" id="331_mlvtx"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_10_08_shape.res" id="332_gcm6e"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_11_08.res" id="333_a5chp"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_11_08_shape.res" id="334_8qeks"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_12_08.res" id="335_r3wv7"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_12_08_shape.res" id="336_vgw54"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_13_08.res" id="337_pn1or"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_13_08_shape.res" id="338_l5ysl"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_14_08.res" id="339_nlr2x"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_14_08_shape.res" id="340_p80ro"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_15_08.res" id="341_ifb7i"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_15_08_shape.res" id="342_n8tqo"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_16_08.res" id="343_b0rrx"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_16_08_shape.res" id="344_66xiw"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_17_08.res" id="345_5mi6m"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_17_08_shape.res" id="346_ote1w"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_18_08.res" id="347_vdjrk"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_18_08_shape.res" id="348_5tihq"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/roof_18_08.res" id="349_k7a0c"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/roof_18_08_shape.res" id="350_1iygn"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_00_09.res" id="351_fvmxp"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_00_09_shape.res" id="352_a51qx"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/roof_00_09.res" id="353_dqovf"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/roof_00_09_shape.res" id="354_og2xv"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_01_09.res" id="355_dnn0o"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_01_09_shape.res" id="356_cfgkr"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_02_09.res" id="357_cs47v"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_02_09_shape.res" id="358_yg4fr"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_03_09.res" id="359_v5b7o"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_03_09_shape.res" id="360_8yckp"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_04_09.res" id="361_e57nc"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_04_09_shape.res" id="362_tiekn"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_05_09.res" id="363_1ovrs"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_05_09_shape.res" id="364_5jouv"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_06_09.res" id="365_r1222"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_06_09_shape.res" id="366_l4t56"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_07_09.res" id="367_tgko5"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_07_09_shape.res" id="368_as3iq"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_08_09.res" id="369_2foou"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_08_09_shape.res" id="370_g5biy"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_09_09.res" id="371_3rn4f"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_09_09_shape.res" id="372_h4geo"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_10_09.res" id="373_1ps0k"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_10_09_shape.res" id="374_c06wu"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_11_09.res" id="375_r8ydx"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_11_09_shape.res" id="376_02syi"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_12_09.res" id="377_17ewx"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_12_09_shape.res" id="378_ycd7y"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_13_09.res" id="379_5l60q"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_13_09_shape.res" id="380_vevp7"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_14_09.res" id="381_sxcu3"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_14_09_shape.res" id="382_n1lso"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_15_09.res" id="383_iq0u4"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_15_09_shape.res" id="384_81d0s"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_16_09.res" id="385_u8fy7"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_16_09_shape.res" id="386_62b86"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_17_09.res" id="387_8s12r"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_17_09_shape.res" id="388_eqfj6"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_18_09.res" id="389_baliu"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_18_09_shape.res" id="390_saiw6"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_00_10.res" id="391_7pgxa"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_00_10_shape.res" id="392_t5fu2"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_01_10.res" id="393_nu10p"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_01_10_shape.res" id="394_al6fk"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_02_10.res" id="395_xpucn"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_02_10_shape.res" id="396_ey5n4"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_03_10.res" id="397_wbw4p"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_03_10_shape.res" id="398_sboiw"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_04_10.res" id="399_qyyt8"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_04_10_shape.res" id="400_xby05"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_05_10.res" id="401_wyorb"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_05_10_shape.res" id="402_of2f1"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/roof_05_10.res" id="403_un5qq"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/roof_05_10_shape.res" id="404_1q2ds"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_06_10.res" id="405_j73qh"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_06_10_shape.res" id="406_vn0s4"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_07_10.res" id="407_i17sb"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_07_10_shape.res" id="408_11ltk"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_08_10.res" id="409_74a8n"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_08_10_shape.res" id="410_kq7eq"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/roof_08_10.res" id="411_qxled"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/roof_08_10_shape.res" id="412_hsirj"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_09_10.res" id="413_k8fex"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_09_10_shape.res" id="414_x2k1c"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_10_10.res" id="415_nbmnv"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_10_10_shape.res" id="416_785lp"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_11_10.res" id="417_wwbf0"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_11_10_shape.res" id="418_rfn4k"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_12_10.res" id="419_18x06"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_12_10_shape.res" id="420_we84n"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_13_10.res" id="421_v0874"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_13_10_shape.res" id="422_dlawp"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_14_10.res" id="423_d0rlf"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_14_10_shape.res" id="424_gj5oj"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_15_10.res" id="425_fpw3e"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_15_10_shape.res" id="426_fmn1d"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/roof_15_10.res" id="427_olmht"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/roof_15_10_shape.res" id="428_nmqmx"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_16_10.res" id="429_kunmg"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_16_10_shape.res" id="430_il5au"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_17_10.res" id="431_sgyp6"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_17_10_shape.res" id="432_nsuu0"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_18_10.res" id="433_5xo24"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_18_10_shape.res" id="434_xstkb"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_00_11.res" id="435_3ykbd"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_00_11_shape.res" id="436_hiama"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_01_11.res" id="437_fob31"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_01_11_shape.res" id="438_37xrn"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_02_11.res" id="439_q5f3x"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_02_11_shape.res" id="440_km6j5"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_03_11.res" id="441_52n2d"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_03_11_shape.res" id="442_pgrn0"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_04_11.res" id="443_0ebk8"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_04_11_shape.res" id="444_t5u2m"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_05_11.res" id="445_qdb2g"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_05_11_shape.res" id="446_ere56"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/roof_05_11.res" id="447_pvns5"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/roof_05_11_shape.res" id="448_behof"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_06_11.res" id="449_7tm5r"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_06_11_shape.res" id="450_8rq00"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_07_11.res" id="451_vcs64"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_07_11_shape.res" id="452_j410s"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_08_11.res" id="453_l28e4"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_08_11_shape.res" id="454_d0soy"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/roof_08_11.res" id="455_6mud0"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/roof_08_11_shape.res" id="456_hcftt"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_09_11.res" id="457_nswe5"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_09_11_shape.res" id="458_qpewj"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_10_11.res" id="459_h4i2n"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_10_11_shape.res" id="460_85mer"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_11_11.res" id="461_fpcq5"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_11_11_shape.res" id="462_g153r"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_12_11.res" id="463_yw2vt"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_12_11_shape.res" id="464_k6sqk"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_13_11.res" id="465_ildsb"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_13_11_shape.res" id="466_bnc47"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_14_11.res" id="467_lbcua"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_14_11_shape.res" id="468_0m7rj"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_15_11.res" id="469_wwddl"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_15_11_shape.res" id="470_48ma2"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/roof_15_11.res" id="471_wtolk"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/roof_15_11_shape.res" id="472_8xhum"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_16_11.res" id="473_4w4qq"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_16_11_shape.res" id="474_qtxsk"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_17_11.res" id="475_6slvg"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_17_11_shape.res" id="476_cw27y"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/terrain/chunk_18_11.res" id="477_otji5"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/terrain/chunk_18_11_shape.res" id="478_177x5"]
+[ext_resource type="Material" path="res://scenes/world/map/generated/terrain/harbor_wall_material.tres" id="479_xcvbu"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_gu0am"]
+size = Vector3(1.2, 10.1, 157)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_55v76"]
+size = Vector3(1.2, 10.1, 157)
+
+[sub_resource type="BoxMesh" id="BoxMesh_n24ye"]
+size = Vector3(1.2, 10.1, 157)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_n0my6"]
+size = Vector3(1.2, 10.1, 157)
+
+[sub_resource type="BoxMesh" id="BoxMesh_fhs4f"]
+size = Vector3(502.4, 10.1, 1.2)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_sorq7"]
+size = Vector3(502.4, 10.1, 1.2)
+
+[node name="Terrain" type="Node3D" unique_id=2000357220]
+
+[node name="Chunk_00_00" type="StaticBody3D" parent="." unique_id=786885025]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2304, 0, -1664)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_00_00" unique_id=1396214925]
+cast_shadow = 0
+mesh = ExtResource("1_aqbgw")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_00_00" unique_id=572525137]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("2_cpmrj")
+
+[node name="Chunk_01_00" type="StaticBody3D" parent="." unique_id=485435424]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2048, 0, -1664)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_01_00" unique_id=1842530036]
+cast_shadow = 0
+mesh = ExtResource("3_k3jpu")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_01_00" unique_id=848600950]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("4_wq716")
+
+[node name="Chunk_02_00" type="StaticBody3D" parent="." unique_id=1765711824]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1792, 0, -1664)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_02_00" unique_id=309041744]
+cast_shadow = 0
+mesh = ExtResource("5_ylmhf")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_02_00" unique_id=917486212]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("6_ro6u8")
+
+[node name="Chunk_03_00" type="StaticBody3D" parent="." unique_id=1029839287]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1536, 0, -1664)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_03_00" unique_id=444190805]
+cast_shadow = 0
+mesh = ExtResource("7_cjsed")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_03_00" unique_id=954135034]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("8_tdff5")
+
+[node name="Chunk_04_00" type="StaticBody3D" parent="." unique_id=582379939]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1280, 0, -1664)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_04_00" unique_id=455793050]
+cast_shadow = 0
+mesh = ExtResource("9_ymgaw")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_04_00" unique_id=828010071]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("10_336yg")
+
+[node name="Chunk_05_00" type="StaticBody3D" parent="." unique_id=2020539000]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1024, 0, -1664)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_05_00" unique_id=1780554444]
+cast_shadow = 0
+mesh = ExtResource("11_2istn")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_05_00" unique_id=2133678890]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("12_bk7ba")
+
+[node name="Chunk_06_00" type="StaticBody3D" parent="." unique_id=709113450]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -768, 0, -1664)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_06_00" unique_id=827520867]
+cast_shadow = 0
+mesh = ExtResource("13_77g6t")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_06_00" unique_id=33347634]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("14_htffs")
+
+[node name="Roof" type="MeshInstance3D" parent="Chunk_06_00" unique_id=559586736]
+cast_shadow = 0
+mesh = ExtResource("15_8h6e0")
+
+[node name="RoofShape" type="CollisionShape3D" parent="Chunk_06_00" unique_id=1549030128]
+shape = ExtResource("16_ivoao")
+
+[node name="Chunk_07_00" type="StaticBody3D" parent="." unique_id=1567537845]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -512, 0, -1664)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_07_00" unique_id=25259516]
+cast_shadow = 0
+mesh = ExtResource("17_3404b")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_07_00" unique_id=1063792244]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("18_6qvln")
+
+[node name="Chunk_08_00" type="StaticBody3D" parent="." unique_id=829330557]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -256, 0, -1664)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_08_00" unique_id=264871023]
+cast_shadow = 0
+mesh = ExtResource("19_n64jf")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_08_00" unique_id=671301989]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("20_dhcs1")
+
+[node name="Chunk_09_00" type="StaticBody3D" parent="." unique_id=1401897520]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -1664)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_09_00" unique_id=648904396]
+cast_shadow = 0
+mesh = ExtResource("21_3cg0x")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_09_00" unique_id=759816302]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("22_50edw")
+
+[node name="Chunk_10_00" type="StaticBody3D" parent="." unique_id=2017066184]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 256, 0, -1664)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_10_00" unique_id=1765246208]
+cast_shadow = 0
+mesh = ExtResource("23_h4mq6")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_10_00" unique_id=908668716]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("24_18xq6")
+
+[node name="Chunk_11_00" type="StaticBody3D" parent="." unique_id=1695898440]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 512, 0, -1664)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_11_00" unique_id=824242775]
+cast_shadow = 0
+mesh = ExtResource("25_hmdab")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_11_00" unique_id=2083534904]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("26_w5hsm")
+
+[node name="Chunk_12_00" type="StaticBody3D" parent="." unique_id=674089270]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 768, 0, -1664)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_12_00" unique_id=392296565]
+cast_shadow = 0
+mesh = ExtResource("27_h7cmg")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_12_00" unique_id=914616061]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("28_j3lyg")
+
+[node name="Chunk_13_00" type="StaticBody3D" parent="." unique_id=310808168]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1024, 0, -1664)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_13_00" unique_id=1126832065]
+cast_shadow = 0
+mesh = ExtResource("29_8d7sh")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_13_00" unique_id=710070858]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("30_e15u1")
+
+[node name="Chunk_14_00" type="StaticBody3D" parent="." unique_id=559284192]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1280, 0, -1664)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_14_00" unique_id=2082392679]
+cast_shadow = 0
+mesh = ExtResource("31_wh4lc")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_14_00" unique_id=201821720]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("32_bfp5j")
+
+[node name="Roof" type="MeshInstance3D" parent="Chunk_14_00" unique_id=1361783098]
+cast_shadow = 0
+mesh = ExtResource("33_dqons")
+
+[node name="RoofShape" type="CollisionShape3D" parent="Chunk_14_00" unique_id=1464022607]
+shape = ExtResource("34_hhm3n")
+
+[node name="Chunk_15_00" type="StaticBody3D" parent="." unique_id=1554851083]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1536, 0, -1664)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_15_00" unique_id=569941261]
+cast_shadow = 0
+mesh = ExtResource("35_1xav1")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_15_00" unique_id=1018763818]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("36_8iu0m")
+
+[node name="Chunk_16_00" type="StaticBody3D" parent="." unique_id=273877264]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1792, 0, -1664)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_16_00" unique_id=1938407530]
+cast_shadow = 0
+mesh = ExtResource("37_c4eo0")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_16_00" unique_id=1663795392]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("38_qn10y")
+
+[node name="Chunk_17_00" type="StaticBody3D" parent="." unique_id=1362770979]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2048, 0, -1664)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_17_00" unique_id=788168931]
+cast_shadow = 0
+mesh = ExtResource("39_t7rpl")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_17_00" unique_id=1910682938]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("40_8bvgv")
+
+[node name="Chunk_18_00" type="StaticBody3D" parent="." unique_id=650692644]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2304, 0, -1664)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_18_00" unique_id=1006602325]
+cast_shadow = 0
+mesh = ExtResource("41_bbd2t")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_18_00" unique_id=522083262]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("42_lpfgj")
+
+[node name="Chunk_00_01" type="StaticBody3D" parent="." unique_id=2024858366]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2304, 0, -1408)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_00_01" unique_id=1149762758]
+cast_shadow = 0
+mesh = ExtResource("43_vuhcc")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_00_01" unique_id=628105727]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("44_ld64u")
+
+[node name="Chunk_01_01" type="StaticBody3D" parent="." unique_id=1522478121]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2048, 0, -1408)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_01_01" unique_id=1203455643]
+cast_shadow = 0
+mesh = ExtResource("45_77dnj")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_01_01" unique_id=2080916459]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("46_yh0df")
+
+[node name="Chunk_02_01" type="StaticBody3D" parent="." unique_id=1526528832]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1792, 0, -1408)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_02_01" unique_id=277308935]
+cast_shadow = 0
+mesh = ExtResource("47_ocwkc")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_02_01" unique_id=111861169]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("48_7238b")
+
+[node name="Chunk_03_01" type="StaticBody3D" parent="." unique_id=1376063421]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1536, 0, -1408)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_03_01" unique_id=633601793]
+cast_shadow = 0
+mesh = ExtResource("49_aasa5")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_03_01" unique_id=1403027913]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("50_x8o2b")
+
+[node name="Chunk_04_01" type="StaticBody3D" parent="." unique_id=513582999]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1280, 0, -1408)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_04_01" unique_id=1996015805]
+cast_shadow = 0
+mesh = ExtResource("51_jpnkj")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_04_01" unique_id=1932422887]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("52_yaf06")
+
+[node name="Chunk_05_01" type="StaticBody3D" parent="." unique_id=385068911]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1024, 0, -1408)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_05_01" unique_id=1492138764]
+cast_shadow = 0
+mesh = ExtResource("53_gf2of")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_05_01" unique_id=1439785405]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("54_56683")
+
+[node name="Chunk_06_01" type="StaticBody3D" parent="." unique_id=1327329278]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -768, 0, -1408)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_06_01" unique_id=203664771]
+cast_shadow = 0
+mesh = ExtResource("55_81o0u")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_06_01" unique_id=1758271289]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("56_k8m5n")
+
+[node name="Roof" type="MeshInstance3D" parent="Chunk_06_01" unique_id=1460767433]
+cast_shadow = 0
+mesh = ExtResource("57_qbmt8")
+
+[node name="RoofShape" type="CollisionShape3D" parent="Chunk_06_01" unique_id=107974107]
+shape = ExtResource("58_t1nis")
+
+[node name="Chunk_07_01" type="StaticBody3D" parent="." unique_id=614265166]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -512, 0, -1408)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_07_01" unique_id=723058994]
+cast_shadow = 0
+mesh = ExtResource("59_rf7wi")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_07_01" unique_id=1620341441]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("60_opwyi")
+
+[node name="Chunk_08_01" type="StaticBody3D" parent="." unique_id=315238043]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -256, 0, -1408)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_08_01" unique_id=573085594]
+cast_shadow = 0
+mesh = ExtResource("61_0b6pj")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_08_01" unique_id=222695583]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("62_0xtru")
+
+[node name="Chunk_09_01" type="StaticBody3D" parent="." unique_id=1386860229]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -1408)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_09_01" unique_id=880557753]
+cast_shadow = 0
+mesh = ExtResource("63_ub1ea")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_09_01" unique_id=1997609697]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("64_4b1mo")
+
+[node name="Chunk_10_01" type="StaticBody3D" parent="." unique_id=1985874397]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 256, 0, -1408)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_10_01" unique_id=1283722818]
+cast_shadow = 0
+mesh = ExtResource("65_ygpyv")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_10_01" unique_id=1313660858]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("66_bounl")
+
+[node name="Chunk_11_01" type="StaticBody3D" parent="." unique_id=643801597]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 512, 0, -1408)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_11_01" unique_id=659697850]
+cast_shadow = 0
+mesh = ExtResource("67_lpeaj")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_11_01" unique_id=1739739870]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("68_s7fs5")
+
+[node name="Chunk_12_01" type="StaticBody3D" parent="." unique_id=1889311092]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 768, 0, -1408)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_12_01" unique_id=1278205975]
+cast_shadow = 0
+mesh = ExtResource("69_mbic2")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_12_01" unique_id=1615034031]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("70_8nhgy")
+
+[node name="Chunk_13_01" type="StaticBody3D" parent="." unique_id=887825693]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1024, 0, -1408)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_13_01" unique_id=692184249]
+cast_shadow = 0
+mesh = ExtResource("71_xu2ty")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_13_01" unique_id=758130586]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("72_jdx2g")
+
+[node name="Chunk_14_01" type="StaticBody3D" parent="." unique_id=32612326]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1280, 0, -1408)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_14_01" unique_id=1015485911]
+cast_shadow = 0
+mesh = ExtResource("73_hdmmg")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_14_01" unique_id=1801698568]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("74_w6agw")
+
+[node name="Chunk_15_01" type="StaticBody3D" parent="." unique_id=1312802659]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1536, 0, -1408)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_15_01" unique_id=806217209]
+cast_shadow = 0
+mesh = ExtResource("75_a2xx1")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_15_01" unique_id=2125644971]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("76_6npi7")
+
+[node name="Chunk_16_01" type="StaticBody3D" parent="." unique_id=1964296313]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1792, 0, -1408)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_16_01" unique_id=255554881]
+cast_shadow = 0
+mesh = ExtResource("77_b44a6")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_16_01" unique_id=1668304308]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("78_6ja3s")
+
+[node name="Chunk_17_01" type="StaticBody3D" parent="." unique_id=106275888]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2048, 0, -1408)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_17_01" unique_id=386130810]
+cast_shadow = 0
+mesh = ExtResource("79_sa1hw")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_17_01" unique_id=2065545673]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("80_qjopg")
+
+[node name="Chunk_18_01" type="StaticBody3D" parent="." unique_id=176260101]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2304, 0, -1408)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_18_01" unique_id=1648378308]
+cast_shadow = 0
+mesh = ExtResource("81_wueua")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_18_01" unique_id=930995821]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("82_613ih")
+
+[node name="Chunk_00_02" type="StaticBody3D" parent="." unique_id=1811159847]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2304, 0, -1152)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_00_02" unique_id=1979148547]
+cast_shadow = 0
+mesh = ExtResource("83_t70ru")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_00_02" unique_id=1837599799]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("84_bblo7")
+
+[node name="Chunk_01_02" type="StaticBody3D" parent="." unique_id=244293242]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2048, 0, -1152)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_01_02" unique_id=538360892]
+cast_shadow = 0
+mesh = ExtResource("85_g1ruh")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_01_02" unique_id=81792989]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("86_411up")
+
+[node name="Chunk_02_02" type="StaticBody3D" parent="." unique_id=1033981866]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1792, 0, -1152)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_02_02" unique_id=550279742]
+cast_shadow = 0
+mesh = ExtResource("87_luyjc")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_02_02" unique_id=1753713590]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("88_c73ql")
+
+[node name="Chunk_03_02" type="StaticBody3D" parent="." unique_id=543522548]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1536, 0, -1152)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_03_02" unique_id=538441676]
+cast_shadow = 0
+mesh = ExtResource("89_3vkdx")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_03_02" unique_id=1696024973]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("90_bke2q")
+
+[node name="Chunk_04_02" type="StaticBody3D" parent="." unique_id=688487113]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1280, 0, -1152)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_04_02" unique_id=2065999984]
+cast_shadow = 0
+mesh = ExtResource("91_lb3s3")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_04_02" unique_id=1024590142]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("92_eq3br")
+
+[node name="Chunk_05_02" type="StaticBody3D" parent="." unique_id=2075987095]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1024, 0, -1152)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_05_02" unique_id=144898071]
+cast_shadow = 0
+mesh = ExtResource("93_jfxhv")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_05_02" unique_id=313059711]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("94_e4h8p")
+
+[node name="Chunk_06_02" type="StaticBody3D" parent="." unique_id=2128104831]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -768, 0, -1152)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_06_02" unique_id=2008328702]
+cast_shadow = 0
+mesh = ExtResource("95_i861r")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_06_02" unique_id=292432890]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("96_78m13")
+
+[node name="Chunk_07_02" type="StaticBody3D" parent="." unique_id=1349902127]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -512, 0, -1152)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_07_02" unique_id=591598459]
+cast_shadow = 0
+mesh = ExtResource("97_hf10s")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_07_02" unique_id=827929717]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("98_gefdh")
+
+[node name="Chunk_08_02" type="StaticBody3D" parent="." unique_id=1095199359]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -256, 0, -1152)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_08_02" unique_id=1980461671]
+cast_shadow = 0
+mesh = ExtResource("99_61pbf")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_08_02" unique_id=1843596966]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("100_ppq7c")
+
+[node name="Chunk_09_02" type="StaticBody3D" parent="." unique_id=600139945]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -1152)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_09_02" unique_id=577834201]
+cast_shadow = 0
+mesh = ExtResource("101_g86gg")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_09_02" unique_id=147819798]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("102_m43hh")
+
+[node name="Chunk_10_02" type="StaticBody3D" parent="." unique_id=689862207]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 256, 0, -1152)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_10_02" unique_id=1356142784]
+cast_shadow = 0
+mesh = ExtResource("103_miwhp")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_10_02" unique_id=1357450344]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("104_enmx1")
+
+[node name="Chunk_11_02" type="StaticBody3D" parent="." unique_id=1853866043]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 512, 0, -1152)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_11_02" unique_id=41065422]
+cast_shadow = 0
+mesh = ExtResource("105_vn0gb")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_11_02" unique_id=502711168]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("106_gky3d")
+
+[node name="Chunk_12_02" type="StaticBody3D" parent="." unique_id=1944454101]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 768, 0, -1152)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_12_02" unique_id=1049071166]
+cast_shadow = 0
+mesh = ExtResource("107_gjc0n")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_12_02" unique_id=59078091]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("108_xfh4u")
+
+[node name="Chunk_13_02" type="StaticBody3D" parent="." unique_id=1904050258]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1024, 0, -1152)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_13_02" unique_id=564048105]
+cast_shadow = 0
+mesh = ExtResource("109_ma0c4")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_13_02" unique_id=1432979457]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("110_3o8bx")
+
+[node name="Chunk_14_02" type="StaticBody3D" parent="." unique_id=338825515]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1280, 0, -1152)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_14_02" unique_id=655129145]
+cast_shadow = 0
+mesh = ExtResource("111_4b4qx")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_14_02" unique_id=1621727880]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("112_f8xdg")
+
+[node name="Chunk_15_02" type="StaticBody3D" parent="." unique_id=650689477]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1536, 0, -1152)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_15_02" unique_id=2050196660]
+cast_shadow = 0
+mesh = ExtResource("113_gl22l")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_15_02" unique_id=189133485]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("114_0stc7")
+
+[node name="Chunk_16_02" type="StaticBody3D" parent="." unique_id=1497770395]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1792, 0, -1152)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_16_02" unique_id=141473916]
+cast_shadow = 0
+mesh = ExtResource("115_iupbq")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_16_02" unique_id=377633304]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("116_nqmw8")
+
+[node name="Chunk_17_02" type="StaticBody3D" parent="." unique_id=1089550041]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2048, 0, -1152)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_17_02" unique_id=601820169]
+cast_shadow = 0
+mesh = ExtResource("117_vkhss")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_17_02" unique_id=1514619891]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("118_5007t")
+
+[node name="Chunk_18_02" type="StaticBody3D" parent="." unique_id=609946197]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2304, 0, -1152)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_18_02" unique_id=1405008235]
+cast_shadow = 0
+mesh = ExtResource("119_5xxbq")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_18_02" unique_id=1652579822]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("120_boj3t")
+
+[node name="Chunk_00_03" type="StaticBody3D" parent="." unique_id=1417817957]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2304, 0, -896)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_00_03" unique_id=834062491]
+cast_shadow = 0
+mesh = ExtResource("121_l1dl4")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_00_03" unique_id=1447650193]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("122_uw63m")
+
+[node name="Chunk_01_03" type="StaticBody3D" parent="." unique_id=1151700685]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2048, 0, -896)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_01_03" unique_id=1209918884]
+cast_shadow = 0
+mesh = ExtResource("123_yv3n4")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_01_03" unique_id=1895173623]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("124_74be5")
+
+[node name="Chunk_02_03" type="StaticBody3D" parent="." unique_id=980054958]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1792, 0, -896)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_02_03" unique_id=616853203]
+cast_shadow = 0
+mesh = ExtResource("125_xia6m")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_02_03" unique_id=1305345008]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("126_4ptw6")
+
+[node name="Chunk_03_03" type="StaticBody3D" parent="." unique_id=1637388900]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1536, 0, -896)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_03_03" unique_id=2056976460]
+cast_shadow = 0
+mesh = ExtResource("127_28cxt")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_03_03" unique_id=1369358675]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("128_bkquh")
+
+[node name="Chunk_04_03" type="StaticBody3D" parent="." unique_id=842018558]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1280, 0, -896)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_04_03" unique_id=635320638]
+cast_shadow = 0
+mesh = ExtResource("129_qaime")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_04_03" unique_id=800623159]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("130_waenl")
+
+[node name="Chunk_05_03" type="StaticBody3D" parent="." unique_id=796677505]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1024, 0, -896)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_05_03" unique_id=1044796496]
+cast_shadow = 0
+mesh = ExtResource("131_48js3")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_05_03" unique_id=2126473332]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("132_gjppf")
+
+[node name="Chunk_06_03" type="StaticBody3D" parent="." unique_id=1687379261]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -768, 0, -896)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_06_03" unique_id=859138785]
+cast_shadow = 0
+mesh = ExtResource("133_y25fl")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_06_03" unique_id=362990601]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("134_2ir7l")
+
+[node name="Chunk_07_03" type="StaticBody3D" parent="." unique_id=488976598]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -512, 0, -896)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_07_03" unique_id=726419885]
+cast_shadow = 0
+mesh = ExtResource("135_ot4b8")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_07_03" unique_id=126376533]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("136_gynma")
+
+[node name="Chunk_08_03" type="StaticBody3D" parent="." unique_id=1446579247]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -256, 0, -896)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_08_03" unique_id=256143351]
+cast_shadow = 0
+mesh = ExtResource("137_as2ut")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_08_03" unique_id=1757383822]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("138_be10f")
+
+[node name="Chunk_09_03" type="StaticBody3D" parent="." unique_id=1403011656]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -896)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_09_03" unique_id=628587372]
+cast_shadow = 0
+mesh = ExtResource("139_mgb8g")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_09_03" unique_id=968553249]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("140_hm13s")
+
+[node name="Chunk_10_03" type="StaticBody3D" parent="." unique_id=1580714015]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 256, 0, -896)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_10_03" unique_id=1255057899]
+cast_shadow = 0
+mesh = ExtResource("141_40kx5")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_10_03" unique_id=1035108934]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("142_m1vg1")
+
+[node name="Chunk_11_03" type="StaticBody3D" parent="." unique_id=1580109907]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 512, 0, -896)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_11_03" unique_id=996723362]
+cast_shadow = 0
+mesh = ExtResource("143_8qyfn")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_11_03" unique_id=285037366]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("144_bfavl")
+
+[node name="Chunk_12_03" type="StaticBody3D" parent="." unique_id=503050651]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 768, 0, -896)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_12_03" unique_id=1495057289]
+cast_shadow = 0
+mesh = ExtResource("145_voy70")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_12_03" unique_id=1065911200]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("146_c7so4")
+
+[node name="Chunk_13_03" type="StaticBody3D" parent="." unique_id=2133927229]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1024, 0, -896)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_13_03" unique_id=1728285358]
+cast_shadow = 0
+mesh = ExtResource("147_fx7il")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_13_03" unique_id=342239774]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("148_xlvgp")
+
+[node name="Chunk_14_03" type="StaticBody3D" parent="." unique_id=1693767834]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1280, 0, -896)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_14_03" unique_id=928936790]
+cast_shadow = 0
+mesh = ExtResource("149_5kbtc")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_14_03" unique_id=1194940231]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("150_smdes")
+
+[node name="Chunk_15_03" type="StaticBody3D" parent="." unique_id=1966097824]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1536, 0, -896)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_15_03" unique_id=251628491]
+cast_shadow = 0
+mesh = ExtResource("151_tdd08")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_15_03" unique_id=1595591371]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("152_gcwlt")
+
+[node name="Chunk_16_03" type="StaticBody3D" parent="." unique_id=1625358122]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1792, 0, -896)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_16_03" unique_id=534258380]
+cast_shadow = 0
+mesh = ExtResource("153_gkv7h")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_16_03" unique_id=944055103]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("154_jbss8")
+
+[node name="Chunk_17_03" type="StaticBody3D" parent="." unique_id=1749126023]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2048, 0, -896)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_17_03" unique_id=530101552]
+cast_shadow = 0
+mesh = ExtResource("155_y4s00")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_17_03" unique_id=30366394]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("156_trqoa")
+
+[node name="Chunk_18_03" type="StaticBody3D" parent="." unique_id=2037374098]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2304, 0, -896)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_18_03" unique_id=255513706]
+cast_shadow = 0
+mesh = ExtResource("157_vdls7")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_18_03" unique_id=1163928706]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("158_ha2pu")
+
+[node name="Chunk_00_04" type="StaticBody3D" parent="." unique_id=838952794]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2304, 0, -640)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_00_04" unique_id=1149266320]
+cast_shadow = 0
+mesh = ExtResource("159_dbr8q")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_00_04" unique_id=264898411]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("160_31ode")
+
+[node name="Roof" type="MeshInstance3D" parent="Chunk_00_04" unique_id=381574225]
+cast_shadow = 0
+mesh = ExtResource("161_yx7lf")
+
+[node name="RoofShape" type="CollisionShape3D" parent="Chunk_00_04" unique_id=1362243529]
+shape = ExtResource("162_3sc2q")
+
+[node name="Chunk_01_04" type="StaticBody3D" parent="." unique_id=1589355600]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2048, 0, -640)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_01_04" unique_id=224774599]
+cast_shadow = 0
+mesh = ExtResource("163_pnfh8")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_01_04" unique_id=207875091]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("164_jwvch")
+
+[node name="Chunk_02_04" type="StaticBody3D" parent="." unique_id=485777541]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1792, 0, -640)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_02_04" unique_id=1397425225]
+cast_shadow = 0
+mesh = ExtResource("165_h6wsu")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_02_04" unique_id=838753782]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("166_jqcxn")
+
+[node name="Chunk_03_04" type="StaticBody3D" parent="." unique_id=1984468952]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1536, 0, -640)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_03_04" unique_id=558513229]
+cast_shadow = 0
+mesh = ExtResource("167_0b2ul")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_03_04" unique_id=559384603]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("168_nt4vo")
+
+[node name="Chunk_04_04" type="StaticBody3D" parent="." unique_id=178266977]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1280, 0, -640)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_04_04" unique_id=479580190]
+cast_shadow = 0
+mesh = ExtResource("169_ex23v")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_04_04" unique_id=385305513]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("170_1wnt4")
+
+[node name="Chunk_05_04" type="StaticBody3D" parent="." unique_id=697745813]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1024, 0, -640)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_05_04" unique_id=1551268544]
+cast_shadow = 0
+mesh = ExtResource("171_3bs1c")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_05_04" unique_id=387124782]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("172_qnpou")
+
+[node name="Chunk_06_04" type="StaticBody3D" parent="." unique_id=1269619704]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -768, 0, -640)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_06_04" unique_id=56244263]
+cast_shadow = 0
+mesh = ExtResource("173_k5mhl")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_06_04" unique_id=1099700531]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("174_7ft56")
+
+[node name="Chunk_07_04" type="StaticBody3D" parent="." unique_id=1678307417]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -512, 0, -640)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_07_04" unique_id=1234578100]
+cast_shadow = 0
+mesh = ExtResource("175_fsq0k")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_07_04" unique_id=493054937]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("176_m8qlw")
+
+[node name="Chunk_08_04" type="StaticBody3D" parent="." unique_id=1937653075]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -256, 0, -640)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_08_04" unique_id=1767164618]
+cast_shadow = 0
+mesh = ExtResource("177_xqwum")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_08_04" unique_id=1505890774]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("178_j8o28")
+
+[node name="Chunk_09_04" type="StaticBody3D" parent="." unique_id=277963765]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -640)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_09_04" unique_id=66958699]
+cast_shadow = 0
+mesh = ExtResource("179_nixya")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_09_04" unique_id=780422829]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("180_bap55")
+
+[node name="Chunk_10_04" type="StaticBody3D" parent="." unique_id=132505286]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 256, 0, -640)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_10_04" unique_id=412259349]
+cast_shadow = 0
+mesh = ExtResource("181_5gf75")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_10_04" unique_id=789391721]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("182_rh1aq")
+
+[node name="Chunk_11_04" type="StaticBody3D" parent="." unique_id=1185682416]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 512, 0, -640)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_11_04" unique_id=1570901675]
+cast_shadow = 0
+mesh = ExtResource("183_syog2")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_11_04" unique_id=1998202854]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("184_u7pei")
+
+[node name="Chunk_12_04" type="StaticBody3D" parent="." unique_id=832455273]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 768, 0, -640)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_12_04" unique_id=977713325]
+cast_shadow = 0
+mesh = ExtResource("185_mttlj")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_12_04" unique_id=666906516]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("186_6uqqf")
+
+[node name="Chunk_13_04" type="StaticBody3D" parent="." unique_id=2103580563]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1024, 0, -640)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_13_04" unique_id=575174717]
+cast_shadow = 0
+mesh = ExtResource("187_5nl8y")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_13_04" unique_id=581050927]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("188_c3mo5")
+
+[node name="Chunk_14_04" type="StaticBody3D" parent="." unique_id=633242174]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1280, 0, -640)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_14_04" unique_id=1265154482]
+cast_shadow = 0
+mesh = ExtResource("189_06hgv")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_14_04" unique_id=819735301]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("190_10o05")
+
+[node name="Chunk_15_04" type="StaticBody3D" parent="." unique_id=278320514]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1536, 0, -640)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_15_04" unique_id=1882949068]
+cast_shadow = 0
+mesh = ExtResource("191_ym2yr")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_15_04" unique_id=537964086]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("192_gc7en")
+
+[node name="Chunk_16_04" type="StaticBody3D" parent="." unique_id=1198540307]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1792, 0, -640)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_16_04" unique_id=450739015]
+cast_shadow = 0
+mesh = ExtResource("193_apogm")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_16_04" unique_id=1640349508]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("194_2n2fx")
+
+[node name="Chunk_17_04" type="StaticBody3D" parent="." unique_id=924421509]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2048, 0, -640)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_17_04" unique_id=1161817744]
+cast_shadow = 0
+mesh = ExtResource("195_lwv7q")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_17_04" unique_id=236578595]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("196_koeap")
+
+[node name="Chunk_18_04" type="StaticBody3D" parent="." unique_id=504978011]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2304, 0, -640)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_18_04" unique_id=887053567]
+cast_shadow = 0
+mesh = ExtResource("197_ncpjc")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_18_04" unique_id=995545131]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("198_vdmst")
+
+[node name="Roof" type="MeshInstance3D" parent="Chunk_18_04" unique_id=1464327330]
+cast_shadow = 0
+mesh = ExtResource("199_06ma2")
+
+[node name="RoofShape" type="CollisionShape3D" parent="Chunk_18_04" unique_id=702493071]
+shape = ExtResource("200_wxsbc")
+
+[node name="Chunk_00_05" type="StaticBody3D" parent="." unique_id=1258827231]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2304, 0, -384)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_00_05" unique_id=846720886]
+cast_shadow = 0
+mesh = ExtResource("201_r412w")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_00_05" unique_id=1324571602]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("202_13p6q")
+
+[node name="Roof" type="MeshInstance3D" parent="Chunk_00_05" unique_id=658990525]
+cast_shadow = 0
+mesh = ExtResource("203_5q8gn")
+
+[node name="RoofShape" type="CollisionShape3D" parent="Chunk_00_05" unique_id=235121408]
+shape = ExtResource("204_pcqsi")
+
+[node name="Chunk_01_05" type="StaticBody3D" parent="." unique_id=1931642185]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2048, 0, -384)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_01_05" unique_id=600158923]
+cast_shadow = 0
+mesh = ExtResource("205_r53kj")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_01_05" unique_id=830970887]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("206_13kyc")
+
+[node name="Chunk_02_05" type="StaticBody3D" parent="." unique_id=788518991]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1792, 0, -384)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_02_05" unique_id=30165343]
+cast_shadow = 0
+mesh = ExtResource("207_simbr")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_02_05" unique_id=588574858]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("208_w1vuh")
+
+[node name="Chunk_03_05" type="StaticBody3D" parent="." unique_id=2130433808]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1536, 0, -384)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_03_05" unique_id=410019476]
+cast_shadow = 0
+mesh = ExtResource("209_57v4d")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_03_05" unique_id=1659400334]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("210_eyd54")
+
+[node name="Chunk_04_05" type="StaticBody3D" parent="." unique_id=1815076387]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1280, 0, -384)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_04_05" unique_id=587670942]
+cast_shadow = 0
+mesh = ExtResource("211_tt07s")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_04_05" unique_id=277076323]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("212_0llhq")
+
+[node name="Chunk_05_05" type="StaticBody3D" parent="." unique_id=1618790995]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1024, 0, -384)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_05_05" unique_id=1055480208]
+cast_shadow = 0
+mesh = ExtResource("213_s3gtx")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_05_05" unique_id=755791340]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("214_ckqai")
+
+[node name="Chunk_06_05" type="StaticBody3D" parent="." unique_id=1768920634]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -768, 0, -384)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_06_05" unique_id=292417230]
+cast_shadow = 0
+mesh = ExtResource("215_4ui4a")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_06_05" unique_id=564985344]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("216_ahcb6")
+
+[node name="Chunk_07_05" type="StaticBody3D" parent="." unique_id=1145794211]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -512, 0, -384)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_07_05" unique_id=1107630017]
+cast_shadow = 0
+mesh = ExtResource("217_pp6ox")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_07_05" unique_id=1733001860]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("218_if1lb")
+
+[node name="Chunk_09_05" type="StaticBody3D" parent="." unique_id=898231971]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -384)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_09_05" unique_id=533394094]
+cast_shadow = 0
+mesh = ExtResource("219_xfedk")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_09_05" unique_id=1423076147]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("220_wno8e")
+
+[node name="Chunk_10_05" type="StaticBody3D" parent="." unique_id=1864390308]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 256, 0, -384)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_10_05" unique_id=2105226884]
+cast_shadow = 0
+mesh = ExtResource("221_1uoje")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_10_05" unique_id=91362553]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("222_sc655")
+
+[node name="Chunk_11_05" type="StaticBody3D" parent="." unique_id=511954121]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 512, 0, -384)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_11_05" unique_id=1335789117]
+cast_shadow = 0
+mesh = ExtResource("223_f6ey7")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_11_05" unique_id=802309011]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("224_wqa6g")
+
+[node name="Chunk_12_05" type="StaticBody3D" parent="." unique_id=382787077]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 768, 0, -384)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_12_05" unique_id=2022544619]
+cast_shadow = 0
+mesh = ExtResource("225_4tiaa")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_12_05" unique_id=1281810556]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("226_6kywv")
+
+[node name="Chunk_13_05" type="StaticBody3D" parent="." unique_id=1886434098]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1024, 0, -384)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_13_05" unique_id=1556632423]
+cast_shadow = 0
+mesh = ExtResource("227_qiitj")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_13_05" unique_id=609881134]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("228_0b7db")
+
+[node name="Chunk_14_05" type="StaticBody3D" parent="." unique_id=948658785]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1280, 0, -384)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_14_05" unique_id=255603826]
+cast_shadow = 0
+mesh = ExtResource("229_psvne")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_14_05" unique_id=1963354933]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("230_m4esc")
+
+[node name="Chunk_15_05" type="StaticBody3D" parent="." unique_id=34383021]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1536, 0, -384)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_15_05" unique_id=1624867541]
+cast_shadow = 0
+mesh = ExtResource("231_wl471")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_15_05" unique_id=416158283]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("232_41kg6")
+
+[node name="Chunk_16_05" type="StaticBody3D" parent="." unique_id=532565353]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1792, 0, -384)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_16_05" unique_id=2011121833]
+cast_shadow = 0
+mesh = ExtResource("233_2oune")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_16_05" unique_id=405043542]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("234_pwcqb")
+
+[node name="Chunk_17_05" type="StaticBody3D" parent="." unique_id=1950722256]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2048, 0, -384)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_17_05" unique_id=1157132320]
+cast_shadow = 0
+mesh = ExtResource("235_ph2e4")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_17_05" unique_id=1513056784]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("236_f5t26")
+
+[node name="Chunk_18_05" type="StaticBody3D" parent="." unique_id=1545372829]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2304, 0, -384)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_18_05" unique_id=508719384]
+cast_shadow = 0
+mesh = ExtResource("237_ne8us")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_18_05" unique_id=946045639]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("238_d6ysu")
+
+[node name="Chunk_00_06" type="StaticBody3D" parent="." unique_id=560415619]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2304, 0, -128)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_00_06" unique_id=332396016]
+cast_shadow = 0
+mesh = ExtResource("239_mlqwe")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_00_06" unique_id=393347741]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("240_0xk25")
+
+[node name="Chunk_01_06" type="StaticBody3D" parent="." unique_id=1795246702]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2048, 0, -128)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_01_06" unique_id=35964208]
+cast_shadow = 0
+mesh = ExtResource("241_fttph")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_01_06" unique_id=162042647]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("242_t0vve")
+
+[node name="Chunk_02_06" type="StaticBody3D" parent="." unique_id=1495157482]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1792, 0, -128)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_02_06" unique_id=2131614938]
+cast_shadow = 0
+mesh = ExtResource("243_y1p1k")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_02_06" unique_id=988093811]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("244_awae4")
+
+[node name="Chunk_03_06" type="StaticBody3D" parent="." unique_id=2005309676]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1536, 0, -128)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_03_06" unique_id=1080384932]
+cast_shadow = 0
+mesh = ExtResource("245_cxdim")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_03_06" unique_id=1521073509]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("246_g1hoc")
+
+[node name="Chunk_04_06" type="StaticBody3D" parent="." unique_id=1960540834]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1280, 0, -128)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_04_06" unique_id=705691533]
+cast_shadow = 0
+mesh = ExtResource("247_c0ooa")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_04_06" unique_id=1523066757]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("248_p3t2s")
+
+[node name="Chunk_05_06" type="StaticBody3D" parent="." unique_id=1405054210]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1024, 0, -128)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_05_06" unique_id=44169683]
+cast_shadow = 0
+mesh = ExtResource("249_hg2fs")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_05_06" unique_id=1746898870]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("250_j8qhl")
+
+[node name="Chunk_09_06" type="StaticBody3D" parent="." unique_id=1068622479]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -128)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_09_06" unique_id=527857929]
+cast_shadow = 0
+mesh = ExtResource("251_1fle0")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_09_06" unique_id=1346828349]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("252_bvn31")
+
+[node name="Chunk_10_06" type="StaticBody3D" parent="." unique_id=183175467]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 256, 0, -128)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_10_06" unique_id=1386350180]
+cast_shadow = 0
+mesh = ExtResource("253_w6i4e")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_10_06" unique_id=673638662]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("254_liymu")
+
+[node name="Chunk_11_06" type="StaticBody3D" parent="." unique_id=1394730918]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 512, 0, -128)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_11_06" unique_id=136749666]
+cast_shadow = 0
+mesh = ExtResource("255_dupq0")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_11_06" unique_id=606646034]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("256_rdu8n")
+
+[node name="Chunk_12_06" type="StaticBody3D" parent="." unique_id=511854250]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 768, 0, -128)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_12_06" unique_id=757799610]
+cast_shadow = 0
+mesh = ExtResource("257_7wbjr")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_12_06" unique_id=1969742157]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("258_1s26m")
+
+[node name="Chunk_13_06" type="StaticBody3D" parent="." unique_id=1796041361]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1024, 0, -128)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_13_06" unique_id=811175153]
+cast_shadow = 0
+mesh = ExtResource("259_ml4so")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_13_06" unique_id=359510501]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("260_jg6mn")
+
+[node name="Chunk_14_06" type="StaticBody3D" parent="." unique_id=1002686199]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1280, 0, -128)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_14_06" unique_id=333630782]
+cast_shadow = 0
+mesh = ExtResource("261_yi0dh")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_14_06" unique_id=1895136772]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("262_7mqmr")
+
+[node name="Chunk_15_06" type="StaticBody3D" parent="." unique_id=736121566]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1536, 0, -128)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_15_06" unique_id=1107151466]
+cast_shadow = 0
+mesh = ExtResource("263_4cwjy")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_15_06" unique_id=600842100]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("264_fftg6")
+
+[node name="Chunk_16_06" type="StaticBody3D" parent="." unique_id=167627111]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1792, 0, -128)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_16_06" unique_id=349960710]
+cast_shadow = 0
+mesh = ExtResource("265_a2r10")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_16_06" unique_id=83928042]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("266_4jdki")
+
+[node name="Chunk_17_06" type="StaticBody3D" parent="." unique_id=1006130989]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2048, 0, -128)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_17_06" unique_id=2051124743]
+cast_shadow = 0
+mesh = ExtResource("267_chuqf")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_17_06" unique_id=554520742]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("268_6x3s8")
+
+[node name="Chunk_18_06" type="StaticBody3D" parent="." unique_id=2027013571]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2304, 0, -128)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_18_06" unique_id=1144909741]
+cast_shadow = 0
+mesh = ExtResource("269_3t82p")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_18_06" unique_id=2085290779]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("270_7jjbg")
+
+[node name="Roof" type="MeshInstance3D" parent="Chunk_18_06" unique_id=1027592018]
+cast_shadow = 0
+mesh = ExtResource("271_r4pm5")
+
+[node name="RoofShape" type="CollisionShape3D" parent="Chunk_18_06" unique_id=621263785]
+shape = ExtResource("272_qubs3")
+
+[node name="Chunk_00_07" type="StaticBody3D" parent="." unique_id=566193603]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2304, 0, 128)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_00_07" unique_id=1499500773]
+cast_shadow = 0
+mesh = ExtResource("273_niiva")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_00_07" unique_id=46654018]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("274_dkfyx")
+
+[node name="Chunk_01_07" type="StaticBody3D" parent="." unique_id=1932330286]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2048, 0, 128)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_01_07" unique_id=1923512486]
+cast_shadow = 0
+mesh = ExtResource("275_ailc6")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_01_07" unique_id=1758303930]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("276_xmr6f")
+
+[node name="Chunk_02_07" type="StaticBody3D" parent="." unique_id=1594387504]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1792, 0, 128)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_02_07" unique_id=2123815588]
+cast_shadow = 0
+mesh = ExtResource("277_q1vcf")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_02_07" unique_id=1948688874]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("278_x3j54")
+
+[node name="Chunk_03_07" type="StaticBody3D" parent="." unique_id=1366514099]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1536, 0, 128)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_03_07" unique_id=1885113219]
+cast_shadow = 0
+mesh = ExtResource("279_jm8s6")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_03_07" unique_id=295303170]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("280_f3m72")
+
+[node name="Chunk_04_07" type="StaticBody3D" parent="." unique_id=1242160232]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1280, 0, 128)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_04_07" unique_id=1166308972]
+cast_shadow = 0
+mesh = ExtResource("281_jxmsd")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_04_07" unique_id=1606335884]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("282_qy2li")
+
+[node name="Chunk_05_07" type="StaticBody3D" parent="." unique_id=288709682]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1024, 0, 128)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_05_07" unique_id=974647503]
+cast_shadow = 0
+mesh = ExtResource("283_un7dw")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_05_07" unique_id=1515826888]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("284_obf2m")
+
+[node name="Chunk_06_07" type="StaticBody3D" parent="." unique_id=329635148]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -768, 0, 128)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_06_07" unique_id=1782652427]
+cast_shadow = 0
+mesh = ExtResource("285_8joxv")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_06_07" unique_id=871040468]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("286_0ne01")
+
+[node name="Chunk_07_07" type="StaticBody3D" parent="." unique_id=2083033931]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -512, 0, 128)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_07_07" unique_id=491633313]
+cast_shadow = 0
+mesh = ExtResource("287_a3tfm")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_07_07" unique_id=1874043225]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("288_vvbcs")
+
+[node name="Chunk_08_07" type="StaticBody3D" parent="." unique_id=1102247575]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -256, 0, 128)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_08_07" unique_id=1416461778]
+cast_shadow = 0
+mesh = ExtResource("289_b6lxw")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_08_07" unique_id=1393826476]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("290_8dwik")
+
+[node name="Chunk_09_07" type="StaticBody3D" parent="." unique_id=1278207807]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 128)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_09_07" unique_id=1724010586]
+cast_shadow = 0
+mesh = ExtResource("291_a4amt")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_09_07" unique_id=94062190]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("292_keca7")
+
+[node name="Chunk_10_07" type="StaticBody3D" parent="." unique_id=379297231]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 256, 0, 128)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_10_07" unique_id=892300997]
+cast_shadow = 0
+mesh = ExtResource("293_sf44q")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_10_07" unique_id=1509254978]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("294_x4mtm")
+
+[node name="Chunk_11_07" type="StaticBody3D" parent="." unique_id=1517354693]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 512, 0, 128)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_11_07" unique_id=1794319047]
+cast_shadow = 0
+mesh = ExtResource("295_nksko")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_11_07" unique_id=874845508]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("296_ie87w")
+
+[node name="Chunk_12_07" type="StaticBody3D" parent="." unique_id=1582903674]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 768, 0, 128)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_12_07" unique_id=1261311661]
+cast_shadow = 0
+mesh = ExtResource("297_nqguc")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_12_07" unique_id=731230432]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("298_u6c75")
+
+[node name="Chunk_13_07" type="StaticBody3D" parent="." unique_id=1221200503]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1024, 0, 128)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_13_07" unique_id=1763700718]
+cast_shadow = 0
+mesh = ExtResource("299_1vdtf")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_13_07" unique_id=943324839]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("300_hrqed")
+
+[node name="Chunk_14_07" type="StaticBody3D" parent="." unique_id=1449492001]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1280, 0, 128)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_14_07" unique_id=114249731]
+cast_shadow = 0
+mesh = ExtResource("301_ui85x")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_14_07" unique_id=745944184]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("302_im7v3")
+
+[node name="Chunk_15_07" type="StaticBody3D" parent="." unique_id=2101502251]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1536, 0, 128)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_15_07" unique_id=499239775]
+cast_shadow = 0
+mesh = ExtResource("303_milwp")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_15_07" unique_id=1151010287]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("304_hm8b5")
+
+[node name="Chunk_16_07" type="StaticBody3D" parent="." unique_id=512650100]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1792, 0, 128)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_16_07" unique_id=380851301]
+cast_shadow = 0
+mesh = ExtResource("305_brcwy")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_16_07" unique_id=1748285753]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("306_xq6ju")
+
+[node name="Chunk_17_07" type="StaticBody3D" parent="." unique_id=1446630046]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2048, 0, 128)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_17_07" unique_id=529224304]
+cast_shadow = 0
+mesh = ExtResource("307_qupo0")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_17_07" unique_id=115559018]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("308_wsjvf")
+
+[node name="Chunk_18_07" type="StaticBody3D" parent="." unique_id=1406294136]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2304, 0, 128)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_18_07" unique_id=718763950]
+cast_shadow = 0
+mesh = ExtResource("309_p3n0b")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_18_07" unique_id=1972637544]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("310_y5yn6")
+
+[node name="Chunk_00_08" type="StaticBody3D" parent="." unique_id=1879513424]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2304, 0, 384)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_00_08" unique_id=761110081]
+cast_shadow = 0
+mesh = ExtResource("311_qxpwx")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_00_08" unique_id=1951857985]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("312_i8b8v")
+
+[node name="Chunk_01_08" type="StaticBody3D" parent="." unique_id=1081509453]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2048, 0, 384)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_01_08" unique_id=403899495]
+cast_shadow = 0
+mesh = ExtResource("313_366f5")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_01_08" unique_id=639886652]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("314_qrmgq")
+
+[node name="Chunk_02_08" type="StaticBody3D" parent="." unique_id=1571172545]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1792, 0, 384)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_02_08" unique_id=1172944344]
+cast_shadow = 0
+mesh = ExtResource("315_goe0n")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_02_08" unique_id=922206674]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("316_6epjc")
+
+[node name="Chunk_03_08" type="StaticBody3D" parent="." unique_id=425429573]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1536, 0, 384)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_03_08" unique_id=2100790520]
+cast_shadow = 0
+mesh = ExtResource("317_sklho")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_03_08" unique_id=1750340164]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("318_i65n2")
+
+[node name="Chunk_04_08" type="StaticBody3D" parent="." unique_id=1682399766]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1280, 0, 384)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_04_08" unique_id=1331966390]
+cast_shadow = 0
+mesh = ExtResource("319_uv0ho")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_04_08" unique_id=1749349913]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("320_fbm58")
+
+[node name="Chunk_05_08" type="StaticBody3D" parent="." unique_id=1980629317]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1024, 0, 384)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_05_08" unique_id=836458013]
+cast_shadow = 0
+mesh = ExtResource("321_kqbit")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_05_08" unique_id=187932333]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("322_c5jqy")
+
+[node name="Chunk_06_08" type="StaticBody3D" parent="." unique_id=835951214]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -768, 0, 384)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_06_08" unique_id=1151341458]
+cast_shadow = 0
+mesh = ExtResource("323_1gnxd")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_06_08" unique_id=426245528]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("324_wws86")
+
+[node name="Chunk_07_08" type="StaticBody3D" parent="." unique_id=349927057]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -512, 0, 384)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_07_08" unique_id=1371594671]
+cast_shadow = 0
+mesh = ExtResource("325_p07r2")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_07_08" unique_id=1425896816]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("326_jxsm7")
+
+[node name="Chunk_08_08" type="StaticBody3D" parent="." unique_id=1539028268]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -256, 0, 384)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_08_08" unique_id=1355058552]
+cast_shadow = 0
+mesh = ExtResource("327_ygy05")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_08_08" unique_id=574143600]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("328_et6gk")
+
+[node name="Chunk_09_08" type="StaticBody3D" parent="." unique_id=1830146165]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 384)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_09_08" unique_id=1258658296]
+cast_shadow = 0
+mesh = ExtResource("329_bkgof")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_09_08" unique_id=1608695935]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("330_xw6nd")
+
+[node name="Chunk_10_08" type="StaticBody3D" parent="." unique_id=786544571]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 256, 0, 384)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_10_08" unique_id=895962607]
+cast_shadow = 0
+mesh = ExtResource("331_mlvtx")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_10_08" unique_id=968883276]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("332_gcm6e")
+
+[node name="Chunk_11_08" type="StaticBody3D" parent="." unique_id=1927751349]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 512, 0, 384)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_11_08" unique_id=493727668]
+cast_shadow = 0
+mesh = ExtResource("333_a5chp")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_11_08" unique_id=1808864677]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("334_8qeks")
+
+[node name="Chunk_12_08" type="StaticBody3D" parent="." unique_id=1391527961]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 768, 0, 384)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_12_08" unique_id=2116834012]
+cast_shadow = 0
+mesh = ExtResource("335_r3wv7")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_12_08" unique_id=403143716]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("336_vgw54")
+
+[node name="Chunk_13_08" type="StaticBody3D" parent="." unique_id=1253433047]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1024, 0, 384)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_13_08" unique_id=1368912342]
+cast_shadow = 0
+mesh = ExtResource("337_pn1or")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_13_08" unique_id=1162303231]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("338_l5ysl")
+
+[node name="Chunk_14_08" type="StaticBody3D" parent="." unique_id=310459549]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1280, 0, 384)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_14_08" unique_id=1085457412]
+cast_shadow = 0
+mesh = ExtResource("339_nlr2x")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_14_08" unique_id=1215150856]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("340_p80ro")
+
+[node name="Chunk_15_08" type="StaticBody3D" parent="." unique_id=623283059]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1536, 0, 384)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_15_08" unique_id=2010321219]
+cast_shadow = 0
+mesh = ExtResource("341_ifb7i")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_15_08" unique_id=177368061]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("342_n8tqo")
+
+[node name="Chunk_16_08" type="StaticBody3D" parent="." unique_id=372711857]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1792, 0, 384)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_16_08" unique_id=1075479448]
+cast_shadow = 0
+mesh = ExtResource("343_b0rrx")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_16_08" unique_id=2094624231]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("344_66xiw")
+
+[node name="Chunk_17_08" type="StaticBody3D" parent="." unique_id=1620604665]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2048, 0, 384)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_17_08" unique_id=376539868]
+cast_shadow = 0
+mesh = ExtResource("345_5mi6m")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_17_08" unique_id=587222380]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("346_ote1w")
+
+[node name="Chunk_18_08" type="StaticBody3D" parent="." unique_id=1824303826]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2304, 0, 384)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_18_08" unique_id=805911974]
+cast_shadow = 0
+mesh = ExtResource("347_vdjrk")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_18_08" unique_id=896918538]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("348_5tihq")
+
+[node name="Roof" type="MeshInstance3D" parent="Chunk_18_08" unique_id=1266596766]
+cast_shadow = 0
+mesh = ExtResource("349_k7a0c")
+
+[node name="RoofShape" type="CollisionShape3D" parent="Chunk_18_08" unique_id=1393485386]
+shape = ExtResource("350_1iygn")
+
+[node name="Chunk_00_09" type="StaticBody3D" parent="." unique_id=1787029094]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2304, 0, 640)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_00_09" unique_id=576695286]
+cast_shadow = 0
+mesh = ExtResource("351_fvmxp")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_00_09" unique_id=509572048]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("352_a51qx")
+
+[node name="Roof" type="MeshInstance3D" parent="Chunk_00_09" unique_id=1627339083]
+cast_shadow = 0
+mesh = ExtResource("353_dqovf")
+
+[node name="RoofShape" type="CollisionShape3D" parent="Chunk_00_09" unique_id=651688834]
+shape = ExtResource("354_og2xv")
+
+[node name="Chunk_01_09" type="StaticBody3D" parent="." unique_id=1755270671]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2048, 0, 640)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_01_09" unique_id=2111907128]
+cast_shadow = 0
+mesh = ExtResource("355_dnn0o")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_01_09" unique_id=1560368250]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("356_cfgkr")
+
+[node name="Chunk_02_09" type="StaticBody3D" parent="." unique_id=1522240262]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1792, 0, 640)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_02_09" unique_id=770651346]
+cast_shadow = 0
+mesh = ExtResource("357_cs47v")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_02_09" unique_id=1236127144]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("358_yg4fr")
+
+[node name="Chunk_03_09" type="StaticBody3D" parent="." unique_id=1109851782]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1536, 0, 640)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_03_09" unique_id=730780389]
+cast_shadow = 0
+mesh = ExtResource("359_v5b7o")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_03_09" unique_id=1665950185]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("360_8yckp")
+
+[node name="Chunk_04_09" type="StaticBody3D" parent="." unique_id=1087168432]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1280, 0, 640)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_04_09" unique_id=857693553]
+cast_shadow = 0
+mesh = ExtResource("361_e57nc")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_04_09" unique_id=952524886]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("362_tiekn")
+
+[node name="Chunk_05_09" type="StaticBody3D" parent="." unique_id=920780486]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1024, 0, 640)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_05_09" unique_id=2138081258]
+cast_shadow = 0
+mesh = ExtResource("363_1ovrs")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_05_09" unique_id=1707184427]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("364_5jouv")
+
+[node name="Chunk_06_09" type="StaticBody3D" parent="." unique_id=580807179]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -768, 0, 640)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_06_09" unique_id=1242662836]
+cast_shadow = 0
+mesh = ExtResource("365_r1222")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_06_09" unique_id=693557606]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("366_l4t56")
+
+[node name="Chunk_07_09" type="StaticBody3D" parent="." unique_id=585925999]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -512, 0, 640)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_07_09" unique_id=921316762]
+cast_shadow = 0
+mesh = ExtResource("367_tgko5")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_07_09" unique_id=625201233]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("368_as3iq")
+
+[node name="Chunk_08_09" type="StaticBody3D" parent="." unique_id=1607144793]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -256, 0, 640)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_08_09" unique_id=1535127846]
+cast_shadow = 0
+mesh = ExtResource("369_2foou")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_08_09" unique_id=1152665365]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("370_g5biy")
+
+[node name="Chunk_09_09" type="StaticBody3D" parent="." unique_id=244501704]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 640)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_09_09" unique_id=153695045]
+cast_shadow = 0
+mesh = ExtResource("371_3rn4f")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_09_09" unique_id=2050542563]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("372_h4geo")
+
+[node name="Chunk_10_09" type="StaticBody3D" parent="." unique_id=782413062]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 256, 0, 640)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_10_09" unique_id=674093058]
+cast_shadow = 0
+mesh = ExtResource("373_1ps0k")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_10_09" unique_id=696427579]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("374_c06wu")
+
+[node name="Chunk_11_09" type="StaticBody3D" parent="." unique_id=2001996867]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 512, 0, 640)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_11_09" unique_id=1110271476]
+cast_shadow = 0
+mesh = ExtResource("375_r8ydx")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_11_09" unique_id=324379051]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("376_02syi")
+
+[node name="Chunk_12_09" type="StaticBody3D" parent="." unique_id=794388150]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 768, 0, 640)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_12_09" unique_id=2080646154]
+cast_shadow = 0
+mesh = ExtResource("377_17ewx")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_12_09" unique_id=1650141716]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("378_ycd7y")
+
+[node name="Chunk_13_09" type="StaticBody3D" parent="." unique_id=1908250330]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1024, 0, 640)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_13_09" unique_id=1240552046]
+cast_shadow = 0
+mesh = ExtResource("379_5l60q")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_13_09" unique_id=1350290483]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("380_vevp7")
+
+[node name="Chunk_14_09" type="StaticBody3D" parent="." unique_id=1942764103]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1280, 0, 640)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_14_09" unique_id=1767213838]
+cast_shadow = 0
+mesh = ExtResource("381_sxcu3")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_14_09" unique_id=785623697]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("382_n1lso")
+
+[node name="Chunk_15_09" type="StaticBody3D" parent="." unique_id=922992260]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1536, 0, 640)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_15_09" unique_id=1194523981]
+cast_shadow = 0
+mesh = ExtResource("383_iq0u4")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_15_09" unique_id=9604265]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("384_81d0s")
+
+[node name="Chunk_16_09" type="StaticBody3D" parent="." unique_id=1068185850]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1792, 0, 640)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_16_09" unique_id=1817203885]
+cast_shadow = 0
+mesh = ExtResource("385_u8fy7")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_16_09" unique_id=830138765]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("386_62b86")
+
+[node name="Chunk_17_09" type="StaticBody3D" parent="." unique_id=532468902]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2048, 0, 640)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_17_09" unique_id=351754728]
+cast_shadow = 0
+mesh = ExtResource("387_8s12r")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_17_09" unique_id=714374683]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("388_eqfj6")
+
+[node name="Chunk_18_09" type="StaticBody3D" parent="." unique_id=2026410917]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2304, 0, 640)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_18_09" unique_id=277343680]
+cast_shadow = 0
+mesh = ExtResource("389_baliu")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_18_09" unique_id=328810437]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("390_saiw6")
+
+[node name="Chunk_00_10" type="StaticBody3D" parent="." unique_id=291490302]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2304, 0, 896)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_00_10" unique_id=1926255542]
+cast_shadow = 0
+mesh = ExtResource("391_7pgxa")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_00_10" unique_id=50331597]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("392_t5fu2")
+
+[node name="Chunk_01_10" type="StaticBody3D" parent="." unique_id=1534783219]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2048, 0, 896)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_01_10" unique_id=265409814]
+cast_shadow = 0
+mesh = ExtResource("393_nu10p")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_01_10" unique_id=26040666]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("394_al6fk")
+
+[node name="Chunk_02_10" type="StaticBody3D" parent="." unique_id=1749060568]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1792, 0, 896)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_02_10" unique_id=1617822154]
+cast_shadow = 0
+mesh = ExtResource("395_xpucn")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_02_10" unique_id=1837829006]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("396_ey5n4")
+
+[node name="Chunk_03_10" type="StaticBody3D" parent="." unique_id=1033119118]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1536, 0, 896)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_03_10" unique_id=1491384507]
+cast_shadow = 0
+mesh = ExtResource("397_wbw4p")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_03_10" unique_id=953636683]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("398_sboiw")
+
+[node name="Chunk_04_10" type="StaticBody3D" parent="." unique_id=184708311]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1280, 0, 896)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_04_10" unique_id=542198646]
+cast_shadow = 0
+mesh = ExtResource("399_qyyt8")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_04_10" unique_id=1761942517]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("400_xby05")
+
+[node name="Chunk_05_10" type="StaticBody3D" parent="." unique_id=88480330]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1024, 0, 896)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_05_10" unique_id=91554081]
+cast_shadow = 0
+mesh = ExtResource("401_wyorb")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_05_10" unique_id=1781269956]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("402_of2f1")
+
+[node name="Roof" type="MeshInstance3D" parent="Chunk_05_10" unique_id=288942875]
+cast_shadow = 0
+mesh = ExtResource("403_un5qq")
+
+[node name="RoofShape" type="CollisionShape3D" parent="Chunk_05_10" unique_id=1695881051]
+shape = ExtResource("404_1q2ds")
+
+[node name="Chunk_06_10" type="StaticBody3D" parent="." unique_id=87324988]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -768, 0, 896)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_06_10" unique_id=195995028]
+cast_shadow = 0
+mesh = ExtResource("405_j73qh")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_06_10" unique_id=398312885]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("406_vn0s4")
+
+[node name="Chunk_07_10" type="StaticBody3D" parent="." unique_id=1769370368]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -512, 0, 896)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_07_10" unique_id=660014272]
+cast_shadow = 0
+mesh = ExtResource("407_i17sb")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_07_10" unique_id=1579189686]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("408_11ltk")
+
+[node name="Chunk_08_10" type="StaticBody3D" parent="." unique_id=1801989883]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -256, 0, 896)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_08_10" unique_id=167241306]
+cast_shadow = 0
+mesh = ExtResource("409_74a8n")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_08_10" unique_id=1780710252]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("410_kq7eq")
+
+[node name="Roof" type="MeshInstance3D" parent="Chunk_08_10" unique_id=149424424]
+cast_shadow = 0
+mesh = ExtResource("411_qxled")
+
+[node name="RoofShape" type="CollisionShape3D" parent="Chunk_08_10" unique_id=1439294848]
+shape = ExtResource("412_hsirj")
+
+[node name="Chunk_09_10" type="StaticBody3D" parent="." unique_id=1557828324]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 896)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_09_10" unique_id=1410761393]
+cast_shadow = 0
+mesh = ExtResource("413_k8fex")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_09_10" unique_id=1374485671]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("414_x2k1c")
+
+[node name="Chunk_10_10" type="StaticBody3D" parent="." unique_id=1800301024]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 256, 0, 896)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_10_10" unique_id=152546128]
+cast_shadow = 0
+mesh = ExtResource("415_nbmnv")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_10_10" unique_id=1531988801]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("416_785lp")
+
+[node name="Chunk_11_10" type="StaticBody3D" parent="." unique_id=1564461832]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 512, 0, 896)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_11_10" unique_id=632018464]
+cast_shadow = 0
+mesh = ExtResource("417_wwbf0")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_11_10" unique_id=1509246385]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("418_rfn4k")
+
+[node name="Chunk_12_10" type="StaticBody3D" parent="." unique_id=390607040]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 768, 0, 896)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_12_10" unique_id=1408097077]
+cast_shadow = 0
+mesh = ExtResource("419_18x06")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_12_10" unique_id=326943972]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("420_we84n")
+
+[node name="Chunk_13_10" type="StaticBody3D" parent="." unique_id=1865424184]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1024, 0, 896)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_13_10" unique_id=2131127996]
+cast_shadow = 0
+mesh = ExtResource("421_v0874")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_13_10" unique_id=1038627545]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("422_dlawp")
+
+[node name="Chunk_14_10" type="StaticBody3D" parent="." unique_id=677725914]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1280, 0, 896)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_14_10" unique_id=1306615204]
+cast_shadow = 0
+mesh = ExtResource("423_d0rlf")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_14_10" unique_id=1713022813]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("424_gj5oj")
+
+[node name="Chunk_15_10" type="StaticBody3D" parent="." unique_id=970570919]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1536, 0, 896)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_15_10" unique_id=1310669960]
+cast_shadow = 0
+mesh = ExtResource("425_fpw3e")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_15_10" unique_id=1593030805]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("426_fmn1d")
+
+[node name="Roof" type="MeshInstance3D" parent="Chunk_15_10" unique_id=620623647]
+cast_shadow = 0
+mesh = ExtResource("427_olmht")
+
+[node name="RoofShape" type="CollisionShape3D" parent="Chunk_15_10" unique_id=1544373289]
+shape = ExtResource("428_nmqmx")
+
+[node name="Chunk_16_10" type="StaticBody3D" parent="." unique_id=59100731]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1792, 0, 896)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_16_10" unique_id=255230675]
+cast_shadow = 0
+mesh = ExtResource("429_kunmg")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_16_10" unique_id=17605287]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("430_il5au")
+
+[node name="Chunk_17_10" type="StaticBody3D" parent="." unique_id=405251728]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2048, 0, 896)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_17_10" unique_id=87970588]
+cast_shadow = 0
+mesh = ExtResource("431_sgyp6")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_17_10" unique_id=164729218]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("432_nsuu0")
+
+[node name="Chunk_18_10" type="StaticBody3D" parent="." unique_id=94847434]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2304, 0, 896)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_18_10" unique_id=1329733027]
+cast_shadow = 0
+mesh = ExtResource("433_5xo24")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_18_10" unique_id=836190957]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("434_xstkb")
+
+[node name="Chunk_00_11" type="StaticBody3D" parent="." unique_id=1732635744]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2304, 0, 1152)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_00_11" unique_id=2104804326]
+cast_shadow = 0
+mesh = ExtResource("435_3ykbd")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_00_11" unique_id=1968007334]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("436_hiama")
+
+[node name="Chunk_01_11" type="StaticBody3D" parent="." unique_id=1123176509]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2048, 0, 1152)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_01_11" unique_id=521273700]
+cast_shadow = 0
+mesh = ExtResource("437_fob31")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_01_11" unique_id=1568065040]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("438_37xrn")
+
+[node name="Chunk_02_11" type="StaticBody3D" parent="." unique_id=363652652]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1792, 0, 1152)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_02_11" unique_id=1773825585]
+cast_shadow = 0
+mesh = ExtResource("439_q5f3x")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_02_11" unique_id=742605524]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("440_km6j5")
+
+[node name="Chunk_03_11" type="StaticBody3D" parent="." unique_id=827652963]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1536, 0, 1152)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_03_11" unique_id=1992869107]
+cast_shadow = 0
+mesh = ExtResource("441_52n2d")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_03_11" unique_id=261172866]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("442_pgrn0")
+
+[node name="Chunk_04_11" type="StaticBody3D" parent="." unique_id=1441004529]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1280, 0, 1152)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_04_11" unique_id=208608444]
+cast_shadow = 0
+mesh = ExtResource("443_0ebk8")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_04_11" unique_id=1995806716]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("444_t5u2m")
+
+[node name="Chunk_05_11" type="StaticBody3D" parent="." unique_id=1377258103]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1024, 0, 1152)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_05_11" unique_id=495418767]
+cast_shadow = 0
+mesh = ExtResource("445_qdb2g")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_05_11" unique_id=1222100414]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("446_ere56")
+
+[node name="Roof" type="MeshInstance3D" parent="Chunk_05_11" unique_id=101394683]
+cast_shadow = 0
+mesh = ExtResource("447_pvns5")
+
+[node name="RoofShape" type="CollisionShape3D" parent="Chunk_05_11" unique_id=690625661]
+shape = ExtResource("448_behof")
+
+[node name="Chunk_06_11" type="StaticBody3D" parent="." unique_id=1054935684]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -768, 0, 1152)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_06_11" unique_id=34669343]
+cast_shadow = 0
+mesh = ExtResource("449_7tm5r")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_06_11" unique_id=1874499512]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("450_8rq00")
+
+[node name="Chunk_07_11" type="StaticBody3D" parent="." unique_id=728485693]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -512, 0, 1152)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_07_11" unique_id=1653566545]
+cast_shadow = 0
+mesh = ExtResource("451_vcs64")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_07_11" unique_id=904875999]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("452_j410s")
+
+[node name="Chunk_08_11" type="StaticBody3D" parent="." unique_id=1789032242]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -256, 0, 1152)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_08_11" unique_id=938952974]
+cast_shadow = 0
+mesh = ExtResource("453_l28e4")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_08_11" unique_id=547913159]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("454_d0soy")
+
+[node name="Roof" type="MeshInstance3D" parent="Chunk_08_11" unique_id=979480872]
+cast_shadow = 0
+mesh = ExtResource("455_6mud0")
+
+[node name="RoofShape" type="CollisionShape3D" parent="Chunk_08_11" unique_id=23942612]
+shape = ExtResource("456_hcftt")
+
+[node name="Chunk_09_11" type="StaticBody3D" parent="." unique_id=1962209429]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1152)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_09_11" unique_id=1536053194]
+cast_shadow = 0
+mesh = ExtResource("457_nswe5")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_09_11" unique_id=1795993388]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("458_qpewj")
+
+[node name="Chunk_10_11" type="StaticBody3D" parent="." unique_id=424940375]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 256, 0, 1152)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_10_11" unique_id=1987840623]
+cast_shadow = 0
+mesh = ExtResource("459_h4i2n")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_10_11" unique_id=640836278]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("460_85mer")
+
+[node name="Chunk_11_11" type="StaticBody3D" parent="." unique_id=1308448078]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 512, 0, 1152)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_11_11" unique_id=649875160]
+cast_shadow = 0
+mesh = ExtResource("461_fpcq5")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_11_11" unique_id=742004544]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("462_g153r")
+
+[node name="Chunk_12_11" type="StaticBody3D" parent="." unique_id=2048966229]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 768, 0, 1152)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_12_11" unique_id=1899561719]
+cast_shadow = 0
+mesh = ExtResource("463_yw2vt")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_12_11" unique_id=598580730]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("464_k6sqk")
+
+[node name="Chunk_13_11" type="StaticBody3D" parent="." unique_id=61378120]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1024, 0, 1152)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_13_11" unique_id=950468373]
+cast_shadow = 0
+mesh = ExtResource("465_ildsb")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_13_11" unique_id=1039030382]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("466_bnc47")
+
+[node name="Chunk_14_11" type="StaticBody3D" parent="." unique_id=1597634346]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1280, 0, 1152)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_14_11" unique_id=1577903330]
+cast_shadow = 0
+mesh = ExtResource("467_lbcua")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_14_11" unique_id=1291693110]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("468_0m7rj")
+
+[node name="Chunk_15_11" type="StaticBody3D" parent="." unique_id=16214306]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1536, 0, 1152)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_15_11" unique_id=455395192]
+cast_shadow = 0
+mesh = ExtResource("469_wwddl")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_15_11" unique_id=243032783]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("470_48ma2")
+
+[node name="Roof" type="MeshInstance3D" parent="Chunk_15_11" unique_id=296362149]
+cast_shadow = 0
+mesh = ExtResource("471_wtolk")
+
+[node name="RoofShape" type="CollisionShape3D" parent="Chunk_15_11" unique_id=1846748957]
+shape = ExtResource("472_8xhum")
+
+[node name="Chunk_16_11" type="StaticBody3D" parent="." unique_id=1411160659]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1792, 0, 1152)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_16_11" unique_id=2049406256]
+cast_shadow = 0
+mesh = ExtResource("473_4w4qq")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_16_11" unique_id=337350706]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("474_qtxsk")
+
+[node name="Chunk_17_11" type="StaticBody3D" parent="." unique_id=1235114806]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2048, 0, 1152)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_17_11" unique_id=1877035725]
+cast_shadow = 0
+mesh = ExtResource("475_6slvg")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_17_11" unique_id=885543655]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("476_cw27y")
+
+[node name="Chunk_18_11" type="StaticBody3D" parent="." unique_id=2027427054]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2304, 0, 1152)
+
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_18_11" unique_id=943690941]
+cast_shadow = 0
+mesh = ExtResource("477_otji5")
+
+[node name="Shape" type="CollisionShape3D" parent="Chunk_18_11" unique_id=1069285500]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+shape = ExtResource("478_177x5")
+
+[node name="HarborWalls" type="Node3D" parent="." unique_id=827578165]
+
+[node name="MurOuest" type="StaticBody3D" parent="HarborWalls" unique_id=1645295142]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -500.6, -4.75, -572)
+
+[node name="Mesh" type="MeshInstance3D" parent="HarborWalls/MurOuest" unique_id=2035264750]
+material_override = ExtResource("479_xcvbu")
+mesh = SubResource("BoxMesh_gu0am")
+
+[node name="Shape" type="CollisionShape3D" parent="HarborWalls/MurOuest" unique_id=63459072]
+shape = SubResource("BoxShape3D_55v76")
+
+[node name="MurEst" type="StaticBody3D" parent="HarborWalls" unique_id=243359117]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.6, -4.75, -572)
+
+[node name="Mesh" type="MeshInstance3D" parent="HarborWalls/MurEst" unique_id=1760301561]
+material_override = ExtResource("479_xcvbu")
+mesh = SubResource("BoxMesh_n24ye")
+
+[node name="Shape" type="CollisionShape3D" parent="HarborWalls/MurEst" unique_id=470221481]
+shape = SubResource("BoxShape3D_n0my6")
+
+[node name="MurNord" type="StaticBody3D" parent="HarborWalls" unique_id=71953784]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -250, -4.75, -650.6)
+
+[node name="Mesh" type="MeshInstance3D" parent="HarborWalls/MurNord" unique_id=1972587683]
+material_override = ExtResource("479_xcvbu")
+mesh = SubResource("BoxMesh_fhs4f")
+
+[node name="Shape" type="CollisionShape3D" parent="HarborWalls/MurNord" unique_id=405294582]
+shape = SubResource("BoxShape3D_sorq7")

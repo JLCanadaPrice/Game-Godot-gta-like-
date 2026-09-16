@@ -4,7 +4,8 @@ extends SceneTree
 # chaque zone : maisons, commerces, bureaux, entrepôts ou fermes selon le type de zone, modèles du pack EverythingLibrary
 # (data/building_catalog.json, tailles réelles), façade (+Z du modèle, vérifiée au rendu) tournée vers la rue.
 #  - lots : grille d'occupation de 4 m (routes et talus, eau, voie ferrée, centre-ville et lieux réservés avec marge, lots
-#    déjà posés), emprise entière dans la zone, pente modérée, sol proche du niveau de la route ;
+#    déjà posés), emprise entière dans la zone, pente modérée, sol proche du niveau de la route ; maisons en éventail
+#    autour des culs-de-sac ; teinte propre à chaque bâtiment (couleur d'instance) ;
 #  - terrain : generated/terrain/heights_roads.res (écrit par RoadBake) aplani sous chaque lot -> heights.res, recuit
 #    ensuite par TerrainBake --from-heights ; les cellules des routes ne sont jamais modifiées ;
 #  - modèles : sous-maillages fusionnés avec leurs transformations en un seul maillage à niveaux de détail et un seul
@@ -52,7 +53,7 @@ const MIX := {
 	"suburb": {"street": [[HOUSES_SUBURB, 1.0]], "arterial": [[HOUSES_SUBURB, 0.75], [SHOPS, 0.25]], "gap": 1.0},
 	"residential": {"street": [[HOUSES_TOWN, 1.0]], "arterial": [[HOUSES_TOWN, 0.6], [SHOPS, 0.4]], "gap": 0.7},
 	"mixed": {"street": [[HOUSES_TOWN, 0.8], [LOFTS, 0.2]], "arterial": [[CENTER, 0.65], [SHOPS, 0.35]], "gap": 0.8},
-	"industrial": {"street": [], "arterial": [[INDUSTRY, 1.0]], "gap": 0.8},
+	"industrial": {"street": [[INDUSTRY, 1.0]], "arterial": [[INDUSTRY, 1.0]], "gap": 0.8},
 	"farmland": {"street": [], "arterial": [[FARMS, 1.0]], "gap": 8.0},
 }
 const SETBACK := {"house": 8.0, "commerce": 12.0, "office": 12.0, "service": 12.0, "industry": 14.0, "farm": 16.0}
@@ -80,6 +81,7 @@ var baked := {}                          # nom -> {"mesh": Mesh, "aabb": AABB, "
 var material: StandardMaterial3D
 var lots: Array[Dictionary] = []
 var refused := {"zone": 0, "occupation": 0, "pente": 0, "route": 0}
+var tint_rng := RandomNumberGenerator.new()
 var _mv := PackedVector3Array()
 var _mn := PackedVector3Array()
 var _mc := PackedColorArray()
@@ -118,23 +120,26 @@ func _initialize() -> void:
 	print("DISTRICTS masque %dx%d en %.1f s" % [mask_w, mask_h, (Time.get_ticks_msec() - t0) / 1000.0])
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 424242
+	tint_rng.seed = 777
 	for zone: Dictionary in Spec.ZONES:
 		var mix: Dictionary = MIX.get(zone["type"], {})
 		if mix.is_empty():
 			continue
 		var poly := Spec.zone_polygon(zone)
-		for street: Dictionary in net.local_streets:
-			if street["zone"] != zone["id"] or (mix["street"] as Array).is_empty():
-				continue
-			var srb = street["ribbon"]
-			for side_sign: float in [-1.0, 1.0]:
-				_frontage(srb.points, side_sign, float(srb.width) * 0.5, mix["street"], float(mix["gap"]), poly, zone, rng, 14.0)
+		# grands axes d'abord (commerces, bureaux), puis rues locales (maisons, entrepôts)
 		for rb in net.ribbons:
 			if rb.kind != "arterial" or not rb.mesh or String(rb.id).begins_with("rue_") or rb.style == "dirt":
 				continue
 			var offset: float = float(rb.width) * 0.5 + (Network.SIDEWALK_WIDTH if rb.style == "urban" else 1.0)
 			for side_sign: float in [-1.0, 1.0]:
 				_frontage(rb.points, side_sign, offset, mix["arterial"], float(mix["gap"]), poly, zone, rng, 30.0)
+		for street: Dictionary in net.local_streets:
+			if street["zone"] != zone["id"] or (mix["street"] as Array).is_empty():
+				continue
+			var srb = street["ribbon"]
+			_cul_de_sac(srb, mix["street"], poly, zone, rng)
+			for side_sign: float in [-1.0, 1.0]:
+				_frontage(srb.points, side_sign, float(srb.width) * 0.5, mix["street"], float(mix["gap"]), poly, zone, rng, 14.0)
 	ResourceSaver.save(Image.create_from_data(model.width, model.depth, false, Image.FORMAT_RF, heights.to_byte_array()), GEN + "/terrain/heights.res")
 	material = _material()
 	var scene_stats := _write_scene()
@@ -297,8 +302,31 @@ func _try_lot(center: Vector2, front: Vector2, entry: Dictionary, size: Vector3,
 	_mask_mark(center, right, front, half + Vector2(2.0, 2.0))
 	_flatten(center, right, front, Vector2(size.x * 0.5, size.z * 0.5), base)
 	lots.append({"name": entry["name"], "use": use, "zone": zone["id"], "x": snappedf(center.x, 0.01), "z": snappedf(center.y, 0.01),
-			"base": snappedf(base, 0.01), "yaw": snappedf(atan2(front.x, front.y), 0.0001), "size": [size.x, size.y, size.z]})
+			"base": snappedf(base, 0.01), "yaw": snappedf(atan2(front.x, front.y), 0.0001), "size": [size.x, size.y, size.z], "tint": _tint(use)})
 	return true
+
+
+# Teinte par bâtiment (multipliée aux couleurs de sommet) : luminosité et nuance chaude ou froide, plus marquées sur
+# les maisons, pour que deux modèles identiques voisins ne se ressemblent pas.
+func _tint(use: String) -> Array:
+	var light := tint_rng.randf_range(0.86, 1.06) if use == "house" else tint_rng.randf_range(0.92, 1.04)
+	var shade := tint_rng.randf_range(-0.04, 0.04) if use == "house" else 0.0
+	return [snappedf(light * (1.0 + shade), 0.001), snappedf(light, 0.001), snappedf(light * (1.0 - shade), 0.001)]
+
+
+# Maisons autour du plateau de demi-tour d'une rue locale : dans l'axe de la rue et de part et d'autre, façade vers le
+# centre du plateau.
+func _cul_de_sac(rb, groups: Array, poly: PackedVector2Array, zone: Dictionary, rng: RandomNumberGenerator) -> void:
+	var pts: PackedVector3Array = rb.points
+	var n := pts.size()
+	var tip := Vector2(pts[n - 1].x, pts[n - 1].z)
+	var dir := (tip - Vector2(pts[n - 2].x, pts[n - 2].z)).normalized()
+	for angle: float in [0.0, -1.15, 1.15]:
+		var entry: Dictionary = catalog[_pick(groups, rng)]
+		var size := Vector3(float(entry["size"][0]), float(entry["size"][1]), float(entry["size"][2]))
+		var out := dir.rotated(angle)
+		var center := tip + out * (float(rb.width) * 0.5 + 5.0 + 9.0 + size.z * 0.5)
+		_try_lot(center, -out, entry, size, poly, zone, pts[n - 1].y)
 
 
 # Cellules de la grille d'occupation dont le centre tombe dans le rectangle orienté (élargi d'une demi-cellule).
@@ -510,8 +538,9 @@ func _write_scene() -> Dictionary:
 				ranges.append(float(RANGE[lot["use"]]))
 				bounds.append(Rect2(Vector2(center.x, center.z), Vector2.ZERO))
 			var buffer := data[m]
+			var tint: Array = lot["tint"]
 			buffer.append_array(PackedFloat32Array([basis.x.x, basis.x.y, basis.x.z, basis.y.x, basis.y.y, basis.y.z,
-					basis.z.x, basis.z.y, basis.z.z, origin.x, origin.y, origin.z]))
+					basis.z.x, basis.z.y, basis.z.z, origin.x, origin.y, origin.z, tint[0], tint[1], tint[2], 1.0]))
 			data[m] = buffer
 			bounds[m] = bounds[m].expand(Vector2(center.x, center.z))
 			stats["triangles"] += int(info["triangles"])

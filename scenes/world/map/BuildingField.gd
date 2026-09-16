@@ -5,25 +5,30 @@ extends Node3D
 # positions, elles sont donc gardées ici en tableau). Collision et occulteurs sont des noeuds statiques à côté.
 
 @export var meshes: Array[Mesh] = []
-@export var instance_data: Array[PackedFloat32Array] = []   # par modèle : 12 flottants par bâtiment (base x, y, z, origine)
+# par modèle : STRIDE flottants par bâtiment (base x, y, z, origine, teinte r, g, b, a)
+@export var instance_data: Array[PackedFloat32Array] = []
 @export var ranges := PackedFloat32Array()                  # par modèle : portée de visibilité (m)
 @export var shadows := true
+
+const STRIDE := 16
 
 
 func _ready() -> void:
 	for i in mini(meshes.size(), instance_data.size()):
 		var data := instance_data[i]
-		var count := data.size() / 12
+		var count := data.size() / STRIDE
 		if count == 0 or meshes[i] == null:
 			continue
 		var multimesh := MultiMesh.new()
 		multimesh.transform_format = MultiMesh.TRANSFORM_3D
+		multimesh.use_colors = true
 		multimesh.mesh = meshes[i]
 		multimesh.instance_count = count
 		for n in count:
-			var o := n * 12
+			var o := n * STRIDE
 			var basis := Basis(Vector3(data[o], data[o + 1], data[o + 2]), Vector3(data[o + 3], data[o + 4], data[o + 5]), Vector3(data[o + 6], data[o + 7], data[o + 8]))
 			multimesh.set_instance_transform(n, Transform3D(basis, Vector3(data[o + 9], data[o + 10], data[o + 11])))
+			multimesh.set_instance_color(n, Color(data[o + 12], data[o + 13], data[o + 14], data[o + 15]))
 		var instance := MultiMeshInstance3D.new()
 		instance.name = "Model_%d" % i
 		instance.multimesh = multimesh
