@@ -1,0 +1,8 @@
+[gd_resource type="ShaderMaterial" format=3]
+
+[ext_resource type="Shader" path="res://scenes/world/map/shaders/vegetation_far.gdshader" id="1_uwvvl"]
+
+[resource]
+render_priority = 0
+shader = ExtResource("1_uwvvl")
+shader_parameter/near_hide = 290.0

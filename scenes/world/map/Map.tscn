@@ -6,6 +6,7 @@
 [ext_resource type="PackedScene" path="res://scenes/world/map/generated/Roads.tscn" id="4_roads"]
 [ext_resource type="PackedScene" path="res://scenes/world/map/generated/Buildings.tscn" id="5_buildings"]
 [ext_resource type="PackedScene" path="res://scenes/world/map/generated/Places.tscn" id="6_places"]
+[ext_resource type="PackedScene" path="res://scenes/world/map/generated/Vegetation.tscn" id="7_vegetation"]
 
 [node name="Map" type="Node3D" unique_id=99550813]
 
@@ -20,3 +21,5 @@
 [node name="Buildings" type="Node3D" parent="." unique_id=1812030455 instance=ExtResource("5_buildings")]
 
 [node name="Places" type="Node3D" parent="." unique_id=1522739407 instance=ExtResource("6_places")]
+
+[node name="Vegetation" type="Node3D" parent="." unique_id=1377240991 instance=ExtResource("7_vegetation")]

@@ -11,7 +11,7 @@ extends RefCounted
 # a10) sont décalées pour franchir les autoroutes hors des bretelles (étape 2a).
 
 # Dernière étape construite (0, 1, 2 = 2a, 2.5 = 2b, 3...) : active les points de contrôle correspondants.
-const BUILT_STAGE := 5.0
+const BUILT_STAGE := 6.0
 
 # --- emprises ---------------------------------------------------------------------------------------------------
 const PLAYABLE := Rect2(-2174.0, -1480.0, 4347.0, 2447.0)   # zone explorable (4,35 × 2,45 km)
@@ -269,6 +269,8 @@ const GATE_SPOTS := [
 	{"name": "allée du Central Precinct", "pos": Vector2(-713, 132), "yaw": -90.0, "min_stage": 5.0},
 	{"name": "parc de Liberty Motors", "pos": Vector2(17.5, -400), "yaw": 0.0, "min_stage": 5.0},
 	{"name": "lot de l'Ashford Grand Hotel", "pos": Vector2(-910, -448), "yaw": 90.0, "min_stage": 5.0},
+	{"name": "clairière du Bois nord-est", "pos": Vector2(1700, -1100), "yaw": 0.0, "min_stage": 6.0},
+	{"name": "bosquet de Hollow Creek", "pos": Vector2(1800, 880), "yaw": -90.0, "min_stage": 6.0},
 ]
 
 

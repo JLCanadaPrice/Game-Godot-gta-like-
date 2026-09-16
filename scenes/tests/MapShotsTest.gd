@@ -58,6 +58,10 @@ const VIEWS := [
 	["lieu_commissariat", Vector3(-690, 6, 115), Vector3(-713, 6, 158)],
 	["lieu_liberty_motors", Vector3(40, 10, -440), Vector3(15, 2, -395)],
 	["lieu_casino", Vector3(-520, 45, -300), Vector3(-586, 30, -365)],
+	# étape 6 : végétation
+	["foret_cedar_gulch_sous_bois", Vector3(-1950, 1.7, 150), Vector3(-1900, 3.0, 60), "sol"],
+	["foret_nord_ouest_survol", Vector3(-1500, 90, -700), Vector3(-1900, 10, -1100)],
+	["bordure_est_depuis_campagne", Vector3(1900, 20, -300), Vector3(2300, 20, -500)],
 ]
 const SETTLE_FRAMES := 40
 

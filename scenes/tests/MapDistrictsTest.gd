@@ -173,7 +173,7 @@ func _rects_overlap(a: Dictionary, b: Dictionary) -> bool:
 func _check_instances(map: Node, lots: Array) -> void:
 	var total := 0
 	var fields := 0
-	for node in map.find_children("*", "MultiMeshInstance3D", true, false):
+	for node in map.get_node("Buildings").find_children("*", "MultiMeshInstance3D", true, false):
 		var mmi := node as MultiMeshInstance3D
 		if mmi.multimesh != null and mmi.multimesh.mesh != null:
 			total += mmi.multimesh.instance_count
