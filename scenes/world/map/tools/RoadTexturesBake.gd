@@ -1,7 +1,8 @@
 extends SceneTree
 
-# Étapes 2a et 2b : textures des routes de la carte 3D, dans la palette des routes du centre-ville (assets/modular_roads :
-# enrobé gris plus sombre sur les bords, lignes jaunes). Atlas roads.png (4096 x 512) : une colonne par type de ruban,
+# Étapes 2a, 2b et 4b : textures des routes de la carte 3D, dans la palette des routes du centre-ville (assets/modular_roads :
+# enrobé gris plus sombre sur les bords, lignes jaunes), plateforme ballastée de la voie ferrée. Atlas roads.png
+# (4096 x 512) : une colonne par type de ruban,
 # u = travers de la chaussée (bord gauche du sens de marche -> bord droit), v = long de la route sur TEX_LENGTH m ;
 # concrete.png pour les ouvrages. Réglages d'import écrits avec (compression VRAM, mipmaps) : lancer avant l'import
 # puis RoadBake.
@@ -29,7 +30,12 @@ const COLUMNS := [
 	["access", 2000, 6.5, [[0.35, 0.48, "white", false], [6.02, 6.15, "white", false]]],
 	["dirt", 2344, 5.0, []],
 	["sidewalk", 2616, 3.0, []],
+	["rail", 2800, 5.0, []],
 ]
+const BALLAST_DARK := Color8(0x57, 0x53, 0x4f)
+const BALLAST_LIGHT := Color8(0x8b, 0x85, 0x7d)
+const SLEEPER := Color8(0x4d, 0x41, 0x36)
+const RAIL_SHADOW := Color8(0x33, 0x30, 0x2d)
 const DIRT_DARK := Color8(0x6b, 0x55, 0x3d)
 const DIRT_LIGHT := Color8(0x8f, 0x76, 0x57)
 const WALK_DARK := Color8(0x9a, 0x9a, 0x9b)
@@ -117,6 +123,15 @@ func _base_color(kind: String, across: float, width: float, along: float, noise:
 			var joint := fposmod(along, 3.0) < 0.04 or across < 0.08
 			var c := WALK_LIGHT.lerp(WALK_DARK, 0.5 + noise * 0.5)
 			return c.darkened(0.15) if joint else c
+		"rail":
+			# ballast moucheté, traverses de 2,6 m tous les 0,6 m (20 par longueur de texture), ombre sous les rails
+			var speck := fposmod(sin(across * 917.3 + along * 571.9) * 43758.5, 1.0)
+			var c := BALLAST_LIGHT.lerp(BALLAST_DARK, clampf(0.5 + noise * 0.8 + (speck - 0.5) * 0.6, 0.0, 1.0))
+			if absf(across - width * 0.5) < 1.3 and fposmod(along, 0.6) < 0.24:
+				c = SLEEPER.darkened(clampf(noise * 0.3 + speck * 0.1, 0.0, 0.4))
+			if absf(absf(across - width * 0.5) - 0.7175) < 0.06:
+				c = RAIL_SHADOW
+			return c
 		_:
 			var shade := 1.0 - absf(across / width - 0.5) * 2.0
 			return ASPHALT_EDGE.lerp(ASPHALT_MID, smoothstep(0.0, 0.8, shade)).darkened(noise * 0.04)

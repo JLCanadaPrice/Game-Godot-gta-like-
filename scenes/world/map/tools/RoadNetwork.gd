@@ -54,10 +54,16 @@ const PORTAL_COVER := 8.0           # terrain au-dessus de la chaussée à l'ent
 const BLEND := 40.0                 # m pour passer de l'axe d'une chaussée à celui d'une bretelle
 const LEVEL_WITH_CARRIAGEWAY := 26.0  # m de bretelle accolée à niveau de sa chaussée (le trajet franchit le joint vers 23 m)
 const GRADE := {"highway": 0.045, "ramp": 0.08}
-const GRADE_LIMIT := {"carriageway": 0.052, "median": 0.052, "ramp": 0.092, "ring": 0.01, "arterial": 0.082, "sidewalk": 0.082}
+const GRADE_LIMIT := {"carriageway": 0.052, "median": 0.052, "ramp": 0.092, "ring": 0.01, "arterial": 0.082, "sidewalk": 0.082, "rail": 0.034}
 const SMOOTH := {"highway": 220.0, "ramp": 12.0}
 const AXIS_PRIORITY := ["an", "vxo", "as", "vxe"]
-const WIDTHS := {"carriageway": CW_WIDTH, "median": MEDIAN_WIDTH, "ramp": RAMP_WIDTH, "ring": RING_WIDTH, "arterial": 9.0, "sidewalk": 3.0}
+const WIDTHS := {"carriageway": CW_WIDTH, "median": MEDIAN_WIDTH, "ramp": RAMP_WIDTH, "ring": RING_WIDTH, "arterial": 9.0, "sidewalk": 3.0, "rail": 5.0}
+# voie ferrée (étape 4b) : plateforme ballastée à voie unique, sans circulation
+const RAIL_GAUGE := 1.435
+const RAIL_GRADE := 0.03
+const RAIL_SMOOTH := 160.0
+const RAIL_WATER_DECK := Spec.WATER_LEVEL + 4.5
+const RAIL_LEVEL_CROSSING := 2.5    # écart max entre la chaussée et le relief pour un passage à niveau
 # artères : largeur de chaussée, style d'atlas (RoadTexturesBake), trottoirs
 const ROAD_STYLES := {
 	"urban": {"width": 10.5, "sidewalk": true},
@@ -86,7 +92,7 @@ const LOCAL_END_FLAT := 14.0        # m de rue à plat avant le plateau du cul-d
 
 class Ribbon:
 	var id := ""
-	var kind := ""                          # carriageway, median, ramp, ring, arterial, sidewalk
+	var kind := ""                          # carriageway, median, ramp, ring, arterial, sidewalk, rail
 	var style := ""                         # colonne d'atlas des artères : urban, arterial, access, dirt
 	var width := 0.0
 	var chain := ""                         # chaîne d'origine (autoroute ou artère)
@@ -116,6 +122,10 @@ var stations := {}                          # id -> {"id", "kind", "pos": Vector
 var pads: Array[Dictionary] = []            # plateaux : {"id", "kind", "center": Vector3, "rim": PackedVector3Array, "island": float}
 var connectors: Array[Dictionary] = []      # trajets sur plateau : {"points": PackedVector3Array, "one_way", "lanes"}
 var local_streets: Array[Dictionary] = []   # {"id", "zone", "ribbon": Ribbon, "side": Vector2 (vers le fond de la rue)}
+var rail_line := PackedVector2Array()       # axe de la voie ferrée dans la zone explorable (pas de 4 m)
+var rail_heights := PackedFloat32Array()    # dessus de plateforme
+var level_crossings: Array[Dictionary] = [] # {"pos": Vector3, "index", "road": Ribbon, "rail_dir": Vector2, "road_dir": Vector2, "half_gap": m le long de la voie}
+var rail_ends: Array[Dictionary] = []       # {"pos": Vector3, "dir": Vector2 vers l'extérieur, "rise": relief au-delà (m)}
 var g_lit: Array[int] = []                  # noeuds du graphe à feux (carrefours éclairés, extrémités de losange)
 var g_grid: Array[int] = []                 # noeuds du graphe confondus avec la grille du centre-ville
 var levels := {}                            # anneau -> axe en tranchée ("low"/"high" s'il n'a qu'un axe traversant) ; losange -> "low"/"high"
@@ -148,6 +158,7 @@ func build() -> void:
 		elif shape(node_id) == "join":
 			_build_join(node_id)
 	_build_arterials()
+	_build_rail()
 	_build_tunnels()
 	_finalize_paths()
 	_build_graph()
@@ -1134,6 +1145,11 @@ func _build_local_streets() -> void:
 	var obstacles := {}
 	for rb in ribbons:
 		_index_obstacle(obstacles, rb)
+	for p in smooth(PackedVector2Array(Spec.RAIL), STEP):   # voie ferrée construite ensuite
+		var key := Vector2i(floori(p.x / 32.0), floori(p.y / 32.0))
+		if not obstacles.has(key):
+			obstacles[key] = []
+		obstacles[key].append([p, WIDTHS["rail"] * 0.5 + 4.0, null])
 	var sources: Array = ribbons.filter(func(r: Ribbon) -> bool: return r.kind == "arterial" and r.style != "dirt")
 	for zone: Dictionary in Spec.ZONES:
 		if not DEVELOPED_ZONES.has(zone["type"]):
@@ -1372,6 +1388,170 @@ static func _disc(center: Vector3, radius: float, segments: int) -> PackedVector
 	return out
 
 
+# --- voie ferrée (étape 4b) -------------------------------------------------------------------------------------
+# Tracé de MapSpec.RAIL lissé, limité à la zone explorable. Profil : relief lissé à pente limitée, au niveau des
+# artères franchies (passages à niveau), au-dessus des chaussées plus basses avec le gabarit d'un pont (autoroutes en
+# tranchée, bretelles), au-dessus de l'eau. Plateforme en rubans "rail" coupés à la traversée des chaussées et de
+# leurs trottoirs ; bouts à la limite de la carte (relief au-delà mesuré pour un portail).
+func _build_rail() -> void:
+	var full := smooth(PackedVector2Array(Spec.RAIL), STEP)
+	var inner := Spec.PLAYABLE.grow(-2.0)
+	var first := 0
+	while first < full.size() - 1 and not inner.has_point(full[first]):
+		first += 1
+	var last := full.size() - 1
+	while last > first and not inner.has_point(full[last]):
+		last -= 1
+	rail_line = full.slice(first, last + 1)
+	var line := rail_line
+	var n := line.size()
+	var natural := _natural_profile(line)
+	var fixed := {}
+	var constraints: Array = []
+	var found: Array[Dictionary] = []
+	for rb: Ribbon in ribbons:
+		if not rb.mesh or rb.kind == "sidewalk":
+			continue
+		var pts := PackedVector2Array()
+		for p: Vector3 in rb.points:
+			pts.append(Vector2(p.x, p.z))
+		if rb.closed:
+			pts.append(pts[0])
+		for hit in polyline_intersections(line, pts):
+			var i := nearest_index(line, hit)
+			var road_y := _height_on(rb, hit)
+			if rb.kind == "arterial" and absf(road_y - natural[i]) <= RAIL_LEVEL_CROSSING:
+				fixed[i] = road_y
+				found.append({"index": i, "road": rb, "pos": Vector3(hit.x, road_y, hit.y)})
+			elif road_y < natural[i]:
+				constraints.append({"i0": i - 4, "i1": i + 4, "h": road_y + LOW_CLEARANCE + RAIL_DECK, "type": "min"})
+			else:
+				errors.append("voie ferrée sous %s en (%.0f, %.0f) : passage non prévu" % [rb.id, hit.x, hit.y])
+	for span: Vector2i in water_spans(line, 10.0):
+		constraints.append({"i0": span.x - 3, "i1": span.y + 3, "h": RAIL_WATER_DECK, "type": "min"})
+	rail_heights = solve_profile(natural, RAIL_GRADE, RAIL_SMOOTH, fixed, constraints)
+	for c: Dictionary in constraints:
+		for i in range(maxi(0, int(c["i0"])), mini(n, int(c["i1"]) + 1)):
+			if rail_heights[i] < float(c["h"]) - 0.05:
+				errors.append("voie ferrée : plateforme à %.2f m sous le minimum %.2f m en (%.0f, %.0f)" % [rail_heights[i], c["h"], line[i].x, line[i].y])
+				break
+	var arc := PackedFloat32Array([0.0])
+	for i in range(1, n):
+		arc.append(arc[i - 1] + line[i].distance_to(line[i - 1]))
+	# passages à niveau : la plateforme s'arrête au bord extérieur des trottoirs, quel que soit l'angle
+	var gaps: Array[Vector2] = []
+	for f: Dictionary in found:
+		var road: Ribbon = f["road"]
+		var hit := Vector2((f["pos"] as Vector3).x, (f["pos"] as Vector3).z)
+		var road_pts := PackedVector2Array()
+		for p: Vector3 in road.points:
+			road_pts.append(Vector2(p.x, p.z))
+		var rail_dir := tangent(line, int(f["index"]))
+		var road_dir := tangent(road_pts, nearest_index(road_pts, hit))
+		var sin_a := maxf(absf(rail_dir.cross(road_dir)), 0.25)
+		var cos_a := absf(rail_dir.dot(road_dir))
+		var band := road.width * 0.5 + (SIDEWALK_WIDTH if road.style == "urban" else 0.0) + 0.3
+		var half_gap := band / sin_a + WIDTHS["rail"] * 0.5 * cos_a / sin_a
+		var s := _arc_at(line, arc, hit)
+		gaps.append(Vector2(s - half_gap, s + half_gap))
+		level_crossings.append({"pos": f["pos"], "index": f["index"], "road": road, "rail_dir": rail_dir, "road_dir": road_dir, "half_gap": half_gap, "s": s})
+	gaps.sort_custom(func(a: Vector2, b: Vector2) -> bool: return a.x < b.x)
+	var total := arc[n - 1]
+	var pieces: Array[Vector2] = []
+	var cursor := 0.0
+	for g: Vector2 in gaps:
+		if g.x > cursor + STEP:
+			pieces.append(Vector2(cursor, g.x))
+		cursor = maxf(cursor, g.y)
+	if total > cursor + STEP:
+		pieces.append(Vector2(cursor, total))
+	for piece: Vector2 in pieces:
+		var rb := _new_ribbon("rail_%d" % ribbons.size(), "rail", "rail")
+		rb.style = "rail"
+		rb.graph = false
+		rb.one_way = false
+		rb.points.append(_rail_point(arc, piece.x))
+		for i in n:
+			if arc[i] > piece.x + STEP * 0.4 and arc[i] < piece.y - STEP * 0.4:
+				rb.points.append(Vector3(line[i].x, rail_heights[i], line[i].y))
+		rb.points.append(_rail_point(arc, piece.y))
+		ribbons.append(rb)
+	# bouts de ligne à la limite : relief au-delà (portail s'il remonte)
+	for end: int in [0, n - 1]:
+		var dir := (line[0] - line[1]).normalized() if end == 0 else (line[n - 1] - line[n - 2]).normalized()
+		var top := -INF
+		for d: float in [10.0, 20.0, 30.0]:
+			top = maxf(top, terrain.height_at(line[end] + dir * d))
+		rail_ends.append({"pos": Vector3(line[end].x, rail_heights[end], line[end].y), "dir": dir, "rise": top - rail_heights[end]})
+	for pad: Dictionary in pads:
+		var c: Vector3 = pad["center"]
+		var radius := 0.0
+		for p: Vector3 in pad["rim"]:
+			radius = maxf(radius, Vector2(p.x - c.x, p.z - c.z).length())
+		var q := Vector2(c.x, c.z)
+		if q.distance_to(line[nearest_index(line, q)]) < radius + WIDTHS["rail"] * 0.5 + 1.0:
+			errors.append("plateau %s sur la voie ferrée" % pad["id"])
+	var lo := INF
+	var hi := -INF
+	for h in rail_heights:
+		lo = minf(lo, h)
+		hi = maxf(hi, h)
+	var rises: PackedStringArray = []
+	for e: Dictionary in rail_ends:
+		rises.append("%.0f m" % e["rise"])
+	report.append("voie ferrée : %.0f m, %d passages à niveau, %d tronçons de plateforme, hauteur %.1f à %.1f m, relief au-delà des bouts %s"
+			% [total, level_crossings.size(), pieces.size(), lo, hi, ", ".join(rises)])
+
+
+func _rail_point(arc: PackedFloat32Array, s: float) -> Vector3:
+	var n := rail_line.size()
+	for k in n - 1:
+		if arc[k + 1] >= s:
+			var t := clampf((s - arc[k]) / maxf(arc[k + 1] - arc[k], 0.001), 0.0, 1.0)
+			var p := rail_line[k].lerp(rail_line[k + 1], t)
+			return Vector3(p.x, lerpf(rail_heights[k], rail_heights[k + 1], t), p.y)
+	return Vector3(rail_line[n - 1].x, rail_heights[n - 1], rail_line[n - 1].y)
+
+
+static func _arc_at(line: PackedVector2Array, arc: PackedFloat32Array, p: Vector2) -> float:
+	var i := nearest_index(line, p)
+	var best := arc[i]
+	var best_d := line[i].distance_to(p)
+	for k: int in [i - 1, i]:
+		if k < 0 or k + 1 >= line.size():
+			continue
+		var q := Geometry2D.get_closest_point_to_segment(p, line[k], line[k + 1])
+		if q.distance_to(p) < best_d:
+			best_d = q.distance_to(p)
+			best = arc[k] + line[k].distance_to(q)
+	return best
+
+
+# Hauteur de l'axe d'un ruban au point de son tracé le plus proche de p.
+static func _height_on(rb: Ribbon, p: Vector2) -> float:
+	var pts: PackedVector3Array = rb.points
+	var best := INF
+	var y := pts[0].y
+	for k in pts.size() - 1:
+		var a := Vector2(pts[k].x, pts[k].z)
+		var b := Vector2(pts[k + 1].x, pts[k + 1].z)
+		var q := Geometry2D.get_closest_point_to_segment(p, a, b)
+		if q.distance_squared_to(p) < best:
+			best = q.distance_squared_to(p)
+			y = lerpf(pts[k].y, pts[k + 1].y, a.distance_to(q) / maxf(a.distance_to(b), 0.001))
+	return y
+
+
+func _at_level_crossing(ra: Ribbon, rbb: Ribbon, p: Vector3) -> bool:
+	var other: Ribbon = rbb if ra.kind == "rail" else ra
+	for lc: Dictionary in level_crossings:
+		var road: Ribbon = lc["road"]
+		var c: Vector3 = lc["pos"]
+		if (other == road or (other.kind == "sidewalk" and other.chain == road.chain)) and Vector2(p.x, p.z).distance_to(Vector2(c.x, c.z)) < float(lc["half_gap"]) + 20.0:
+			return true
+	return false
+
+
 func _build_tunnels() -> void:
 	for chain in chains:
 		var nodes: Array = chain["nodes"]
@@ -1595,7 +1775,12 @@ func _check() -> void:
 	for rb in ribbons:
 		for k in rb.points.size():
 			var b: Vector3 = rb.points[k]
-			if is_water(Vector2(b.x, b.z)) and b.y < (ARTERIAL_WATER_DECK if rb.kind in ["arterial", "sidewalk"] else WATER_DECK) - 0.35:
+			var deck := WATER_DECK
+			if rb.kind in ["arterial", "sidewalk"]:
+				deck = ARTERIAL_WATER_DECK
+			elif rb.kind == "rail":
+				deck = RAIL_WATER_DECK
+			if is_water(Vector2(b.x, b.z)) and b.y < deck - 0.35:
 				low_deck += 1
 				low_ids[rb.id] = true
 			if k == 0:
@@ -1684,6 +1869,9 @@ func _check_conflicts() -> void:
 							continue
 						# trottoir qui traverse l'entrée d'une rue locale
 						if (ra.kind == "sidewalk" and String(rbb.id).begins_with("rue_")) or (rbb.kind == "sidewalk" and String(ra.id).begins_with("rue_")):
+							continue
+						# plateforme de la voie ferrée arrêtée au bord d'un passage à niveau
+						if (ra.kind == "rail") != (rbb.kind == "rail") and _at_level_crossing(ra, rbb, ra.points[a.y]):
 							continue
 						var pa: Vector3 = ra.points[a.y]
 						var pb: Vector3 = rbb.points[b.y]

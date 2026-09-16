@@ -9,7 +9,8 @@ extends SceneTree
 const Spec := preload("res://scenes/world/map/MapSpec.gd")
 const Network := preload("res://scenes/world/map/tools/RoadNetwork.gd")
 const COLORS := {"carriageway": Color("d89b1d"), "median": Color("7a7a7a"), "ramp": Color("e06a2c"), "ring": Color("c0392b"),
-		"urban": Color("5d6d7e"), "arterial": Color("8e44ad"), "access": Color("16a085"), "dirt": Color("a0522d"), "sidewalk": Color("bdc3c7"), "pad": Color("34495e")}
+		"urban": Color("5d6d7e"), "arterial": Color("8e44ad"), "access": Color("16a085"), "dirt": Color("a0522d"), "sidewalk": Color("bdc3c7"), "pad": Color("34495e"),
+		"rail": Color("6b4f3a")}
 const CLOSE_UPS := ["x_no", "x_ne", "x_st", "x_se", "d_n9", "d_o172", "d_no13", "d_so13", "d_e8", "d_s7", "j_lake", "r_echo", "g_o172", "j_hollow"]
 
 
@@ -43,6 +44,9 @@ func _initialize() -> void:
 			var c := Spec.node_pos(node_id)
 			var half := 450.0 if node_id.begins_with("x_") else 160.0
 			_render(net, Rect2(c - Vector2(half, half), Vector2(half, half) * 2.0), 900.0 / (half * 2.0), out.path_join("zoom_%s.png" % node_id))
+		for k in net.level_crossings.size():
+			var lc: Vector3 = net.level_crossings[k]["pos"]
+			_render(net, Rect2(Vector2(lc.x, lc.z) - Vector2(60, 60), Vector2(120, 120)), 900.0 / 120.0, out.path_join("zoom_passage_niveau_%d.png" % k))
 	quit(0)
 
 
@@ -58,7 +62,7 @@ func _render(net, rect: Rect2, scale: float, path: String) -> void:
 		for p in rim:
 			poly.append((Vector2(p.x, p.z) - rect.position) * scale)
 		_fill_polygon(img, poly, COLORS["pad"])
-	for kind in ["median", "sidewalk", "carriageway", "arterial", "ring", "ramp"]:
+	for kind in ["rail", "median", "sidewalk", "carriageway", "arterial", "ring", "ramp"]:
 		for rb in net.ribbons:
 			if rb.kind != kind or not rb.mesh:
 				continue

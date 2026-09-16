@@ -255,6 +255,7 @@ const GATE_SPOTS := [
 	{"name": "rue locale de Westbank", "pos": Vector2(-1255.2, 165.9), "yaw": -174.5, "min_stage": 4.0},
 	{"name": "rue locale d'Eastgate", "pos": Vector2(1098.6, 338.0), "yaw": -3.3, "min_stage": 4.0},
 	{"name": "artère commerçante d'Eastside", "pos": Vector2(300, -310), "yaw": -90.0, "min_stage": 4.0},
+	{"name": "voie ferrée du Railyard", "pos": Vector2(304, 289), "yaw": 90.0, "min_stage": 4.0},
 ]
 
 

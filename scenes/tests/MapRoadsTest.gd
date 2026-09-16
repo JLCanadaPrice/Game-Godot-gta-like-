@@ -50,6 +50,7 @@ func _ready() -> void:
 	for i in net.g_grid:
 		grid_points.append(net.g_nodes[i])
 	_check_surface(net, grid_points)
+	_check_rail(net)
 	await _check_traffic(net, grid_points)
 	map.queue_free()
 	for k in 3:
@@ -64,6 +65,48 @@ func _near_grid(p: Vector3, grid_points: Array[Vector3]) -> bool:
 		if Vector2(p.x - g.x, p.z - g.z).length() < GRID_ZONE:
 			return true
 	return false
+
+
+# Voie ferrée (étape 4b) : plateforme présente à la hauteur du modèle tous les SAMPLE m, rien au-dessus sur 5 m (hors
+# niches des portails de bout de ligne).
+func _check_rail(net: Network) -> void:
+	var space := get_viewport().world_3d.direct_space_state
+	var samples := 0
+	var misses := 0
+	var blocked := 0
+	var first := ""
+	for rb in net.ribbons:
+		if rb.kind != "rail":
+			continue
+		var pts: PackedVector3Array = rb.points
+		var along := 0.0
+		for k in pts.size() - 1:
+			var seg := pts[k].distance_to(pts[k + 1])
+			while along < seg:
+				var p := pts[k].lerp(pts[k + 1], along / seg)
+				along += SAMPLE
+				var near_end := false
+				for e: Dictionary in net.rail_ends:
+					near_end = near_end or Vector2(p.x, p.z).distance_to(Vector2((e["pos"] as Vector3).x, (e["pos"] as Vector3).z)) < 8.0
+				if near_end:
+					continue
+				samples += 1
+				var hit := _ray(space, p + Vector3.UP * 2.0, p + Vector3.DOWN * 3.0, [])
+				if hit.is_empty() or absf((hit["position"] as Vector3).y - p.y) > 0.35:
+					misses += 1
+					if first == "":
+						first = "(%.0f, %.1f, %.0f) sol %s" % [p.x, p.y, p.z, "absent" if hit.is_empty() else "%.2f" % (hit["position"] as Vector3).y]
+				elif not _ray(space, p + Vector3.UP * 0.3, p + Vector3.UP * 5.0, []).is_empty():
+					blocked += 1
+					if first == "":
+						first = "(%.0f, %.1f, %.0f) encombré" % [p.x, p.y, p.z]
+			along -= seg
+	print("MAP_ROADS_RAIL %d points de plateforme : %d sans sol à la bonne hauteur, %d encombrés %s | %d passages à niveau, %d bouts de ligne"
+			% [samples, misses, blocked, first, net.level_crossings.size(), net.rail_ends.size()])
+	if samples == 0:
+		_errors.append("voie ferrée absente")
+	if misses > 0 or blocked > 0:
+		_errors.append("voie ferrée : %d points sans sol, %d encombrés, premier %s" % [misses, blocked, first])
 
 
 func _check_surface(net: Network, grid_points: Array[Vector3]) -> void:

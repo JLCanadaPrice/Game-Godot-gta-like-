@@ -55,7 +55,16 @@ const RANGE_CONCRETE := 1500.0
 # colonnes de l'atlas roads.png (bornes en u affichées par RoadTexturesBake)
 const ATLAS := {"highway": Vector2(0.0, 0.125), "ramp": Vector2(0.125, 0.206787), "median": Vector2(0.207031, 0.242188),
 		"urban": Vector2(0.25, 0.372559), "arterial": Vector2(0.375, 0.480225), "access": Vector2(0.488281, 0.564209),
-		"dirt": Vector2(0.572266, 0.630615), "sidewalk": Vector2(0.638672, 0.673828)}
+		"dirt": Vector2(0.572266, 0.630615), "sidewalk": Vector2(0.638672, 0.673828), "rail": Vector2(0.683594, 0.741943)}
+# voie ferrée (étape 4b) : rails en acier sans collision, passages à niveau, bouts de ligne
+const RAIL_HEAD := 0.07
+const RAIL_TOP := 0.17
+const RANGE_STEEL := 600.0
+const STEEL := Color(0.3, 0.29, 0.28)
+const SIGN_POST := Color(0.55, 0.55, 0.53)
+const SIGN_BOARD := Color(0.92, 0.92, 0.9)
+const BUFFER_RED := Color(0.5, 0.13, 0.1)
+const PORTAL_RISE := 6.0             # relief au-delà du bout de ligne à partir duquel on pose un portail
 const ISLAND_RISE := 0.25
 # lampadaires du kit de routes (sans lumière, en MultiMesh par cellule) : trottoirs des artères urbaines en quinconce,
 # terre-plein des viaducs et des approches d'échangeur (double crosse), bord extérieur des anneaux
@@ -126,6 +135,10 @@ func _initialize() -> void:
 	for pad: Dictionary in net.pads:
 		_pad(pad)
 	_place_lamps(modes)
+	for lc: Dictionary in net.level_crossings:
+		_level_crossing(lc)
+	for e: Dictionary in net.rail_ends:
+		_rail_end(e)
 	var roof := PackedByteArray()
 	roof.resize(model.width * model.depth)
 	for t: Dictionary in net.tunnels:
@@ -338,7 +351,7 @@ func _ribbon(rb, mode: PackedByteArray) -> void:
 	var kind: String = rb.kind
 	var column := "highway"
 	match kind:
-		"median", "ramp", "sidewalk":
+		"median", "ramp", "sidewalk", "rail":
 			column = kind
 		"arterial":
 			column = rb.style
@@ -368,6 +381,10 @@ func _ribbon(rb, mode: PackedByteArray) -> void:
 		_quad("asphalt", l1, l2, r2, r1, Vector3.UP, [Vector2(atlas.x, v1), Vector2(atlas.x, v2), Vector2(atlas.y, v2), Vector2(atlas.y, v1)])
 	if kind == "median":
 		_jersey(pts, sides, segs)
+	if kind == "rail":
+		for k in segs:
+			for offset: float in [-Network.RAIL_GAUGE * 0.5, Network.RAIL_GAUGE * 0.5]:
+				_rail_bar(pts[k] + sides[k] * offset, pts[k + 1] + sides[k + 1] * offset, sides[k], sides[k + 1], 0.0, RAIL_TOP)
 	# bords : rebord ou flanc de tablier, mur de soutènement, garde-corps
 	for side_sign: float in [-1.0, 1.0]:
 		if kind == "median" or (kind == "carriageway" and side_sign < 0.0):
@@ -411,7 +428,13 @@ func _ribbon(rb, mode: PackedByteArray) -> void:
 			var e1 := pts[k] + o1 * hw
 			var e2 := pts[k2] + o2 * hw
 			var seg_len := Vector2(e2.x - e1.x, e2.z - e1.z).length()
-			_quad("concrete", e1, e2, e2 - Vector3(0, depth[k2], 0), e1 - Vector3(0, depth[k], 0), (o1 + o2).normalized())
+			if kind == "rail" and mode[k] == 0 and mode[k2] == 0 and depth[k] <= LIP + 0.01 and depth[k2] <= LIP + 0.01:
+				# plateforme posée : talus de ballast au lieu du rebord en béton
+				var u := atlas.x + 0.003 if side_sign < 0.0 else atlas.y - 0.003
+				_quad("asphalt", e1, e2, e2 + o2 * 0.9 - Vector3(0, LIP, 0), e1 + o1 * 0.9 - Vector3(0, LIP, 0), ((o1 + o2).normalized() + Vector3.UP).normalized(),
+						[Vector2(u, arc[k] / TEX_LENGTH), Vector2(u, arc[k2] / TEX_LENGTH), Vector2(u, arc[k2] / TEX_LENGTH), Vector2(u, arc[k] / TEX_LENGTH)])
+			else:
+				_quad("concrete", e1, e2, e2 - Vector3(0, depth[k2], 0), e1 - Vector3(0, depth[k], 0), (o1 + o2).normalized())
 			if depth[k] > LIP + 0.5 or depth[k2] > LIP + 0.5:
 				stats["murs_m"] += seg_len
 			if retain[k] > 0.0 or retain[k2] > 0.0:
@@ -626,6 +649,123 @@ func _pier(p: Vector3, side: Vector3, size: float, bottom: float, top: float) ->
 	stats["piles"] += 1
 
 
+# --- voie ferrée ------------------------------------------------------------------------------------------------
+# Rail en acier de a à b (tête de RAIL_HEAD m) : dessus et flancs de `bottom` à `top` au-dessus des points.
+func _rail_bar(a: Vector3, b: Vector3, sa: Vector3, sb: Vector3, bottom: float, top: float) -> void:
+	var h := RAIL_HEAD * 0.5
+	var t := Vector3(0, top, 0)
+	var d := Vector3(0, bottom, 0)
+	_quad("steel", a - sa * h + t, b - sb * h + t, b + sb * h + t, a + sa * h + t, Vector3.UP, [], STEEL)
+	_quad("steel", a - sa * h + d, b - sb * h + d, b - sb * h + t, a - sa * h + t, -(sa + sb).normalized(), [], STEEL)
+	_quad("steel", a + sa * h + d, b + sb * h + d, b + sb * h + t, a + sa * h + t, (sa + sb).normalized(), [], STEEL)
+
+
+# Pavé orienté (centre de la base, axe avant, demi-tailles) dans la partie "steel", couleur unie, sans dessous.
+func _steel_box(base: Vector3, fwd: Vector3, side: Vector3, half: Vector3, color: Color) -> void:
+	var up := Vector3(0, half.y * 2.0, 0)
+	var c := [base + side * half.x + fwd * half.z, base - side * half.x + fwd * half.z, base - side * half.x - fwd * half.z, base + side * half.x - fwd * half.z]
+	for k in 4:
+		var a: Vector3 = c[k]
+		var b: Vector3 = c[(k + 1) % 4]
+		var out := ((a + b) * 0.5 - base)
+		_quad("steel", a, b, b + up, a + up, Vector3(out.x, 0.0, out.z).normalized(), [], color)
+	_quad("steel", c[0] + up, c[1] + up, c[2] + up, c[3] + up, Vector3.UP, [], color)
+
+
+# Passage à niveau : rails noyés dans la chaussée et les trottoirs (2 cm au-dessus), croix de Saint-André à droite de
+# la route avant les voies, dans chaque sens.
+func _level_crossing(lc: Dictionary) -> void:
+	var road = lc["road"]
+	var c: Vector3 = lc["pos"]
+	var rail_dir: Vector2 = lc["rail_dir"]
+	var half: float = lc["half_gap"]
+	var fwd := Vector3(rail_dir.x, 0.0, rail_dir.y)
+	var side := Vector3(-rail_dir.y, 0.0, rail_dir.x)
+	var steps := maxi(2, ceili(half * 2.0))
+	for s in steps:
+		var p1 := c + fwd * (-half + half * 2.0 * s / steps)
+		var p2 := c + fwd * (-half + half * 2.0 * (s + 1) / steps)
+		for offset: float in [-Network.RAIL_GAUGE * 0.5, Network.RAIL_GAUGE * 0.5]:
+			var a := p1 + side * offset
+			var b := p2 + side * offset
+			a.y = _crossing_surface(road, Vector2(a.x, a.z))
+			b.y = _crossing_surface(road, Vector2(b.x, b.z))
+			_rail_bar(a, b, side, side, -0.06, 0.02)
+	var road_dir: Vector2 = lc["road_dir"]
+	var sin_a := maxf(absf(rail_dir.cross(road_dir)), 0.25)
+	var lateral: float = float(road.width) * 0.5 + (Network.SIDEWALK_WIDTH if road.style == "urban" else 0.0) + 0.7
+	for approach: float in [-1.0, 1.0]:
+		var d := road_dir * approach                  # sens de marche vers les voies
+		var right := Network.right_of(d)
+		var before := (Network.WIDTHS["rail"] * 0.5 + 2.5) / sin_a
+		# le long de la route, l'axe des voies croise la ligne du panneau (à `lateral` m de l'axe) en t_rail
+		var t_rail := -lateral * right.cross(rail_dir) / (d.cross(rail_dir) if absf(d.cross(rail_dir)) > 0.01 else 0.01)
+		var p := Vector2(c.x, c.z) + right * lateral + d * (t_rail - before)
+		var ground := _crossing_surface(road, p)
+		_crossbuck(Vector3(p.x, ground - 0.3, p.y), Vector3(d.x, 0.0, d.y))
+
+
+# Hauteur de surface à la traversée : axe de la route, trottoir surélevé au-delà de la chaussée.
+func _crossing_surface(road, q: Vector2) -> float:
+	var y := Network._height_on(road, q)
+	var pts: PackedVector3Array = road.points
+	var lateral := INF
+	for k in pts.size() - 1:
+		var close := Geometry2D.get_closest_point_to_segment(q, Vector2(pts[k].x, pts[k].z), Vector2(pts[k + 1].x, pts[k + 1].z))
+		lateral = minf(lateral, close.distance_to(q))
+	if road.style == "urban" and lateral > float(road.width) * 0.5:
+		y += Network.SIDEWALK_RISE
+	return y
+
+
+# Croix de Saint-André : poteau gris et deux planches blanches croisées, face aux véhicules qui arrivent (sens `toward`).
+func _crossbuck(base: Vector3, toward: Vector3) -> void:
+	var side := Vector3(-toward.z, 0.0, toward.x)
+	_steel_box(base, toward, side, Vector3(0.06, 1.85, 0.06), SIGN_POST)
+	var center := base + Vector3(0, 3.35, 0) - toward * 0.08
+	for tilt: float in [-1.0, 1.0]:
+		var along := (side + Vector3.UP * tilt).normalized() * 0.65
+		var across := (side * -tilt + Vector3.UP).normalized() * 0.11
+		_quad("steel", center - along - across, center + along - across, center + along + across, center - along + across, -toward, [], SIGN_BOARD)
+		center -= toward * 0.02
+
+
+# Bout de ligne à la limite de la carte : portail de tunnel si le relief remonte au-delà, heurtoir sinon.
+func _rail_end(e: Dictionary) -> void:
+	var p: Vector3 = e["pos"]
+	var d: Vector2 = e["dir"]
+	var fwd := Vector3(d.x, 0.0, d.y)
+	var side := Vector3(-d.y, 0.0, d.x)
+	if float(e["rise"]) < PORTAL_RISE:
+		_steel_box(p + fwd * 0.8 - Vector3(0, 0.1, 0), fwd, side, Vector3(1.4, 0.6, 0.35), BUFFER_RED)
+		stats["heurtoirs"] = int(stats.get("heurtoirs", 0)) + 1
+		return
+	# façade en béton (piédroits, linteau) autour d'une ouverture de 6,4 x 6,2 m, niche de 4 m au fond noir
+	var face := p + fwd * 0.5
+	var bottom := p.y - 2.0
+	var top := p.y + 9.5
+	var open_w := 3.2
+	var open_h := p.y + 6.2
+	var wing := 13.0
+	var y_of := func(q: Vector3, y: float) -> Vector3: return Vector3(q.x, y, q.z)
+	for s: float in [-1.0, 1.0]:
+		var inner: Vector3 = face + side * s * open_w
+		var outer: Vector3 = face + side * s * wing
+		_quad("concrete", y_of.call(inner, bottom), y_of.call(outer, bottom), y_of.call(outer, top), y_of.call(inner, top), -fwd)
+		_quad("concrete", y_of.call(inner, bottom), y_of.call(inner + fwd * 4.0, bottom), y_of.call(inner + fwd * 4.0, open_h), y_of.call(inner, open_h), -side * s)
+		# rails jusqu'au fond de la niche
+		var rail_a := p + side * s * Network.RAIL_GAUGE * 0.5
+		_rail_bar(rail_a, rail_a + fwd * 4.5, side, side, 0.0, RAIL_TOP)
+	var l := face - side * open_w
+	var r := face + side * open_w
+	_quad("concrete", y_of.call(l, open_h), y_of.call(r, open_h), y_of.call(r, top), y_of.call(l, top), -fwd)
+	_quad("concrete", y_of.call(l, open_h), y_of.call(r, open_h), y_of.call(r + fwd * 4.0, open_h), y_of.call(l + fwd * 4.0, open_h), Vector3.DOWN)
+	_quad("concrete", y_of.call(face - side * wing, top), y_of.call(face + side * wing, top), y_of.call(face + side * wing + fwd * 2.0, top), y_of.call(face - side * wing + fwd * 2.0, top), Vector3.UP)
+	_quad("steel", y_of.call(l + fwd * 4.0, bottom), y_of.call(r + fwd * 4.0, bottom), y_of.call(r + fwd * 4.0, open_h), y_of.call(l + fwd * 4.0, open_h), -fwd, [], Color(0.02, 0.02, 0.02))
+	_quad("concrete", y_of.call(l, p.y - 0.25), y_of.call(r, p.y - 0.25), y_of.call(r + fwd * 4.0, p.y - 0.25), y_of.call(l + fwd * 4.0, p.y - 0.25), Vector3.UP)
+	stats["portails_voie_ferree"] = int(stats.get("portails_voie_ferree", 0)) + 1
+
+
 # --- tunnels ----------------------------------------------------------------------------------------------------
 func _tunnel(t: Dictionary, roof: PackedByteArray) -> void:
 	var chain := _chain(t["chain"])
@@ -765,9 +905,10 @@ func _quad(part: String, a: Vector3, b: Vector3, c: Vector3, d: Vector3, normal:
 		batch.uvs.append(uv_order[i] if not uv_order.is_empty() else Vector2.ZERO)
 		batch.colors.append(color)
 	batch.indices.append_array(PackedInt32Array([base, base + 1, base + 2, base, base + 2, base + 3]))
-	var faces: PackedVector3Array = g["faces"]
-	faces.append_array(PackedVector3Array([order[0], order[1], order[2], order[0], order[2], order[3]]))
-	g["faces"] = faces
+	if part != "steel":   # rails et panneaux : sans collision (pas de marche pour le joueur ni les roues)
+		var faces: PackedVector3Array = g["faces"]
+		faces.append_array(PackedVector3Array([order[0], order[1], order[2], order[0], order[2], order[3]]))
+		g["faces"] = faces
 	stats["triangles"] += 2
 
 
@@ -783,8 +924,13 @@ func _materials() -> Dictionary:
 	concrete.uv1_triplanar = true
 	concrete.uv1_world_triplanar = true
 	concrete.uv1_scale = Vector3(0.25, 0.25, 0.25)
+	var steel := StandardMaterial3D.new()
+	steel.vertex_color_use_as_albedo = true
+	steel.metallic = 0.45
+	steel.roughness = 0.45
+	steel.cull_mode = BaseMaterial3D.CULL_DISABLED
 	var out := {}
-	for pair in [["asphalt", asphalt], ["concrete", concrete]]:
+	for pair in [["asphalt", asphalt], ["concrete", concrete], ["steel", steel]]:
 		var path := OUT.path_join("%s_material.tres" % pair[0])
 		ResourceSaver.save(pair[1], path)
 		out[pair[0]] = load(path)
@@ -816,7 +962,7 @@ func _write_scene() -> void:
 		var body := StaticBody3D.new()
 		body.name = "RoadCell_%02d_%02d" % [key.x + 10, key.y + 10]
 		root.add_child(body)
-		for part in ["asphalt", "concrete", "roof"]:
+		for part in ["asphalt", "concrete", "roof", "steel"]:
 			if not g.has(part):
 				continue
 			var batch: Batch = g[part]
@@ -825,7 +971,7 @@ func _write_scene() -> void:
 			arrays[Mesh.ARRAY_VERTEX] = batch.verts
 			arrays[Mesh.ARRAY_NORMAL] = batch.normals
 			arrays[Mesh.ARRAY_TEX_UV] = batch.uvs
-			if part == "roof":
+			if part == "roof" or part == "steel":
 				arrays[Mesh.ARRAY_COLOR] = batch.colors
 			arrays[Mesh.ARRAY_INDEX] = batch.indices
 			var mesh := ArrayMesh.new()
@@ -837,17 +983,18 @@ func _write_scene() -> void:
 			mi.name = part.capitalize()
 			mi.mesh = load(mesh_path)
 			mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-			mi.visibility_range_end = RANGE_CONCRETE if part == "concrete" else RANGE_ASPHALT
+			mi.visibility_range_end = RANGE_CONCRETE if part == "concrete" else (RANGE_STEEL if part == "steel" else RANGE_ASPHALT)
 			body.add_child(mi)
-		var shape := ConcavePolygonShape3D.new()
-		shape.set_faces(g["faces"])
-		shape.backface_collision = true
-		var shape_path := OUT.path_join("shape_%02d_%02d.res" % [key.x + 10, key.y + 10])
-		ResourceSaver.save(shape, shape_path)
-		var cs := CollisionShape3D.new()
-		cs.name = "Shape"
-		cs.shape = load(shape_path)
-		body.add_child(cs)
+		if not (g["faces"] as PackedVector3Array).is_empty():
+			var shape := ConcavePolygonShape3D.new()
+			shape.set_faces(g["faces"])
+			shape.backface_collision = true
+			var shape_path := OUT.path_join("shape_%02d_%02d.res" % [key.x + 10, key.y + 10])
+			ResourceSaver.save(shape, shape_path)
+			var cs := CollisionShape3D.new()
+			cs.name = "Shape"
+			cs.shape = load(shape_path)
+			body.add_child(cs)
 		for part in ["lamp_single", "lamp_double"]:
 			if not g.has(part):
 				continue

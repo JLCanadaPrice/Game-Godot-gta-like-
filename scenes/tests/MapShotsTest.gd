@@ -38,6 +38,13 @@ const VIEWS := [
 	["quartier_eastgate_rue", Vector3(1098.6, 1.7, 338.0), Vector3(1104.4, 1.5, 238.2), "sol"],
 	["quartier_bluffview_survol", Vector3(-850, 120, -700), Vector3(-1000, 0, -1050)],
 	["quartier_midtown_nord", Vector3(-230, 50, -700), Vector3(-380, 0, -1000)],
+	# étape 4b : voie ferrée
+	["voie_ferree_pont_riviere", Vector3(-790, 9, 628), Vector3(-850, 3, 560)],
+	["voie_ferree_passage_niveau", Vector3(-372, 9, 226), Vector3(-389, 0.5, 252)],
+	["voie_ferree_viaduc_est", Vector3(690, 22, 380), Vector3(810, 4, 294)],
+	["voie_ferree_sur_voie_express", Vector3(-652, -3.8, 519), Vector3(-716, -2, 468)],
+	["voie_ferree_portail_est", Vector3(2060, 12, 235), Vector3(2172, 4, 196), "sol"],
+	["voie_ferree_heurtoir_ouest", Vector3(-2140, 2.5, 792), Vector3(-2172, 0.5, 800), "sol"],
 ]
 const SETTLE_FRAMES := 40
 
