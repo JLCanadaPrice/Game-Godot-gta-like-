@@ -1,0 +1,15 @@
+class_name ApartmentData
+extends Resource
+
+# Définition statique d'un bien achetable à l'agence immobilière (un .tres
+# par bien, sous resources/apartments/), même convention que CarData/
+# BuildingData. Résidence PERSONNELLE du joueur -- pas d'équivalent
+# passive_income comme BuildingData, ce n'est pas un investissement.
+# world_position : inutilisé pour l'instant (pas de lieu visitable en V1),
+# prêt pour la future téléportation sans retravailler la structure.
+
+@export var id: String
+@export var display_name: String
+@export var neighborhood: String
+@export var price: int
+@export var world_position: Vector3 = Vector3.ZERO

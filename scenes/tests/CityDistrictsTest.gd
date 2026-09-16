@@ -1,0 +1,350 @@
+extends Node
+
+# Test headless de la ville à 4 districts (après CityExpansionBake) :
+#  - districts : décalages, quai et boutiques seulement dans le District d'origine, contenu de chacun ;
+#  - graphes : CircuitPath et PedGraph d'un seul tenant, aucun noeud ni arête en double après fusion ;
+#  - coutures : une seule pièce de carrefour par noeud (Road2_X pour 4 branches), aucune bordure ni trottoir en
+#    travers d'une branche, aucune pièce en double le long des avenues partagées, et sur chaque branche : tuile
+#    d'approche, passage piéton, feu câblé et simulé, ligne d'arrêt du passage piéton, traversée piétonne ;
+#  - spawners (tous les noeuds, 252 voitures / 315 PNJ), SimulationCuller, carte, unique_id des nœuds.
+#
+# Lancer : Godot --headless --fixed-fps 60 --quit-after 900 res://scenes/tests/CityDistrictsTest.tscn
+
+const WORLD := preload("res://scenes/world/World.tscn")
+const Merge := preload("res://scenes/world/tools/CityGraphMerge.gd")
+const MapTexture := preload("res://scenes/ui/DistrictMapTexture.gd")
+const DISTRICTS := {"District": Vector3.ZERO, "District_W": Vector3(-432, 0, 0), "District_N": Vector3(0, 0, 288), "District_NW": Vector3(-432, 0, 288)}
+const ROAD_X := "res://assets/modular_roads/Road2_X.glb"
+const ROAD_T := "res://assets/modular_roads/Road2_T.glb"
+const DIRS := {"+X": Vector3(1, 0, 0), "-X": Vector3(-1, 0, 0), "+Z": Vector3(0, 0, 1), "-Z": Vector3(0, 0, -1)}
+const PED_NEG := -8.0
+const PED_POS := 7.0
+
+var _errors: Array[String] = []
+
+
+func _ready() -> void:
+	print("CITY_DISTRICTS_BEGIN")
+	var world := WORLD.instantiate()
+	add_child(world)
+	for spawner in ["CarSpawner", "NpcSpawner"]:
+		world.get_node(spawner).set_process(false)   # structure seule : pas de population ici
+	await get_tree().physics_frame
+	var circuit := world.get_node("Circuit") as CircuitPath
+	var ped := world.get_node("PedGraph") as PathGraph
+	_check_districts(world)
+	_check_graphs(circuit, ped)
+	_check_seams(world, circuit, ped)
+	_check_population_setup(world, circuit, ped)
+	_check_map(world)
+	_check_unique_ids()
+	print("CITY_DISTRICTS_RESULT %s %s" % ["OK" if _errors.is_empty() else "FAIL", " | ".join(_errors)])
+	get_tree().quit(0 if _errors.is_empty() else 1)
+
+
+func _check_districts(world: Node) -> void:
+	for district_name: String in DISTRICTS:
+		var d := world.get_node_or_null(district_name) as Node3D
+		if d == null:
+			_errors.append(district_name + " absent")
+			continue
+		var is_main := district_name == "District"
+		var quay := d.has_node("Quay")
+		var dealer := d.has_node("Buildings/Dealership_Building")
+		var agency := d.has_node("Buildings/Agency_Building")
+		var shops_ok := (dealer and agency) if is_main else not (dealer or agency)
+		if d.position.distance_to(DISTRICTS[district_name]) > 0.01 or quay != is_main or not shops_ok:
+			_errors.append("%s : position %s, quai %s, boutiques %s/%s" % [district_name, d.position, quay, dealer, agency])
+		print("CITY_DISTRICT %s @%s : %d tuiles de route, %d bâtiments, %d trottoirs, %d collisions de route, %d collisions de trottoir, quai %s, boutiques %s"
+				% [district_name, d.position, _count(d, "Roads"), _count(d, "Buildings"), _count(d, "Sidewalks"),
+				_count(d, "RoadsCollision"), _count(d, "SidewalksCollision"), quay, dealer and agency])
+	print("CITY_SEAM_PIECES %d pièces de carrefour posées aux coutures" % _count(world, "DistrictSeams/Roads"))
+
+
+func _check_graphs(circuit: CircuitPath, ped: PathGraph) -> void:
+	var pairs: Array[Vector2i] = []
+	var seen := {}
+	var dup_edges := 0
+	for e: Dictionary in circuit.edges:
+		var a := int(e.a)
+		var b := int(e.b)
+		pairs.append(Vector2i(a, b))
+		var key := "%d_%d" % [mini(a, b), maxi(a, b)]
+		if seen.has(key):
+			dup_edges += 1
+		seen[key] = true
+	var close := _close_pairs(circuit.nodes, 1.0) + _close_pairs(ped.nodes, 0.6)
+	var circuit_parts := _components(circuit.nodes.size(), pairs)
+	var ped_parts := _components(ped.nodes.size(), ped.edges)
+	print("CITY_GRAPHS circuit : %d noeuds, %d arêtes, %d composante(s), %d carrefours à feux simulés, %d lignes d'arrêt de passage piéton | réseau piéton : %d noeuds, %d arêtes, %d composante(s)"
+			% [circuit.nodes.size(), circuit.edges.size(), circuit_parts, circuit._light_state.size(),
+			circuit.crosswalk_stop_dist.size(), ped.nodes.size(), ped.edges.size(), ped_parts])
+	if circuit_parts != 1 or ped_parts != 1:
+		_errors.append("graphes coupés : circuit %d morceaux, réseau piéton %d" % [circuit_parts, ped_parts])
+	if dup_edges > 0 or close > 0:
+		_errors.append("fusion incomplète : %d arêtes doublées, %d paires de noeuds confondus" % [dup_edges, close])
+
+
+func _check_seams(world: Node, circuit: CircuitPath, ped: PathGraph) -> void:
+	var roads := []
+	var curbs: Array[Rect2] = []
+	var walls: Array[Rect2] = []
+	var walk_points: Array[Vector2] = []
+	var lights := {}
+	for d in world.get_children():
+		if not String(d.name).begins_with("District"):
+			continue
+		var r := d.get_node_or_null("Roads")
+		if r != null:
+			for tile in r.get_children():
+				roads.append(tile)
+				for k in tile.get_children():
+					if "circuit_node" in k:
+						lights["%d_%d" % [k.circuit_node, k.circuit_edge]] = true
+		for c in d.get_children():
+			if c.scene_file_path.begins_with("res://assets/modular_roads/"):
+				roads.append(c)
+		curbs.append_array(_boxes(d.get_node_or_null("RoadsCollision"), "RoadEdge"))
+		walls.append_array(_boxes(d.get_node_or_null("SidewalksCollision"), ""))
+		var s := d.get_node_or_null("Sidewalks")
+		if s != null:
+			for w in s.get_children():
+				var o := (w as Node3D).global_position
+				walk_points.append(Vector2(o.x, o.z))
+	var stats := {"noeuds": 0, "X": 0, "T": 0, "branches": 0}
+	for i in circuit.nodes.size():
+		var p: Vector3 = circuit.nodes[i]
+		if not _on_seam(p):
+			continue
+		var arms := Merge.arm_edges(circuit, i)
+		stats.noeuds += 1
+		stats["X" if arms.size() == 4 else "T"] += 1
+		var label := "couture (%.0f, %.0f)" % [p.x, p.z]
+		var here := _pieces_near(roads, p, 2.0)
+		if arms.size() < 3:
+			_errors.append("%s : %d branches" % [label, arms.size()])
+		if here.size() != 1:
+			_errors.append("%s : %d pièces de carrefour" % [label, here.size()])
+		elif arms.size() == 4 and here[0].scene_file_path != ROAD_X:
+			_errors.append("%s : 4 branches sur %s" % [label, here[0].scene_file_path.get_file()])
+		for key: String in arms:
+			var dir: Vector3 = DIRS[key]
+			var e: int = arms[key]
+			stats.branches += 1
+			var lane := _arm_rect(p, dir)
+			var what := []
+			if _any_rect(curbs, lane):
+				what.append("bordure en travers")
+			if _any_rect(walls, lane):
+				what.append("collision de trottoir en travers")
+			if _any_point(walk_points, lane):
+				what.append("trottoir en travers")
+			var approach := _pieces_near(roads, p + dir * 12.0, 1.0)
+			if approach.is_empty():
+				what.append("tuile d'approche absente")
+			elif not _has_decal(approach):
+				what.append("passage piéton absent")
+			if not lights.has("%d_%d" % [i, e]):
+				what.append("feu absent")
+			if not circuit._light_state.has(i) or not circuit._light_edge_phase.has(e):
+				what.append("feu non simulé")
+			if circuit.crosswalk_clear_distance(e, i) <= 0.0:
+				what.append("ligne d'arrêt absente")
+			if not _has_ped_crossing(ped, p, dir):
+				what.append("traversée piétonne absente")
+			if not what.is_empty():
+				_errors.append("%s branche %s : %s" % [label, key, ", ".join(what)])
+	var dups := _seam_duplicates(world, roads)
+	print("CITY_SEAMS %d carrefours de couture (%d en X, %d en T), %d branches vérifiées (bordures, trottoirs, tuile, passage piéton, feu, ligne d'arrêt, traversée) | doublons le long des coutures : %d pièces de route, %d collisions"
+			% [stats.noeuds, stats.X, stats.T, stats.branches, dups.x, dups.y])
+	if stats.noeuds != 21:
+		_errors.append("%d carrefours de couture au lieu de 21" % stats.noeuds)
+	if dups.x > 0 or dups.y > 0:
+		_errors.append("doublons aux coutures : %d pièces, %d collisions" % [dups.x, dups.y])
+
+
+func _check_population_setup(world: Node, circuit: CircuitPath, ped: PathGraph) -> void:
+	var cars := world.get_node("CarSpawner")
+	var npcs := world.get_node("NpcSpawner")
+	var culler := world.get_node_or_null("SimulationCuller")
+	print("CITY_SPAWNERS voitures max %d sur %d points (circuit %d noeuds) | PNJ max %d sur %d points (réseau %d noeuds) | SimulationCuller %s"
+			% [cars.max_active, cars.spawn_nodes.size(), circuit.nodes.size(), npcs.max_active, npcs.spawn_nodes.size(), ped.nodes.size(), culler != null])
+	if cars.max_active != 252 or npcs.max_active != 315 or cars.spawn_nodes.size() != circuit.nodes.size() \
+			or npcs.spawn_nodes.size() != ped.nodes.size() or culler == null:
+		_errors.append("spawners / SimulationCuller mal réglés")
+
+
+func _check_map(world: Node) -> void:
+	var img := MapTexture.build(world, 0.5).get_image()
+	if img == null:
+		print("CITY_MAP image de carte non relisible en headless, contrôle des pixels sauté")
+		return
+	var missing := []
+	for district_name: String in DISTRICTS:
+		var at: Vector3 = Vector3(-388, 0, -316) + DISTRICTS[district_name]
+		if img.get_pixelv(Vector2i(MapTexture.world_to_pixel(at, 0.5))).a < 0.5:
+			missing.append(district_name)
+	print("CITY_MAP carte %dx%d px, routes dessinées dans %d/4 districts" % [img.get_width(), img.get_height(), 4 - missing.size()])
+	if not missing.is_empty():
+		_errors.append("carte : routes absentes dans " + str(missing))
+
+
+func _check_unique_ids() -> void:
+	var text := FileAccess.get_file_as_string("res://scenes/world/World.tscn")
+	var seen := {}
+	var total := 0
+	var dups := 0
+	for m in RegEx.create_from_string("unique_id=(\\d+)").search_all(text):
+		total += 1
+		if seen.has(m.get_string(1)):
+			dups += 1
+		seen[m.get_string(1)] = true
+	print("CITY_SCENE_IDS World.tscn : %d lignes, %d nœuds identifiés, %d unique_id en double" % [text.count("\n"), total, dups])
+	if dups > 0:
+		_errors.append("%d unique_id en double dans World.tscn" % dups)
+
+
+func _seam_duplicates(world: Node, roads: Array) -> Vector2i:
+	var seen := {}
+	var road_dups := 0
+	for piece in roads:
+		var o := (piece as Node3D).global_position
+		if _near_seam_line(o):
+			var key := "%s|%d|%d" % [piece.scene_file_path, roundi(o.x), roundi(o.z)]
+			road_dups += 1 if seen.has(key) else 0
+			seen[key] = true
+	var col_dups := 0
+	for d in world.get_children():
+		for container in ["RoadsCollision", "SidewalksCollision"]:
+			var holder := d.get_node_or_null(container) if String(d.name).begins_with("District") else null
+			if holder == null:
+				continue
+			for body in holder.get_children():
+				for s in body.find_children("*", "CollisionShape3D", true, false):
+					var o := (s as Node3D).global_position
+					if _near_seam_line(o):
+						var key := "%s|%s|%d|%d|%d" % [container, str((s as CollisionShape3D).shape.get("size")), roundi(o.x * 2.0), roundi(o.y * 4.0), roundi(o.z * 2.0)]
+						col_dups += 1 if seen.has(key) else 0
+						seen[key] = true
+	return Vector2i(road_dups, col_dups)
+
+
+func _boxes(container: Node, prefix: String) -> Array[Rect2]:
+	var out: Array[Rect2] = []
+	if container == null:
+		return out
+	for body in container.get_children():
+		if not String(body.name).begins_with(prefix):
+			continue
+		for s in body.find_children("*", "CollisionShape3D", true, false):
+			var box := (s as CollisionShape3D).shape as BoxShape3D
+			if box == null:
+				continue
+			var t := (s as Node3D).global_transform
+			var h := box.size * 0.5
+			var hx := absf(t.basis.x.x) * h.x + absf(t.basis.y.x) * h.y + absf(t.basis.z.x) * h.z
+			var hz := absf(t.basis.x.z) * h.x + absf(t.basis.y.z) * h.y + absf(t.basis.z.z) * h.z
+			out.append(Rect2(t.origin.x - hx, t.origin.z - hz, hx * 2.0, hz * 2.0))
+	return out
+
+
+# Chaussée d'une branche juste après le carrefour : 7 à 16 m du centre, 3.5 m de part et d'autre de l'axe
+# (les bordures de la branche elle-même sont à 4.9 m et plus).
+func _arm_rect(p: Vector3, dir: Vector3) -> Rect2:
+	var c := p + dir * 11.5
+	var size := Vector2(9.0, 7.0) if absf(dir.x) > 0.5 else Vector2(7.0, 9.0)
+	return Rect2(Vector2(c.x, c.z) - size * 0.5, size)
+
+
+func _any_rect(rects: Array[Rect2], lane: Rect2) -> bool:
+	for r in rects:
+		if r.intersects(lane):
+			return true
+	return false
+
+
+func _any_point(points: Array[Vector2], lane: Rect2) -> bool:
+	for q in points:
+		if lane.has_point(q):
+			return true
+	return false
+
+
+func _pieces_near(pieces: Array, p: Vector3, radius: float) -> Array:
+	var out := []
+	for piece in pieces:
+		var o := (piece as Node3D).global_position
+		if Vector2(o.x - p.x, o.z - p.z).length() < radius:
+			out.append(piece)
+	return out
+
+
+func _has_decal(tiles: Array) -> bool:
+	for tile in tiles:
+		for k in tile.get_children():
+			if k is Decal:
+				return true
+	return false
+
+
+func _has_ped_crossing(ped: PathGraph, p: Vector3, dir: Vector3) -> bool:
+	var side := PED_POS if dir.x + dir.z > 0.0 else PED_NEG
+	var a := _ped_near(ped, p + (Vector3(side, 0, PED_NEG) if absf(dir.x) > 0.5 else Vector3(PED_NEG, 0, side)))
+	var b := _ped_near(ped, p + (Vector3(side, 0, PED_POS) if absf(dir.x) > 0.5 else Vector3(PED_POS, 0, side)))
+	if a < 0 or b < 0:
+		return false
+	for e in ped.edges:
+		if (e.x == a and e.y == b) or (e.x == b and e.y == a):
+			return true
+	return false
+
+
+func _ped_near(ped: PathGraph, q: Vector3) -> int:
+	for i in ped.nodes.size():
+		if Vector2(ped.nodes[i].x - q.x, ped.nodes[i].z - q.z).length() < 1.0:
+			return i
+	return -1
+
+
+func _on_seam(p: Vector3) -> bool:
+	return (absf(p.x + 460.0) < 1.0 and p.z > -461.0 and p.z < 117.0) or (absf(p.z + 172.0) < 1.0 and p.x > -893.0 and p.x < -27.0)
+
+
+func _near_seam_line(o: Vector3) -> bool:
+	return (absf(o.x + 460.0) < 8.0 and o.z > -468.0 and o.z < 124.0) or (absf(o.z + 172.0) < 8.0 and o.x > -900.0 and o.x < -20.0)
+
+
+func _close_pairs(nodes: Array[Vector3], dist: float) -> int:
+	var n := 0
+	for i in nodes.size():
+		for j in range(i + 1, nodes.size()):
+			if nodes[i].distance_to(nodes[j]) < dist:
+				n += 1
+	return n
+
+
+func _count(root: Node, path: String) -> int:
+	var n := root.get_node_or_null(path)
+	return n.get_child_count() if n != null else 0
+
+
+func _components(count: int, pairs: Array[Vector2i]) -> int:
+	var parent := PackedInt32Array()
+	parent.resize(count)
+	for i in count:
+		parent[i] = i
+	for pr in pairs:
+		var a := _root_of(parent, pr.x)
+		var b := _root_of(parent, pr.y)
+		if a != b:
+			parent[a] = b
+	var roots := {}
+	for i in count:
+		roots[_root_of(parent, i)] = true
+	return roots.size()
+
+
+func _root_of(parent: PackedInt32Array, i: int) -> int:
+	while parent[i] != i:
+		i = parent[i]
+	return i

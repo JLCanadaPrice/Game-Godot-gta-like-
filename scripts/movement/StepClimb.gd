@@ -1,0 +1,51 @@
+class_name StepClimb
+extends RefCounted
+
+# Aide au franchissement de petites marches verticales (bordure trottoir/
+# route) par un CharacterBody3D en marchant normalement, sans avoir besoin
+# de sauter. Technique classique : rayon bas bloqué (un obstacle est juste
+# devant, au ras du sol) + rayon haut dégagé (son sommet est sous
+# MAX_STEP_HEIGHT, donc franchissable -- pas un mur) -> on soulève le
+# personnage pour que sa capsule passe par-dessus l'arête verticale ; le
+# recalage vertical normal qui suit (floor snapping du joueur, ou
+# NPC._ground_ride_height()) retrouve ensuite la vraie hauteur de la
+# nouvelle surface au même frame/au suivant.
+#
+# MAX_STEP_HEIGHT reprend l'écart trottoir/route réellement mesuré ce soir
+# (dessus trottoir 0.408, dessus route 0.2 côté District / 0.05 côté
+# CityKitBuilder -> écart 0.208 à 0.358 m), avec une marge généreuse.
+const MAX_STEP_HEIGHT := 0.4
+const LOW_PROBE_Y := 0.05
+const PROBE_DIST := 0.6
+# Player.tscn et NPC.tscn utilisent la même CapsuleShape3D (radius 0.4,
+# height 1.8) -> demi-hauteur 0.9, capsule centrée sur global_position.
+const DEFAULT_CAPSULE_HALF_HEIGHT := 0.9
+
+static func try_climb(body: CharacterBody3D, move_dir: Vector3, capsule_half_height: float = DEFAULT_CAPSULE_HALF_HEIGHT) -> void:
+	var flat_dir := Vector3(move_dir.x, 0.0, move_dir.z)
+	if flat_dir.length_squared() < 0.0001:
+		return
+	flat_dir = flat_dir.normalized()
+
+	var space_state := body.get_world_3d().direct_space_state
+	var origin := body.global_position
+	# global_position est le CENTRE de la capsule, pas les pieds -> les
+	# rayons doivent partir du niveau du sol réel sous le personnage, sinon
+	# ils passent bien au-dessus d'une marche basse (curb) sans la détecter.
+	var foot_y := origin.y - capsule_half_height
+
+	var low_from := Vector3(origin.x, foot_y + LOW_PROBE_Y, origin.z)
+	var low_params := PhysicsRayQueryParameters3D.create(low_from, low_from + flat_dir * PROBE_DIST)
+	low_params.collision_mask = 1
+	low_params.exclude = [body.get_rid()]
+	if space_state.intersect_ray(low_params).is_empty():
+		return   # rien au ras du sol devant -> pas de marche à franchir
+
+	var high_from := Vector3(origin.x, foot_y + MAX_STEP_HEIGHT, origin.z)
+	var high_params := PhysicsRayQueryParameters3D.create(high_from, high_from + flat_dir * PROBE_DIST)
+	high_params.collision_mask = 1
+	high_params.exclude = [body.get_rid()]
+	if not space_state.intersect_ray(high_params).is_empty():
+		return   # obstacle encore présent en hauteur -> un mur, pas une marche
+
+	body.global_position.y += MAX_STEP_HEIGHT

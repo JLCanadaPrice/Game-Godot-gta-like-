@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="BuildingData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/BuildingData.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "office_lowrise_01"
+display_name = "Immeuble de bureaux"
+district = "downtown"
+price = 15000
+passive_income = 330
+upgrade_level = 0
+max_upgrade_level = 3
+risk_factor = 0.18
+world_position = Vector3(-45, 1, 94)

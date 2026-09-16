@@ -1,0 +1,97 @@
+extends Control
+
+# Téléphone : ouvert/fermé par la touche T (toggle_phone). Ne met pas le
+# jeu en pause (cohérent avec I/C/M) -- un appel entrant doit pouvoir
+# arriver pendant une course-poursuite, pas seulement à l'arrêt.
+# Onglet "Contacts" : vue allégée des 4 catégories de ContactsManager
+# (nom + bouton Appeler, pas le niveau de confiance/note -- ça reste
+# l'affaire de ContactsPanel sur C). Onglet "Journal" : historique des
+# appels (sortants et entrants), vide pour l'instant -- fondation pour les
+# futures alertes (gangs rivaux, etc.) via PhoneManager.trigger_incoming_call().
+
+const CATEGORY_TAB_NAMES := {
+	"flic": "Flics",
+	"mafieux": "Mafieux",
+	"rival": "Rivaux",
+	"indic": "Indics",
+}
+
+@onready var contacts_tabs: TabContainer = $Panel/VBoxContainer/TabContainer/Contacts/ContactsTabs
+@onready var journal_list: VBoxContainer = $Panel/VBoxContainer/TabContainer/Journal/ScrollContainer/ItemsList
+@onready var journal_empty_label: Label = $Panel/VBoxContainer/TabContainer/Journal/EmptyLabel
+@onready var close_button: Button = $Panel/VBoxContainer/CloseButton
+
+var _contact_lists: Dictionary = {}        # category -> VBoxContainer
+var _contact_empty_labels: Dictionary = {} # category -> Label
+
+func _ready() -> void:
+	add_to_group("phone_panel")
+	visible = false
+	close_button.pressed.connect(_on_close_pressed)
+	for category in ContactsManager.CATEGORIES:
+		var tab_name: String = CATEGORY_TAB_NAMES[category]
+		_contact_lists[category] = contacts_tabs.get_node(
+			NodePath(tab_name + "/ScrollContainer/ItemsList"))
+		_contact_empty_labels[category] = contacts_tabs.get_node(
+			NodePath(tab_name + "/EmptyLabel"))
+	ContactsManager.contacts_changed.connect(_refresh_contacts)
+	PhoneManager.call_log_changed.connect(_refresh_journal)
+	_refresh_contacts()
+	_refresh_journal()
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("toggle_phone"):
+		toggle()
+
+func toggle() -> void:
+	if visible:
+		hide_ui()
+	else:
+		show_ui()
+
+func show_ui() -> void:
+	visible = true
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	_refresh_contacts()
+	_refresh_journal()
+
+func hide_ui() -> void:
+	visible = false
+	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+
+func _on_close_pressed() -> void:
+	hide_ui()
+
+func _refresh_contacts() -> void:
+	for category in ContactsManager.CATEGORIES:
+		var list: VBoxContainer = _contact_lists[category]
+		for child in list.get_children():
+			child.queue_free()
+		var entries: Array = ContactsManager.get_contacts(category)
+		(_contact_empty_labels[category] as Label).visible = entries.is_empty()
+		for entry in entries:
+			var row := HBoxContainer.new()
+			var label := Label.new()
+			label.text = entry["name"]
+			label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			row.add_child(label)
+			var call_button := Button.new()
+			call_button.text = "Appeler"
+			var contact_name: String = entry["name"]
+			call_button.pressed.connect(func(): PhoneManager.call_contact(category, contact_name))
+			row.add_child(call_button)
+			list.add_child(row)
+
+func _refresh_journal() -> void:
+	for child in journal_list.get_children():
+		child.queue_free()
+	var log: Array = PhoneManager.call_log
+	journal_empty_label.visible = log.is_empty()
+	for entry: Dictionary in log:
+		var label := Label.new()
+		var arrow: String = "->" if entry["direction"] == "sortant" else "<-"
+		var who: String = entry["name"]
+		var note: String = entry.get("note", "")
+		var note_suffix: String = "  (%s)" % note if note != "" else ""
+		label.text = "%s %s%s" % [arrow, who, note_suffix]
+		journal_list.add_child(label)

@@ -1,0 +1,22 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scenes/tests/CarDropTest.gd" id="1"]
+[ext_resource type="PackedScene" path="res://scenes/vehicles/PlayerCarPhysics.tscn" id="2"]
+
+[sub_resource type="BoxShape3D" id="Shape_ground"]
+size = Vector3(200, 1, 200)
+
+[node name="CarDropTest" type="Node3D"]
+script = ExtResource("1")
+DROP_HEIGHT = 10.0
+disable_steering_assist = false
+debug_wheel_forces = true
+
+[node name="Ground" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Ground"]
+shape = SubResource("Shape_ground")
+
+[node name="PlayerCarPhysics" parent="." instance=ExtResource("2")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 10, 0)

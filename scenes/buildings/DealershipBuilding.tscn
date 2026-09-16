@@ -1,0 +1,28 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scenes/buildings/ShopBuilding.gd" id="1_script"]
+[ext_resource type="PackedScene" path="res://assets/shops/dealership/Dealership_Shell.glb" id="2_shell"]
+[ext_resource type="PackedScene" path="res://assets/shops/dealership/Dealership_Roof.glb" id="3_roof"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_map"]
+size = Vector3(18.5, 6.6, 14.4)
+
+[node name="DealershipBuilding" type="Node3D"]
+script = ExtResource("1_script")
+panel_group = "car_dealership_panel"
+counter_prompt = "[E] Parler au vendeur"
+delivers_cars = true
+display_models = PackedStringArray("res://assets/vehicle_models_extra/lowpoly_cars_free_cc0/italia.glb", "res://assets/vehicle_models_extra/lowpoly_cars_free_cc0/kamaro.glb")
+
+[node name="Shell" parent="." instance=ExtResource("2_shell")]
+
+[node name="Roof" parent="." instance=ExtResource("3_roof")]
+
+[node name="StaticBody3D" type="StaticBody3D" parent="."]
+collision_layer = 0
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="StaticBody3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.25, 3.3, -2.2)
+shape = SubResource("BoxShape3D_map")
+disabled = true

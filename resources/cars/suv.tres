@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="CarData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/CarData.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "suv"
+display_name = "SUV"
+model_path = "res://assets/vehicle_models/SUV.fbx"
+category = "utilitaire"
+price = 7000

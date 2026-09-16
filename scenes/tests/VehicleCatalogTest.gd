@@ -1,0 +1,130 @@
+extends Node3D
+
+# Test headless du catalogue de modèles de véhicules (resources/vehicle_models/*.tres) branché dans Car.gd :
+#  - chaque entrée a au moins une variante et chaque variante se charge ;
+#  - une Car créée sur chaque modèle (1re variante) reçoit les réglages du catalogue, trouve ses roues (pivot
+#    au centre de la roue, exactement 2 roues avant) et une boîte de collision de gabarit plausible ;
+#  - les 6 voitures d'origine gardent échelle 1, orientation 180°, décalage -0.45 ;
+#  - 20 000 tirages de circulation : uniquement du rôle civil, chaque modèle civil sort au moins une fois.
+#
+# Lancer : Godot --headless --fixed-fps 60 --quit-after 300 res://scenes/tests/VehicleCatalogTest.tscn
+
+const CAR_SCENE := preload("res://scenes/vehicles/Car.tscn")
+const VehicleCatalog := preload("res://scripts/data/VehicleCatalog.gd")
+const ModelData := preload("res://scripts/data/VehicleModelData.gd")
+const LEGACY := [
+	"res://assets/vehicle_models/NormalCar1.fbx",
+	"res://assets/vehicle_models/NormalCar2.fbx",
+	"res://assets/vehicle_models/SportsCar.fbx",
+	"res://assets/vehicle_models/SportsCar2.fbx",
+	"res://assets/vehicle_models/SUV.fbx",
+	"res://assets/vehicle_models/Taxi.fbx",
+]
+const PICKS := 20000
+const PIVOT_TOLERANCE := 0.05           # m
+const LENGTH_RANGE := Vector2(1.8, 12.5)
+const WIDTH_RANGE := Vector2(1.0, 3.2)
+
+
+func _ready() -> void:
+	print("VEHICLE_CATALOG_BEGIN")
+	var errors: Array[String] = []
+	var models := VehicleCatalog.models()
+	var roles := {}
+	var variants := 0
+	for m in models:
+		roles[m.role] = int(roles.get(m.role, 0)) + 1
+		variants += m.model_paths.size()
+		if m.model_paths.is_empty():
+			errors.append("%s : aucune variante" % m.id)
+		for p in m.model_paths:
+			if not (load(p) is PackedScene):
+				errors.append("%s : variante illisible %s" % [m.id, p])
+	print("VEHICLE_CATALOG_MODELS %d modèles, %d variantes, rôles %s" % [models.size(), variants, roles])
+
+	for p in LEGACY:
+		var d := VehicleCatalog.find_by_path(p)
+		if d == null or d.role != "civil" or not is_equal_approx(d.model_scale, 1.0) \
+				or not is_equal_approx(d.model_yaw_deg, 180.0) or not is_equal_approx(d.model_y_offset, -0.45):
+			errors.append("voiture d'origine absente du catalogue ou réglages modifiés : " + p)
+
+	for m in models:
+		if not m.model_paths.is_empty():
+			_check_car(m, errors)
+
+	var counts := {}
+	var legacy_hits := 0
+	for i in PICKS:
+		var path := VehicleCatalog.pick_traffic_path()
+		var d := VehicleCatalog.find_by_path(path)
+		if d == null or d.role != "civil":
+			errors.append("tirage de circulation hors rôle civil : " + path)
+			break
+		counts[d.id] = int(counts.get(d.id, 0)) + 1
+		if path in LEGACY:
+			legacy_hits += 1
+	for m in models:
+		if m.role == "civil" and m.traffic_weight > 0.0 and not counts.has(m.id):
+			errors.append("%s jamais tiré en %d tirages" % [m.id, PICKS])
+	print("VEHICLE_CATALOG_PICKS %d tirages, %d modèles tirés, voitures d'origine %.1f %%" % [PICKS, counts.size(), 100.0 * legacy_hits / PICKS])
+
+	for e in errors.slice(0, 40):
+		print("VEHICLE_CATALOG_ERROR " + e)
+	print("VEHICLE_CATALOG_RESULT %s (%d erreurs)" % ["OK" if errors.is_empty() else "FAIL", errors.size()])
+	get_tree().quit(0 if errors.is_empty() else 1)
+
+
+# Car réelle sur la 1re variante du modèle : réglages appliqués, roues, boîte de collision.
+func _check_car(m: ModelData, errors: Array[String]) -> void:
+	var car := CAR_SCENE.instantiate()
+	car.set("forced_model_path", m.model_paths[0])
+	add_child(car)
+	var model := car.get("_model") as Node3D
+	if model == null:
+		errors.append("%s : modèle non chargé" % m.id)
+		car.free()
+		return
+	if car.get("model_path") != m.model_paths[0] or not is_equal_approx(model.scale.x, m.model_scale) \
+			or not is_equal_approx(float(car.get("model_yaw_deg")), m.model_yaw_deg) \
+			or not is_equal_approx(model.position.y, m.model_y_offset):
+		errors.append("%s : réglages du catalogue non appliqués" % m.id)
+	var wheels: Array = car.get("_wheels")
+	var fronts: Array = car.get("_wheels_front")
+	if wheels.size() < 3 or fronts.size() != 2:
+		errors.append("%s : %d roues dont %d avant" % [m.id, wheels.size(), fronts.size()])
+	var worst_pivot := 0.0
+	var worst_wheel := ""
+	for w: Node3D in wheels:
+		var offset := _pivot_offset(w)
+		if offset > worst_pivot:
+			worst_pivot = offset
+			worst_wheel = w.name
+	if worst_pivot > PIVOT_TOLERANCE:
+		if m.model_paths[0] in LEGACY:   # défaut de l'asset d'origine, que le catalogue ne modifie pas : signalé seulement
+			print("VEHICLE_CATALOG_WARN %s : pivot de la roue %s décalé de %.2f m (asset d'origine inchangé)" % [m.id, worst_wheel, worst_pivot])
+		else:
+			errors.append("%s : pivot de la roue %s décalé de %.2f m" % [m.id, worst_wheel, worst_pivot])
+	var box := (car.get_node("CollisionShape3D") as CollisionShape3D).shape as BoxShape3D
+	var half: float = car.get("_half_length")
+	if box.size.z < LENGTH_RANGE.x or box.size.z > LENGTH_RANGE.y or box.size.x < WIDTH_RANGE.x \
+			or box.size.x > WIDTH_RANGE.y or not is_equal_approx(half, box.size.z * 0.5):
+		errors.append("%s : boîte de collision %s incohérente" % [m.id, box.size])
+	print("VEHICLE_CATALOG_CAR %-24s %-7s x%.2f  L=%.2f l=%.2f h=%.2f  roues=%d avant=%d pivot=%.3f"
+			% [m.id, m.role, m.model_scale, box.size.z, box.size.x, box.size.y, wheels.size(), fronts.size(), worst_pivot])
+	car.free()
+
+
+# Écart (m) entre l'origine d'une roue et le centre de ses meshes, en repère monde.
+func _pivot_offset(wheel: Node3D) -> float:
+	var parts := wheel.find_children("*", "MeshInstance3D", true, false)
+	parts.append(wheel)
+	var box := AABB()
+	var has := false
+	for p in parts:
+		var mi := p as MeshInstance3D
+		if mi == null or mi.mesh == null:
+			continue
+		var b := mi.global_transform * mi.mesh.get_aabb()
+		box = box.merge(b) if has else b
+		has = true
+	return box.get_center().distance_to(wheel.global_position) if has else 0.0

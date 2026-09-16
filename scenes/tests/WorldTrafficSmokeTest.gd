@@ -1,0 +1,144 @@
+extends Node
+
+# Test fumée (headless) de la circulation dans la vraie carte : charge World.tscn et laisse CarSpawner remplir
+# les rues pendant GAME_SECONDS de jeu, puis relève :
+#  - la composition des voitures apparues (voitures d'origine / City Vehicles / Low Poly Cars, par modèle) ;
+#  - l'écart pare-choc à pare-choc entre deux voitures IA qui se suivent sur la même voie (cap à 25° près,
+#    décalage latéral < 1.5 m), pour vérifier que le suivi tient compte de la longueur réelle des véhicules.
+# Le poids des véhicules longs (bus, autocar, camions, limousine) est multiplié en mémoire pour en voir assez
+# en 90 s ; rien n'est enregistré dans les .tres.
+#
+# Lancer : Godot --headless --fixed-fps 60 --quit-after 7000 res://scenes/tests/WorldTrafficSmokeTest.tscn
+
+const WORLD := preload("res://scenes/world/World.tscn")
+const VehicleCatalog := preload("res://scripts/data/VehicleCatalog.gd")
+const GAME_SECONDS := 90.0
+const LONG_MODEL_TOKENS := ["bus", "coach", "truck", "stepvan", "limousine"]
+const LONG_WEIGHT_BOOST := 6.0
+const SAMPLE_INTERVAL := 0.1
+const SAME_LANE_COS := 0.906        # cos(25°)
+const SAME_LANE_LATERAL := 1.5      # m
+const FOLLOW_RANGE := 15.0          # m d'écart max pour considérer que deux voitures se suivent
+const DEEP_OVERLAP := 1.0           # m : chevauchement franc, au-delà du lissage de voie
+
+var _running := false
+var _sample_timer := 0.0
+var _seen := {}                     # instance id -> chemin du modèle
+var _follow_samples := 0
+var _min_gap_cars := INF
+var _min_gap_long := INF
+var _overlaps_cars := {}            # paire -> pire écart
+var _overlaps_long := {}
+
+
+func _ready() -> void:
+	print("WORLD_TRAFFIC_BEGIN")
+	for m in VehicleCatalog.models():
+		if _is_long_id(m.id):
+			m.traffic_weight *= LONG_WEIGHT_BOOST
+	add_child(WORLD.instantiate())
+	_running = true
+	await get_tree().create_timer(GAME_SECONDS).timeout
+	_running = false
+	_report()
+
+
+func _physics_process(delta: float) -> void:
+	if not _running:
+		return
+	_sample_timer -= delta
+	if _sample_timer > 0.0:
+		return
+	_sample_timer = SAMPLE_INTERVAL
+	var cars: Array[Node3D] = []
+	for v in get_tree().get_nodes_in_group("vehicle"):
+		if not _seen.has(v.get_instance_id()):
+			_seen[v.get_instance_id()] = str(v.get("model_path"))
+		if _is_ai(v):
+			cars.append(v as Node3D)
+	for i in cars.size():
+		var a := cars[i]
+		var fwd := _flat_forward(a)
+		var side := fwd.cross(Vector3.UP)
+		for j in range(i + 1, cars.size()):
+			var b := cars[j]
+			if fwd.dot(_flat_forward(b)) < SAME_LANE_COS:
+				continue
+			var rel := b.global_position - a.global_position
+			rel.y = 0.0
+			if absf(rel.dot(side)) > SAME_LANE_LATERAL:
+				continue
+			var gap: float = absf(rel.dot(fwd)) - float(a.get("_half_length")) - float(b.get("_half_length"))
+			if gap > FOLLOW_RANGE:
+				continue
+			_follow_samples += 1
+			var id_a := a.get_instance_id()
+			var id_b := b.get_instance_id()
+			var pair := "%d_%d" % [mini(id_a, id_b), maxi(id_a, id_b)]
+			if _is_long_path(_seen[id_a]) or _is_long_path(_seen[id_b]):
+				_min_gap_long = minf(_min_gap_long, gap)
+				if gap < -DEEP_OVERLAP:
+					_overlaps_long[pair] = minf(float(_overlaps_long.get(pair, 0.0)), gap)
+			else:
+				_min_gap_cars = minf(_min_gap_cars, gap)
+				if gap < -DEEP_OVERLAP:
+					_overlaps_cars[pair] = minf(float(_overlaps_cars.get(pair, 0.0)), gap)
+
+
+func _report() -> void:
+	var packs := {"origine": 0, "city": 0, "lowpoly": 0, "autre": 0}
+	var per_model := {}
+	var long_count := 0
+	for id in _seen:
+		var path: String = _seen[id]
+		var pack := "autre"
+		if path.begins_with("res://assets/vehicle_models/"):
+			pack = "origine"
+		elif path.contains("city_vehicles"):
+			pack = "city"
+		elif path.contains("lowpoly_cars_free"):
+			pack = "lowpoly"
+		packs[pack] += 1
+		var d := VehicleCatalog.find_by_path(path)
+		var model_id: String = d.id if d != null else path.get_file()
+		per_model[model_id] = int(per_model.get(model_id, 0)) + 1
+		if _is_long_path(path):
+			long_count += 1
+	print("WORLD_TRAFFIC_SPAWNED %d voitures %s, dont %d véhicules longs, %d modèles différents" % [_seen.size(), packs, long_count, per_model.size()])
+	print("WORLD_TRAFFIC_MODELS %s" % per_model)
+	print("WORLD_TRAFFIC_GAPS %d mesures de suivi | écart mini voitures %.2f m | écart mini avec véhicule long %.2f m | chevauchements > %.1f m : voitures %d paires, avec véhicule long %d paires"
+			% [_follow_samples, _min_gap_cars, _min_gap_long, DEEP_OVERLAP, _overlaps_cars.size(), _overlaps_long.size()])
+	var errors: Array[String] = []
+	if packs.city == 0:
+		errors.append("aucune voiture City Vehicles")
+	if packs.lowpoly == 0:
+		errors.append("aucune voiture Low Poly Cars")
+	if long_count == 0:
+		errors.append("aucun véhicule long apparu")
+	if not _overlaps_long.is_empty():
+		errors.append("%d paires avec véhicule long qui se chevauchent" % _overlaps_long.size())
+	print("WORLD_TRAFFIC_RESULT %s %s" % ["OK" if errors.is_empty() else "FAIL", " | ".join(errors)])
+	get_tree().quit(0 if errors.is_empty() else 1)
+
+
+func _is_ai(v: Node) -> bool:
+	return v is Node3D and v.get("_path") != null and not bool(v.get("driven_by_player")) \
+			and not bool(v.get("_abandoned")) and float(v.get("_knock_time")) <= 0.0
+
+
+func _flat_forward(n: Node3D) -> Vector3:
+	var f := -n.global_transform.basis.z
+	f.y = 0.0
+	return f.normalized()
+
+
+func _is_long_id(id: String) -> bool:
+	for token: String in LONG_MODEL_TOKENS:
+		if id.contains(token):
+			return true
+	return false
+
+
+func _is_long_path(path: String) -> bool:
+	var d := VehicleCatalog.find_by_path(path)
+	return d != null and _is_long_id(d.id)

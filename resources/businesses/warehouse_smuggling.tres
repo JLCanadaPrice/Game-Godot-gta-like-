@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="BusinessData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/BusinessData.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "warehouse_ops_01"
+display_name = "Entrepôt - opérations"
+linked_building_id = "warehouse_01"
+base_price = 8
+current_stock = 0
+max_stock = 120
+demand_factor = 1.2
+risk_factor = 0.25

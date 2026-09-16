@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="BuildingData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/BuildingData.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "laundromat_01"
+display_name = "Laverie automatique"
+district = "downtown"
+price = 6000
+passive_income = 130
+upgrade_level = 0
+max_upgrade_level = 3
+risk_factor = 0.1
+world_position = Vector3(0, 1, -26)

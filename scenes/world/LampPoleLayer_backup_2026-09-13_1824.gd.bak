@@ -1,0 +1,20 @@
+extends Node3D
+
+# Place le mesh du poteau de lampadaire (lamp_1.glb) sur le meme calque
+# visuel dedie (2) que TrafficLight.gd utilise pour son propre modele : le
+# poteau touche presque son propre SpotLight3D (a peine ~6.2m, dans un cone
+# de 44 et une portee de 8.8), qui le surexposait en blanc. Le
+# light_cull_mask des 98 spots exclut deja ce calque ; le soleil
+# (DirectionalLight3D, cull_mask par defaut = tous calques) continue de
+# l'eclairer normalement.
+#
+# Fait exprès en script (comme TrafficLight.gd) plutot qu'en modifiant la
+# propriete "layers" directement dans World.tscn sur ce noeud interne de
+# l'instance .glb : une tentative precedente de forcer un owner sur ce
+# noeud interne pour sauvegarder l'override a corrompu la structure
+# d'instanciation (duplication du mesh). Un changement au runtime, ici,
+# n'a pas ce probleme puisqu'il n'est jamais serialise dans la scene.
+func _ready() -> void:
+	for c in get_children():
+		if c is MeshInstance3D:
+			c.layers = 2

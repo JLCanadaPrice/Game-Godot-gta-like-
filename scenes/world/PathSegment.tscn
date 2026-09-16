@@ -1,0 +1,19 @@
+[gd_scene load_steps=4 format=3]
+
+[sub_resource type="BoxShape3D" id="Shape_path"]
+size = Vector3(1, 0.4, 1)
+
+[sub_resource type="BoxMesh" id="Mesh_path"]
+size = Vector3(1, 0.4, 1)
+
+[sub_resource type="StandardMaterial3D" id="Mat_path"]
+albedo_color = Color(0.55, 0.53, 0.5, 1)
+
+[node name="PathSegment" type="StaticBody3D"]
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+mesh = SubResource("Mesh_path")
+surface_material_override/0 = SubResource("Mat_path")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("Shape_path")

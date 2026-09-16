@@ -1,0 +1,761 @@
+extends CharacterBody3D
+
+# Voiture arcade (CharacterBody3D, pas de VehicleBody3D).
+#  - En circulation : suit CircuitPath (spawn/despawn via LoopSpawner).
+#  - Conduite : le joueur monte (E via InteractZone), la voiture quitte sa
+#    trajectoire scriptée. À la descente -> épave inerte, despawn après 25 s.
+#  - Réactions de choc (recul / tilt) : SCRIPTÉES, pas de vraie physique de
+#    collision (cf. note du groupe 2 point 8).
+
+# Hauteur d'origine PAR DÉFAUT en circulation (fallback si le modèle FBX ne
+# charge pas). En temps normal `_ride_height` est recalculé par
+# _fit_collision_to_model() à partir de la vraie boîte de collision ajustée au
+# modèle, pour que le bas de caisse repose pile sur la chaussée (dessus à 0.05).
+const RIDE_HEIGHT := 0.66
+const ROAD_TOP_Y := 0.05         # = CityKitBuilder.SURFACE_Y (surface roulable au-dessus de l'herbe)
+const LANE_SNAP := 4.0
+
+const CAR_MODELS := [
+	"res://assets/vehicle_models/NormalCar1.fbx",
+	"res://assets/vehicle_models/NormalCar2.fbx",
+	"res://assets/vehicle_models/SportsCar.fbx",
+	"res://assets/vehicle_models/SportsCar2.fbx",
+	"res://assets/vehicle_models/SUV.fbx",
+	"res://assets/vehicle_models/Taxi.fbx",
+]
+# "Cop.fbx" volontairement exclu -> réservé police
+
+@export var model_scale := 1.0
+@export var model_yaw_deg := 180.0        # orientation native du FBX (comme le modèle Player)
+# Décalage vertical du modèle visuel par rapport à l'origine. -0.6 posait
+# l'origine du FBX pile sur le bas de la BoxShape3D -> la caisse visible
+# s'enfonçait dans la route. Relevé à -0.45 pour qu'elle repose dessus. À
+# peaufiner par modèle via l'inspecteur.
+@export var model_y_offset := -0.45
+@export var debug_hitbox := false         # imprime la taille de boîte ajustée par modèle
+@export var wheel_spin_axis := Vector3(1, 0, 0)   # axe de roulement d'une roue (repère local roue)
+# Axe de braquage des roues avant. IMPORTANT : exprimé dans le repère de la
+# CAISSE (pas de la roue) -> (0,1,0) = verticale voiture = pivot de direction.
+# Appliqué en pré-multiplication dans _update_visuals pour que le braquage se
+# fasse toujours autour d'un axe vertical, quelle que soit l'orientation native
+# du noeud de roue dans le modèle importé (sinon la roue "cabre" au lieu de braquer).
+@export var wheel_steer_axis := Vector3(0, 1, 0)
+
+# --- conduite ---
+const DRIVE_ACCEL := 16.0
+const DRIVE_MAX_SPEED := 24.0
+const DRIVE_REVERSE_MAX := 8.0
+const DRIVE_FRICTION := 9.0
+const DRIVE_BRAKE := 26.0
+const TURN_RATE := 2.4
+const ABANDON_DESPAWN := 25.0
+const GRAVITY := 18.0
+const WHEEL_RADIUS := 0.34
+const MAX_STEER_RAD := 0.52       # ~30° de braquage visuel
+const KNOCK_TIME := 1.2           # durée pendant laquelle une voiture percutée est "sonnée"
+const CRUSH_MIN_SPEED := 5.0      # vitesse mini pour écraser un PNJ
+const MAX_STAINS := 8
+
+# --- circulation IA : accélération / freinage / virage progressifs ---
+const AI_ACCEL := 3.5             # m/s² pour rejoindre la vitesse de croisière
+const AI_DECEL := 12.0            # m/s² pour freiner (obstacle, arrêt) — DOIT correspondre à la
+								   # décélération utilisée dans la formule de distance de freinage
+								   # ci-dessous, sinon la voiture peut dépasser la marge de sécurité.
+const AI_TURN_RATE_DEG := 100.0   # °/s de rotation max -> virage fluide, pas de snap
+# Taux de virage PROPORTIONNEL à la vitesse actuelle (rayon de braquage
+# réaliste) plutôt qu'un taux fixe : évite l'effet "pivote sur place" quand
+# la voiture est encore lente en sortie de carrefour/d'arrêt, tout en
+# gardant une trajectoire large et naturelle une fois lancée.
+const MIN_TURN_RADIUS := 6.5      # rayon de braquage visé à vitesse de croisière (m)
+const MIN_TURN_RATE_DEG := 35.0   # plancher : peut quand même finir un virage à très basse vitesse
+const MAX_TURN_RATE_DEG := 130.0  # plafond : jamais un virage plus serré que ça, même très vite
+
+# --- circulation IA : pas de dépassement, suit la voiture/l'obstacle devant ---
+# Détection large : à la vitesse de croisière max (~14 m/s), la distance de
+# freinage réelle (v²/2a) est d'environ 12 m -> il faut voir l'obstacle bien
+# avant pour avoir le temps de ralentir sans dépasser OBSTACLE_SAFE_GAP.
+const OBSTACLE_LOOK_AHEAD := 22.0     # distance de détection devant soi (m)
+const OBSTACLE_SAFE_GAP := 5.5        # distance visée jusqu'au centre de l'obstacle à l'arrêt (m)
+const OBSTACLE_LANE_HALF_WIDTH := 2.5 # tolérance latérale pour considérer "sur ma voie"
+
+var _path: CircuitPath
+var _cur_edge := -1
+var _from_node := -1
+var _edge_progress := 0.0
+var _speed := 10.0
+var _lateral := 2.0
+var _edges_left := 20
+var _ai_speed := 0.0              # vitesse réelle actuelle (rampe vers _speed, ou vers 0 si bloquée)
+var _heading_deg := 0.0           # cap actuel lissé (degrés autour de Y), tourne à AI_TURN_RATE_DEG max
+# Vrai dès que la voiture s'est engagée dans un carrefour à feu VERT (déjà
+# dans la marge d'arrêt à ce moment-là) : le feu ne peut plus la faire
+# s'arrêter pour CETTE traversée, même s'il passe à l'orange/rouge entre
+# temps. Remis à faux à chaque nouvelle arête (nouvelle traversée).
+var _committed_to_cross := false
+# Vrai dès que la voiture a décidé, à son point de décision, de freiner pour
+# s'arrêter à ce carrefour : reste vraie jusqu'à l'arrêt complet (ou la
+# nouvelle arête suivante), ne revient pas en arrière même si le feu change
+# entre-temps -> évite de changer d'avis en pleine décélération.
+var _committed_to_stop := false
+
+# Prochaine arête déjà décidée à l'avance (dès l'approche d'un carrefour à
+# feu, cf. _intersection_speed_limit) au lieu d'être tirée au hasard pile au
+# moment d'atteindre le noeud. Nécessaire pour la priorité de virage
+# ci-dessous : il faut savoir SI et COMMENT la voiture va tourner avant
+# qu'elle n'entre dans le bloc, pas seulement au moment d'y entrer.
+var _planned_next_edge := -1
+
+# Priorité de virage entre 2 voitures qui tournent en même temps au même
+# carrefour (pas concerné si l'une des deux va tout droit) : la voiture
+# arrivée en premier dans la zone (rang le plus bas) passe en premier,
+# l'autre attend qu'elle ait dégagé le bloc -> règle simple et déterministe,
+# pas un tirage au hasard.
+var _turn_priority_node := -1        # noeud pour lequel une priorité est active (-1 = aucune)
+var _turn_priority_seq := -1         # rang d'arrivée pour CE passage (plus petit = arrivé avant)
+var _turn_priority_is_turn := false  # ce passage est-il un vrai virage (pas tout droit) ?
+static var _turn_priority_counter := 0
+const TURN_DOT_THRESHOLD := 0.7      # < ce cos(angle) entre direction entrante/sortante = virage
+
+# détection d'obstacle : recalculée ~10x/s (pas 60x/s) et avec un léger
+# déphasage aléatoire par voiture pour étaler le coût sur plusieurs frames
+# plutôt que de le concentrer -> coût CPU quasi divisé par 6 à densité de
+# trafic élevée (84 voitures), le freinage restant fluide entre deux recalculs
+# grâce à la rampe move_toward sur _ai_speed.
+const OBSTACLE_RECHECK_INTERVAL := 0.033
+var _obstacle_recheck_timer := 0.0
+var _cached_obstacle_speed_limit := 999.0
+
+# liste des véhicules, mise en cache UNE fois par frame physique et partagée
+# entre toutes les voitures (évite 84 appels redondants à get_nodes_in_group).
+static var _vehicle_cache: Array = []
+static var _vehicle_cache_frame: int = -1
+
+var driven_by_player := false
+var has_npc_driver := false
+var _abandoned := false
+var _drive_speed := 0.0
+var _player_near := false
+var _steer_input := 0.0
+
+# choc
+var _knock_time := 0.0
+var _knock_vel := Vector3.ZERO
+var _recoil_vel := Vector3.ZERO
+var _tilt_pitch := 0.0
+var _tilt_roll := 0.0
+var _stains := 0
+
+# visuel
+var _model: Node3D
+var _wheels: Array[Node3D] = []
+var _wheels_front: Array[Node3D] = []
+var _wheel_rest: Dictionary = {}
+var _wheel_spin := 0.0
+var _steer_visual := 0.0
+var _ride_height := RIDE_HEIGHT       # recalculé selon la boîte ajustée au modèle
+var _half_length := 2.0               # demi-longueur (axe -Z avant) de la caisse, recalculée au modèle réel ; 2.0 = moitié de la boîte par défaut de Car.tscn (size.z=4)
+
+@onready var _prompt: Label3D = $EnterPrompt
+
+func _ready() -> void:
+	add_to_group("vehicle")
+	# garde la caisse collée au sol sur les pentes (rampes de bordure) : évite le
+	# décollement au sommet et le rebond en redescendant
+	floor_snap_length = 0.5
+	has_npc_driver = randf() < 0.5
+	_setup_model()
+	$InteractZone.body_entered.connect(_on_zone_entered)
+	$InteractZone.body_exited.connect(_on_zone_exited)
+	$CrushZone.body_entered.connect(_on_crush_zone_entered)
+	call_deferred("_print_ride_diag")
+
+# Diagnostic ponctuel : compare la géométrie de collision de la voiture au sol
+# réellement sous elle. Imprimé pour la 1re voiture spawnée seulement.
+# À retirer une fois la hauteur validée.
+static var _diag_done := false
+func _print_ride_diag() -> void:
+	if _diag_done:
+		return
+	_diag_done = true
+	var cs := $CollisionShape3D as CollisionShape3D
+	var box := cs.shape as BoxShape3D
+	if box == null:
+		return
+	var bottom_offset := cs.position.y - box.size.y * 0.5      # bas de caisse / origine
+	var bottom_global := global_position.y + bottom_offset
+	print("[Car diag] BoxShape3D taille=%s  offset local Y=%.3f  -> bas de caisse à %.3f sous l'origine"
+		% [box.size, cs.position.y, -bottom_offset])
+	print("[Car diag] origine Y=%.3f  ride_height=%.2f  -> bas de caisse Y global=%.3f"
+		% [global_position.y, _ride_height, bottom_global])
+	var st := get_world_3d().direct_space_state
+	var q := PhysicsRayQueryParameters3D.create(
+		global_position + Vector3.UP * 0.5, global_position + Vector3.DOWN * 4.0)
+	q.exclude = [get_rid()]
+	q.collision_mask = 1
+	var h := st.intersect_ray(q)
+	if h.is_empty():
+		print("[Car diag] aucun sol détecté sous la voiture")
+		return
+	var ground_y := float((h["position"] as Vector3).y)
+	print("[Car diag] sol sous la voiture Y=%.3f  -> écart bas-de-caisse/sol=%.3f (négatif = pénètre)"
+		% [ground_y, bottom_global - ground_y])
+
+func _setup_model() -> void:
+	var path: String = CAR_MODELS[randi() % CAR_MODELS.size()]
+	var scene := load(path) as PackedScene
+	if scene == null:
+		var mat := StandardMaterial3D.new()
+		mat.albedo_color = Color(randf(), randf(), randf())
+		$MeshInstance3D.material_override = mat
+		return
+	$MeshInstance3D.visible = false
+	_model = scene.instantiate() as Node3D
+	add_child(_model)
+	_model.scale = Vector3.ONE * model_scale
+	_model.rotation_degrees.y = model_yaw_deg
+	_model.position.y = model_y_offset
+
+	# repère les roues (best-effort ; si le modèle est monobloc -> rien ne se passe)
+	for w in _model.find_children("*heel*", "", true, false):
+		var w3 := w as Node3D
+		if w3 == null:
+			continue
+		_wheels.append(w3)
+		_wheel_rest[w3] = w3.transform.basis
+		var wn := String(w3.name).to_lower()
+		var front_by_name := wn.contains("front") or wn.contains("_f") or wn.contains("fl") or wn.contains("fr")
+		var front_by_pos := w3.position.z > 0.0   # +Z local = avant (modèle tourné de 180°)
+		if front_by_name or front_by_pos:
+			_wheels_front.append(w3)
+
+	_fit_collision_to_model()
+
+# Ajuste la BoxShape3D de la caisse aux dimensions RÉELLES du modèle chargé
+# (SUV, SportsCar, Taxi... ont des gabarits différents) au lieu d'une boîte
+# unique. On calcule l'AABB combinée de tous les MeshInstance3D du modèle dans
+# le repère de la voiture, puis on en fait une boîte + on recale la hauteur de
+# circulation. Ne touche NI CrushZone NI InteractZone : le comportement de
+# collision (choc, écrasement PNJ, poussée) est inchangé, seule la boîte de
+# caisse est mieux dimensionnée.
+func _fit_collision_to_model() -> void:
+	if _model == null:
+		return
+	var cs := get_node_or_null("CollisionShape3D") as CollisionShape3D
+	if cs == null:
+		return
+
+	# AABB combinée de tous les meshes du modèle, exprimée dans le repère de la
+	# voiture (invariant de la position/rotation courante de la voiture).
+	var world_to_car := global_transform.affine_inverse()
+	var meshes := _model.find_children("*", "MeshInstance3D", true, false)
+	if _model is MeshInstance3D:
+		meshes.append(_model)   # cas d'un modèle monobloc
+	var aabb := AABB()
+	var has := false
+	for n in meshes:
+		var mi := n as MeshInstance3D
+		if mi == null or mi.mesh == null:
+			continue
+		var b := (world_to_car * mi.global_transform) * mi.mesh.get_aabb()
+		if has:
+			aabb = aabb.merge(b)
+		else:
+			aabb = b
+			has = true
+	if not has:
+		return
+
+	var size := aabb.size
+	# garde-fou : AABB aberrante (mesh helper parasite, échelle folle) -> on
+	# garde la boîte par défaut de Car.tscn
+	if size.x <= 0.05 or size.z <= 0.05 or size.length() > 40.0:
+		if debug_hitbox:
+			print("[Car hitbox] AABB inexploitable %s -> boîte par défaut conservée" % size)
+		return
+	size += Vector3(0.04, 0.04, 0.04)   # micro-marge, la boîte ne dépasse pas du modèle
+
+	var box := BoxShape3D.new()
+	box.size = size
+	cs.shape = box                      # ressource neuve -> pas de partage entre voitures
+	cs.position = aabb.get_center()     # la caisse peut ne pas être centrée sur l'origine
+	_half_length = size.z * 0.5         # pour arrêter la voiture AVANT le carrefour, pas son origine dessus
+
+	# repose le bas de la boîte sur la chaussée (+1 cm) pour la circulation
+	var box_bottom_local := cs.position.y - size.y * 0.5
+	_ride_height = ROAD_TOP_Y + 0.01 - box_bottom_local
+	if debug_hitbox:
+		print("[Car hitbox] %s -> L=%.2f l=%.2f h=%.2f  centre=(%.2f,%.2f,%.2f)  ride_h=%.2f"
+			% [String(_model.name), size.z, size.x, size.y,
+				cs.position.x, cs.position.y, cs.position.z, _ride_height])
+
+# --- circulation scriptée -----------------------------------------
+
+func setup(path: CircuitPath, start_node: int, speed: float, lateral: float, edges_budget := 20) -> void:
+	_path = path
+	_from_node = start_node
+	_speed = speed
+	_lateral = lateral
+	_edges_left = edges_budget
+	_cur_edge = _path.pick_next_edge(_from_node, -1)
+	_edge_progress = 0.0
+	_snap_to_path()
+
+func _physics_process(delta: float) -> void:
+	if driven_by_player:
+		_drive_physics(delta)
+		_update_visuals(delta, _drive_speed, _steer_input)
+		return
+
+	if _knock_time > 0.0:
+		_knock_time -= delta
+		_knock_vel = _knock_vel.lerp(Vector3.ZERO, clampf(delta * 2.5, 0.0, 1.0))
+		velocity = _knock_vel
+		velocity.y = 0.0 if is_on_floor() else velocity.y - GRAVITY * delta
+		move_and_slide()
+		_update_visuals(delta, _speed * 0.3, 0.0)
+		return
+
+	if _abandoned:
+		if not is_on_floor():
+			velocity.y -= GRAVITY * delta
+			move_and_slide()
+		_update_visuals(delta, 0.0, 0.0)
+		return
+
+	if _path == null or _cur_edge < 0:
+		return
+
+	# avance selon la vitesse RÉELLE actuelle (rampe), pas la vitesse de
+	# croisière cible -> l'accélération/le freinage se répercutent sur la
+	# progression le long de la route, pas juste sur l'affichage.
+	_edge_progress += _ai_speed * delta
+	var edge_len := _path.edge_length(_cur_edge)
+	if _edge_progress >= edge_len:
+		_edge_progress -= edge_len
+		_from_node = _path.edge_other_node(_cur_edge, _from_node)
+		_edges_left -= 1
+		if _edges_left <= 0:
+			queue_free()
+			return
+		# Réutilise l'arête déjà décidée à l'avance à l'approche du carrefour
+		# (cf. _intersection_speed_limit) si elle existe, pour rester cohérent
+		# avec la décision qui a servi à établir la priorité de virage ; sinon
+		# (rond-point, simple passage...) tire au hasard comme d'habitude.
+		var next_edge: int = _planned_next_edge if _planned_next_edge >= 0 else _path.pick_next_edge(_from_node, _cur_edge)
+		if next_edge < 0:
+			queue_free()
+			return
+		_cur_edge = next_edge
+		_committed_to_cross = false   # nouvelle arête -> nouvelle traversée, nouvelle décision
+		_committed_to_stop = false
+		_planned_next_edge = -1
+
+	var target_dir := _path.direction_at(_cur_edge, _from_node, _edge_progress)
+	var turn_rate_deg := clampf(rad_to_deg(_ai_speed / MIN_TURN_RADIUS), MIN_TURN_RATE_DEG, MAX_TURN_RATE_DEG)
+	_heading_deg = _turn_toward(_heading_deg, _heading_from_dir(target_dir), turn_rate_deg * delta)
+	var heading_dir := _dir_from_heading(_heading_deg)
+
+	_obstacle_recheck_timer -= delta
+	if _obstacle_recheck_timer <= 0.0:
+		_obstacle_recheck_timer = OBSTACLE_RECHECK_INTERVAL + randf_range(-0.02, 0.02)
+		_cached_obstacle_speed_limit = minf(
+			_obstacle_speed_limit(heading_dir, _speed),
+			_intersection_speed_limit(_speed))
+	var desired_speed: float = _cached_obstacle_speed_limit
+	var accel := AI_ACCEL if desired_speed > _ai_speed else AI_DECEL
+	_ai_speed = move_toward(_ai_speed, desired_speed, accel * delta)
+
+	velocity = heading_dir * _ai_speed
+	velocity.y = 0.0
+	move_and_slide()
+
+	var ideal := _path.sample_offset(_cur_edge, _from_node, _edge_progress, _lateral)
+	ideal.y = _ride_height
+	global_position = global_position.lerp(ideal, clampf(delta * LANE_SNAP, 0.0, 1.0))
+	rotation_degrees.y = _heading_deg
+	_update_visuals(delta, _ai_speed, 0.0)
+
+func _snap_to_path() -> void:
+	if _path == null or _cur_edge < 0:
+		return
+	var ideal := _path.sample_offset(_cur_edge, _from_node, _edge_progress, _lateral)
+	ideal.y = _ride_height
+	global_position = ideal
+	_heading_deg = _heading_from_dir(_path.direction_at(_cur_edge, _from_node, _edge_progress))
+	_ai_speed = 0.0   # départ à l'arrêt -> accélération progressive dès la 1re frame
+	_committed_to_cross = false
+	_committed_to_stop = false
+	_planned_next_edge = -1
+	_turn_priority_node = -1
+	rotation_degrees.y = _heading_deg
+
+# --- helpers cap/vitesse IA -----------------------------------------
+
+static func _heading_from_dir(dir: Vector3) -> float:
+	return rad_to_deg(atan2(-dir.x, -dir.z))
+
+static func _dir_from_heading(deg: float) -> Vector3:
+	var r := deg_to_rad(deg)
+	return Vector3(-sin(r), 0.0, -cos(r))
+
+static func _turn_toward(current_deg: float, target_deg: float, max_step_deg: float) -> float:
+	var diff := wrapf(target_deg - current_deg, -180.0, 180.0)
+	return current_deg + clampf(diff, -max_step_deg, max_step_deg)
+
+func _get_vehicle_list() -> Array:
+	var f := Engine.get_physics_frames()
+	if f != _vehicle_cache_frame:
+		_vehicle_cache_frame = f
+		_vehicle_cache = get_tree().get_nodes_in_group("vehicle")
+	return _vehicle_cache
+
+# Vitesse maximale sûre compte tenu des véhicules devant soi sur la voie
+# (autre voiture IA arrêtée, épave, OU la voiture du joueur qui bloque le
+# passage — toutes dans le groupe "vehicle"). Ralentit progressivement en
+# approche puis s'arrête à une distance de sécurité ; ne dépasse jamais.
+func _obstacle_speed_limit(heading_dir: Vector3, cruise_speed: float) -> float:
+	var right := heading_dir.cross(Vector3.UP).normalized()
+	var nearest := INF
+	for o in _get_vehicle_list():
+		if o == self:
+			continue
+		var rel: Vector3 = (o as Node3D).global_position - global_position
+		rel.y = 0.0
+		var fwd_dist := rel.dot(heading_dir)
+		if fwd_dist <= 0.0 or fwd_dist > OBSTACLE_LOOK_AHEAD:
+			continue
+		if absf(rel.dot(right)) > OBSTACLE_LANE_HALF_WIDTH:
+			continue
+		nearest = minf(nearest, fwd_dist)
+	if nearest == INF:
+		return cruise_speed
+	var brake_dist := nearest - OBSTACLE_SAFE_GAP
+	if brake_dist <= 0.0:
+		return 0.0
+	# Distance de freinage physique (v² = 2·a·d) plutôt qu'une réduction
+	# proportionnelle arbitraire : garantit que la voiture peut TOUJOURS
+	# s'arrêter pile à OBSTACLE_SAFE_GAP en freinant à AI_DECEL, quelle que
+	# soit sa vitesse d'approche, au lieu de risquer de dépasser la marge de
+	# sécurité si elle referme l'écart plus vite qu'elle ne peut ralentir.
+	var max_safe_speed := sqrt(2.0 * AI_DECEL * brake_dist)
+	return minf(cruise_speed, max_safe_speed)
+
+# Vitesse imposée par la signalisation à l'approche du PROCHAIN noeud sur
+# l'arête courante :
+#  - carrefour classique avec feu : s'arrête si le feu de cette approche
+#    n'est pas vert (rouge OU orange) ;
+#  - entrée du rond-point (arête d'approche, PAS déjà sur l'anneau) : cédez-
+#    le-passage -> s'arrête si une voiture est déjà engagée sur l'anneau à
+#    proximité de ce point d'entrée ;
+#  - déjà engagé sur l'anneau (arête one_way) : prioritaire, aucun arrêt ici.
+# Même formule de distance de freinage que _obstacle_speed_limit. La marge
+# d'arrêt (ligne d'arrêt virtuelle) doit placer l'AVANT de la caisse à la
+# limite de la zone, pas son origine : on ajoute donc la demi-longueur RÉELLE
+# de la voiture (_half_length, mesurée sur le modèle) à la demi-taille réelle
+# du bloc carrefour (12x12m mesuré sur RoadsCollision -> 6.0), pas juste une
+# constante arbitraire.
+const INTERSECTION_CHECK_DIST := 22.0
+const INTERSECTION_HALF_SIZE := 6.0     # 12x12m réel (RoadsCollision "RoadFlat_*"), pas une estimation
+const STOP_LINE_BUFFER := 0.5           # petit espace visuel entre le pare-choc et la zone
+const YIELD_RING_RADIUS := 14.0
+const YIELD_STOP_BUFFER := 1.0          # le rond-point n'a pas de bloc 12x12 : juste la caisse + une marge
+
+func _intersection_speed_limit(cruise_speed: float) -> float:
+	if _path == null or _cur_edge < 0:
+		return cruise_speed
+
+	# Nettoyage : une fois assez loin APRÈS être sortie du bloc dont elle
+	# avait la priorité de virage, elle libère la place pour les suivantes.
+	if _turn_priority_node >= 0 and _from_node == _turn_priority_node \
+			and _edge_progress >= INTERSECTION_HALF_SIZE + _half_length:
+		_turn_priority_node = -1
+
+	if _path.is_edge_one_way(_cur_edge):
+		return cruise_speed   # déjà sur l'anneau : prioritaire, pas de cédez-le-passage à faire
+
+	var next_node := _path.edge_other_node(_cur_edge, _from_node)
+	var remaining := _path.edge_length(_cur_edge) - _edge_progress
+	if remaining > INTERSECTION_CHECK_DIST:
+		return cruise_speed
+
+	if _path.is_roundabout_node(next_node):
+		# cédez-le-passage : une voiture est-elle déjà engagée sur l'anneau
+		# près de ce point d'entrée précis ?
+		var stop_margin := _half_length + YIELD_STOP_BUFFER
+		var must_stop := false
+		var entry_pos := _path.node_pos(next_node)
+		for o in _get_vehicle_list():
+			if o == self or not (o.has_method("is_on_ring") and o.is_on_ring()):
+				continue
+			if (o as Node3D).global_position.distance_to(entry_pos) <= YIELD_RING_RADIUS:
+				must_stop = true
+				break
+		if not must_stop:
+			return cruise_speed
+		var brake_dist := remaining - stop_margin
+		if brake_dist <= 0.0:
+			return 0.0
+		return minf(cruise_speed, sqrt(2.0 * AI_DECEL * brake_dist))
+
+	# --- carrefour classique avec feu ---
+	var stop_margin2 := INTERSECTION_HALF_SIZE + _half_length + STOP_LINE_BUFFER
+
+	# Planifie l'arête de sortie et détecte si c'est un vrai virage UNE SEULE
+	# FOIS par traversée, dès qu'on est dans la zone de surveillance ->
+	# nécessaire pour la priorité de virage ci-dessous, avant même de savoir
+	# ce que dira le feu. Ceci ne freine PAS la voiture : juste préparation.
+	if _planned_next_edge < 0:
+		_planned_next_edge = _path.pick_next_edge(next_node, _cur_edge)
+		_turn_priority_node = next_node
+		_turn_priority_seq = _turn_priority_counter
+		_turn_priority_counter += 1
+		if _planned_next_edge >= 0:
+			var incoming := _path.direction_at(_cur_edge, _from_node, _path.edge_length(_cur_edge))
+			var outgoing := _path.direction_at(_planned_next_edge, next_node, 0.0)
+			_turn_priority_is_turn = incoming.dot(outgoing) < TURN_DOT_THRESHOLD
+		else:
+			_turn_priority_is_turn = false
+
+	# --- priorité de virage : contrainte CONTINUE (recalculée à chaque
+	# recheck, comme le suivi de voiture), JAMAIS figée par une décision
+	# définitive -> dès que l'autre voiture a dégagé le bloc, celle qui
+	# attendait doit pouvoir repartir immédiatement, pas rester bloquée pour
+	# le reste de la traversée. Ne s'active qu'à partir de SA PROPRE distance
+	# de freinage (comme le feu) pour ne pas ralentir inutilement de loin.
+	var turn_priority_limit := cruise_speed
+	if _turn_priority_is_turn:
+		var own_stop_t := (_ai_speed * _ai_speed) / (2.0 * AI_DECEL)
+		if remaining <= stop_margin2 + own_stop_t:
+			var must_yield_for_turn := false
+			for o in _get_vehicle_list():
+				if o == self or not o.has_method("active_turn_priority"):
+					continue
+				var info: Dictionary = o.active_turn_priority()
+				if info.is_empty() or int(info.get("node", -1)) != next_node:
+					continue
+				if bool(info.get("is_turn", false)) and int(info.get("seq", -1)) < _turn_priority_seq:
+					must_yield_for_turn = true
+					break
+			if must_yield_for_turn:
+				var brake_dist_y := remaining - stop_margin2
+				turn_priority_limit = 0.0 if brake_dist_y <= 0.0 else sqrt(2.0 * AI_DECEL * brake_dist_y)
+
+	# --- feu : décision UNE FOIS "j'y vais" (n'y revient plus ensuite, pour
+	# ne pas piler en plein milieu du carrefour si le feu change pendant la
+	# traversée). En revanche, tant qu'on n'a PAS encore franchi ce cap, on
+	# continue de revérifier le feu à CHAQUE recheck, y compris une fois déjà
+	# à l'arrêt : sinon, une voiture arrêtée au rouge ne redémarre jamais,
+	# `remaining` restant figé (elle n'avance plus) une fois immobilisée, ce
+	# qui gelait aussi la décision "je m'arrête" pour toujours -- exactement
+	# le bug de priorité de virage déjà vu, réintroduit ici côté freinage.
+	var light_limit := cruise_speed
+	if _committed_to_cross:
+		_committed_to_stop = false
+		light_limit = cruise_speed
+	else:
+		var own_stopping_dist := (_ai_speed * _ai_speed) / (2.0 * AI_DECEL)
+		var decision_threshold := stop_margin2 + own_stopping_dist
+		if remaining > decision_threshold and not _committed_to_stop:
+			light_limit = cruise_speed
+		elif _path.light_allows(_cur_edge, next_node):
+			_committed_to_cross = true
+			_committed_to_stop = false
+			light_limit = cruise_speed
+		else:
+			_committed_to_stop = true
+			var brake_dist2 := remaining - stop_margin2
+			light_limit = 0.0 if brake_dist2 <= 0.0 else minf(cruise_speed, sqrt(2.0 * AI_DECEL * brake_dist2))
+
+	return minf(light_limit, turn_priority_limit)
+
+# Utilisé par les AUTRES voitures pour l'arbitrage de priorité de virage
+# ci-dessus : renvoie le noeud de carrefour concerné, le rang d'arrivée pour
+# cette traversée, et si c'est un vrai virage. Vide si aucune priorité active
+# OU si la voiture est DÉFINITIVEMENT à l'arrêt à son feu (_committed_to_stop) :
+# une voiture immobilisée au rouge n'occupe plus le bloc et ne doit jamais
+# bloquer indéfiniment une autre voiture. En revanche une voiture encore EN
+# TRAIN DE DÉCIDER (pas encore committed dans un sens ou l'autre) compte
+# toujours -- sinon deux voitures qui arrivent en même temps se
+# "doubleraient" l'une l'autre au lieu de respecter l'ordre d'arrivée, le
+# rang le plus bas n'ayant pas encore eu la CHANCE de committed_to_cross.
+func active_turn_priority() -> Dictionary:
+	if _turn_priority_node < 0 or _committed_to_stop:
+		return {}
+	return {"node": _turn_priority_node, "seq": _turn_priority_seq, "is_turn": _turn_priority_is_turn}
+
+# Utilisé par les AUTRES voitures pour savoir si celle-ci est déjà engagée
+# sur l'anneau du rond-point (priorité), pour le cédez-le-passage ci-dessus.
+func is_on_ring() -> bool:
+	return _path != null and _cur_edge >= 0 and _path.is_edge_one_way(_cur_edge)
+
+# --- conduite ---------------------------------------------------
+
+func _drive_physics(delta: float) -> void:
+	var throttle := Input.get_axis("move_back", "move_forward")
+	_steer_input = Input.get_axis("move_right", "move_left")
+
+	if throttle > 0.0:
+		_drive_speed = move_toward(_drive_speed, DRIVE_MAX_SPEED, DRIVE_ACCEL * delta)
+	elif throttle < 0.0:
+		if _drive_speed > 0.5:
+			_drive_speed = move_toward(_drive_speed, 0.0, DRIVE_BRAKE * delta)
+		else:
+			_drive_speed = move_toward(_drive_speed, -DRIVE_REVERSE_MAX, DRIVE_ACCEL * delta)
+	else:
+		_drive_speed = move_toward(_drive_speed, 0.0, DRIVE_FRICTION * delta)
+
+	if absf(_drive_speed) > 0.3:
+		rotate_y(_steer_input * TURN_RATE * delta * clampf(_drive_speed / DRIVE_MAX_SPEED, -1.0, 1.0))
+
+	# Montée de trottoir : gérée nativement par move_and_slide grâce aux rampes
+	# de collision en pente ajoutées le long des bordures (voir CurbRamp.gd).
+	# Plus aucun raycast/nudge scripté ici.
+
+	# recul de choc (décroît vite)
+	_recoil_vel = _recoil_vel.lerp(Vector3.ZERO, clampf(delta * 6.0, 0.0, 1.0))
+
+	if not is_on_floor():
+		velocity.y -= GRAVITY * delta
+	else:
+		velocity.y = 0.0
+	var fwd := -global_transform.basis.z
+	velocity.x = fwd.x * _drive_speed + _recoil_vel.x
+	velocity.z = fwd.z * _drive_speed + _recoil_vel.z
+	move_and_slide()
+	_resolve_drive_collisions(fwd)
+
+func _resolve_drive_collisions(fwd: Vector3) -> void:
+	for i in get_slide_collision_count():
+		var c := get_slide_collision(i)
+		var n := c.get_normal()
+		if absf(n.y) > 0.7:
+			continue   # sol / marche, pas un mur
+		var other := c.get_collider()
+		var frontality := clampf(-fwd.dot(n), -1.0, 1.0)   # 1 = choc pile de face
+
+		if other != null and other.is_in_group("vehicle") and other.has_method("knock"):
+			other.knock(-n, absf(_drive_speed) * 0.6 + 4.0)
+			_drive_speed *= 0.35
+			_recoil_vel = n * (absf(_drive_speed) * 0.4 + 4.0)
+			_tilt_pitch = -0.12 * maxf(frontality, 0.3)
+		else:
+			# mur / obstacle statique : on tue la vitesse selon la frontalité
+			_drive_speed *= clampf(1.0 - 0.95 * maxf(frontality, 0.0), 0.0, 1.0)
+			_recoil_vel = n * (3.0 + 3.0 * maxf(frontality, 0.0))
+			_tilt_pitch = -0.10 * maxf(frontality, 0.2)
+		_tilt_roll = clampf(n.dot(global_transform.basis.x), -1.0, 1.0) * 0.08
+
+func knock(dir: Vector3, strength: float) -> void:
+	var d := Vector3(dir.x, 0.0, dir.z)
+	if d.length() < 0.01:
+		return
+	_knock_vel = d.normalized() * strength
+	_knock_time = KNOCK_TIME
+	_tilt_roll = 0.1
+	_tilt_pitch = -0.06
+
+func get_drive_speed() -> float:
+	return _drive_speed
+
+# --- visuel (roues + tilt) -----------------------------------
+
+func _update_visuals(delta: float, fwd_speed: float, steer_target: float) -> void:
+	if not _wheels.is_empty():
+		_wheel_spin = fmod(_wheel_spin + (fwd_speed / WHEEL_RADIUS) * delta, TAU)
+		_steer_visual = lerpf(_steer_visual, steer_target * MAX_STEER_RAD, clampf(delta * 10.0, 0.0, 1.0))
+		var spin_b := Basis(wheel_spin_axis.normalized(), _wheel_spin)
+		# spin_b : dans le repère roue (post-multiplié via rest).
+		# steer_b : dans le repère caisse (pré-multiplié) -> rotation garantie
+		#           autour de la verticale, la roue pivote gauche/droite.
+		var steer_b := Basis(wheel_steer_axis.normalized(), _steer_visual)
+		for w in _wheels:
+			var rest: Basis = _wheel_rest[w]
+			if w in _wheels_front:
+				w.transform.basis = steer_b * rest * spin_b
+			else:
+				w.transform.basis = rest * spin_b
+
+	# tilt de carrosserie : revient à zéro
+	_tilt_pitch = lerpf(_tilt_pitch, 0.0, clampf(delta * 6.0, 0.0, 1.0))
+	_tilt_roll = lerpf(_tilt_roll, 0.0, clampf(delta * 6.0, 0.0, 1.0))
+	if _model != null:
+		_model.rotation.x = _tilt_pitch
+		_model.rotation.z = _tilt_roll
+		_model.rotation.y = deg_to_rad(model_yaw_deg)
+
+func start_drive() -> void:
+	driven_by_player = true
+	_abandoned = false
+	_player_near = false
+	_drive_speed = 0.0
+	_prompt.visible = false
+
+func stop_drive() -> void:
+	driven_by_player = false
+	_abandoned = true
+	_drive_speed = 0.0
+	velocity = Vector3.ZERO
+	get_tree().create_timer(ABANDON_DESPAWN).timeout.connect(queue_free)
+
+func is_occupied() -> bool:
+	return driven_by_player
+
+# --- zone d'interaction + éjection PNJ -------------------------
+
+func _on_zone_entered(body: Node3D) -> void:
+	if body.is_in_group("player") and body.has_method("notify_car_in_range"):
+		_player_near = true
+		body.notify_car_in_range(self)
+		_refresh_prompt()
+
+func _on_zone_exited(body: Node3D) -> void:
+	if body.is_in_group("player") and body.has_method("notify_car_out_of_range"):
+		_player_near = false
+		body.notify_car_out_of_range(self)
+		_prompt.visible = false
+
+func _refresh_prompt() -> void:
+	_prompt.visible = _player_near and not driven_by_player
+
+func eject_driver() -> void:
+	if not has_npc_driver:
+		return
+	has_npc_driver = false
+	var npc_scene := load("res://scenes/npc/NPC.tscn") as PackedScene
+	if npc_scene == null:
+		return
+	var npc := npc_scene.instantiate()
+	get_tree().current_scene.add_child(npc)
+	if npc.has_method("setup_ejected"):
+		var eject_point := get_node_or_null("EjectPoint") as Node3D
+		var spawn_pos: Vector3 = eject_point.global_position if eject_point != null else global_position
+		var pedgraph := get_tree().current_scene.get_node_or_null("PedGraph") as PathGraph
+		npc.setup_ejected(spawn_pos, pedgraph)
+
+# --- écrasement PNJ ------------------------------------------
+
+func _on_crush_zone_entered(body: Node3D) -> void:
+	if not driven_by_player or absf(_drive_speed) < CRUSH_MIN_SPEED:
+		return
+	if body.is_in_group("npc") and body.has_method("take_damage"):
+		body.take_damage(999, body.global_position, Vector3.UP)   # réutilise la mort PNJ + sang au sol
+		_add_body_stain()
+
+func _add_body_stain() -> void:
+	if _stains >= MAX_STAINS:
+		return
+	_stains += 1
+	var q := QuadMesh.new()
+	q.size = Vector2(randf_range(0.25, 0.5), randf_range(0.25, 0.5))
+	var mat := StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.albedo_color = Color(0.22, 0.0, 0.0, randf_range(0.55, 0.85))
+	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	var mi := MeshInstance3D.new()
+	mi.mesh = q
+	mi.material_override = mat
+	# collé juste devant le pare-choc (la voiture faisant face à -Z)
+	mi.position = Vector3(randf_range(-0.7, 0.7), randf_range(0.1, 0.9), -2.02)
+	mi.rotation_degrees = Vector3(0, 180, randf_range(0.0, 360.0))
+	add_child(mi)

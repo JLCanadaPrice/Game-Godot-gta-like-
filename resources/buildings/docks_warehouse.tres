@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="BuildingData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/BuildingData.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "docks_warehouse_01"
+display_name = "Entrepôt portuaire"
+district = "docks"
+price = 45000
+passive_income = 900
+upgrade_level = 0
+max_upgrade_level = 3
+risk_factor = 0.35
+world_position = Vector3(-55, 1, 24)

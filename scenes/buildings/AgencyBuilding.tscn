@@ -1,0 +1,26 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scenes/buildings/ShopBuilding.gd" id="1_script"]
+[ext_resource type="PackedScene" path="res://assets/shops/agency/Agency_Shell.glb" id="2_shell"]
+[ext_resource type="PackedScene" path="res://assets/shops/agency/Agency_Roof.glb" id="3_roof"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_map"]
+size = Vector3(13, 6.2, 12.5)
+
+[node name="AgencyBuilding" type="Node3D"]
+script = ExtResource("1_script")
+panel_group = "apartment_agency_panel"
+counter_prompt = "[E] Parler à l'agent immobilier"
+
+[node name="Shell" parent="." instance=ExtResource("2_shell")]
+
+[node name="Roof" parent="." instance=ExtResource("3_roof")]
+
+[node name="StaticBody3D" type="StaticBody3D" parent="."]
+collision_layer = 0
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="StaticBody3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.1, -0.25)
+shape = SubResource("BoxShape3D_map")
+disabled = true

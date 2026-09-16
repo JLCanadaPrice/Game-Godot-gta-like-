@@ -1,0 +1,48 @@
+[gd_scene load_steps=6 format=3]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_road"]
+size = Vector3(8, 0.2, 10)
+
+[sub_resource type="BoxMesh" id="BoxMesh_road"]
+size = Vector3(8, 0.2, 10)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_road"]
+albedo_color = Color(0.14, 0.14, 0.16, 1)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_walk"]
+size = Vector3(3, 0.3, 10)
+
+[sub_resource type="BoxMesh" id="BoxMesh_walk"]
+size = Vector3(3, 0.3, 10)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_walk"]
+albedo_color = Color(0.62, 0.62, 0.64, 1)
+
+[node name="StreetSegment" type="StaticBody3D"]
+
+[node name="RoadMesh" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, 0)
+mesh = SubResource("BoxMesh_road")
+surface_material_override/0 = SubResource("StandardMaterial3D_road")
+
+[node name="RoadCollision" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, 0)
+shape = SubResource("BoxShape3D_road")
+
+[node name="SidewalkLeftMesh" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.5, 0.15, 0)
+mesh = SubResource("BoxMesh_walk")
+surface_material_override/0 = SubResource("StandardMaterial3D_walk")
+
+[node name="SidewalkLeftCollision" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.5, 0.15, 0)
+shape = SubResource("BoxShape3D_walk")
+
+[node name="SidewalkRightMesh" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.5, 0.15, 0)
+mesh = SubResource("BoxMesh_walk")
+surface_material_override/0 = SubResource("StandardMaterial3D_walk")
+
+[node name="SidewalkRightCollision" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.5, 0.15, 0)
+shape = SubResource("BoxShape3D_walk")

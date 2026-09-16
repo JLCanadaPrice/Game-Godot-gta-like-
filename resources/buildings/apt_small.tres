@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="BuildingData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/BuildingData.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "apt_small_01"
+display_name = "Petit immeuble"
+district = "downtown"
+price = 6000
+passive_income = 135
+upgrade_level = 0
+max_upgrade_level = 3
+risk_factor = 0.12
+world_position = Vector3(-45, 1, -94)

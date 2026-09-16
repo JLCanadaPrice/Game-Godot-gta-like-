@@ -1,0 +1,15 @@
+[gd_scene load_steps=3 format=3]
+
+[sub_resource type="QuadMesh" id="quad"]
+size = Vector2(1.4, 1.4)
+
+[sub_resource type="StandardMaterial3D" id="pool_mat"]
+transparency = 1
+shading_mode = 0
+albedo_color = Color(0.22, 0.0, 0.0, 0.75)
+cull_mode = 2
+
+[node name="BloodPool" type="MeshInstance3D"]
+transform = Transform3D(1, 0, 0, 0, 0, -1, 0, 1, 0, 0, 0, 0)
+mesh = SubResource("quad")
+material_override = SubResource("pool_mat")

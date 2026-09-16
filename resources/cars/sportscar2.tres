@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="CarData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/CarData.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "sportscar2"
+display_name = "Voiture de Sport 2"
+model_path = "res://assets/vehicle_models/SportsCar2.fbx"
+category = "sport"
+price = 16000

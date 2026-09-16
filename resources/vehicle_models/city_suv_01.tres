@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="VehicleModelData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/VehicleModelData.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "city_suv_01"
+model_paths = PackedStringArray("res://assets/vehicle_models_extra/city_vehicles_UNVERIFIED_LICENSE/SUVs/Veh_SUV_01_Blue.glb", "res://assets/vehicle_models_extra/city_vehicles_UNVERIFIED_LICENSE/SUVs/Veh_SUV_01_Green.glb", "res://assets/vehicle_models_extra/city_vehicles_UNVERIFIED_LICENSE/SUVs/Veh_SUV_01_Red.glb", "res://assets/vehicle_models_extra/city_vehicles_UNVERIFIED_LICENSE/SUVs/Veh_SUV_01_White.glb", "res://assets/vehicle_models_extra/city_vehicles_UNVERIFIED_LICENSE/SUVs/Veh_SUV_01_Yellow.glb")
+model_scale = 1.65
+model_yaw_deg = 180.0
+model_y_offset = -0.45
+role = "civil"
+traffic_weight = 1.0

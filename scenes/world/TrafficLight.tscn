@@ -1,0 +1,9 @@
+[gd_scene load_steps=3 format=3 uid="uid://c8j3xr0lqpx2n"]
+
+[ext_resource type="Script" path="res://scenes/world/TrafficLight.gd" id="1"]
+[ext_resource type="PackedScene" uid="uid://ceea221oqewdi" path="res://assets/traffic_light/traffic light.fbx" id="2"]
+
+[node name="TrafficLight" type="Node3D"]
+script = ExtResource("1")
+
+[node name="Model" parent="." instance=ExtResource("2")]

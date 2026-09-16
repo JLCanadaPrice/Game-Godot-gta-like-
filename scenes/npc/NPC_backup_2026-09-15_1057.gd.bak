@@ -1,0 +1,309 @@
+extends CharacterBody3D
+
+# PNJ piéton : marche sur le réseau piéton (PathGraph) — anneau des trottoirs
+# de la route + allées reliant les bâtiments. À chaque noeud atteint il tire
+# une nouvelle arête au hasard. Se supprime après `edges_budget` segments
+# (spawn/despawn géré par LoopSpawner, comme les voitures).
+#
+# Les PNJ n'utilisent PAS CircuitPath (ça, c'est pour les voitures).
+
+const BLOOD_BURST := preload("res://scenes/weapons/BloodBurst.tscn")
+const BLOOD_POOL := preload("res://scenes/weapons/BloodPool.tscn")
+
+# Calque visuel (doit correspondre à NPC.tscn et au cull_mask exclu par les
+# décalques de passage piéton dans World.tscn) : exclut ce PNJ de la
+# projection des décalques. Le placeholder MeshInstance3D de la scène l'a
+# déjà, mais il est caché (visible=false) dès qu'un skin aléatoire est
+# chargé -> il faut le réappliquer explicitement sur chaque mesh du modèle.
+const DECAL_EXCLUDE_LAYERS := 4
+
+# Vitesse de marche des PNJ ambiants : volontairement plus lente que le
+# joueur (5.0) pour une allure de piéton normale, pas un pas pressé.
+const WALK_SPEED := 2.3
+# Vitesse de course (PNJ éjecté d'une voiture volée qui fuit vers le trottoir).
+const RUN_SPEED := WALK_SPEED * 2.2
+const EJECTED_EDGES_BUDGET := 14   # une fois sur le réseau piéton : même budget qu'un PNJ normal
+
+const MAX_HP := 100
+const CORPSE_DESPAWN := 5.0
+const POOL_GROUND_Y := 0.1   # flaque légèrement au-dessus du pavé (top ~0.05) -> pas de z-fighting
+
+# Skins possibles (pack Quaternius, même squelette/anims que le Player).
+# JAMAIS Suit.gltf (réservé joueur). King/Spacesuit exclus (hors thème).
+const NPC_MODEL_PATHS := [
+	"res://assets/npc_models/Farmer.gltf",
+	"res://assets/npc_models/Adventurer.gltf",
+	"res://assets/npc_models/Swat.gltf",
+	"res://assets/npc_models/Punk.gltf",
+	"res://assets/npc_models/Worker.gltf",
+	"res://assets/npc_models/Casual_2.gltf",
+	"res://assets/npc_models/Casual_Hoodie.gltf",
+	"res://assets/npc_models/Beach.gltf",
+]
+const MODEL_Y_OFFSET := -0.9   # pieds du modèle -> bas de la capsule (comme le Player)
+const MODEL_YAW_DEG := 180.0   # même correction d'orientation que le Player
+
+# Hauteur d'origine du PNJ = dessus RÉEL du trottoir du District (0.408,
+# relevé sur SidewalksCollision) + demi-hauteur de la capsule (0.9) + marge.
+# L'ancienne valeur (1.0) datait de l'ancienne carte (trottoirs à Y≈0) et
+# enfonçait le PNJ d'env. 0.3 m dans le trottoir une fois la collision
+# activée (point C) -> corrigé pour qu'il marche vraiment DESSUS.
+const SIDEWALK_TOP_Y := 0.408
+const RIDE_HEIGHT := SIDEWALK_TOP_Y + 0.9 + 0.01
+const ARRIVE_DIST := 0.35        # distance à un noeud pour le considérer atteint
+const DODGE_DETECT_DIST := 2.6
+const DODGE_CONE := 0.35
+const DODGE_STRENGTH := 2.2
+const DODGE_LERP := 6.0
+
+@export var body_color: Color = Color(0.75, 0.7, 0.55)
+
+var _graph: PathGraph
+var _from: int = -1
+var _to: int = -1
+var _edges_left: int = 8
+var _player: Node3D
+var _dodge: Vector3 = Vector3.ZERO
+var _hp: int = MAX_HP
+var _dead := false
+
+var _anim: AnimationPlayer
+var _cur_anim := ""
+
+# mode "éjecté d'une voiture" : court vers le point PedGraph le plus proche
+# puis rejoint le comportement normal (trajet aléatoire sur le graphe).
+var _ejected := false
+var _eject_target_node := -1
+
+# Signature alignée sur Car.setup : (ref, start, speed, extra, budget).
+# Ici `ref` = PathGraph, `start` = index du noeud de départ, `speed` ignoré
+# (WALK_SPEED), `extra` inutilisé, `budget` = nb de segments avant despawn.
+func setup(graph: PathGraph, start_node: int, _speed: float, _extra: float, budget: int = 8) -> void:
+	_graph = graph
+	_from = start_node
+	_to = _graph.pick_next(_from, -1)
+	_edges_left = budget
+	var p := _graph.node_pos(_from)
+	p.y = RIDE_HEIGHT
+	global_position = p
+
+func _ready() -> void:
+	add_to_group("npc")
+	_setup_visual()
+
+func _setup_visual() -> void:
+	var path: String = NPC_MODEL_PATHS[randi() % NPC_MODEL_PATHS.size()]
+	var scene := load(path) as PackedScene
+	if scene == null:
+		# fallback : garde la capsule placeholder avec une teinte aléatoire
+		var mat := StandardMaterial3D.new()
+		mat.albedo_color = Color(randf_range(0.3, 0.8), randf_range(0.3, 0.7), randf_range(0.25, 0.6))
+		$MeshInstance3D.material_override = mat
+		return
+
+	$MeshInstance3D.visible = false
+	var m := scene.instantiate() as Node3D
+	add_child(m)
+	m.position.y = MODEL_Y_OFFSET
+	m.rotation_degrees.y = MODEL_YAW_DEG
+
+	# le placeholder caché avait déjà le bon calque (cf. DECAL_EXCLUDE_LAYERS) :
+	# le modèle réellement affiché doit l'avoir aussi, sur chaque mesh (corps,
+	# arme skinnée cachée ci-dessous, cheveux/accessoires séparés éventuels).
+	var model_meshes := m.find_children("*", "MeshInstance3D", true, false)
+	if m is MeshInstance3D:
+		model_meshes.append(m)
+	for mm in model_meshes:
+		(mm as MeshInstance3D).layers = DECAL_EXCLUDE_LAYERS
+
+	# les modèles Quaternius embarquent parfois une arme skinnée (Pistol, Sword…) :
+	# un PNJ ne porte JAMAIS d'arme visible -> on cache ces meshes
+	for w in m.find_children("*", "MeshInstance3D", true, false):
+		var wn := String(w.name).to_lower()
+		if wn.contains("pistol") or wn.contains("gun") or wn.contains("rifle") \
+			or wn.contains("sword") or wn.contains("weapon") or wn.contains("knife") \
+			or wn.contains("axe") or wn.contains("smg") or wn.contains("revolver") \
+			or wn.contains("bat") or wn.contains("shotgun"):
+			var w3 := w as Node3D
+			if w3 != null:
+				w3.visible = false
+
+	var anims := m.find_children("*", "AnimationPlayer", true, false)
+	if not anims.is_empty():
+		_anim = anims[0] as AnimationPlayer
+		for a in _anim.get_animation_list():
+			var low := String(a).to_lower()
+			if low.contains("idle") or low.contains("walk") or low.contains("run"):
+				var res := _anim.get_animation(a)
+				if res != null:
+					res.loop_mode = Animation.LOOP_LINEAR
+		_play_anim("Walk", "Idle")
+
+func _play_anim(primary: String, fallback: String) -> void:
+	if _anim == null:
+		return
+	var anim := primary
+	if not _anim.has_animation(anim):
+		anim = fallback
+	if anim == "" or not _anim.has_animation(anim):
+		return
+	if anim != _cur_anim:
+		_cur_anim = anim
+		_anim.play(anim, 0.15)
+
+# Appelé quand le joueur vole une voiture occupée. `graph` = le PedGraph du
+# monde (peut être null si introuvable, auquel cas le PNJ disparaît proprement
+# plutôt que de rester planté sans destination). Le PNJ apparaît à côté de la
+# voiture (spawn_pos = EjectPoint, déjà à l'extérieur de la caisse) et court
+# vers le noeud PedGraph le plus proche avant de rejoindre le comportement
+# normal.
+func setup_ejected(spawn_pos: Vector3, graph: PathGraph) -> void:
+	global_position = Vector3(spawn_pos.x, RIDE_HEIGHT, spawn_pos.z)
+	_graph = graph
+	_ejected = true
+	_eject_target_node = -1
+	if _graph != null and _graph.node_count() > 0:
+		var best := -1
+		var best_d := INF
+		for i in _graph.node_count():
+			var d: float = global_position.distance_squared_to(_graph.node_pos(i))
+			if d < best_d:
+				best_d = d
+				best = i
+		_eject_target_node = best
+	_play_anim("Run", "Walk")
+
+func _physics_process(delta: float) -> void:
+	if _dead:
+		return
+
+	if _ejected:
+		_process_ejected(delta)
+		return
+
+	if _graph == null or _to < 0:
+		return
+	if _player == null:
+		_player = get_tree().get_first_node_in_group("player")
+
+	var target := _graph.node_pos(_to)
+	target.y = RIDE_HEIGHT
+	var to_target := target - global_position
+	to_target.y = 0.0
+	var dist := to_target.length()
+
+	if dist < ARRIVE_DIST:
+		_edges_left -= 1
+		if _edges_left <= 0:
+			queue_free()
+			return
+		var came_from := _from
+		_from = _to
+		_to = _graph.pick_next(_from, came_from)
+		return
+
+	var dir := to_target / dist
+	_play_anim("Walk", "Idle")   # le PNJ marche en continu sur le graphe
+
+	# --- évitement latéral du joueur ---
+	var desired := Vector3.ZERO
+	if _player != null:
+		var to_player := _player.global_position - global_position
+		to_player.y = 0.0
+		var pdist := to_player.length()
+		if pdist > 0.05 and pdist < DODGE_DETECT_DIST and to_player.normalized().dot(dir) > DODGE_CONE:
+			var right := dir.cross(Vector3.UP).normalized()
+			var side := -1.0 if to_player.dot(right) > 0.0 else 1.0
+			var urgency := clampf((DODGE_DETECT_DIST - pdist) / DODGE_DETECT_DIST, 0.0, 1.0)
+			desired = right * side * DODGE_STRENGTH * urgency
+	_dodge = _dodge.lerp(desired, clampf(delta * DODGE_LERP, 0.0, 1.0))
+
+	var move := dir * WALK_SPEED + _dodge
+	velocity.x = move.x
+	velocity.z = move.z
+	velocity.y = 0.0
+	move_and_slide()
+	global_position.y = RIDE_HEIGHT
+
+	var face := dir + _dodge * 0.3
+	face.y = 0.0
+	if face.length() > 0.01:
+		look_at(global_position + face.normalized(), Vector3.UP)
+
+# PNJ éjecté : court (collision active, comme tout le monde) vers le noeud
+# PedGraph le plus proche. En l'absence de graphe, disparaît proprement au
+# lieu de rester planté sans destination.
+func _process_ejected(delta: float) -> void:
+	if _graph == null or _eject_target_node < 0:
+		queue_free()
+		return
+
+	var target := _graph.node_pos(_eject_target_node)
+	target.y = RIDE_HEIGHT
+	var to_target := target - global_position
+	to_target.y = 0.0
+	var dist := to_target.length()
+
+	if dist < ARRIVE_DIST:
+		# a rejoint le trottoir -> redevient un PNJ tout à fait normal :
+		# trajet aléatoire, même despawn en fin de trajet que les autres.
+		_ejected = false
+		_from = _eject_target_node
+		_to = _graph.pick_next(_from, -1)
+		_edges_left = EJECTED_EDGES_BUDGET
+		return
+
+	var dir := to_target / dist
+	_play_anim("Run", "Walk")
+	velocity.x = dir.x * RUN_SPEED
+	velocity.z = dir.z * RUN_SPEED
+	velocity.y = 0.0
+	move_and_slide()
+	global_position.y = RIDE_HEIGHT
+	look_at(global_position + dir, Vector3.UP)
+
+# --- Dégâts / mort --------------------------------------------------
+
+func take_damage(amount: int, hit_pos: Vector3, hit_normal: Vector3) -> void:
+	if _dead:
+		return
+	_hp -= amount
+	_spawn_blood_burst(hit_pos, hit_normal)   # 1 éclaboussure par balle, pas de doublon
+	if _hp <= 0:
+		_die()
+
+# pos    : point d'impact EXACT du raycast (hit["position"])
+# normal : normale de la surface touchée (hit["normal"])
+func _spawn_blood_burst(pos: Vector3, normal: Vector3) -> void:
+	var fx: Node3D = BLOOD_BURST.instantiate()
+	# position posée AVANT add_child : particules en coords globales, émission
+	# dès _ready(). La scène racine (World) est à l'origine -> local == global.
+	fx.position = pos
+	get_tree().current_scene.add_child(fx)
+	# oriente l'éclaboussure le long de la normale (sort de la plaie).
+	# Garde-fou si la normale est ~verticale (look_at planterait).
+	var n := normal.normalized()
+	if n.length() > 0.5 and absf(n.dot(Vector3.UP)) < 0.98:
+		fx.look_at(pos + n, Vector3.UP)
+
+func _die() -> void:
+	_dead = true
+	var here := global_position   # capture avant de basculer / repositionner le corps
+
+	# flaque de sang : à plat (orientée dans la scène BloodPool, pas sur le PNJ),
+	# sous le corps, un peu au-dessus du sol pour éviter le z-fighting.
+	# Parentée à la scène (pas au PNJ) pour rester après le despawn du cadavre.
+	var pool: Node3D = BLOOD_POOL.instantiate()
+	pool.position = Vector3(here.x, POOL_GROUND_Y, here.z)
+	get_tree().current_scene.add_child(pool)
+
+	if _anim != null and _anim.has_animation("Death"):
+		_cur_anim = "Death"
+		_anim.play("Death", 0.1)   # l'anim couche le corps ; le PNJ reste sur place
+	else:
+		# fallback (pas de modèle / pas d'anim) : bascule la capsule
+		rotate_object_local(Vector3.RIGHT, deg_to_rad(90))
+		global_position = Vector3(here.x, 0.5, here.z)
+
+	# despawn différé, comme un PNJ en fin de trajet (pas de cadavres à l'infini)
+	get_tree().create_timer(CORPSE_DESPAWN).timeout.connect(queue_free)

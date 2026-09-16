@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="BuildingData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/BuildingData.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "casino_01"
+display_name = "Casino"
+district = "downtown"
+price = 28000
+passive_income = 750
+upgrade_level = 0
+max_upgrade_level = 3
+risk_factor = 0.4
+world_position = Vector3(40, 1, -26)

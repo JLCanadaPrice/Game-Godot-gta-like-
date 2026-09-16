@@ -1,0 +1,115 @@
+extends Control
+
+# Catalogue du concessionnaire : ouvert depuis l'onglet "Services" du
+# téléphone (PhonePanel). Ne met pas le jeu en pause (même convention que
+# I/C/T). Achat = GameManager.remove_money(price) puis own_vehicle(id) ;
+# une fois possédé, un modèle ne peut pas être racheté (juste "Déjà
+# achetée", comme un bâtiment possédé). La voiture apparaît près du joueur,
+# recalée au sol, jamais confiée à LoopSpawner (donc jamais soumise au
+# budget d'arêtes ni au despawn d'abandon -- cf. Car.gd is_player_owned).
+
+const CAR_SCENE := preload("res://scenes/vehicles/Car.tscn")
+const SPAWN_FORWARD_DIST := 5.0
+const SPAWN_SIDE_DIST := 3.0
+
+@onready var items_list: VBoxContainer = $Panel/VBoxContainer/ScrollContainer/ItemsList
+@onready var status_label: Label = $Panel/VBoxContainer/StatusLabel
+@onready var close_button: Button = $Panel/VBoxContainer/CloseButton
+
+func _ready() -> void:
+	add_to_group("car_dealership_panel")
+	visible = false
+	close_button.pressed.connect(_on_close_pressed)
+	GameManager.money_changed.connect(_on_money_changed)
+	GameManager.vehicle_purchased.connect(_on_vehicle_purchased)
+	_refresh()
+
+func show_ui() -> void:
+	visible = true
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	status_label.text = ""
+	_refresh()
+
+func hide_ui() -> void:
+	visible = false
+	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+
+func _on_close_pressed() -> void:
+	hide_ui()
+
+func _on_money_changed(_amount: int) -> void:
+	if visible:
+		_refresh()   # garde la disponibilité des boutons "Acheter" à jour
+
+func _on_vehicle_purchased(_vehicle_id: String) -> void:
+	if visible:
+		_refresh()
+
+func _refresh() -> void:
+	for child in items_list.get_children():
+		child.queue_free()
+	for car_data: CarData in CarRegistry.all_cars:
+		var row := HBoxContainer.new()
+		var label := Label.new()
+		label.text = "%s (%s) -- %d $" % [car_data.display_name, car_data.category, car_data.price]
+		label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		row.add_child(label)
+
+		if GameManager.owns_vehicle(car_data.id):
+			var owned_label := Label.new()
+			owned_label.text = "Déjà achetée"
+			row.add_child(owned_label)
+		else:
+			var buy_button := Button.new()
+			buy_button.text = "Acheter"
+			buy_button.disabled = GameManager.money < car_data.price
+			var data := car_data
+			buy_button.pressed.connect(func(): _on_buy_pressed(data))
+			row.add_child(buy_button)
+
+		items_list.add_child(row)
+
+func _on_buy_pressed(car_data: CarData) -> void:
+	if GameManager.owns_vehicle(car_data.id):
+		return
+	if not GameManager.remove_money(car_data.price):
+		status_label.text = "Pas assez d'argent"
+		return
+	GameManager.own_vehicle(car_data.id)
+	_spawn_purchased_car(car_data)
+	status_label.text = "%s livrée !" % car_data.display_name
+
+func _spawn_purchased_car(car_data: CarData) -> void:
+	var player := get_tree().get_first_node_in_group("player") as Node3D
+	var car := CAR_SCENE.instantiate() as CharacterBody3D
+	car.set("forced_model_path", car_data.model_path)
+	get_tree().current_scene.add_child(car)
+	car.is_player_owned = true
+	car.has_npc_driver = false
+
+	if player == null:
+		return
+
+	var spot := purchase_spawn_transform(player)
+	var spawn_xz: Vector3 = spot.origin
+
+	var space_state: PhysicsDirectSpaceState3D = car.get_world_3d().direct_space_state
+	var params := PhysicsRayQueryParameters3D.create(
+		spawn_xz + Vector3.UP * 5.0, spawn_xz + Vector3.DOWN * 5.0)
+	params.collision_mask = 1
+	var hit: Dictionary = space_state.intersect_ray(params)
+	var ground_y: float = (hit["position"] as Vector3).y if not hit.is_empty() else spawn_xz.y
+
+	car.global_position = Vector3(spawn_xz.x, ground_y + (car.get("_ride_height") as float), spawn_xz.z)
+	car.rotation.y = spot.basis.get_euler().y
+
+# Où livrer la voiture achetée : devant le joueur (achat par téléphone, comme avant), ou sur la place
+# de livraison du parvis quand l'achat se fait au comptoir du showroom (ShopBuilding.delivers_cars) :
+# sinon la voiture apparaîtrait entre les murs et les voitures exposées.
+func purchase_spawn_transform(player: Node3D) -> Transform3D:
+	for shop in get_tree().get_nodes_in_group("car_delivery_shop"):
+		if shop.is_player_inside(player):
+			return shop.delivery_transform()
+	var fwd: Vector3 = -player.global_transform.basis.z
+	var right: Vector3 = player.global_transform.basis.x
+	return Transform3D(Basis(Vector3.UP, player.rotation.y), player.global_position + fwd * SPAWN_FORWARD_DIST + right * SPAWN_SIDE_DIST)
