@@ -1,0 +1,73 @@
+[gd_scene format=3]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_ia7au"]
+size = Vector3(1464.7, 220, 2)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_t05xf"]
+size = Vector3(1853.3999, 220, 2)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_cch4u"]
+size = Vector3(983.69995, 220, 2)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_ilyee"]
+size = Vector3(1826.8126, 220, 2)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_e002g"]
+size = Vector3(2501.5874, 220, 2)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_agx43"]
+size = Vector3(2, 220, 926.69934)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_47qbx"]
+size = Vector3(2, 220, 1091.4009)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_7jrwm"]
+size = Vector3(2, 220, 383.69977)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_1jobh"]
+size = Vector3(2, 220, 798.6999)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_4atvn"]
+size = Vector3(2, 220, 1629.7002)
+
+[node name="Boundary" type="StaticBody3D" unique_id=807839149]
+
+[node name="LimiteNord_0" type="CollisionShape3D" parent="." unique_id=280663224]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1445.65, 60, -1481)
+shape = SubResource("BoxShape3D_ia7au")
+
+[node name="LimiteNord_1" type="CollisionShape3D" parent="." unique_id=740597913]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 239.99997, 60, -1481)
+shape = SubResource("BoxShape3D_t05xf")
+
+[node name="LimiteNord_2" type="CollisionShape3D" parent="." unique_id=724848098]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1685.15, 60, -1481)
+shape = SubResource("BoxShape3D_cch4u")
+
+[node name="LimiteSud_0" type="CollisionShape3D" parent="." unique_id=1089532318]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1264.5936, 60, 968)
+shape = SubResource("BoxShape3D_ilyee")
+
+[node name="LimiteSud_1" type="CollisionShape3D" parent="." unique_id=1822252529]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 926.2063, 60, 968)
+shape = SubResource("BoxShape3D_e002g")
+
+[node name="LimiteOuest_0" type="CollisionShape3D" parent="." unique_id=2050315792]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2175, 60, -1020.6503)
+shape = SubResource("BoxShape3D_agx43")
+
+[node name="LimiteOuest_1" type="CollisionShape3D" parent="." unique_id=981869598]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2175, 60, 14.999786)
+shape = SubResource("BoxShape3D_47qbx")
+
+[node name="LimiteOuest_2" type="CollisionShape3D" parent="." unique_id=578175951]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2175, 60, 779.15015)
+shape = SubResource("BoxShape3D_7jrwm")
+
+[node name="LimiteEst_0" type="CollisionShape3D" parent="." unique_id=1195887627]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2174, 60, -1084.65)
+shape = SubResource("BoxShape3D_1jobh")
+
+[node name="LimiteEst_1" type="CollisionShape3D" parent="." unique_id=642913919]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2174, 60, 156.14993)
+shape = SubResource("BoxShape3D_4atvn")

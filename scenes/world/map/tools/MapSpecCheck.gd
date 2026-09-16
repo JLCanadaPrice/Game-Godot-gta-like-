@@ -219,7 +219,7 @@ func _check_places() -> void:
 					_errors.append("%s empiète sur %s (%.0f, %.0f)" % [poi["id"], road["id"], q.x, q.y])
 					break
 	for spot: Dictionary in Spec.GATE_SPOTS:
-		if _river_distance(spot["pos"]) < 10.0:
+		if _river_distance(spot["pos"]) < 10.0 and not spot.get("bridge", false):
 			_errors.append("point de contrôle dans l'eau : " + String(spot["name"]))
 
 

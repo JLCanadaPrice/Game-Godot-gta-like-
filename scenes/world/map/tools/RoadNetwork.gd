@@ -1,6 +1,7 @@
 extends RefCounted
 
-# Réseau routier de la carte 3D calculé depuis MapSpec (étape 2a : autoroutes et voies express).
+# Réseau routier de la carte 3D calculé depuis MapSpec (étape 2a : autoroutes et voies express ; étape 2b : artères,
+# dessertes, chemins, losanges, carrefours, rond-point, raccords au centre-ville).
 #  - axes : tronçons d'un même axe enchaînés puis lissés (Catmull-Rom centripète), échantillonnés tous les 4 m ;
 #  - profils en long : relief naturel lissé (sans la remontée des bords de carte), pente limitée, tablier au-dessus de
 #    l'eau ; niveau des axes aux échangeurs (tranchée / viaduc), aux losanges et aux passages de la voie ferrée choisi
@@ -10,8 +11,13 @@ extends RefCounted
 #    bretelles qui longent leur chaussée puis s'évasent vers l'anneau ; un axe qui s'arrête à l'échangeur se raccorde
 #    directement à l'anneau ; jonction continue là où deux axes se prolongent ;
 #  - sorties de carte en tranchée puis en tunnel, demi-tour caché au fond ;
+#  - artères : chaînes de tronçons à travers les losanges, profil qui suit le relief (pente limitée, ponts sur l'eau,
+#    niveau fixé aux passages sous / sur les autoroutes), coupées en rubans à double sens entre stations : raccord à
+#    la grille (bord de la tuile en X), carrefour (plateau), carrefour d'extrémité de losange, cul-de-sac, rond-point,
+#    sortie de carte ; trottoirs des artères urbaines ; bretelles de losange en S entre chaussée et carrefour ;
 #  - graphe de circulation : arêtes avec voies et sens unique, anneaux gérés comme le rond-point existant, noeuds sans
-#    feu, bretelles d'insertion qui cèdent le passage.
+#    feu (autoroutes, carrefours non éclairés), feux aux carrefours éclairés et aux extrémités de losange, bretelles
+#    d'insertion qui cèdent le passage, raccords sur plateau (connectors) sans géométrie propre.
 # Géométrie en rubans (axe 3D + largeur), utilisée par RoadBake et par les tests de routes ; `errors` liste ce qui
 # rendrait la géométrie inutilisable (pentes, eau, conflits entre rubans, tunnels).
 
@@ -48,17 +54,38 @@ const PORTAL_COVER := 8.0           # terrain au-dessus de la chaussée à l'ent
 const BLEND := 40.0                 # m pour passer de l'axe d'une chaussée à celui d'une bretelle
 const LEVEL_WITH_CARRIAGEWAY := 26.0  # m de bretelle accolée à niveau de sa chaussée (le trajet franchit le joint vers 23 m)
 const GRADE := {"highway": 0.045, "ramp": 0.08}
-const GRADE_LIMIT := {"carriageway": 0.052, "median": 0.052, "ramp": 0.092, "ring": 0.01}
+const GRADE_LIMIT := {"carriageway": 0.052, "median": 0.052, "ramp": 0.092, "ring": 0.01, "arterial": 0.082, "sidewalk": 0.082}
 const SMOOTH := {"highway": 220.0, "ramp": 12.0}
 const AXIS_PRIORITY := ["an", "vxo", "as", "vxe"]
-const WIDTHS := {"carriageway": CW_WIDTH, "median": MEDIAN_WIDTH, "ramp": RAMP_WIDTH, "ring": RING_WIDTH}
+const WIDTHS := {"carriageway": CW_WIDTH, "median": MEDIAN_WIDTH, "ramp": RAMP_WIDTH, "ring": RING_WIDTH, "arterial": 9.0, "sidewalk": 3.0}
+# artères : largeur de chaussée, style d'atlas (RoadTexturesBake), trottoirs
+const ROAD_STYLES := {
+	"urban": {"width": 10.5, "sidewalk": true},
+	"arterial": {"width": 9.0, "sidewalk": false},
+	"access": {"width": 6.5, "sidewalk": false},
+	"dirt": {"width": 5.0, "sidewalk": false},
+}
+const SIDEWALK_WIDTH := 3.0
+const SIDEWALK_RISE := 0.15
+const ARTERIAL_GRADE := 0.07
+const ARTERIAL_WATER_DECK := Spec.WATER_LEVEL + 3.5   # ponts d'artères plus bas que ceux des autoroutes
+const ARTERIAL_SMOOTH := 60.0
+const GRID_TRIM := 6.0              # bras libre de la tuile en X du centre-ville
+const PAD_MARGIN := 3.0
+const TERMINAL_OFFSET := 48.0       # distance entre l'axe de l'autoroute et le carrefour d'extrémité d'un losange
+const DIAMOND_BEND := 110.0         # courbe en S d'une bretelle de losange, avant le carrefour d'extrémité
+const MINI_RING := {"ring": 30.0, "pad": 42.0, "island": 24.0, "angle": 0.436332, "width": 8.0}   # angle 25°
 
 
 class Ribbon:
 	var id := ""
-	var kind := ""                          # carriageway, median, ramp, ring
+	var kind := ""                          # carriageway, median, ramp, ring, arterial, sidewalk
+	var style := ""                         # colonne d'atlas des artères : urban, arterial, access, dirt
 	var width := 0.0
-	var chain := ""                         # chaîne d'autoroute d'origine
+	var chain := ""                         # chaîne d'origine (autoroute ou artère)
+	var chain_start := 0                    # indice de chaîne de l'échantillon 0 et pas (+1 / -1) : tunnels
+	var chain_step := 1
+	var mesh := true                        # faux : trajet seul (anneau de rond-point dessiné par son plateau)
 	var points := PackedVector3Array()      # axe géométrique (x, surface de chaussée, z)
 	var path := PackedVector3Array()        # trajet de circulation (même nombre d'échantillons, y = surface - ROAD_TOP)
 	var one_way := true
@@ -77,6 +104,12 @@ var boundary_gaps: Array[Dictionary] = []
 var rail_crossings: Array[Dictionary] = []
 var road_crossings: Array[Dictionary] = []  # artères qui croisent une autoroute hors losange (ouvrage, étape 2b)
 var attachments: Array[Dictionary] = []     # bords de rubans accolés à un raccord (ni garde-corps ni mur) : ruban, indices, côté
+var arterial_chains: Array[Dictionary] = []
+var stations := {}                          # id -> {"id", "kind", "pos": Vector3, "node", "lit", "ends": [{"left", "right", "dir"}]}
+var pads: Array[Dictionary] = []            # plateaux : {"id", "kind", "center": Vector3, "rim": PackedVector3Array, "island": float}
+var connectors: Array[Dictionary] = []      # trajets sur plateau : {"points": PackedVector3Array, "one_way", "lanes"}
+var g_lit: Array[int] = []                  # noeuds du graphe à feux (carrefours éclairés, extrémités de losange)
+var g_grid: Array[int] = []                 # noeuds du graphe confondus avec la grille du centre-ville
 var levels := {}                            # anneau -> axe en tranchée ("low"/"high" s'il n'a qu'un axe traversant) ; losange -> "low"/"high"
 var rail_modes := {}                        # passage (voie ferrée ou artère) -> "over" (autoroute au-dessus) / "under"
 var report: PackedStringArray = []
@@ -106,6 +139,7 @@ func build() -> void:
 			_build_ring(node_id)
 		elif shape(node_id) == "join":
 			_build_join(node_id)
+	_build_arterials()
 	_build_tunnels()
 	_finalize_paths()
 	_build_graph()
@@ -286,7 +320,10 @@ func _natural_profile(pts: PackedVector2Array) -> PackedFloat32Array:
 	var out := PackedFloat32Array()
 	for p in pts:
 		var q := Vector2(clampf(p.x, r.position.x + 2.0, r.end.x - 2.0), clampf(p.y, r.position.y + 2.0, r.end.y - 2.0))
-		out.append(maxf(terrain.height_at(q), TerrainModel.RIVER_BANK_TOP) + 0.3)
+		var h := terrain.height_at(q)
+		if is_water(q):
+			h = maxf(h, TerrainModel.RIVER_BANK_TOP)   # le lit ne tire pas le profil vers le fond
+		out.append(h + 0.3)
 	return out
 
 
@@ -407,6 +444,10 @@ func _make_chain_ribbons(chain: Dictionary) -> void:
 		r.points.append(Vector3(pts[i].x - side.x * CW_OFFSET, heights[i], pts[i].y - side.y * CW_OFFSET))
 	chain["first"] = first
 	chain["last"] = last
+	d.chain_start = first
+	m.chain_start = first
+	r.chain_start = last
+	r.chain_step = -1
 	_chain_ribbons[chain["id"]] = {"d": d, "i": r, "m": m}
 	ribbons.append_array([d, r, m])
 
@@ -566,8 +607,21 @@ func _ramp_distance(chain: Dictionary, node_id: String, k: int, s: int) -> float
 # rayon. inbound : vers l'anneau (côté entrée) ; sinon depuis l'anneau (côté sortie), points parcourus à l'envers.
 func _ring_ramp(id: String, chain: Dictionary, center: Vector2, s: int, j_a: int, j_f: int, t_a: float,
 		ring_point: Vector3, h_ring: float, inbound: bool) -> Ribbon:
+	var q := Vector2(ring_point.x, ring_point.z)
+	var radial := (q - center).normalized()
+	var ring_dir := rotate_ccw(radial, PI * 0.5) * (1.0 if inbound else -1.0)
+	var end_dir := (ring_dir * 0.8 - radial * 0.6).normalized()
+	return _branch_ramp(id, chain, s, j_a, j_f, t_a, Vector3(q.x, h_ring, q.y), end_dir, 0.35, 18.0, inbound)
+
+
+# Bretelle générique : partie qui longe l'axe (voir _ring_ramp) puis Bézier jusqu'à `end_point`, abordé dans la
+# direction `end_dir` (sens de construction, de la chaussée vers le bout) ; portée d'arrivée end_ratio x écart,
+# plafonnée à end_cap m.
+func _branch_ramp(id: String, chain: Dictionary, s: int, j_a: int, j_f: int, t_a: float, end_point: Vector3,
+		end_dir: Vector2, end_ratio: float, end_cap: float, inbound: bool) -> Ribbon:
 	var pts: PackedVector2Array = chain["points"]
 	var heights: PackedFloat32Array = chain["heights"]
+	var h_ring := end_point.y
 	var side_sign := 1.0 if inbound else -1.0
 	var line := PackedVector2Array()
 	var line_h := PackedFloat32Array()
@@ -579,14 +633,11 @@ func _ring_ramp(id: String, chain: Dictionary, center: Vector2, s: int, j_a: int
 		line.append(pts[j] + side * lerpf(t_a, RAMP_OFFSET, smoothstep(0.0, float(maxi(count, 1)), float(k))))
 		line_h.append(heights[j])
 		sides.append(side)
-	var q := Vector2(ring_point.x, ring_point.z)
-	var radial := (q - center).normalized()
-	var ring_dir := rotate_ccw(radial, PI * 0.5) * side_sign
-	var end_dir := (ring_dir * 0.8 - radial * 0.6).normalized()
+	var q := Vector2(end_point.x, end_point.z)
 	var p0 := line[count]
 	var start_dir := -tangent(pts, j_f) * float(s)
 	var gap := p0.distance_to(q)
-	var bend := resample(bezier([p0, p0 + start_dir * gap * 0.4, q - end_dir * minf(18.0, gap * 0.35), q], 96), STEP)
+	var bend := resample(bezier([p0, p0 + start_dir * gap * 0.4, q - end_dir * minf(end_cap, gap * end_ratio), q], 96), STEP)
 	if bend.size() > 2 and bend[bend.size() - 2].distance_to(q) < STEP * 0.6:
 		bend.remove_at(bend.size() - 2)
 	for k in range(1, bend.size()):
@@ -665,6 +716,540 @@ func _link(id: String, a: Vector3, a_dir: Vector2, b: Vector3, b_dir: Vector2, k
 	return rb
 
 
+# --- artères, dessertes et chemins ------------------------------------------------------------------------------
+func _build_arterials() -> void:
+	for chain in _arterial_chain_specs():
+		_profile_arterial(chain)
+		arterial_chains.append(chain)
+	for chain in arterial_chains:
+		_arterial_stations(chain)
+	for chain in arterial_chains:
+		_arterial_ribbons(chain)
+	for node_id: String in Spec.NODES:
+		match String(Spec.NODES[node_id]["kind"]):
+			"diamond":
+				_diamond_ramps(node_id)
+			"roundabout":
+				_mini_roundabout(node_id)
+	_station_pads()
+
+
+# Chaînes d'artères : tronçons consécutifs à travers les losanges où deux artères se prolongent.
+func _arterial_chain_specs() -> Array[Dictionary]:
+	var roads: Array = Spec.ROADS.filter(func(r: Dictionary) -> bool: return r["class"] != "highway")
+	var at_diamond := {}
+	for r: Dictionary in roads:
+		for end in ["from", "to"]:
+			var node_id: String = r[end]
+			if Spec.NODES[node_id]["kind"] == "diamond":
+				if not at_diamond.has(node_id):
+					at_diamond[node_id] = []
+				at_diamond[node_id].append(r)
+	var used := {}
+	var out: Array[Dictionary] = []
+	for r: Dictionary in roads:
+		if used.has(r["id"]):
+			continue
+		var head: Dictionary = r
+		for guard in 20:
+			var from_id: String = head["from"]
+			var prev := _other_road(at_diamond, from_id, head)
+			if prev.is_empty() or prev["to"] != from_id or used.has(prev["id"]):
+				break
+			head = prev
+		var seq: Array[Dictionary] = [head]
+		used[head["id"]] = true
+		for guard in 20:
+			var to_id: String = seq[-1]["to"]
+			var next := _other_road(at_diamond, to_id, seq[-1])
+			if next.is_empty() or next["from"] != to_id or used.has(next["id"]):
+				break
+			seq.append(next)
+			used[next["id"]] = true
+		out.append(_make_arterial_chain(seq))
+	return out
+
+
+static func _other_road(at_diamond: Dictionary, node_id: String, road: Dictionary) -> Dictionary:
+	if Spec.NODES[node_id]["kind"] != "diamond" or (at_diamond[node_id] as Array).size() != 2:
+		return {}
+	var pair: Array = at_diamond[node_id]
+	return pair[1] if pair[0]["id"] == road["id"] else pair[0]
+
+
+func _make_arterial_chain(seq: Array[Dictionary]) -> Dictionary:
+	var control := PackedVector2Array()
+	var nodes: Array[String] = []
+	var road_ids: Array[String] = []
+	for road in seq:
+		if control.is_empty():
+			control.append(Spec.node_pos(road["from"]))
+			nodes.append(road["from"])
+		for v: Vector2 in road["via"]:
+			control.append(v)
+		control.append(Spec.node_pos(road["to"]))
+		nodes.append(road["to"])
+		road_ids.append(road["id"])
+	# losange en bout de chaîne : l'artère franchit l'autoroute jusqu'au carrefour d'extrémité de l'autre côté
+	var stub_head: bool = Spec.NODES[nodes[0]]["kind"] == "diamond"
+	var stub_tail: bool = Spec.NODES[nodes[-1]]["kind"] == "diamond"
+	if stub_head:
+		control.insert(0, control[0] + (control[0] - control[1]).normalized() * TERMINAL_OFFSET)
+	if stub_tail:
+		control.append(control[control.size() - 1] + (control[control.size() - 1] - control[control.size() - 2]).normalized() * TERMINAL_OFFSET)
+	var points := smooth(control, STEP)
+	var node_index := {}
+	for node_id in nodes:
+		node_index[node_id] = nearest_index(points, Spec.node_pos(node_id))
+	var styles := PackedStringArray()
+	styles.resize(points.size())
+	for road in seq:
+		var style := _road_style(road)
+		var i0: int = node_index[road["from"]]
+		var i1: int = node_index[road["to"]]
+		for i in range(mini(i0, i1), maxi(i0, i1) + 1):
+			styles[i] = style
+	for i in points.size():
+		if styles[i] == "":
+			styles[i] = _road_style(seq[0]) if i < points.size() / 2 else _road_style(seq[-1])
+	return {"id": "art_" + String(seq[0]["id"]), "roads": road_ids, "nodes": nodes, "points": points, "node_index": node_index,
+			"styles": styles, "stub_head": stub_head, "stub_tail": stub_tail, "heights": PackedFloat32Array(), "first": 0, "last": points.size() - 1}
+
+
+static func _road_style(road: Dictionary) -> String:
+	match String(road["class"]):
+		"arterial":
+			return "urban" if road.get("urban", false) else "arterial"
+		"access":
+			return "access"
+		_:
+			return "dirt"
+
+
+func _profile_arterial(chain: Dictionary) -> void:
+	var pts: PackedVector2Array = chain["points"]
+	var natural := _natural_profile(pts)
+	var fixed := {}
+	var constraints: Array = []
+	for node_id: String in chain["nodes"]:
+		var idx: int = chain["node_index"][node_id]
+		match String(Spec.NODES[node_id]["kind"]):
+			"grid":
+				fixed[idx] = ROAD_TOP
+			"edge":
+				pass
+			"roundabout":
+				# plateau plat du rond-point : les bras arrivent à sa hauteur
+				var reach := ceili((float(MINI_RING["pad"]) + STEP) / STEP)
+				for j in range(maxi(idx - reach, 0), mini(idx + reach, pts.size() - 1) + 1):
+					fixed[j] = node_base(node_id)
+			_:
+				fixed[idx] = node_base(node_id)
+	for span in water_spans(pts, 10.0):
+		constraints.append({"i0": span.x - 3, "i1": span.y + 3, "h": ARTERIAL_WATER_DECK, "type": "min"})
+	# passages sous / sur une autoroute : l'artère reste à la hauteur prévue par le profil de l'autoroute
+	for entry: Dictionary in road_crossings:
+		if not (chain["roads"] as Array).has(entry["with"]):
+			continue
+		var i := nearest_index(pts, entry["pos"])
+		var h: float = entry["rail_height"]
+		constraints.append({"i0": i - 3, "i1": i + 3, "h": h + 0.2, "type": "max"})
+		if entry["mode"] == "under":
+			constraints.append({"i0": i - 3, "i1": i + 3, "h": h - 0.2, "type": "min"})
+	chain["heights"] = solve_profile(natural, ARTERIAL_GRADE, ARTERIAL_SMOOTH, fixed, constraints)
+
+
+func _chain_point(chain: Dictionary, i: int) -> Vector3:
+	var pts: PackedVector2Array = chain["points"]
+	return Vector3(pts[i].x, (chain["heights"] as PackedFloat32Array)[i], pts[i].y)
+
+
+# Stations le long d'une chaîne : ses deux bouts et les carrefours d'extrémité des losanges traversés.
+func _arterial_stations(chain: Dictionary) -> void:
+	var pts: PackedVector2Array = chain["points"]
+	var nodes: Array = chain["nodes"]
+	var list: Array[Dictionary] = []
+	for end_index in [0, pts.size() - 1]:
+		var stub: bool = chain["stub_head"] if end_index == 0 else chain["stub_tail"]
+		var node_id: String = nodes[0] if end_index == 0 else nodes[-1]
+		if stub:
+			list.append({"index": end_index, "station": _diamond_terminal(node_id, chain, end_index)})
+		else:
+			list.append({"index": end_index, "station": _station(node_id, String(Spec.NODES[node_id]["kind"]), _chain_point(chain, chain["node_index"][node_id]))})
+	for node_id: String in nodes:
+		if Spec.NODES[node_id]["kind"] != "diamond":
+			continue
+		var j0: int = chain["node_index"][node_id]
+		var highway := _highway_chain_of(node_id)
+		for dir: int in [-1, 1]:
+			var j := j0
+			var reached := false
+			while j + dir > 0 and j + dir < pts.size() - 1:
+				j += dir
+				if _distance_to_chain(highway, pts[j]) >= TERMINAL_OFFSET:
+					reached = true
+					break
+			if not reached:
+				continue   # bout de chaîne (déjà station)
+			var terminal := _diamond_terminal(node_id, chain, j)
+			if not terminal.is_empty():
+				list.append({"index": j, "station": terminal})
+	list.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return a["index"] < b["index"])
+	chain["stations"] = list
+
+
+func _station(id: String, kind: String, pos: Vector3) -> Dictionary:
+	if not stations.has(id):
+		var lit: bool = kind == "terminal" or (Spec.NODES.has(id) and Spec.NODES[id].get("lit", false))
+		stations[id] = {"id": id, "kind": kind, "pos": pos, "lit": lit, "ends": []}
+	return stations[id]
+
+
+# Carrefour d'extrémité d'un losange du côté de l'axe où se trouve l'échantillon j ; station vide si ce côté n'a pas
+# de bretelle (l'artère passe simplement).
+func _diamond_terminal(node_id: String, chain: Dictionary, j: int) -> Dictionary:
+	var highway := _highway_chain_of(node_id)
+	var hp: PackedVector2Array = highway["points"]
+	var hj: int = highway["node_index"][node_id]
+	var p := (chain["points"] as PackedVector2Array)[j]
+	var side := "d" if right_of(tangent(hp, hj)).dot(p - hp[hj]) > 0.0 else "i"
+	var wanted := false
+	for code: String in Spec.NODES[node_id].get("ramps", []):
+		wanted = wanted or code.begins_with(side)
+	if not wanted:
+		if j == 0 or j == (chain["points"] as PackedVector2Array).size() - 1:
+			return _station("%s:%s" % [node_id, side], "end", _chain_point(chain, j))
+		return {}
+	return _station("%s:%s" % [node_id, side], "terminal", _chain_point(chain, j))
+
+
+func _highway_chain_of(node_id: String) -> Dictionary:
+	for chain in chains:
+		if (chain["nodes"] as Array).has(node_id):
+			return chain
+	return {}
+
+
+static func _distance_to_chain(chain: Dictionary, p: Vector2) -> float:
+	var pts: PackedVector2Array = chain["points"]
+	var i := nearest_index(pts, p)
+	var best := INF
+	for k in range(maxi(i - 1, 0), mini(i + 1, pts.size() - 2) + 1):
+		best = minf(best, p.distance_to(Geometry2D.get_closest_point_to_segment(p, pts[k], pts[k + 1])))
+	return best
+
+
+# Distance de coupe d'un ruban d'artère au bord d'une station.
+func _station_trim(station: Dictionary, hw: float) -> float:
+	match String(station["kind"]):
+		"grid":
+			return GRID_TRIM
+		"edge":
+			return 0.0
+		"roundabout":
+			return MINI_RING["pad"]
+		"end":
+			return hw + 2.0
+		"terminal":
+			return maxf(hw, RAMP_WIDTH * 0.5) + PAD_MARGIN + 6.0   # place pour une bretelle arrivée en biais
+		_:
+			return _junction_radius(station["id"])
+
+
+# Rayon d'un carrefour : les chaussées qui y arrivent ne se recouvrent pas avant le plateau.
+func _junction_radius(node_id: String) -> float:
+	var dirs: Array[Vector2] = []
+	var widest := 0.0
+	for road: Dictionary in Spec.ROADS:
+		if road["class"] == "highway" or (road["from"] != node_id and road["to"] != node_id):
+			continue
+		var line := Spec.road_polyline(road)
+		var other := line[1] if road["from"] == node_id else line[line.size() - 2]
+		dirs.append((other - Spec.node_pos(node_id)).normalized())
+		widest = maxf(widest, float(ROAD_STYLES[_road_style(road)]["width"]) * 0.5)
+	var min_angle := PI
+	for a in dirs.size():
+		for b in range(a + 1, dirs.size()):
+			min_angle = minf(min_angle, absf(dirs[a].angle_to(dirs[b])))
+	return clampf(widest / tan(maxf(min_angle, 0.35) * 0.5) + 2.0, widest + PAD_MARGIN, 30.0)
+
+
+func _arterial_ribbons(chain: Dictionary) -> void:
+	var pts: PackedVector2Array = chain["points"]
+	var heights: PackedFloat32Array = chain["heights"]
+	var styles: PackedStringArray = chain["styles"]
+	var list: Array = chain["stations"]
+	for k in list.size() - 1:
+		var s1: Dictionary = list[k]["station"]
+		var s2: Dictionary = list[k + 1]["station"]
+		var i1: int = list[k]["index"]
+		var i2: int = list[k + 1]["index"]
+		var style := styles[(i1 + i2) / 2]
+		var width: float = ROAD_STYLES[style]["width"]
+		var hw := width * 0.5
+		var start := _cut(chain, i1, _station_trim(s1, hw), 1)
+		var stop := _cut(chain, i2, _station_trim(s2, hw), -1)
+		var a: int = start["index"]
+		var b: int = stop["index"]
+		if b - a < 1:
+			errors.append("artère %s : tronçon trop court entre %s et %s" % [chain["id"], s1["id"], s2["id"]])
+			continue
+		# bouts exacts à la distance de coupe (plateaux, tuile du centre-ville) puis échantillons de la chaîne entre eux
+		var line: Array[Vector3] = [start["point"]]
+		var dirs: Array[Vector2] = [start["dir"]]
+		for i in range(a, b + 1):
+			var p3 := Vector3(pts[i].x, heights[i], pts[i].y)
+			if p3.distance_to(line[line.size() - 1]) > 1.0 and p3.distance_to(stop["point"]) > 1.0:
+				line.append(p3)
+				dirs.append(tangent(pts, i))
+		line.append(stop["point"])
+		dirs.append(stop["dir"])
+		var rb := _new_ribbon("%s:%d" % [chain["id"], k], "arterial", chain["id"])
+		rb.style = style
+		rb.width = width
+		rb.one_way = false
+		rb.chain_start = a - 1
+		for p3 in line:
+			rb.points.append(p3)
+		ribbons.append(rb)
+		_register_end(s1, rb, 0)
+		_register_end(s2, rb, rb.points.size() - 1)
+		if ROAD_STYLES[style]["sidewalk"]:
+			for side_sign: float in [-1.0, 1.0]:
+				var walk := _new_ribbon("%s:trottoir%d" % [rb.id, int(side_sign)], "sidewalk", chain["id"])
+				walk.graph = false
+				walk.chain_start = a - 1
+				for n in line.size():
+					var side := right_of(dirs[n]) * side_sign * (hw + SIDEWALK_WIDTH * 0.5)
+					walk.points.append(Vector3(line[n].x + side.x, line[n].y + SIDEWALK_RISE, line[n].z + side.y))
+				ribbons.append(walk)
+				attachments.append({"ribbon": walk, "from": 0, "to": walk.points.size() - 1, "side": -1 if side_sign > 0.0 else 1})
+
+
+# Point de la chaîne à `distance` m (le long de l'axe) de l'indice `from_index`, dans le sens `step_sign` : position et
+# hauteur interpolées, direction, premier indice d'échantillon au-delà.
+func _cut(chain: Dictionary, from_index: int, distance: float, step_sign: int) -> Dictionary:
+	var pts: PackedVector2Array = chain["points"]
+	var heights: PackedFloat32Array = chain["heights"]
+	var i := from_index
+	var walked := 0.0
+	while i + step_sign >= 0 and i + step_sign < pts.size():
+		var seg := pts[i].distance_to(pts[i + step_sign])
+		if walked + seg >= distance:
+			var t := (distance - walked) / maxf(seg, 0.001)
+			var q := pts[i].lerp(pts[i + step_sign], t)
+			var h := lerpf(heights[i], heights[i + step_sign], t)
+			return {"point": Vector3(q.x, h, q.y), "index": i + step_sign, "dir": tangent(pts, i)}
+		walked += seg
+		i += step_sign
+	return {"point": Vector3(pts[i].x, heights[i], pts[i].y), "index": i, "dir": tangent(pts, i)}
+
+
+# Bout de ruban posé sur une station : coins pour le plateau et raccord du trajet vers le centre de la station.
+func _register_end(station: Dictionary, rb: Ribbon, k: int) -> void:
+	var p: Vector3 = rb.points[k]
+	var dir := _ribbon_dir(rb, k) * (-1.0 if k == 0 else 1.0)   # vers la station
+	var side := right_of(dir) * rb.width * 0.5
+	if station["kind"] == "end":
+		var c0: Vector3 = station["pos"]
+		station["pos"] = Vector3(c0.x, p.y, c0.z)   # cul-de-sac plat, à la hauteur du bout de chaussée
+	(station["ends"] as Array).append({"left": Vector3(p.x - side.x, p.y, p.z - side.y), "right": Vector3(p.x + side.x, p.y, p.z + side.y), "tip": p, "dir": dir})
+	var center: Vector3 = station["pos"]
+	match String(station["kind"]):
+		"edge", "roundabout":
+			pass
+		_:
+			var a := Vector3(p.x, p.y - ROAD_TOP, p.z)
+			var c := Vector3(center.x, center.y - ROAD_TOP, center.z)
+			connectors.append({"points": PackedVector3Array([a, c]), "one_way": false, "lanes": PackedFloat32Array(), "station": station["id"]})
+
+
+# Bretelles d'un losange : sortie et entrée par chaussée, en S entre la chaussée et le carrefour d'extrémité.
+func _diamond_ramps(node_id: String) -> void:
+	var chain := _highway_chain_of(node_id)
+	if chain.is_empty():
+		errors.append("losange %s : aucune autoroute" % node_id)
+		return
+	var pts: PackedVector2Array = chain["points"]
+	var ribs: Dictionary = _chain_ribbons[chain["id"]]
+	var j_center: int = chain["node_index"][node_id]
+	var axis_dir := tangent(pts, j_center)
+	for code: String in Spec.NODES[node_id].get("ramps", []):
+		var side := code.substr(0, 1)
+		var off := code.ends_with("off")
+		var terminal: Dictionary = stations.get("%s:%s" % [node_id, side], {})
+		if terminal.is_empty():
+			errors.append("losange %s : pas de carrefour d'extrémité côté %s" % [node_id, side])
+			continue
+		# branche : côté de l'axe où se trouve la bretelle (avant / après le croisement dans le sens de la chaussée)
+		var s := -1 if (side == "d") == off else 1
+		var carriageway: Ribbon = ribs[side]
+		var j_a := clampi(j_center + s * roundi(_diamond_ramp_distance(chain, node_id, s) / STEP), int(chain["first"]) + 2, int(chain["last"]) - 2)
+		var t_pos: Vector3 = terminal["pos"]
+		var j_t := nearest_index(pts, Vector2(t_pos.x, t_pos.z))
+		var j_f := j_t + s * roundi(DIAMOND_BEND / STEP)
+		if (j_a - j_f) * s <= 2:
+			errors.append("losange %s : bretelle %s trop courte" % [node_id, code])
+			continue
+		var art_hw := 5.25
+		for end: Dictionary in terminal["ends"]:
+			art_hw = maxf(art_hw, Vector3(end["left"]).distance_to(end["right"]) * 0.5)
+		var end_dir := axis_dir * float(-s)
+		var end_point := t_pos - Vector3(end_dir.x, 0.0, end_dir.y) * (art_hw + 1.5)
+		var cw_index := _ribbon_index(chain, side == "d", j_a)
+		carriageway.splits[cw_index] = true
+		var rb := _branch_ramp("%s:%s" % [node_id, code], chain, s, j_a, j_f, RAMP_OFFSET, end_point, end_dir, 0.4, 60.0, off)
+		var span := ceili((BLEND + 8.0) / STEP)
+		if off:
+			attachments.append({"ribbon": carriageway, "from": cw_index, "to": cw_index + span, "side": 1})
+			attachments.append({"ribbon": rb, "from": 0, "to": span, "side": -1})
+			attachments.append({"ribbon": rb, "from": rb.points.size() - 3, "to": rb.points.size() - 1, "side": 0})
+			connectors.append({"points": PackedVector3Array([rb.path[rb.path.size() - 1], Vector3(t_pos.x, t_pos.y - ROAD_TOP, t_pos.z)]), "one_way": true, "lanes": PackedFloat32Array([0.0]), "station": terminal["id"]})
+		else:
+			attachments.append({"ribbon": carriageway, "from": cw_index - span, "to": cw_index, "side": 1})
+			attachments.append({"ribbon": rb, "from": rb.points.size() - 1 - span, "to": rb.points.size() - 1, "side": -1})
+			attachments.append({"ribbon": rb, "from": 0, "to": 2, "side": 0})
+			connectors.append({"points": PackedVector3Array([Vector3(t_pos.x, t_pos.y - ROAD_TOP, t_pos.z), rb.path[0]]), "one_way": true, "lanes": PackedFloat32Array([0.0]), "station": terminal["id"]})
+		var tip: Vector3 = rb.points[rb.points.size() - 1] if off else rb.points[0]
+		var dir := end_dir
+		var hw := RAMP_WIDTH * 0.5
+		var lateral := right_of(end_dir) * hw
+		(terminal["ends"] as Array).append({"left": tip - Vector3(lateral.x, 0.0, lateral.y), "right": tip + Vector3(lateral.x, 0.0, lateral.y), "tip": tip, "dir": dir})
+
+
+# Longueur d'axe laissée aux bretelles d'un losange vers le noeud suivant : moitié de l'écart avec un autre losange,
+# place des bretelles d'un anneau (qui s'arrêtent à DIAMOND_CLEAR), fin des chaussées avant une jonction, limite.
+func _diamond_ramp_distance(chain: Dictionary, node_id: String, s: int) -> float:
+	var nodes: Array = chain["nodes"]
+	var k := nodes.find(node_id)
+	var idx: int = chain["node_index"][node_id]
+	if k + s < 0 or k + s >= nodes.size():
+		return DIAMOND_CLEAR
+	var next_id: String = nodes[k + s]
+	var gap := absf(int(chain["node_index"][next_id]) - idx) * STEP
+	match String(Spec.NODES[next_id]["kind"]):
+		"diamond":
+			return minf(DIAMOND_CLEAR, gap * 0.5 - 10.0)
+		"edge":
+			return minf(DIAMOND_CLEAR, _inside_length(chain, idx, s) - 30.0)
+		_:
+			return DIAMOND_CLEAR if shape(next_id) == "ring" else minf(DIAMOND_CLEAR, gap - JOIN_TRIM - 30.0)
+
+
+# Petit rond-point : anneau à une voie (trajet seul, dessiné par le plateau et son îlot), entrées et sorties de chaque
+# branche d'artère arrivée au bord du plateau.
+func _mini_roundabout(node_id: String) -> void:
+	var station: Dictionary = stations.get(node_id, {})
+	if station.is_empty():
+		return
+	var center: Vector3 = station["pos"]
+	var c2 := Vector2(center.x, center.z)
+	var ring := _new_ribbon("ring_" + node_id, "ring", "")
+	ring.width = MINI_RING["width"]
+	ring.closed = true
+	ring.mesh = false
+	ring.lanes = PackedFloat32Array([0.0])
+	var angles: Array = []
+	var legs: Array[Dictionary] = []
+	for end: Dictionary in station["ends"]:
+		var tip: Vector3 = end["tip"]
+		var u := (Vector2(tip.x, tip.z) - c2).normalized()
+		var leg := {"tip": tip, "entry": _map_angle(rotate_ccw(u, MINI_RING["angle"])), "exit": _map_angle(rotate_ccw(u, -MINI_RING["angle"]))}
+		legs.append(leg)
+		angles.append(leg["entry"])
+		angles.append(leg["exit"])
+	angles.sort()
+	var angle_index := {}
+	var radius: float = MINI_RING["ring"]
+	for k in angles.size():
+		var a0: float = angles[k]
+		var a1: float = angles[(k + 1) % angles.size()]
+		if a1 <= a0:
+			a1 += TAU
+		angle_index[snappedf(a0, 0.0001)] = ring.points.size()
+		ring.splits[ring.points.size()] = true
+		var steps := maxi(1, ceili((a1 - a0) * radius / STEP))
+		for s in steps:
+			var q := c2 + _from_map_angle(lerpf(a0, a1, float(s) / steps)) * radius
+			ring.points.append(Vector3(q.x, center.y, q.y))
+	ribbons.append(ring)
+	for leg in legs:
+		var tip: Vector3 = leg["tip"]
+		var entry: Vector3 = ring.points[angle_index[snappedf(leg["entry"], 0.0001)]]
+		var exit: Vector3 = ring.points[angle_index[snappedf(leg["exit"], 0.0001)]]
+		var down := Vector3(0.0, -ROAD_TOP, 0.0)
+		connectors.append({"points": _curve3(tip + down, entry + down, center + down), "one_way": true, "lanes": PackedFloat32Array([0.0]), "station": node_id})
+		connectors.append({"points": _curve3(exit + down, tip + down, center + down), "one_way": true, "lanes": PackedFloat32Array([0.0]), "station": node_id})
+
+
+# Raccord courbe de a à b qui s'écarte de `center` (quadratique, 6 points).
+static func _curve3(a: Vector3, b: Vector3, center: Vector3) -> PackedVector3Array:
+	var mid := (a + b) * 0.5
+	var away := Vector3(mid.x - center.x, 0.0, mid.z - center.z).normalized() * a.distance_to(b) * 0.25
+	var control := mid + away
+	var out := PackedVector3Array()
+	for s in 6:
+		var t := s / 5.0
+		out.append(a.lerp(control, t).lerp(control.lerp(b, t), t))
+	return out
+
+
+# Plateaux des stations : polygone des coins des rubans qui y arrivent (complété en arc), disque pour les culs-de-sac
+# et les ronds-points (avec îlot).
+func _station_pads() -> void:
+	for id: String in stations:
+		var station: Dictionary = stations[id]
+		var center: Vector3 = station["pos"]
+		var kind: String = station["kind"]
+		if kind == "grid" or kind == "edge":
+			continue
+		var rim := PackedVector3Array()
+		var island := 0.0
+		if kind == "roundabout":
+			# disque un peu plus large et 1 cm plus bas : recouvre le bout plat des bras sans jour ni scintillement
+			rim = _disc(center - Vector3(0, 0.01, 0), float(MINI_RING["pad"]) + 1.2, 48)
+			island = MINI_RING["island"]
+		elif kind == "end":
+			var radius := 8.0
+			for end: Dictionary in station["ends"]:
+				radius = maxf(radius, Vector3(end["left"]).distance_to(end["right"]) * 0.5 + 5.0)
+			rim = _disc(center, radius, 20)
+		else:
+			var corners: Array[Vector3] = []
+			var arms: Array[int] = []
+			var reach := 0.0
+			for end: Dictionary in station["ends"]:
+				corners.append(end["left"])
+				corners.append(end["right"])
+				arms.append_array([arms.size() / 2, arms.size() / 2])
+				reach = maxf(reach, Vector2(center.x, center.z).distance_to(Vector2(Vector3(end["tip"]).x, Vector3(end["tip"]).z)))
+			# arcs entre deux bras éloignés (jamais entre les deux coins d'un même bras) : le plateau reste arrondi
+			var angles: Array[float] = []
+			for c in corners:
+				angles.append(fposmod(atan2(c.z - center.z, c.x - center.x), TAU))
+			var order := range(corners.size())
+			order.sort_custom(func(a: int, b: int) -> bool: return angles[a] < angles[b])
+			for n in order.size():
+				var a: int = order[n]
+				var b: int = order[(n + 1) % order.size()]
+				rim.append(corners[a])
+				var gap := fposmod(angles[b] - angles[a], TAU)
+				if arms[a] != arms[b] and gap > 0.6:
+					var fill := int(gap / 0.35)
+					for f in range(1, fill):
+						var ang := angles[a] + gap * f / fill
+						rim.append(Vector3(center.x + cos(ang) * reach * 0.8, center.y, center.z + sin(ang) * reach * 0.8))
+		pads.append({"id": id, "kind": kind, "center": center, "rim": rim, "island": island})
+
+
+static func _disc(center: Vector3, radius: float, segments: int) -> PackedVector3Array:
+	var out := PackedVector3Array()
+	for k in segments:
+		var a := TAU * k / segments
+		out.append(Vector3(center.x + cos(a) * radius, center.y, center.z + sin(a) * radius))
+	return out
+
+
 func _build_tunnels() -> void:
 	for chain in chains:
 		var nodes: Array = chain["nodes"]
@@ -696,10 +1281,45 @@ func _build_tunnels() -> void:
 			leaving.splits[0] = true
 			tunnels.append({"id": node_id, "chain": chain["id"], "tip_index": tip, "portal_index": portal, "boundary_index": boundary,
 					"pos": Vector3(pts[tip].x, heights[tip], pts[tip].y), "dir": tangent(pts, tip) * float(-inward),
-					"width": CW_OFFSET * 2.0 + CW_WIDTH + 4.0,
+					"width": CW_OFFSET * 2.0 + CW_WIDTH + 4.0, "road_half": CW_OFFSET + CW_WIDTH * 0.5,
 					"arrive": arriving.points[arriving.points.size() - 1], "leave": leaving.points[0]})
 		for hit in _boundary_crossings(pts):
-			boundary_gaps.append({"pos": hit, "width": CW_OFFSET * 2.0 + CW_WIDTH + 10.0, "chain": chain["id"]})
+			boundary_gaps.append({"pos": hit, "width": (CW_OFFSET + CW_WIDTH * 0.5 + 1.1) * 2.0, "chain": chain["id"]})
+	# artères : un seul ruban à double sens jusqu'au fond (cul-de-sac)
+	for chain in arterial_chains:
+		var pts: PackedVector2Array = chain["points"]
+		var heights: PackedFloat32Array = chain["heights"]
+		var nodes: Array = chain["nodes"]
+		for end in ["head", "tail"]:
+			var node_id: String = nodes[0] if end == "head" else nodes[-1]
+			if Spec.NODES[node_id]["kind"] != "edge":
+				continue
+			var tip := pts.size() - 1 if end == "tail" else 0
+			var inward := -1 if end == "tail" else 1
+			var width: float = ROAD_STYLES[(chain["styles"] as PackedStringArray)[tip]]["width"]
+			var j := tip
+			while j + inward >= 0 and j + inward < pts.size() and not Spec.PLAYABLE.has_point(pts[j]):
+				j += inward
+			var boundary := j
+			var portal := -1
+			while j != tip:
+				if terrain.height_at(pts[j]) - heights[j] >= PORTAL_COVER:
+					portal = j
+					break
+				j -= inward
+			if portal < 0 or absi(tip - portal) * STEP < 30.0:
+				errors.append("tunnel %s : pas assez de terrain au-dessus de la chaussée" % node_id)
+				portal = tip
+			tunnels.append({"id": node_id, "chain": chain["id"], "tip_index": tip, "portal_index": portal, "boundary_index": boundary,
+					"pos": Vector3(pts[tip].x, heights[tip], pts[tip].y), "dir": tangent(pts, tip) * float(-inward),
+					"width": width + 4.0, "road_half": width * 0.5})
+		for hit in _boundary_crossings(pts):
+			boundary_gaps.append({"pos": hit, "width": width_of_chain_end(chain, hit) + 2.2, "chain": chain["id"]})
+
+
+static func width_of_chain_end(chain: Dictionary, p: Vector2) -> float:
+	var styles: PackedStringArray = chain["styles"]
+	return ROAD_STYLES[styles[nearest_index(chain["points"], p)]]["width"]
 
 
 func _boundary_crossings(pts: PackedVector2Array) -> Array[Vector2]:
@@ -762,6 +1382,8 @@ func _build_graph() -> void:
 				if rb.yield_end and k == cuts.size() - 2:
 					g_yield["%d_%d" % [edge_index, g_edges[edge_index]["b"]]] = true
 	for t in tunnels:
+		if not t.has("arrive"):
+			continue   # artère à double sens : cul-de-sac au fond du tunnel
 		var a: Vector3 = t["arrive"]
 		var b: Vector3 = t["leave"]
 		var dir: Vector2 = t["dir"]
@@ -770,8 +1392,31 @@ func _build_graph() -> void:
 		var turn := Ribbon.new()
 		turn.lanes = PackedFloat32Array([0.0])
 		_add_edge(pts, turn)
+	for c: Dictionary in connectors:
+		var link := Ribbon.new()
+		link.one_way = c["one_way"]
+		link.lanes = c["lanes"]
+		_add_edge((c["points"] as PackedVector3Array).duplicate(), link)
+	# feux : carrefours éclairés et extrémités de losange ; noeuds de la grille laissés au centre-ville ; les autres sans feu
+	var lit := {}
+	var grid := {}
+	for id: String in stations:
+		var station: Dictionary = stations[id]
+		var c: Vector3 = station["pos"]
+		var node := _find_graph_node(Vector3(c.x, c.y - ROAD_TOP, c.z))
+		if node < 0:
+			continue
+		if station["kind"] == "grid":
+			grid[node] = true
+		elif station["lit"]:
+			lit[node] = true
 	for i in g_nodes.size():
-		g_unlit.append(i)
+		if grid.has(i):
+			g_grid.append(i)
+		elif lit.has(i):
+			g_lit.append(i)
+		else:
+			g_unlit.append(i)
 
 
 func _add_edge(pts: PackedVector3Array, rb: Ribbon) -> int:
@@ -789,6 +1434,17 @@ func _add_edge(pts: PackedVector3Array, rb: Ribbon) -> int:
 		total += d
 	g_edges.append({"a": a, "b": b, "points": pts, "seg_len": seg_len, "cum": cum, "length": total, "one_way": rb.one_way, "lanes": rb.lanes})
 	return g_edges.size() - 1
+
+
+func _find_graph_node(p: Vector3) -> int:
+	var key := Vector3i(roundi(p.x), roundi(p.y), roundi(p.z))
+	for dz in range(-1, 2):
+		for dx in range(-1, 2):
+			for dy in range(-1, 2):
+				for idx: int in _node_hash.get(key + Vector3i(dx, dy, dz), []):
+					if g_nodes[idx].distance_to(p) < 0.75:
+						return idx
+	return -1
 
 
 func _graph_node(p: Vector3) -> int:
@@ -817,7 +1473,7 @@ func _check() -> void:
 	for rb in ribbons:
 		for k in rb.points.size():
 			var b: Vector3 = rb.points[k]
-			if is_water(Vector2(b.x, b.z)) and b.y < WATER_DECK - 0.35:
+			if is_water(Vector2(b.x, b.z)) and b.y < (ARTERIAL_WATER_DECK if rb.kind in ["arterial", "sidewalk"] else WATER_DECK) - 0.35:
 				low_deck += 1
 				low_ids[rb.id] = true
 			if k == 0:
@@ -846,7 +1502,13 @@ func _check() -> void:
 	var reach_back := _reach(true)
 	report.append("graphe : %d noeuds, %d arêtes, depuis le noeud 0 : %d atteints, %d qui l'atteignent" % [g_nodes.size(), g_edges.size(), reach_fwd, reach_back])
 	if reach_fwd != g_nodes.size() or reach_back != g_nodes.size():
-		errors.append("graphe non fortement connexe")
+		var missing: PackedStringArray = []
+		for reverse in [false, true]:
+			var seen := _reach_set(reverse)
+			for i in g_nodes.size():
+				if not seen.has(i) and missing.size() < 12:
+					missing.append("%s(%.0f, %.1f, %.0f)" % ["<-" if reverse else "->", g_nodes[i].x, g_nodes[i].y, g_nodes[i].z])
+		errors.append("graphe non fortement connexe : " + ", ".join(missing))
 
 
 func is_water(p: Vector2) -> bool:
@@ -896,7 +1558,7 @@ func _check_conflicts() -> void:
 							continue
 						var ra: Ribbon = ribbons[a.x]
 						var rbb: Ribbon = ribbons[b.x]
-						if (ra.kind == "median" or rbb.kind == "median") and ra.chain == rbb.chain:
+						if (ra.kind in ["median", "sidewalk"] or rbb.kind in ["median", "sidewalk"]) and ra.chain == rbb.chain:
 							continue
 						var pa: Vector3 = ra.points[a.y]
 						var pb: Vector3 = rbb.points[b.y]
@@ -919,9 +1581,16 @@ func _check_conflicts() -> void:
 
 
 func _reach(reverse: bool) -> int:
+	return _reach_set(reverse).size()
+
+
+func _reach_set(reverse: bool) -> Dictionary:
 	if g_nodes.is_empty():
-		return 0
+		return {}
 	var adj := {}
+	# les noeuds de la grille sont reliés entre eux par les rues du centre-ville
+	for a in g_grid:
+		adj[a] = g_grid.filter(func(b: int) -> bool: return b != a)
 	for e in g_edges:
 		var a: int = e["b"] if reverse else e["a"]
 		var b: int = e["a"] if reverse else e["b"]
@@ -939,7 +1608,7 @@ func _reach(reverse: bool) -> int:
 			if not seen.has(m):
 				seen[m] = true
 				stack.append(m)
-	return seen.size()
+	return seen
 
 
 func strongly_connected() -> bool:

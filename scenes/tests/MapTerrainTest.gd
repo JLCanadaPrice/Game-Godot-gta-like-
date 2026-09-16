@@ -96,15 +96,23 @@ func _check_downtown_seam() -> void:
 		z += 8.0
 	var worst := 0.0
 	var bad := 0
+	var on_roads := 0
 	for p in samples:
 		if Spec.HARBOR.grow(12.0).has_point(p):
 			continue
-		var y := _ground(p)
+		var hit := _hit(p)
+		# chaussées de la carte qui sortent du centre-ville : leur hauteur suit leur propre profil (MapRoadsTest)
+		if not hit.is_empty() and String((hit["collider"] as Node).name).begins_with("RoadCell_"):
+			on_roads += 1
+			continue
+		var y := -INF if hit.is_empty() else (hit["position"] as Vector3).y
 		var dev := absf(y) if y != -INF else 99.0
 		worst = maxf(worst, dev)
 		if dev > 0.5:
 			bad += 1
-	print("MAP_TERRAIN_SEAM %d points au bord du centre-ville, écart max au niveau du sol %.2f m, %d au-delà de 0,5 m" % [samples.size(), worst, bad])
+			if bad <= 5:
+				print("MAP_TERRAIN_SEAM_OFF (%.0f, %.0f) sol %.2f sur %s" % [p.x, p.y, y, "rien" if hit.is_empty() else String((hit["collider"] as Node).name)])
+	print("MAP_TERRAIN_SEAM %d points au bord du centre-ville (%d sur les routes de la carte), écart max au niveau du sol %.2f m, %d au-delà de 0,5 m" % [samples.size(), on_roads, worst, bad])
 	if bad > 0:
 		_errors.append("%d points de raccord au centre-ville décalés" % bad)
 

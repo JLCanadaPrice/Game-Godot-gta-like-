@@ -1,6 +1,10 @@
 extends SceneTree
 
-# Étape 2a : cuisson des autoroutes et voies express de la carte 3D à partir de RoadNetwork.
+# Étapes 2a et 2b : cuisson des routes de la carte 3D à partir de RoadNetwork (autoroutes, voies express, artères,
+# dessertes, chemins, losanges, carrefours et rond-point) :
+#  - plateaux de carrefour (éventail depuis le centre, îlot de rond-point), trottoirs surélevés des artères urbaines ;
+#  - graphe de circulation (generated/roads/traffic_graph.tres) et noeud Traffic (MapTraffic.gd) qui l'ajoute au
+#    Circuit du monde au démarrage ;
 #  - terrain : grille de hauteurs d'origine (TerrainModel) creusée et remblayée sous les chaussées (accotement plat,
 #    talus), enregistrée dans generated/terrain/heights.res ; TerrainBake --from-heights recuit ensuite les tuiles ;
 #  - chaussées : rubans maillés (atlas d'enrobé et de marquages dans le style des routes du centre-ville), rebords ;
@@ -48,7 +52,13 @@ const ROOF_BAND := 8.0              # toit de terrain (TerrainBake) au-delà du 
 const PORTAL_WING := 16.0           # portail : largeur au-delà des parois du tube
 const RANGE_ASPHALT := 2000.0
 const RANGE_CONCRETE := 1500.0
-const ATLAS := {"highway": Vector2(0.0, 0.5), "ramp": Vector2(0.5, 0.827148), "median": Vector2(0.828125, 0.96875)}
+# colonnes de l'atlas roads.png (bornes en u affichées par RoadTexturesBake)
+const ATLAS := {"highway": Vector2(0.0, 0.125), "ramp": Vector2(0.125, 0.206787), "median": Vector2(0.207031, 0.242188),
+		"urban": Vector2(0.25, 0.372559), "arterial": Vector2(0.375, 0.480225), "access": Vector2(0.488281, 0.564209),
+		"dirt": Vector2(0.572266, 0.630615), "sidewalk": Vector2(0.638672, 0.673828)}
+const ISLAND_RISE := 0.25
+const TrafficGraph := preload("res://scenes/world/map/MapTrafficGraph.gd")
+const TRAFFIC_SCRIPT := preload("res://scenes/world/map/MapTraffic.gd")
 const JERSEY := [Vector2(-0.3, 0.0), Vector2(-0.22, 0.28), Vector2(-0.1, 0.85), Vector2(0.1, 0.85), Vector2(0.22, 0.28), Vector2(0.3, 0.0)]
 
 
@@ -95,19 +105,23 @@ func _initialize() -> void:
 		tunnel_spans[t["chain"]].append([int(t["portal_index"]), int(t["tip_index"])])
 	var modes := {}
 	for rb in net.ribbons:
-		modes[rb] = _modes(rb)
+		if rb.mesh:
+			modes[rb] = _modes(rb)
 	_carve(modes)
 	_index_roads()
-	for rb in net.ribbons:
+	for rb in modes:
 		modes[rb] = _unsupported_to_bridges(rb, modes[rb])
 	ResourceSaver.save(Image.create_from_data(model.width, model.depth, false, Image.FORMAT_RF, heights.to_byte_array()), GEN + "/terrain/heights.res")
-	for rb in net.ribbons:
+	for rb in modes:
 		_ribbon(rb, modes[rb])
+	for pad: Dictionary in net.pads:
+		_pad(pad)
 	var roof := PackedByteArray()
 	roof.resize(model.width * model.depth)
 	for t: Dictionary in net.tunnels:
 		_tunnel(t, roof)
 	ResourceSaver.save(Image.create_from_data(model.width, model.depth, false, Image.FORMAT_L8, roof), GEN + "/terrain/roof_mask.res")
+	_write_traffic_graph()
 	_write_scene()
 	_write_boundary_gaps()
 	_ensure_in_map()
@@ -141,10 +155,7 @@ func _modes(rb) -> PackedByteArray:
 func _tunnel_depth(rb, k: int) -> int:
 	if not tunnel_spans.has(rb.chain) or rb.kind == "ramp":
 		return 0
-	var chain := _chain(rb.chain)
-	var j := int(chain["first"]) + k
-	if String(rb.id).ends_with(":i"):
-		j = int(chain["last"]) - k
+	var j: int = rb.chain_start + rb.chain_step * k
 	for span: Array in tunnel_spans[rb.chain]:
 		var portal: int = span[0]
 		var tip: int = span[1]
@@ -155,7 +166,7 @@ func _tunnel_depth(rb, k: int) -> int:
 
 
 func _chain(id: String) -> Dictionary:
-	for chain in net.chains:
+	for chain in net.chains + net.arterial_chains:
 		if chain["id"] == id:
 			return chain
 	return {}
@@ -178,7 +189,7 @@ func _carve(modes: Dictionary) -> void:
 	lo.fill(-INF)
 	soft.fill(INF)
 	hard.fill(INF)
-	for rb in net.ribbons:
+	for rb in modes:
 		var pts: PackedVector3Array = rb.points
 		var count := pts.size()
 		var mode: PackedByteArray = modes[rb]
@@ -187,6 +198,12 @@ func _carve(modes: Dictionary) -> void:
 			var k2 := (k + 1) % count
 			var m := maxi(mode[k], mode[k2])
 			_carve_segment(pts[k], pts[k2], hw, m, lo, soft, hard)
+	for pad: Dictionary in net.pads:
+		var center: Vector3 = pad["center"]
+		var radius := 0.0
+		for p: Vector3 in pad["rim"]:
+			radius = maxf(radius, Vector2(p.x - center.x, p.z - center.z).length())
+		_carve_segment(center, center, radius, 0, lo, soft, hard)
 	for t: Dictionary in net.tunnels:
 		var a: Vector3 = t["pos"]
 		var dir: Vector2 = t["dir"]
@@ -309,7 +326,13 @@ func _ribbon(rb, mode: PackedByteArray) -> void:
 	var closed: bool = rb.closed
 	var hw: float = rb.width * 0.5
 	var kind: String = rb.kind
-	var atlas: Vector2 = ATLAS["median" if kind == "median" else ("ramp" if kind == "ramp" else "highway")]
+	var column := "highway"
+	match kind:
+		"median", "ramp", "sidewalk":
+			column = kind
+		"arterial":
+			column = rb.style
+	var atlas: Vector2 = ATLAS[column]
 	var sides := PackedVector3Array()
 	var arc := PackedFloat32Array()
 	var total := 0.0
@@ -439,6 +462,79 @@ func _open_edges(rb) -> PackedByteArray:
 	return out
 
 
+# Plateau de carrefour : éventail depuis le centre jusqu'au pourtour (coins des rubans), rebord vertical ; îlot en herbe
+# surélevé pour un rond-point.
+func _pad(pad: Dictionary) -> void:
+	var center: Vector3 = pad["center"]
+	var rim: PackedVector3Array = pad["rim"]
+	var n := rim.size()
+	if n < 3:
+		return
+	var atlas: Vector2 = ATLAS["median"]
+	var u := (atlas.x + atlas.y) * 0.5
+	for k in n:
+		var a := rim[k]
+		var b := rim[(k + 1) % n]
+		_tri("asphalt", center, a, b, Vector3.UP, [Vector2(u, center.z / TEX_LENGTH), Vector2(u, a.z / TEX_LENGTH), Vector2(u, b.z / TEX_LENGTH)])
+		var out := Vector3((a + b).x * 0.5 - center.x, 0.0, (a + b).z * 0.5 - center.z).normalized()
+		_quad("concrete", a, b, b - Vector3(0, LIP, 0), a - Vector3(0, LIP, 0), out)
+	var island: float = pad["island"]
+	if island > 0.0:
+		var grass := Color(0.85, 0.1, 0.05, 0.0)
+		var top := center + Vector3(0, ISLAND_RISE, 0)
+		var ring := Network._disc(top, island, 32)
+		for k in ring.size():
+			var a := ring[k]
+			var b := ring[(k + 1) % ring.size()]
+			_tri("roof", top, a, b, Vector3.UP, [], grass)
+			var out := Vector3((a + b).x * 0.5 - center.x, 0.0, (a + b).z * 0.5 - center.z).normalized()
+			_quad("concrete", a, b, b - Vector3(0, ISLAND_RISE + 0.1, 0), a - Vector3(0, ISLAND_RISE + 0.1, 0), out)
+
+
+func _tri(part: String, a: Vector3, b: Vector3, c: Vector3, normal: Vector3, uv: Array = [], color := Color.BLACK) -> void:
+	var g := _group((a + b + c) / 3.0)
+	if not g.has(part):
+		g[part] = Batch.new()
+	var batch: Batch = g[part]
+	var geometric := (b - a).cross(c - a)
+	if geometric.length_squared() < 0.000001:
+		return
+	var order := [a, b, c] if geometric.dot(normal) < 0.0 else [a, c, b]
+	var uv_order := uv
+	if not uv.is_empty() and geometric.dot(normal) >= 0.0:
+		uv_order = [uv[0], uv[2], uv[1]]
+	var nrm := geometric.normalized() * (1.0 if geometric.dot(normal) > 0.0 else -1.0)
+	var base := batch.verts.size()
+	for i in 3:
+		batch.verts.append(order[i])
+		batch.normals.append(nrm)
+		batch.uvs.append(uv_order[i] if not uv_order.is_empty() else Vector2.ZERO)
+		batch.colors.append(color)
+	batch.indices.append_array(PackedInt32Array([base, base + 1, base + 2]))
+	var faces: PackedVector3Array = g["faces"]
+	faces.append_array(PackedVector3Array([order[0], order[1], order[2]]))
+	g["faces"] = faces
+	stats["triangles"] += 1
+
+
+# Graphe de circulation de la carte pour MapTraffic : noeuds, arêtes (trajet, voies, sens unique), anneaux, noeuds sans
+# feu, noeuds de la grille du centre-ville, approches qui cèdent le passage.
+func _write_traffic_graph() -> void:
+	var graph := TrafficGraph.new()
+	graph.nodes = net.g_nodes
+	var edges: Array[Dictionary] = []
+	for e: Dictionary in net.g_edges:
+		edges.append({"a": e["a"], "b": e["b"], "points": e["points"], "one_way": e["one_way"], "lanes": e["lanes"]})
+	graph.edges = edges
+	graph.roundabout = PackedInt32Array(net.g_roundabout)
+	graph.unlit = PackedInt32Array(net.g_unlit)
+	graph.grid = PackedInt32Array(net.g_grid)
+	graph.yields = net.g_yield.duplicate()
+	var path := OUT.path_join("traffic_graph.tres")
+	ResourceSaver.save(graph, path)
+	stats["graphe"] = "%d noeuds, %d arêtes" % [net.g_nodes.size(), net.g_edges.size()]
+
+
 func _jersey(pts: PackedVector3Array, sides: PackedVector3Array, segs: int) -> void:
 	var n := pts.size()
 	for k in segs:
@@ -510,7 +606,7 @@ func _tunnel(t: Dictionary, roof: PackedByteArray) -> void:
 			var w2 := p2 + s2 * hw * side_sign
 			_quad("concrete", w1 - Vector3(0, 0.5, 0), w2 - Vector3(0, 0.5, 0), w2 + up, w1 + up, -s1 * side_sign)
 			# sol entre la chaussée et la paroi (et tout le fond au-delà du bout des chaussées)
-			var inner := Network.CW_OFFSET + Network.CW_WIDTH * 0.5 if k < tip_k else 0.0
+			var inner := float(t["road_half"]) if k < tip_k else 0.0
 			var f1 := p1 + s1 * inner * side_sign
 			var f2 := p2 + s2 * inner * side_sign
 			var atlas: Vector2 = ATLAS["median"]
@@ -554,7 +650,7 @@ func _tunnel(t: Dictionary, roof: PackedByteArray) -> void:
 		var a := p0 + s0 * wing * edge_sign
 		_quad("concrete", Vector3(a.x, p0.y - 1.0, a.z), Vector3(a.x, p0.y - 1.0, a.z) + depth, Vector3(a.x, top, a.z) + depth, Vector3(a.x, top, a.z), s0 * edge_sign)
 	# couloir entre la limite de la zone explorable et le portail : murs invisibles de part et d'autre
-	var half := Network.CW_OFFSET + Network.CW_WIDTH * 0.5 + 1.1
+	var half := float(t["road_half"]) + 1.1
 	var k0 := boundary
 	while (k0 - portal) * outward < 0:
 		var k1 := k0 + outward * 6
@@ -677,6 +773,11 @@ func _write_scene() -> void:
 		cs.shape = load(shape_path)
 		body.add_child(cs)
 		stats["cellules"] += 1
+	var traffic := Node.new()
+	traffic.name = "Traffic"
+	traffic.set_script(TRAFFIC_SCRIPT)
+	traffic.set("graph", load(OUT.path_join("traffic_graph.tres")))
+	root.add_child(traffic)
 	var walls := StaticBody3D.new()
 	walls.name = "TunnelCorridors"
 	root.add_child(walls)
@@ -704,7 +805,7 @@ func _write_boundary_gaps() -> void:
 			if float(pair[1]) < best:
 				best = pair[1]
 				side = pair[0]
-		gaps.append({"side": side, "x": p.x, "z": p.y, "width": (Network.CW_OFFSET + Network.CW_WIDTH * 0.5 + 1.1) * 2.0})
+		gaps.append({"side": side, "x": p.x, "z": p.y, "width": float(gap["width"])})
 	var f := FileAccess.open(OUT.path_join("boundary_gaps.json"), FileAccess.WRITE)
 	f.store_string(JSON.stringify(gaps, "\t"))
 	f.close()

@@ -23,6 +23,11 @@ const VIEWS := [
 	["tunnel_sud", Vector3(-322, 9, 870), Vector3(-328, 2, 1010)],
 	["echangeur_nord_est", Vector3(860, 95, -420), Vector3(1050, 0, -596)],
 	["bretelles_tranchee_est", Vector3(850, 18, -575), Vector3(905, -4, -640)],
+	["artere_pont_riviere", Vector3(-1070, 12, -150), Vector3(-1250, 4, -175)],
+	["carrefour_willow_lake", Vector3(-1535, 28, -130), Vector3(-1578, 10, -172)],
+	["rond_point_echo", Vector3(175, 45, -255), Vector3(110, 0, -316)],
+	["losange_aeroport", Vector3(170, 60, -560), Vector3(60, 0, -700)],
+	["entree_ouest_centre_ville", Vector3(-1000, 10, -195), Vector3(-892, 1, -172)],
 ]
 const SETTLE_FRAMES := 40
 

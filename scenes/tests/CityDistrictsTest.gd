@@ -6,7 +6,8 @@ extends Node
 #  - coutures : une seule pièce de carrefour par noeud (Road2_X pour 4 branches), aucune bordure ni trottoir en
 #    travers d'une branche, aucune pièce en double le long des avenues partagées, et sur chaque branche : tuile
 #    d'approche, passage piéton, feu câblé et simulé, ligne d'arrêt du passage piéton, traversée piétonne ;
-#  - spawners (tous les noeuds, 252 voitures / 315 PNJ), SimulationCuller, carte, unique_id des nœuds.
+#  - spawners (apparition autour du joueur sur tout le graphe, 252 voitures / 315 PNJ), SimulationCuller, carte,
+#    unique_id des nœuds.
 #
 # Lancer : Godot --headless --fixed-fps 60 --quit-after 900 res://scenes/tests/CityDistrictsTest.tscn
 
@@ -112,11 +113,17 @@ func _check_seams(world: Node, circuit: CircuitPath, ped: PathGraph) -> void:
 				var o := (w as Node3D).global_position
 				walk_points.append(Vector2(o.x, o.z))
 	var stats := {"noeuds": 0, "X": 0, "T": 0, "branches": 0}
+	# arêtes ajoutées par la carte 3D (MapTraffic) : branches des artères, contrôlées par MapRoadsTest
+	var traffic := world.get_node_or_null("Map/Roads/Traffic")
+	var map_first_edge: int = traffic.first_edge if traffic != null and traffic.first_edge >= 0 else circuit.edges.size()
 	for i in circuit.nodes.size():
 		var p: Vector3 = circuit.nodes[i]
 		if not _on_seam(p):
 			continue
 		var arms := Merge.arm_edges(circuit, i)
+		for key in arms.keys():
+			if int(arms[key]) >= map_first_edge:
+				arms.erase(key)
 		stats.noeuds += 1
 		stats["X" if arms.size() == 4 else "T"] += 1
 		var label := "couture (%.0f, %.0f)" % [p.x, p.z]
@@ -167,10 +174,9 @@ func _check_population_setup(world: Node, circuit: CircuitPath, ped: PathGraph) 
 	var cars := world.get_node("CarSpawner")
 	var npcs := world.get_node("NpcSpawner")
 	var culler := world.get_node_or_null("SimulationCuller")
-	print("CITY_SPAWNERS voitures max %d sur %d points (circuit %d noeuds) | PNJ max %d sur %d points (réseau %d noeuds) | SimulationCuller %s"
-			% [cars.max_active, cars.spawn_nodes.size(), circuit.nodes.size(), npcs.max_active, npcs.spawn_nodes.size(), ped.nodes.size(), culler != null])
-	if cars.max_active != 252 or npcs.max_active != 315 or cars.spawn_nodes.size() != circuit.nodes.size() \
-			or npcs.spawn_nodes.size() != ped.nodes.size() or culler == null:
+	print("CITY_SPAWNERS voitures max %d, apparition autour du joueur %s (circuit %d noeuds) | PNJ max %d, autour du joueur %s (réseau %d noeuds) | SimulationCuller %s"
+			% [cars.max_active, cars.proximity, circuit.nodes.size(), npcs.max_active, npcs.proximity, ped.nodes.size(), culler != null])
+	if cars.max_active != 252 or npcs.max_active != 315 or not cars.proximity or not npcs.proximity or culler == null:
 		_errors.append("spawners / SimulationCuller mal réglés")
 
 

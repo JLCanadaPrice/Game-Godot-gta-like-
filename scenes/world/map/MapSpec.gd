@@ -11,7 +11,7 @@ extends RefCounted
 # a10) sont décalées pour franchir les autoroutes hors des bretelles (étape 2a).
 
 # Dernière étape construite (0, 1, 2 = 2a, 2.5 = 2b, 3...) : active les points de contrôle correspondants.
-const BUILT_STAGE := 2.0
+const BUILT_STAGE := 2.5
 
 # --- emprises ---------------------------------------------------------------------------------------------------
 const PLAYABLE := Rect2(-2174.0, -1480.0, 4347.0, 2447.0)   # zone explorable (4,35 × 2,45 km)
@@ -94,14 +94,16 @@ const NODES := {
 	"x_ne": {"pos": Vector2(1050, -596), "kind": "interchange", "shape": "ring"},
 	"x_st": {"pos": Vector2(-380, 770), "kind": "interchange", "shape": "ring"},
 	"x_se": {"pos": Vector2(686, 496), "kind": "interchange", "shape": "join"},
-	"d_o172": {"pos": Vector2(-1028, -172), "kind": "diamond"},
-	"d_o116": {"pos": Vector2(-1028, 116), "kind": "diamond"},
-	"d_n9": {"pos": Vector2(60, -700), "kind": "diamond"},
-	"d_e5": {"pos": Vector2(972, -232), "kind": "diamond"},
-	"d_e8": {"pos": Vector2(752, 380), "kind": "diamond"},
-	"d_s7": {"pos": Vector2(60, 780), "kind": "diamond"},
-	"d_no13": {"pos": Vector2(-1416, -672), "kind": "diamond"},
-	"d_so13": {"pos": Vector2(-1355, 543), "kind": "diamond"},
+	# losanges : bretelles par chaussée de l'axe (d = sens des points de l'axe, i = sens inverse ; off = sortie avant
+	# le croisement, on = entrée après) ; côté berge ou demi-losange tourné vers la ville quand la place manque
+	"d_o172": {"pos": Vector2(-1028, -172), "kind": "diamond", "ramps": ["i_off", "i_on"]},
+	"d_o116": {"pos": Vector2(-1028, 116), "kind": "diamond", "ramps": ["i_off", "i_on"]},
+	"d_n9": {"pos": Vector2(60, -700), "kind": "diamond", "ramps": ["d_off", "d_on", "i_off", "i_on"]},
+	"d_e5": {"pos": Vector2(972, -232), "kind": "diamond", "ramps": ["d_off", "d_on", "i_off", "i_on"]},
+	"d_e8": {"pos": Vector2(752, 380), "kind": "diamond", "ramps": ["d_off", "i_on"]},
+	"d_s7": {"pos": Vector2(60, 780), "kind": "diamond", "ramps": ["d_off", "d_on", "i_off", "i_on"]},
+	"d_no13": {"pos": Vector2(-1500, -653), "kind": "diamond", "ramps": ["d_on", "i_off"]},
+	"d_so13": {"pos": Vector2(-1355, 543), "kind": "diamond", "ramps": ["d_on", "i_off"]},
 	"j_lake": {"pos": Vector2(-1578, -172), "kind": "junction", "lit": true},
 	"j_bank": {"pos": Vector2(-1600, 156), "kind": "junction", "lit": true},
 	"j_green": {"pos": Vector2(-393, -856), "kind": "junction", "lit": false},
@@ -126,7 +128,7 @@ const NODES := {
 # noeuds extrémités et points de passage. axis : axe autoroutier (AXES) ; urban : trottoirs et éclairage.
 const ROADS := [
 	{"id": "an_o1", "class": "highway", "axis": "an", "from": "e_an_o", "to": "d_no13", "via": [Vector2(-2174, -544), Vector2(-1874, -588), Vector2(-1600, -630)]},
-	{"id": "an_o2", "class": "highway", "axis": "an", "from": "d_no13", "to": "x_no", "via": [Vector2(-1230, -700), Vector2(-960, -700)]},
+	{"id": "an_o2", "class": "highway", "axis": "an", "from": "d_no13", "to": "x_no", "via": [Vector2(-1416, -672), Vector2(-1230, -700), Vector2(-960, -700)]},
 	{"id": "an_c1", "class": "highway", "axis": "an", "from": "x_no", "to": "d_n9", "via": [Vector2(-300, -700)]},
 	{"id": "an_c2", "class": "highway", "axis": "an", "from": "d_n9", "to": "x_ne", "via": [Vector2(400, -690), Vector2(668, -663)]},
 	{"id": "an_e", "class": "highway", "axis": "an", "from": "x_ne", "to": "e_an_e", "via": [Vector2(1334, -622), Vector2(1600, -650), Vector2(2173, -672)]},
@@ -151,7 +153,7 @@ const ROADS := [
 	{"id": "a2_x", "class": "arterial", "urban": false, "from": "j_bank", "to": "n_a2", "via": []},
 	{"id": "a13_n", "class": "arterial", "urban": false, "from": "d_no13", "to": "j_lake", "via": [Vector2(-1470, -500), Vector2(-1530, -300)]},
 	{"id": "a13_m", "class": "arterial", "urban": true, "from": "j_lake", "to": "j_bank", "via": [Vector2(-1624, -55)]},
-	{"id": "a13_s", "class": "arterial", "urban": false, "from": "j_bank", "to": "d_so13", "via": [Vector2(-1560, 300), Vector2(-1450, 450)]},
+	{"id": "a13_s", "class": "arterial", "urban": false, "from": "j_bank", "to": "d_so13", "via": [Vector2(-1560, 300), Vector2(-1440, 380), Vector2(-1362, 450)]},
 	{"id": "a3", "class": "arterial", "urban": false, "from": "g_n892", "to": "n_a3", "via": [Vector2(-892, -540), Vector2(-975, -620), Vector2(-1010, -760), Vector2(-960, -1000), Vector2(-916, -1159)]},
 	{"id": "a4", "class": "arterial", "urban": true, "from": "g_n532", "to": "j_green", "via": [Vector2(-532, -610), Vector2(-527, -666), Vector2(-445, -666), Vector2(-408, -705), Vector2(-400, -790)]},
 	{"id": "a4_n", "class": "arterial", "urban": false, "from": "j_green", "to": "n_a4", "via": [Vector2(-340, -1100)]},
@@ -166,7 +168,7 @@ const ROADS := [
 	{"id": "safe_lane", "class": "dirt", "from": "j_safe", "to": "n_safe", "via": []},
 	{"id": "ranch_road", "class": "dirt", "from": "j_ranch", "to": "n_ranch", "via": [Vector2(1660, -160)]},
 	{"id": "a7_n", "class": "arterial", "urban": true, "from": "g_s388", "to": "j_motel", "via": [Vector2(-388, 207), Vector2(-388, 403)]},
-	{"id": "a7_s", "class": "arterial", "urban": true, "from": "j_motel", "to": "d_s7", "via": [Vector2(-150, 690)]},
+	{"id": "a7_s", "class": "arterial", "urban": true, "from": "j_motel", "to": "d_s7", "via": [Vector2(-150, 640), Vector2(45, 680)]},
 	{"id": "a7_z", "class": "arterial", "urban": true, "from": "d_s7", "to": "j_sw", "via": []},
 	{"id": "motel_access", "class": "access", "from": "j_motel", "to": "n_motel", "via": []},
 	{"id": "a8", "class": "arterial", "urban": true, "from": "g_s100", "to": "d_e8", "via": [Vector2(-100, 320), Vector2(84, 403), Vector2(418, 445)]},
@@ -237,11 +239,17 @@ const GATE_SPOTS := [
 	{"name": "rive ouest, Westbank", "pos": Vector2(-1400, 300), "yaw": 180.0, "min_stage": 1.0},
 	{"name": "forêt de Cedar Gulch", "pos": Vector2(-1950, 150), "yaw": 0.0, "min_stage": 1.0},
 	{"name": "Eastgate", "pos": Vector2(1400, 520), "yaw": -90.0, "min_stage": 1.0},
-	{"name": "viaduc de l'Autoroute Nord sur la rivière", "pos": Vector2(-1230, -693), "yaw": -90.0, "min_stage": 2.0},
+	{"name": "viaduc de l'Autoroute Nord sur la rivière", "pos": Vector2(-1230, -693), "yaw": -90.0, "min_stage": 2.0, "bridge": true},
 	{"name": "tranchée de la Voie express Ouest sous l'échangeur nord-ouest", "pos": Vector2(-706.85, -780), "yaw": 180.0, "min_stage": 2.0},
 	{"name": "anneau de l'échangeur sud-ouest", "pos": Vector2(-380, 698), "yaw": 90.0, "min_stage": 2.0},
 	{"name": "approche du tunnel sud", "pos": Vector2(-347, 940), "yaw": 180.0, "min_stage": 2.0},
 	{"name": "viaduc de la Voie express Ouest le long du centre-ville", "pos": Vector2(-1034.85, 116), "yaw": 180.0, "min_stage": 2.0},
+	{"name": "pont de l'artère a1 sur la rivière", "pos": Vector2(-1150, -170), "yaw": -90.0, "min_stage": 2.5, "bridge": true},
+	{"name": "carrefour de Willow Lake", "pos": Vector2(-1578, -172), "yaw": 90.0, "min_stage": 2.5},
+	{"name": "rond-point d'Echo Circle", "pos": Vector2(110, -350), "yaw": 90.0, "min_stage": 2.5},
+	{"name": "extrémité sud du losange de l'aéroport", "pos": Vector2(63, -640), "yaw": 0.0, "min_stage": 2.5},
+	{"name": "chemin du ranch", "pos": Vector2(1656, -175), "yaw": 0.0, "min_stage": 2.5},
+	{"name": "artère urbaine à l'entrée ouest du centre-ville", "pos": Vector2(-935, -174), "yaw": -90.0, "min_stage": 2.5},
 ]
 
 

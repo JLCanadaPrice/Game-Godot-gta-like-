@@ -12,6 +12,12 @@ extends Node3D
 # Chaque point d'apparition a SON PROPRE compte à rebours et SA PROPRE
 # vérification de distance : les points sont indépendants et répartis tout
 # autour du circuit / du réseau. `max_active` plafonne le total pour le FPS.
+#
+# proximity = true (carte 3D) : les points d'apparition sont tous les noeuds
+# du graphe (y compris ceux ajoutés par la carte) situés entre proximity_min
+# et proximity_max du joueur, relus régulièrement ; les entités endormies par
+# SimulationCuller au-delà de recycle_distance sont supprimées pour que le
+# quota suive le joueur (jamais une voiture conduite ou achetée par le joueur).
 
 @export var spawn_scene: PackedScene
 @export var kind: String = "vehicle"
@@ -37,10 +43,19 @@ extends Node3D
 # Mettre police / police_riot à 0 pour ne faire apparaître que des civils.
 @export var npc_faction_weights: Dictionary = {&"civil": 90, &"police": 7, &"police_riot": 3}
 
+@export var proximity := false
+@export var proximity_min := 60.0
+@export var proximity_max := 400.0
+@export var recycle_distance := 700.0
+const PROXIMITY_REFRESH := 1.0
+const SLEEP_META := &"sim_sleeping"   # posé par SimulationCuller
+
 var _circuit: CircuitPath
 var _graph: PathGraph
 var _cooldowns: PackedFloat32Array = PackedFloat32Array()
 var _points := 0
+var _near: PackedInt32Array = PackedInt32Array()   # proximity : noeuds dans l'anneau autour du joueur
+var _refresh := 0.0
 
 func _ready() -> void:
 	_circuit = get_node_or_null(circuit_path) as CircuitPath
@@ -51,11 +66,16 @@ func _ready() -> void:
 		_cooldowns[i] = randf_range(interval_min, interval_max)
 
 func _process(delta: float) -> void:
-	if spawn_scene == null or _points == 0:
+	if spawn_scene == null:
 		return
 	if kind == "vehicle" and _circuit == null:
 		return
 	if kind == "npc" and _graph == null:
+		return
+	if proximity:
+		_process_proximity(delta)
+		return
+	if _points == 0:
 		return
 
 	for i in _points:
@@ -67,32 +87,86 @@ func _process(delta: float) -> void:
 			continue
 		_try_spawn(i)
 
+# Mode proximity : un compte à rebours par noeud du graphe, seuls les noeuds de l'anneau autour du joueur tentent une
+# apparition ; recyclage des entités endormies trop loin.
+func _process_proximity(delta: float) -> void:
+	var player := get_tree().get_first_node_in_group("player") as Node3D
+	if player == null:
+		return
+	var count := _node_count()
+	if _cooldowns.size() != count:
+		var old := _cooldowns.size()
+		_cooldowns.resize(count)
+		for i in range(old, count):
+			_cooldowns[i] = randf_range(interval_min, interval_max)
+	_refresh -= delta
+	if _refresh <= 0.0:
+		_refresh = PROXIMITY_REFRESH
+		_near.clear()
+		var origin := player.global_position
+		for i in count:
+			var d := _node_position(i).distance_to(origin)
+			if d >= proximity_min and d <= proximity_max:
+				_near.append(i)
+		_recycle(origin)
+	var active := get_tree().get_nodes_in_group(kind).size()
+	for i in _near:
+		_cooldowns[i] -= delta
+		if _cooldowns[i] > 0.0:
+			continue
+		_cooldowns[i] = randf_range(interval_min, interval_max)
+		if active >= max_active:
+			continue
+		if _spawn_at(i):
+			active += 1
+
+func _node_count() -> int:
+	return _circuit.node_count() if kind == "vehicle" else _graph.nodes.size()
+
+func _node_position(i: int) -> Vector3:
+	return _circuit.node_pos(i) if kind == "vehicle" else _graph.node_pos(i)
+
+func _recycle(origin: Vector3) -> void:
+	for e in get_tree().get_nodes_in_group(kind):
+		var body := e as Node3D
+		if body == null or body.get_parent() != self or not bool(body.get_meta(SLEEP_META, false)):
+			continue
+		if body.get("driven_by_player") == true or body.get("is_player_owned") == true:
+			continue   # (propriétés absentes des PNJ : get() renvoie null)
+		if body.global_position.distance_to(origin) > recycle_distance:
+			body.queue_free()
+
 func _try_spawn(point_index: int) -> void:
+	_spawn_at(spawn_nodes[point_index])
+
+# Apparition au noeud `node` du graphe si la place est libre et hors de vue du joueur ; vrai si une entité est née.
+func _spawn_at(node: int) -> bool:
 	var spawn_pos: Vector3
 	var lateral := 0.0
 	if kind == "vehicle":
 		lateral = laterals[randi() % laterals.size()]
-		spawn_pos = _circuit.node_pos(spawn_nodes[point_index])
+		spawn_pos = _circuit.node_pos(node)
 	else:
-		spawn_pos = _graph.node_pos(spawn_nodes[point_index])
+		spawn_pos = _graph.node_pos(node)
 
 	for e in get_tree().get_nodes_in_group(kind):
 		if e is Node3D and e.global_position.distance_to(spawn_pos) < min_gap:
-			return   # ce point d'apparition est encore occupé
+			return false   # ce point d'apparition est encore occupé
 
 	if _is_visible_to_player(spawn_pos):
-		return   # anti-spawn visible : le joueur regarde déjà ce point, on retente au prochain cooldown
+		return false   # anti-spawn visible : le joueur regarde déjà ce point, on retente au prochain cooldown
 
 	var ent := spawn_scene.instantiate()
 	if kind == "npc" and "faction" in ent:
 		ent.faction = _pick_faction()   # avant add_child : NPC._ready charge la tenue de la faction
 	add_child(ent)
 	if not ent.has_method("setup"):
-		return
+		return true
 	if kind == "vehicle":
-		ent.setup(_circuit, spawn_nodes[point_index], randf_range(speed_min, speed_max), lateral, vehicle_edges_budget)
+		ent.setup(_circuit, node, randf_range(speed_min, speed_max), lateral, vehicle_edges_budget)
 	else:
-		ent.setup(_graph, spawn_nodes[point_index], 0.0, 0.0, npc_edges_budget)
+		ent.setup(_graph, node, 0.0, 0.0, npc_edges_budget)
+	return true
 
 # Tirage pondéré dans npc_faction_weights ; civil si la table est vide ou à zéro.
 func _pick_faction() -> StringName:
