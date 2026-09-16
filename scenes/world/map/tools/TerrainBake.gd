@@ -9,8 +9,11 @@ extends SceneTree
 #  - rivière et plans d'eau : surface avec le matériau d'eau existant (vagues calmées), dalle et zone de nage
 #    (WaterZone) disposées comme celles du bassin ;
 #  - scènes generated/Terrain.tscn, Water.tscn, Boundary.tscn et Map.tscn qui les instancie.
+# --from-heights : reprend generated/terrain/heights.res (creusé par RoadBake) au lieu du relief d'origine ; les
+# cellules de roof_mask.res (au-dessus des tunnels, creusées pour la collision) sont rendues au relief d'origine par un
+# toit (maillage et collision) ; les limites laissent les brèches des sorties de carte (generated/roads/boundary_gaps.json).
 #
-# Lancer : Godot --headless --path <projet> --script res://scenes/world/map/tools/TerrainBake.gd
+# Lancer : Godot --headless --path <projet> --script res://scenes/world/map/tools/TerrainBake.gd [-- --from-heights]
 
 const Spec := preload("res://scenes/world/map/MapSpec.gd")
 const Model := preload("res://scenes/world/map/tools/TerrainModel.gd")
@@ -30,6 +33,8 @@ const RIVER_OVERLAP := 24.0         # la surface de la rivière passe sous les b
 
 var model: Model
 var heights := PackedFloat32Array()
+var pristine := PackedFloat32Array()      # relief d'origine (toits de tunnel)
+var roof := PackedByteArray()             # 1 = sommet sous un toit de tunnel
 var excluded := PackedByteArray()
 var zones := PackedByteArray()
 var zones_w := 0
@@ -41,15 +46,25 @@ var _stats := {"tuiles": 0, "triangles": 0, "cellules_trouees": 0, "troncons_riv
 func _initialize() -> void:
 	var t0 := Time.get_ticks_msec()
 	model = Model.new()
-	heights = model.build_heights()
-	print("TERRAIN_HEIGHTS %dx%d en %.1f s, lacs %s" % [model.width, model.depth, (Time.get_ticks_msec() - t0) / 1000.0, model.lake_levels])
+	var from_heights := OS.get_cmdline_user_args().has("--from-heights")
+	if from_heights:
+		var img := load(GEN + "/terrain/heights.res") as Image
+		heights = img.get_data().to_float32_array()
+		if ResourceLoader.exists(GEN + "/terrain/roof_mask.res"):
+			roof = (load(GEN + "/terrain/roof_mask.res") as Image).get_data()
+			pristine = model.build_heights()
+	else:
+		heights = model.build_heights()
+	print("TERRAIN_HEIGHTS %dx%d %s en %.1f s, lacs %s" % [model.width, model.depth, "repris de heights.res" if from_heights else "calculés",
+			(Time.get_ticks_msec() - t0) / 1000.0, model.lake_levels])
 	_detail.seed = 911
 	_detail.frequency = 1.0 / 90.0
 	_build_excluded()
 	_build_zone_raster()
 	for sub in ["terrain", "water"]:
 		DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(GEN.path_join(sub)))
-	ResourceSaver.save(Image.create_from_data(model.width, model.depth, false, Image.FORMAT_RF, heights.to_byte_array()), GEN + "/terrain/heights.res")
+	if not from_heights:
+		ResourceSaver.save(Image.create_from_data(model.width, model.depth, false, Image.FORMAT_RF, heights.to_byte_array()), GEN + "/terrain/heights.res")
 	_build_terrain(_terrain_material())
 	_build_water()
 	_build_boundary()
@@ -142,15 +157,19 @@ func _chunk(cx: int, cz: int, material: Material) -> StaticBody3D:
 			normals.append(nrm)
 			colors.append(_splat(p, h, nrm))
 	var solid := 0
+	var roof_cells: Array[Vector2i] = []
 	for j in CELLS:
 		for i in CELLS:
+			if _cell_roof(i0 + i, j0 + j):
+				roof_cells.append(Vector2i(i, j))
+				continue
 			if _cell_hole(i0 + i, j0 + j):
 				_stats["cellules_trouees"] += 1
 				continue
 			solid += 1
 			var a := j * n + i
 			indices.append_array(PackedInt32Array([a, a + 1, a + n, a + 1, a + n + 1, a + n]))
-	if solid == 0:
+	if solid == 0 and roof_cells.is_empty():
 		return null
 	_add_skirts(verts, normals, colors, indices, i0, j0, n)
 	var arrays := []
@@ -188,9 +207,70 @@ func _chunk(cx: int, cz: int, material: Material) -> StaticBody3D:
 	collision.shape = load(shape_path)
 	collision.scale = Vector3(Model.CELL, 1.0, Model.CELL)
 	body.add_child(collision)
+	if not roof_cells.is_empty():
+		_roof(body, roof_cells, i0, j0, center, material, cx, cz)
 	_stats["tuiles"] += 1
 	_stats["triangles"] += indices.size() / 3
 	return body
+
+
+func _cell_roof(gi: int, gj: int) -> bool:
+	if roof.is_empty():
+		return false
+	var w: int = model.width
+	return roof[gj * w + gi] == 1 and roof[gj * w + gi + 1] == 1 and roof[(gj + 1) * w + gi] == 1 and roof[(gj + 1) * w + gi + 1] == 1
+
+
+# Toit d'un tunnel : cellules au relief d'origine (le terrain y est creusé pour la collision du tube), mêmes poids de
+# matière que le terrain, collision en maillage pour marcher au-dessus.
+func _roof(body: StaticBody3D, cells: Array[Vector2i], i0: int, j0: int, center: Vector2, material: Material, cx: int, cz: int) -> void:
+	var verts := PackedVector3Array()
+	var normals := PackedVector3Array()
+	var colors := PackedColorArray()
+	var indices := PackedInt32Array()
+	var faces := PackedVector3Array()
+	var saved := heights
+	heights = pristine   # _normal et _splat lisent la grille courante
+	for cell in cells:
+		var base := verts.size()
+		for corner: Vector2i in [Vector2i(0, 0), Vector2i(1, 0), Vector2i(0, 1), Vector2i(1, 1)]:
+			var gi := i0 + cell.x + corner.x
+			var gj := j0 + cell.y + corner.y
+			var h := pristine[gj * model.width + gi]
+			var p := Spec.TERRAIN.position + Vector2(gi, gj) * Model.CELL
+			var nrm := _normal(gi, gj)
+			verts.append(Vector3(p.x - center.x, h, p.y - center.y))
+			normals.append(nrm)
+			colors.append(_splat(p, h, nrm))
+		indices.append_array(PackedInt32Array([base, base + 1, base + 2, base + 1, base + 3, base + 2]))
+		for idx in [base, base + 1, base + 2, base + 1, base + 3, base + 2]:
+			faces.append(verts[idx])
+	heights = saved
+	var arrays := []
+	arrays.resize(Mesh.ARRAY_MAX)
+	arrays[Mesh.ARRAY_VERTEX] = verts
+	arrays[Mesh.ARRAY_NORMAL] = normals
+	arrays[Mesh.ARRAY_COLOR] = colors
+	arrays[Mesh.ARRAY_INDEX] = indices
+	var mesh := ArrayMesh.new()
+	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	mesh.surface_set_material(0, material)
+	var mesh_path := GEN + "/terrain/roof_%02d_%02d.res" % [cx, cz]
+	ResourceSaver.save(mesh, mesh_path)
+	var mi := MeshInstance3D.new()
+	mi.name = "Roof"
+	mi.mesh = load(mesh_path)
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	body.add_child(mi)
+	var shape := ConcavePolygonShape3D.new()
+	shape.set_faces(faces)
+	var shape_path := GEN + "/terrain/roof_%02d_%02d_shape.res" % [cx, cz]
+	ResourceSaver.save(shape, shape_path)
+	var cs := CollisionShape3D.new()
+	cs.name = "RoofShape"
+	cs.shape = load(shape_path)
+	body.add_child(cs)
+	_stats["cellules_toit"] = int(_stats.get("cellules_toit", 0)) + cells.size()
 
 
 func _normal(gi: int, gj: int) -> Vector3:
@@ -219,8 +299,8 @@ func _splat(p: Vector2, h: float, nrm: Vector3) -> Color:
 		var r: float = ((p - lake["center"]) / lake["radii"]).length()
 		if r < 1.5:
 			sand = maxf(sand, 1.0 - smoothstep(0.95, 1.5, r))
-	if h < -0.6:
-		sand = maxf(sand, 0.85)
+	if h < -0.6 and river.x < 60.0:
+		sand = maxf(sand, 0.85)   # fond de rivière (pas les tranchées des routes)
 	var dirt := 0.14
 	match _zone_at(p):
 		1:
@@ -262,7 +342,7 @@ func _add_skirts(verts: PackedVector3Array, normals: PackedVector3Array, colors:
 		var cell_base: Vector2i = edge[2]
 		for k in CELLS:
 			var cell := cell_base + step * k
-			if _cell_hole(i0 + cell.x, j0 + cell.y):
+			if _cell_hole(i0 + cell.x, j0 + cell.y) or _cell_roof(i0 + cell.x, j0 + cell.y):
 				continue
 			var p0 := start + step * k
 			var p1 := p0 + step
@@ -480,20 +560,46 @@ func _build_boundary() -> void:
 	body.name = "Boundary"
 	var r := Spec.PLAYABLE
 	var height := 220.0
+	var gaps: Array = []
+	var gaps_path := GEN + "/roads/boundary_gaps.json"
+	if FileAccess.file_exists(gaps_path):
+		gaps = JSON.parse_string(FileAccess.get_file_as_string(gaps_path))
+	# [nom, côté des brèches, axe le long du mur, début, fin, position fixe]
 	var sides := [
-		["Nord", Vector3(r.get_center().x, 60.0, r.position.y - 1.0), Vector3(r.size.x + 8.0, height, 2.0)],
-		["Sud", Vector3(r.get_center().x, 60.0, r.end.y + 1.0), Vector3(r.size.x + 8.0, height, 2.0)],
-		["Ouest", Vector3(r.position.x - 1.0, 60.0, r.get_center().y), Vector3(2.0, height, r.size.y + 8.0)],
-		["Est", Vector3(r.end.x + 1.0, 60.0, r.get_center().y), Vector3(2.0, height, r.size.y + 8.0)],
+		["Nord", "north", "x", r.position.x - 4.0, r.end.x + 4.0, r.position.y - 1.0],
+		["Sud", "south", "x", r.position.x - 4.0, r.end.x + 4.0, r.end.y + 1.0],
+		["Ouest", "west", "z", r.position.y - 4.0, r.end.y + 4.0, r.position.x - 1.0],
+		["Est", "east", "z", r.position.y - 4.0, r.end.y + 4.0, r.end.x + 1.0],
 	]
 	for side: Array in sides:
-		var box := BoxShape3D.new()
-		box.size = side[2]
-		var cs := CollisionShape3D.new()
-		cs.name = "Limite" + String(side[0])
-		cs.shape = box
-		cs.position = side[1]
-		body.add_child(cs)
+		var cuts: Array[Vector2] = []
+		for gap: Dictionary in gaps:
+			if gap["side"] == side[1]:
+				var at: float = gap["x"] if side[2] == "x" else gap["z"]
+				cuts.append(Vector2(at - float(gap["width"]) * 0.5, at + float(gap["width"]) * 0.5))
+		cuts.sort_custom(func(a: Vector2, b: Vector2) -> bool: return a.x < b.x)
+		var pieces: Array[Vector2] = []
+		var start: float = side[3]
+		for cut in cuts:
+			pieces.append(Vector2(start, cut.x))
+			start = cut.y
+		pieces.append(Vector2(start, float(side[4])))
+		for k in pieces.size():
+			var piece := pieces[k]
+			if piece.y - piece.x < 0.5:
+				continue
+			var mid := (piece.x + piece.y) * 0.5
+			var box := BoxShape3D.new()
+			var cs := CollisionShape3D.new()
+			cs.name = "Limite%s%s" % [side[0], "" if pieces.size() == 1 else "_%d" % k]
+			cs.shape = box
+			if side[2] == "x":
+				box.size = Vector3(piece.y - piece.x, height, 2.0)
+				cs.position = Vector3(mid, 60.0, float(side[5]))
+			else:
+				box.size = Vector3(2.0, height, piece.y - piece.x)
+				cs.position = Vector3(float(side[5]), 60.0, mid)
+			body.add_child(cs)
 	_pack(body, GEN + "/Boundary.tscn")
 
 

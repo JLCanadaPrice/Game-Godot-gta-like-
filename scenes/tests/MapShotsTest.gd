@@ -16,6 +16,13 @@ const VIEWS := [
 	["riviere_vers_nord", Vector3(-1120, 3, 60), Vector3(-1230, 2, -700)],
 	["campagne_est_vers_ouest", Vector3(1600, 25, -420), Vector3(900, 5, -300)],
 	["aeroport_plateau", Vector3(300, 40, -800), Vector3(700, 5, -1200)],
+	["echangeur_nord_ouest", Vector3(-500, 95, -520), Vector3(-700, 0, -700)],
+	["pont_autoroute_nord", Vector3(-1030, 22, -610), Vector3(-1250, 5, -700)],
+	["voie_express_ouest", Vector3(-985, 14, -40), Vector3(-1028, 0, -320)],
+	["echangeur_sud_ouest", Vector3(-230, 85, 600), Vector3(-380, 0, 770)],
+	["tunnel_sud", Vector3(-322, 9, 870), Vector3(-328, 2, 1010)],
+	["echangeur_nord_est", Vector3(860, 95, -420), Vector3(1050, 0, -596)],
+	["bretelles_tranchee_est", Vector3(850, 18, -575), Vector3(905, -4, -640)],
 ]
 const SETTLE_FRAMES := 40
 

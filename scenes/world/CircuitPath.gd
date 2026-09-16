@@ -32,6 +32,12 @@ var _adj: Array = []   # _adj[i] = Array[int] des indices d'arêtes touchant le 
 # runtime : la géométrie ne change jamais en jeu.
 @export var crosswalk_stop_dist: Dictionary = {}
 
+# Graphe de la carte 3D (autoroutes, bretelles) : noeuds sans feu tricolore (divergents, convergents, anneaux) et
+# approches qui cèdent le passage, clé "%d_%d" % [edge_idx, node_idx] (bretelle d'insertion -> noeud de convergence).
+# Une arête peut aussi porter "lanes" : décalages latéraux de ses voies (sens unique à plusieurs voies, bretelle).
+@export var unlit_nodes: Array[int] = []
+@export var yield_approaches: Dictionary = {}
+
 func crosswalk_clear_distance(edge_idx: int, node_idx: int) -> float:
 	var key := "%d_%d" % [edge_idx, node_idx]
 	if crosswalk_stop_dist.has(key):
@@ -73,7 +79,7 @@ func _setup_lights() -> void:
 	_light_edge_phase.clear()
 	_light_state.clear()
 	for node_idx in nodes.size():
-		if node_idx in roundabout_nodes:
+		if node_idx in roundabout_nodes or node_idx in unlit_nodes:
 			continue
 		var conn: Array = node_edges(node_idx)
 		if conn.size() < 3:
@@ -113,6 +119,27 @@ func is_edge_one_way(edge_idx: int) -> bool:
 
 func is_roundabout_node(node_idx: int) -> bool:
 	return node_idx in roundabout_nodes
+
+# Arête de l'anneau d'un rond-point (ou d'un échangeur) : sens unique entre deux noeuds de l'anneau. Les chaussées et
+# bretelles d'autoroute sont aussi à sens unique mais ne sont pas prioritaires comme un anneau.
+func is_ring_edge(edge_idx: int) -> bool:
+	var e: Dictionary = edges[edge_idx]
+	return bool(e.get("one_way", false)) and int(e["a"]) in roundabout_nodes and int(e["b"]) in roundabout_nodes
+
+# Décalage latéral effectif sur une arête : la voie de l'arête la plus proche du décalage voulu, ou ce décalage tel
+# quel si l'arête ne décrit pas ses voies (rues du centre-ville à double sens).
+func lane_offset(edge_idx: int, preferred: float) -> float:
+	var lanes: Variant = edges[edge_idx].get("lanes")
+	if lanes == null or (lanes as PackedFloat32Array).is_empty():
+		return preferred
+	var best: float = lanes[0]
+	for lane: float in lanes:
+		if absf(lane - preferred) < absf(best - preferred):
+			best = lane
+	return best
+
+func must_yield(edge_idx: int, node_idx: int) -> bool:
+	return yield_approaches.has("%d_%d" % [edge_idx, node_idx])
 
 func rebuild_adjacency() -> void:
 	_adj.clear()

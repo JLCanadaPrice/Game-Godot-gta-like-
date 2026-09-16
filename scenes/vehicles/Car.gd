@@ -453,8 +453,9 @@ func _physics_process(delta: float) -> void:
 	velocity.y = 0.0
 	move_and_slide()
 
-	var ideal := _path.sample_offset(_cur_edge, _from_node, _edge_progress, _lateral)
-	ideal.y = _ride_height
+	# trajet en 3D (ponts, bretelles de la carte) : hauteur du graphe + hauteur de caisse (graphe du centre-ville à y = 0)
+	var ideal := _path.sample_offset(_cur_edge, _from_node, _edge_progress, _path.lane_offset(_cur_edge, _lateral))
+	ideal.y += _ride_height
 	global_position = global_position.lerp(ideal, clampf(delta * LANE_SNAP, 0.0, 1.0))
 	rotation_degrees.y = _heading_deg
 	_update_visuals(delta, _ai_speed, 0.0)
@@ -462,8 +463,8 @@ func _physics_process(delta: float) -> void:
 func _snap_to_path() -> void:
 	if _path == null or _cur_edge < 0:
 		return
-	var ideal := _path.sample_offset(_cur_edge, _from_node, _edge_progress, _lateral)
-	ideal.y = _ride_height
+	var ideal := _path.sample_offset(_cur_edge, _from_node, _edge_progress, _path.lane_offset(_cur_edge, _lateral))
+	ideal.y += _ride_height
 	global_position = ideal
 	_heading_deg = _heading_from_dir(_path.direction_at(_cur_edge, _from_node, _edge_progress))
 	_ai_speed = 0.0   # départ à l'arrêt -> accélération progressive dès la 1re frame
@@ -620,6 +621,9 @@ const STOP_LINE_BUFFER := 0.5           # petit espace visuel entre le pare-choc
 const CROSSWALK_STOP_MARGIN := 0.5      # petite marge additionnelle avant le bord du passage piéton (0.3 laissait une marge réelle mesurée de seulement ~0.08m à cause du léger dépassement inhérent au freinage discret, déjà présent sur STOP_LINE_BUFFER)
 const YIELD_RING_RADIUS := 14.0
 const YIELD_STOP_BUFFER := 1.0          # le rond-point n'a pas de bloc 12x12 : juste la caisse + une marge
+const MERGE_CHECK_DIST := 80.0          # bretelle d'insertion : surveillance du point de convergence
+const MERGE_STOP_BEFORE := 42.0         # arrêt avant le raccord à la chaussée (RoadNetwork.BLEND 40 m + marge)
+const MERGE_YIELD_RADIUS := 45.0
 
 func _intersection_speed_limit(cruise_speed: float) -> float:
 	if _path == null or _cur_edge < 0:
@@ -631,11 +635,29 @@ func _intersection_speed_limit(cruise_speed: float) -> float:
 			and _edge_progress >= INTERSECTION_HALF_SIZE + _half_length:
 		_turn_priority_node = -1
 
-	if _path.is_edge_one_way(_cur_edge):
+	if _path.is_ring_edge(_cur_edge):
 		return cruise_speed   # déjà sur l'anneau : prioritaire, pas de cédez-le-passage à faire
 
 	var next_node := _path.edge_other_node(_cur_edge, _from_node)
 	var remaining := _path.edge_length(_cur_edge) - _edge_progress
+
+	# bretelle d'insertion (carte 3D) : attend, avant la zone où elle rejoint la chaussée, qu'aucun véhicule de
+	# l'autre branche n'arrive au point de convergence
+	if _path.must_yield(_cur_edge, next_node) and remaining <= MERGE_CHECK_DIST:
+		if remaining < MERGE_STOP_BEFORE + _half_length - 1.0:
+			return cruise_speed   # déjà engagée dans le raccord : ne s'arrête plus au bord de la chaussée
+		var merge_pos := _path.node_pos(next_node)
+		_refresh_vehicle_index()
+		for idx in _nearby_indices(merge_pos, 2):
+			var o := _vehicle_cache[idx] as Node3D
+			if o == self or o == null or not o.has_method("nears_node"):
+				continue
+			if o.nears_node(next_node, _cur_edge, MERGE_YIELD_RADIUS):
+				_keep_awake(o)
+				var brake := remaining - (MERGE_STOP_BEFORE + _half_length)
+				return 0.0 if brake <= 0.0 else minf(cruise_speed, sqrt(2.0 * AI_DECEL * brake))
+		return cruise_speed
+
 	if remaining > INTERSECTION_CHECK_DIST:
 		return cruise_speed
 
@@ -769,7 +791,16 @@ func blocks_turn_at(node: int, seq: int) -> bool:
 # Utilisé par les AUTRES voitures pour savoir si celle-ci est déjà engagée
 # sur l'anneau du rond-point (priorité), pour le cédez-le-passage ci-dessus.
 func is_on_ring() -> bool:
-	return _path != null and _cur_edge >= 0 and _path.is_edge_one_way(_cur_edge)
+	return _path != null and _cur_edge >= 0 and _path.is_ring_edge(_cur_edge)
+
+# Utilisé par les voitures d'une bretelle d'insertion : celle-ci arrive-t-elle (ou vient-elle de passer) au noeud
+# `node` par une autre arête que `except_edge`, à moins de `radius` m ?
+func nears_node(node: int, except_edge: int, radius: float) -> bool:
+	if _path == null or _cur_edge < 0 or _cur_edge == except_edge or not is_physics_processing():
+		return false
+	if _path.edge_other_node(_cur_edge, _from_node) == node:
+		return _path.edge_length(_cur_edge) - _edge_progress <= radius
+	return _from_node == node and _edge_progress <= 10.0
 
 # --- conduite ---------------------------------------------------
 
