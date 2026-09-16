@@ -194,16 +194,12 @@ func _check_unique_ids() -> void:
 	var seen := {}
 	var total := 0
 	var dups := 0
-	# Un enfant d'instance éditable (en-tête avec index="…", ex. Road11_Y_Splitter_45 dans chaque district) garde
-	# l'identifiant de son nœud dans la scène instanciée : l'éditeur le réécrit à l'identique à chaque sauvegarde.
-	for m in RegEx.create_from_string("\\[node [^\\]]*unique_id=(\\d+)[^\\]]*\\]").search_all(text):
-		if m.get_string(0).contains(" index=\""):
-			continue
+	for m in RegEx.create_from_string("unique_id=(\\d+)").search_all(text):
 		total += 1
 		if seen.has(m.get_string(1)):
 			dups += 1
 		seen[m.get_string(1)] = true
-	print("CITY_SCENE_IDS World.tscn : %d lignes, %d nœuds propres identifiés, %d unique_id en double" % [text.count("\n"), total, dups])
+	print("CITY_SCENE_IDS World.tscn : %d lignes, %d nœuds identifiés, %d unique_id en double" % [text.count("\n"), total, dups])
 	if dups > 0:
 		_errors.append("%d unique_id en double dans World.tscn" % dups)
 
