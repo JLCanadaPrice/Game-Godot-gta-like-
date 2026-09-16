@@ -21,6 +21,8 @@ const ARTERIAL := Color("c9c9c4")
 const DIRT := Color("8a7458")
 const RAIL := Color("2a2622")
 const LOTS := "res://scenes/world/map/generated/buildings/lots.json"
+const PLACES := "res://scenes/world/map/generated/places/places.json"
+const PLACE_COLORS := {"paved": Color("8f8f8a"), "runway": Color("5a5a58"), "building": Color("9a948a")}
 const BUILDING_COLORS := {"house": Color("77736b"), "commerce": Color("817a70"), "office": Color("8a8782"), "service": Color("857d73"),
 		"industry": Color("6c6a66"), "farm": Color("7a6a55")}
 const IMPORT_TEMPLATE := """[remap]
@@ -92,6 +94,17 @@ func _initialize() -> void:
 			var hz: float = float(lot["size"][2]) * 0.5
 			_polygon(PackedVector2Array([center + right * hx + front * hz, center - right * hx + front * hz,
 					center - right * hx - front * hz, center + right * hx - front * hz]), BUILDING_COLORS.get(lot["use"], BUILDING_COLORS["house"]))
+	# lieux (PlacesBake) : pistes, surfaces pavées, bâtiments
+	if FileAccess.file_exists(PLACES):
+		var data: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(PLACES))
+		for kind in ["paved", "runway", "building"]:
+			for fp: Dictionary in data.get("footprints", []):
+				if fp["kind"] != kind:
+					continue
+				var poly := PackedVector2Array()
+				for q: Array in fp["poly"]:
+					poly.append(Vector2(float(q[0]), float(q[1])))
+				_polygon(poly, PLACE_COLORS[kind])
 	for pad: Dictionary in net.pads:
 		var poly := PackedVector2Array()
 		for p: Vector3 in pad["rim"]:

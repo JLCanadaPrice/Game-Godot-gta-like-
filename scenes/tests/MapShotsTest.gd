@@ -45,6 +45,19 @@ const VIEWS := [
 	["voie_ferree_sur_voie_express", Vector3(-652, -3.8, 519), Vector3(-716, -2, 468)],
 	["voie_ferree_portail_est", Vector3(2060, 12, 235), Vector3(2172, 4, 196), "sol"],
 	["voie_ferree_heurtoir_ouest", Vector3(-2140, 2.5, 792), Vector3(-2172, 0.5, 800), "sol"],
+	# étape 5 : lieux
+	["lieu_aeroport_survol", Vector3(300, 120, -950), Vector3(650, 5, -1300)],
+	["lieu_aeroport_aerogare", Vector3(470, 7.3, -1172), Vector3(470, 10, -1229)],
+	["lieu_motel", Vector3(-420, 12, 560), Vector3(-485, 3, 590)],
+	["lieu_ranch", Vector3(1650, 30, -175), Vector3(1720, 8, -80)],
+	["lieu_planque", Vector3(680, 14, -105), Vector3(647, 5, -55)],
+	["lieu_greenfield", Vector3(-400, 30, -880), Vector3(-490, 2, -965)],
+	["lieu_echo_circle", Vector3(160, 12, -280), Vector3(110, 6, -316)],
+	["lieu_hotel", Vector3(-880, 8, -470), Vector3(-925, 25, -424)],
+	["lieu_hopital", Vector3(-250, 10, 110), Vector3(-280, 8, 168)],
+	["lieu_commissariat", Vector3(-690, 6, 115), Vector3(-713, 6, 158)],
+	["lieu_liberty_motors", Vector3(40, 10, -440), Vector3(15, 2, -395)],
+	["lieu_casino", Vector3(-520, 45, -300), Vector3(-586, 30, -365)],
 ]
 const SETTLE_FRAMES := 40
 

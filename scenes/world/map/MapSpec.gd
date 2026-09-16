@@ -11,7 +11,7 @@ extends RefCounted
 # a10) sont décalées pour franchir les autoroutes hors des bretelles (étape 2a).
 
 # Dernière étape construite (0, 1, 2 = 2a, 2.5 = 2b, 3...) : active les points de contrôle correspondants.
-const BUILT_STAGE := 4.0
+const BUILT_STAGE := 5.0
 
 # --- emprises ---------------------------------------------------------------------------------------------------
 const PLAYABLE := Rect2(-2174.0, -1480.0, 4347.0, 2447.0)   # zone explorable (4,35 × 2,45 km)
@@ -259,6 +259,16 @@ const GATE_SPOTS := [
 	{"name": "rue de desserte du Railyard", "pos": Vector2(-339.4, 301.8), "yaw": -92.1, "min_stage": 4.0},
 	{"name": "artère commerçante d'Eastside", "pos": Vector2(300, -310), "yaw": -90.0, "min_stage": 4.0},
 	{"name": "voie ferrée du Railyard", "pos": Vector2(304, 289), "yaw": 90.0, "min_stage": 4.0},
+	{"name": "piste principale de l'aéroport", "pos": Vector2(400, -1350), "yaw": -90.0, "min_stage": 5.0},
+	{"name": "devant l'aérogare", "pos": Vector2(430, -1206), "yaw": -90.0, "min_stage": 5.0},
+	{"name": "parking du Starlite Motor Inn", "pos": Vector2(-467, 575), "yaw": 0.0, "min_stage": 5.0},
+	{"name": "cour du Coyote Creek Ranch", "pos": Vector2(1712, -97), "yaw": -90.0, "min_stage": 5.0},
+	{"name": "cour de la planque de Cedar Lane", "pos": Vector2(647, -70), "yaw": 90.0, "min_stage": 5.0},
+	{"name": "parking de Greenfield Botanicals", "pos": Vector2(-460, -924), "yaw": -90.0, "min_stage": 5.0},
+	{"name": "parvis du St. Anselm Medical Center", "pos": Vector2(-290, 137), "yaw": -90.0, "min_stage": 5.0},
+	{"name": "allée du Central Precinct", "pos": Vector2(-713, 132), "yaw": -90.0, "min_stage": 5.0},
+	{"name": "parc de Liberty Motors", "pos": Vector2(17.5, -400), "yaw": 0.0, "min_stage": 5.0},
+	{"name": "lot de l'Ashford Grand Hotel", "pos": Vector2(-910, -448), "yaw": 90.0, "min_stage": 5.0},
 ]
 
 

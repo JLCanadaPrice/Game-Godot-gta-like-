@@ -22,12 +22,11 @@ const Spec := preload("res://scenes/world/map/MapSpec.gd")
 const Model := preload("res://scenes/world/map/tools/TerrainModel.gd")
 const Network := preload("res://scenes/world/map/tools/RoadNetwork.gd")
 const FIELD_SCRIPT := preload("res://scenes/world/map/BuildingField.gd")
+const BuildingModels := preload("res://scenes/world/map/tools/BuildingModels.gd")
 const GEN := "res://scenes/world/map/generated"
 const OUT := "res://scenes/world/map/generated/buildings"
-const CATALOG := "res://scenes/world/map/data/building_catalog.json"
 const SCENE := "res://scenes/world/map/generated/Buildings.tscn"
 const MAP_SCENE := "res://scenes/world/map/Map.tscn"
-const PACK := "res://assets/building_pack_everythinglibrary/"
 const GRID := 4.0
 const GROUP := 256.0
 
@@ -76,16 +75,12 @@ var locked := PackedByteArray()          # grille du terrain : 1 sous une empris
 var mask := PackedByteArray()            # grille de 4 m calée sur PLAYABLE : 1 route / eau / réservé, 2 lot
 var mask_w := 0
 var mask_h := 0
+var models: BuildingModels
 var catalog := {}
 var baked := {}                          # nom -> {"mesh": Mesh, "aabb": AABB, "triangles": int, "shape": Shape3D}
-var material: StandardMaterial3D
 var lots: Array[Dictionary] = []
 var refused := {"zone": 0, "occupation": 0, "pente": 0, "route": 0}
 var tint_rng := RandomNumberGenerator.new()
-var _mv := PackedVector3Array()
-var _mn := PackedVector3Array()
-var _mc := PackedColorArray()
-var _mi := PackedInt32Array()
 
 
 func _initialize() -> void:
@@ -105,17 +100,14 @@ func _initialize() -> void:
 		return
 	heights = (load(source) as Image).get_data().to_float32_array()
 	locked.resize(heights.size())
-	var parsed: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(CATALOG))
-	for entry: Dictionary in parsed["models"]:
-		if entry["allowed"] and String(entry["path"]).begins_with(PACK):
-			catalog[entry["name"]] = entry
+	models = BuildingModels.new()
+	catalog = models.catalog
 	for group: Array in [HOUSES_SUBURB, HOUSES_TOWN, LOFTS, SHOPS, CENTER, INDUSTRY, FARMS]:
 		for name: String in group:
 			if not catalog.has(name):
 				print("DISTRICTS_ERROR modèle absent du catalogue : " + name)
 				quit(1)
 				return
-	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(OUT.path_join("models")))
 	_build_mask()
 	print("DISTRICTS masque %dx%d en %.1f s" % [mask_w, mask_h, (Time.get_ticks_msec() - t0) / 1000.0])
 	var rng := RandomNumberGenerator.new()
@@ -141,7 +133,8 @@ func _initialize() -> void:
 			for side_sign: float in [-1.0, 1.0]:
 				_frontage(srb.points, side_sign, float(srb.width) * 0.5, mix["street"], float(mix["gap"]), poly, zone, rng, 14.0)
 	ResourceSaver.save(Image.create_from_data(model.width, model.depth, false, Image.FORMAT_RF, heights.to_byte_array()), GEN + "/terrain/heights.res")
-	material = _material()
+	# copie « routes et quartiers » : PlacesBake repart de celle-ci (cuisson rejouable)
+	ResourceSaver.save(Image.create_from_data(model.width, model.depth, false, Image.FORMAT_RF, heights.to_byte_array()), GEN + "/terrain/heights_districts.res")
 	var scene_stats := _write_scene()
 	_write_json()
 	_ensure_in_map()
@@ -404,91 +397,13 @@ func _mask_index(p: Vector2) -> int:
 
 
 # --- modèles ------------------------------------------------------------------------------------------------------
-func _material() -> StandardMaterial3D:
-	var m := StandardMaterial3D.new()
-	m.resource_name = "Batiments"
-	m.vertex_color_use_as_albedo = true
-	m.roughness = 0.55
-	m.cull_mode = BaseMaterial3D.CULL_DISABLED
-	var path := OUT.path_join("building_material.tres")
-	ResourceSaver.save(m, path)
-	return load(path)
-
-
+# Modèle fusionné (BuildingModels) ; forme de collision exacte pour les modèles ouverts (station-service).
 func _baked_model(name: String) -> Dictionary:
 	if baked.has(name):
 		return baked[name]
-	var entry: Dictionary = catalog[name]
-	var inst: Node = (load(entry["path"]) as PackedScene).instantiate()
-	_mv = PackedVector3Array()
-	_mn = PackedVector3Array()
-	_mc = PackedColorArray()
-	_mi = PackedInt32Array()
-	_collect(inst, Transform3D.IDENTITY)
-	inst.free()
-	var aabb := AABB(_mv[0], Vector3.ZERO)
-	for v in _mv:
-		aabb = aabb.expand(v)
-	var arrays := []
-	arrays.resize(Mesh.ARRAY_MAX)
-	arrays[Mesh.ARRAY_VERTEX] = _mv
-	arrays[Mesh.ARRAY_NORMAL] = _mn
-	arrays[Mesh.ARRAY_COLOR] = _mc
-	arrays[Mesh.ARRAY_INDEX] = _mi
-	var importer := ImporterMesh.new()
-	importer.add_surface(Mesh.PRIMITIVE_TRIANGLES, arrays, [], {}, material, name)
-	importer.generate_lods(25.0, 60.0, [])
-	var path := OUT.path_join("models/%s.res" % name)
-	ResourceSaver.save(importer.get_mesh(), path)
-	var mesh: Mesh = load(path)
-	var info := {"mesh": mesh, "aabb": aabb, "triangles": _mi.size() / 3, "shape": null}
-	if name in TRIMESH_MODELS:
-		info["shape"] = mesh.create_trimesh_shape()
-	baked[name] = info
-	return info
-
-
-func _collect(node: Node, parent: Transform3D) -> void:
-	var xform := parent
-	if node is Node3D:
-		xform = parent * (node as Node3D).transform
-	if node is MeshInstance3D and (node as MeshInstance3D).mesh != null:
-		var mesh := (node as MeshInstance3D).mesh
-		var mirrored := xform.basis.determinant() < 0.0
-		var normal_basis := xform.basis.inverse().transposed()
-		for s in mesh.get_surface_count():
-			if mesh.surface_get_primitive_type(s) != Mesh.PRIMITIVE_TRIANGLES:
-				continue
-			var arrays: Array = mesh.surface_get_arrays(s)
-			var verts: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
-			var normals := PackedVector3Array()
-			if arrays[Mesh.ARRAY_NORMAL] != null:
-				normals = arrays[Mesh.ARRAY_NORMAL]
-			var colors := PackedColorArray()
-			if arrays[Mesh.ARRAY_COLOR] != null:
-				colors = arrays[Mesh.ARRAY_COLOR]
-			var indices := PackedInt32Array()
-			if arrays[Mesh.ARRAY_INDEX] != null:
-				indices = arrays[Mesh.ARRAY_INDEX]
-			else:
-				indices.resize(verts.size())
-				for k in verts.size():
-					indices[k] = k
-			var first := _mv.size()
-			for k in verts.size():
-				_mv.append(xform * verts[k])
-				_mn.append((normal_basis * (normals[k] if k < normals.size() else Vector3.UP)).normalized())
-				_mc.append(colors[k] if k < colors.size() else Color.WHITE)
-			for t in range(0, indices.size() - 2, 3):
-				_mi.append(first + indices[t])
-				if mirrored:
-					_mi.append(first + indices[t + 2])
-					_mi.append(first + indices[t + 1])
-				else:
-					_mi.append(first + indices[t + 1])
-					_mi.append(first + indices[t + 2])
-	for child in node.get_children():
-		_collect(child, xform)
+	var source := models.get_model(name, name in TRIMESH_MODELS)
+	baked[name] = {"mesh": source["mesh"], "aabb": source["aabb"], "triangles": source["triangles"], "shape": source["trimesh"]}
+	return baked[name]
 
 
 # --- scène ----------------------------------------------------------------------------------------------------------

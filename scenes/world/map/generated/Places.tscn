@@ -1,0 +1,1234 @@
+[gd_scene format=3]
+
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/places/airport_shape.res" id="1_p7bx6"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/buildings/models/Industrial_Warehouse_alt02.res" id="2_gr4ik"]
+[ext_resource type="PackedScene" path="res://assets/Fbx/Fbx/Air Plane_1.fbx" id="3_086pa"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/places/airport_asphalt.res" id="4_63npr"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/places/airport_concrete.res" id="5_nom0u"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/places/airport_paint.res" id="6_q52xx"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/places/airport_steel.res" id="7_5isy1"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/places/motel_shape.res" id="8_xqx0o"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/places/motel_asphalt.res" id="9_eogck"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/places/motel_concrete.res" id="10_swgni"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/places/motel_paint.res" id="11_gmspw"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/places/motel_steel.res" id="12_vlog1"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/places/ranch_shape.res" id="13_huyt4"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/buildings/models/Residential_LargeFamilyHome_alt04.res" id="14_tlxvx"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/buildings/models/Farm_Barn.res" id="15_dm7js"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/buildings/models/Farm_GardenShed.res" id="16_khl43"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/buildings/models/Farm_MetalWindmill.res" id="17_ypevr"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/places/ranch_asphalt.res" id="18_subvc"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/places/ranch_concrete.res" id="19_v2das"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/places/ranch_paint.res" id="20_tmwhe"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/places/safehouse_shape.res" id="21_ckvow"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/buildings/models/Residential_LogCabin_alt01.res" id="22_mbnav"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/places/safehouse_asphalt.res" id="23_mj14t"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/places/safehouse_concrete.res" id="24_t3ygr"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/places/safehouse_paint.res" id="25_ndrev"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/places/safehouse_steel.res" id="26_7no14"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/places/greenfield_shape.res" id="27_fqdul"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/buildings/models/Industrial_Warehouse_alt03.res" id="28_5aldw"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/places/greenfield_asphalt.res" id="29_3iyls"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/places/greenfield_concrete.res" id="30_xgc56"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/places/greenfield_paint.res" id="31_kfmi8"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/places/greenfield_steel.res" id="32_sufbv"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/places/echo_circle_paint.res" id="33_pjscd"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/buildings/models/Industrial_TraditionalSkyscraper_alt05.res" id="34_yl6u5"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/places/hotel_paint.res" id="35_50lt0"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/places/hotel_steel.res" id="36_octan"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/places/hospital_shape.res" id="37_ksemg"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/buildings/models/Business_Hospital.res" id="38_pify7"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/places/hospital_concrete.res" id="39_4rfvk"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/places/hospital_asphalt.res" id="40_faxax"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/places/hospital_paint.res" id="41_7cjak"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/places/precinct_shape.res" id="42_x23sl"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/buildings/models/Business_Bank.res" id="43_bx67b"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/places/precinct_concrete.res" id="44_hluui"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/places/precinct_asphalt.res" id="45_6djfj"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/places/precinct_paint.res" id="46_wx4co"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/places/precinct_steel.res" id="47_ni2nn"]
+[ext_resource type="Shape3D" path="res://scenes/world/map/generated/places/liberty_lot_shape.res" id="48_etc01"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/places/liberty_lot_asphalt.res" id="49_tyt7j"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/places/liberty_lot_paint.res" id="50_a1ldg"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/places/liberty_lot_steel.res" id="51_soprb"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/places/casino_steel.res" id="52_4h2ul"]
+[ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/places/casino_paint.res" id="53_uiqmj"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_84aac"]
+size = Vector3(200, 12, 30)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_akulq"]
+size = Vector3(60, 0.4, 8)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_rfgxr"]
+size = Vector3(0.35, 5, 0.35)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_p43w2"]
+size = Vector3(0.35, 5, 0.35)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_g1cjc"]
+size = Vector3(0.35, 5, 0.35)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_p5e12"]
+size = Vector3(14, 6, 14)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_yva7b"]
+size = Vector3(5, 28, 5)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_cqes2"]
+size = Vector3(11, 6, 11)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_afrpj"]
+size = Vector3(12, 0.8, 12)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_48xpo"]
+size = Vector3(37.96028, 21.676043, 38.103405)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_uhomv"]
+size = Vector3(37.96028, 21.676043, 38.103405)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_2qm8d"]
+size = Vector3(37.96028, 21.676043, 38.103405)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_hmwt8"]
+size = Vector3(37.96028, 21.676043, 38.103405)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_a0lif"]
+size = Vector3(37.96028, 21.676043, 38.103405)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_2recx"]
+size = Vector3(0.12, 2.4, 300)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_fucuy"]
+size = Vector3(0.12, 2.4, 158)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_w7sw6"]
+size = Vector3(0.12, 2.4, 1000)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_hvlt3"]
+size = Vector3(0.12, 2.4, 402)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_b7w3c"]
+size = Vector3(0.12, 2.4, 430)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_n1tis"]
+size = Vector3(0.12, 2.4, 244)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_0vcuk"]
+size = Vector3(0.12, 2.4, 70)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_ohto7"]
+size = Vector3(9, 1.6, 0.35)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_fltb4"]
+size = Vector3(12, 7, 64)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_jtbph"]
+size = Vector3(2, 0.3, 64)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_vkkff"]
+size = Vector3(12, 4.5, 10)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_6mt5a"]
+size = Vector3(0.35, 9, 0.35)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_50dlc"]
+size = Vector3(17.944538, 13.294653, 14.61434)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_0wxd5"]
+size = Vector3(13.557077, 13.23405, 19.32063)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_vyn7s"]
+size = Vector3(4.369128, 5.1759753, 6.8525105)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_jy7h2"]
+size = Vector3(6.560984, 24.435244, 6.562803)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_hoo0m"]
+size = Vector3(0.12, 1.3, 52)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_um2xk"]
+size = Vector3(0.12, 1.3, 172)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_jmjcv"]
+size = Vector3(0.12, 1.3, 200)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_ukv3e"]
+size = Vector3(0.12, 1.3, 240)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_wn846"]
+size = Vector3(0.12, 1.3, 200)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_7hglu"]
+size = Vector3(0.45, 6.2, 0.45)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_07ni1"]
+size = Vector3(0.45, 6.2, 0.45)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_a1a23"]
+size = Vector3(9.709891, 7.627101, 17.594494)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_8pncn"]
+size = Vector3(4.369128, 5.1759753, 6.8525105)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_0s6ox"]
+size = Vector3(23.512781, 13.547526, 23.35411)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_8mabj"]
+size = Vector3(9, 3.2, 60)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_lddxs"]
+size = Vector3(9, 3.2, 60)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_8atxo"]
+size = Vector3(9, 3.2, 60)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_h4ht3"]
+size = Vector3(9, 3.2, 60)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_qfjc2"]
+size = Vector3(0.12, 2.2, 65)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_h8ttp"]
+size = Vector3(0.12, 2.2, 120)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_o6kww"]
+size = Vector3(0.12, 2.2, 65)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_aho4m"]
+size = Vector3(0.12, 2.2, 21)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_wot8n"]
+size = Vector3(0.12, 2.2, 87)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_ka5sw"]
+size = Vector3(5, 1.6, 0.35)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_tt7qa"]
+size = Vector3(9, 0.5, 9)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_6w21o"]
+size = Vector3(6.5, 0.5, 6.5)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_3ufg2"]
+size = Vector3(4, 0.6, 4)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_o6l2g"]
+size = Vector3(1.4, 13, 1.4)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_ksubj"]
+size = Vector3(21.187035, 68.64837, 21.223154)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_mh4na"]
+size = Vector3(12.4, 7, 32)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_duo7h"]
+size = Vector3(47.526222, 29.50417, 47.011765)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_hc7nc"]
+size = Vector3(5, 1.6, 0.35)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_vkf2o"]
+size = Vector3(25.65701, 22.61426, 24.74892)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_jkmuk"]
+size = Vector3(0.12, 2.2, 13)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_x6rf3"]
+size = Vector3(0.12, 2.2, 36)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_p00r0"]
+size = Vector3(0.12, 2.2, 13)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_bopec"]
+size = Vector3(0.16, 11, 0.16)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_ek7p8"]
+size = Vector3(14, 4, 8)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_nlr5e"]
+size = Vector3(0.45, 10, 0.45)
+
+[node name="Places" type="Node3D" unique_id=871409221]
+
+[node name="Place_airport" type="Node3D" parent="." unique_id=1717268086]
+metadata/place_id = "airport"
+metadata/display_name = "Prairie Wind International Airport"
+metadata/kind = "airport"
+
+[node name="Entrance" type="Marker3D" parent="Place_airport" unique_id=2007615080]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 470, 5.3, -1195)
+
+[node name="Collision" type="StaticBody3D" parent="Place_airport" unique_id=2144126124]
+
+[node name="Box_0" type="CollisionShape3D" parent="Place_airport/Collision" unique_id=443700514]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 470, 11.3, -1229)
+shape = SubResource("BoxShape3D_84aac")
+
+[node name="Box_1" type="CollisionShape3D" parent="Place_airport/Collision" unique_id=874147650]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 470, 10.5, -1210)
+shape = SubResource("BoxShape3D_akulq")
+
+[node name="Box_2" type="CollisionShape3D" parent="Place_airport/Collision" unique_id=1640898956]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 442, 7.8, -1207)
+shape = SubResource("BoxShape3D_rfgxr")
+
+[node name="Box_3" type="CollisionShape3D" parent="Place_airport/Collision" unique_id=1956436357]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 470, 7.8, -1207)
+shape = SubResource("BoxShape3D_p43w2")
+
+[node name="Box_4" type="CollisionShape3D" parent="Place_airport/Collision" unique_id=176648912]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 498, 7.8, -1207)
+shape = SubResource("BoxShape3D_g1cjc")
+
+[node name="Box_5" type="CollisionShape3D" parent="Place_airport/Collision" unique_id=703336755]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 620, 8.3, -1205)
+shape = SubResource("BoxShape3D_p5e12")
+
+[node name="Box_6" type="CollisionShape3D" parent="Place_airport/Collision" unique_id=1348692050]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 620, 25.3, -1205)
+shape = SubResource("BoxShape3D_yva7b")
+
+[node name="Box_7" type="CollisionShape3D" parent="Place_airport/Collision" unique_id=291679659]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 620, 42.3, -1205)
+shape = SubResource("BoxShape3D_cqes2")
+
+[node name="Box_8" type="CollisionShape3D" parent="Place_airport/Collision" unique_id=1896264452]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 620, 45.7, -1205)
+shape = SubResource("BoxShape3D_afrpj")
+
+[node name="Model_9" type="CollisionShape3D" parent="Place_airport/Collision" unique_id=878653959]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 705, 16.138021, -1265)
+shape = SubResource("BoxShape3D_48xpo")
+
+[node name="Model_10" type="CollisionShape3D" parent="Place_airport/Collision" unique_id=1248333175]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 750, 16.138021, -1265)
+shape = SubResource("BoxShape3D_uhomv")
+
+[node name="Model_11" type="CollisionShape3D" parent="Place_airport/Collision" unique_id=633797565]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 795, 16.138021, -1265)
+shape = SubResource("BoxShape3D_2qm8d")
+
+[node name="Model_12" type="CollisionShape3D" parent="Place_airport/Collision" unique_id=1319164986]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 840, 16.138021, -1265)
+shape = SubResource("BoxShape3D_hmwt8")
+
+[node name="Model_13" type="CollisionShape3D" parent="Place_airport/Collision" unique_id=385522536]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 885, 16.138021, -1265)
+shape = SubResource("BoxShape3D_a0lif")
+
+[node name="Fence_14" type="CollisionShape3D" parent="Place_airport/Collision" unique_id=374970285]
+transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 220, 6.2, -1214)
+shape = SubResource("BoxShape3D_2recx")
+
+[node name="Fence_15" type="CollisionShape3D" parent="Place_airport/Collision" unique_id=676127099]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 70, 6.2, -1293)
+shape = SubResource("BoxShape3D_fucuy")
+
+[node name="Fence_16" type="CollisionShape3D" parent="Place_airport/Collision" unique_id=181190659]
+transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 570, 6.2, -1372)
+shape = SubResource("BoxShape3D_w7sw6")
+
+[node name="Fence_17" type="CollisionShape3D" parent="Place_airport/Collision" unique_id=1276895304]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1070, 6.2, -1171)
+shape = SubResource("BoxShape3D_hvlt3")
+
+[node name="Fence_18" type="CollisionShape3D" parent="Place_airport/Collision" unique_id=524436114]
+transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 855, 6.2, -970)
+shape = SubResource("BoxShape3D_b7w3c")
+
+[node name="Fence_19" type="CollisionShape3D" parent="Place_airport/Collision" unique_id=1207768875]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 640, 6.2, -1092)
+shape = SubResource("BoxShape3D_n1tis")
+
+[node name="Fence_20" type="CollisionShape3D" parent="Place_airport/Collision" unique_id=1911748581]
+transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 605, 6.2, -1214)
+shape = SubResource("BoxShape3D_0vcuk")
+
+[node name="Box_21" type="CollisionShape3D" parent="Place_airport/Collision" unique_id=541176266]
+transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 330, 7, -1176)
+shape = SubResource("BoxShape3D_ohto7")
+
+[node name="Surfaces" type="CollisionShape3D" parent="Place_airport/Collision" unique_id=1300724745]
+shape = ExtResource("1_p7bx6")
+
+[node name="Runway_09" type="Label3D" parent="Place_airport" unique_id=1406846759]
+transform = Transform3D(-4.371139e-08, 1, 4.371139e-08, 0, -4.371139e-08, 1, 1, 4.371139e-08, 1.9106855e-15, 200, 5.3250003, -1350)
+visibility_range_end = 900.0
+pixel_size = 0.06
+shaded = true
+modulate = Color(0.93, 0.93, 0.9, 1)
+text = "09"
+font_size = 256
+
+[node name="Runway_27" type="Label3D" parent="Place_airport" unique_id=199301641]
+transform = Transform3D(-4.371139e-08, -1, -4.371139e-08, 0, -4.371139e-08, 1, -1, 4.371139e-08, 1.9106855e-15, 980, 5.3250003, -1350)
+visibility_range_end = 900.0
+pixel_size = 0.06
+shaded = true
+modulate = Color(0.93, 0.93, 0.9, 1)
+text = "27"
+font_size = 256
+
+[node name="Label_4" type="Label3D" parent="Place_airport" unique_id=1271045723]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 470, 13.6, -1213.8)
+visibility_range_end = 1500.0
+pixel_size = 0.028
+double_sided = false
+modulate = Color(0.95, 0.95, 0.95, 1)
+outline_modulate = Color(0, 0, 0, 0.6)
+text = "PRAIRIE WIND INTERNATIONAL AIRPORT"
+font_size = 64
+outline_size = 8
+
+[node name="Label_5" type="Label3D" parent="Place_airport" unique_id=443898989]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 470, 13.6, -1244.2)
+visibility_range_end = 1500.0
+pixel_size = 0.035
+double_sided = false
+modulate = Color(0.95, 0.95, 0.95, 1)
+outline_modulate = Color(0, 0, 0, 0.6)
+text = "PRAIRIE WIND"
+font_size = 64
+outline_size = 8
+
+[node name="Industrial_Warehouse_alt02_6" type="MeshInstance3D" parent="Place_airport" unique_id=209216377]
+transform = Transform3D(-1.6, 0, -1.3987645e-07, 0, 1.6, 0, 1.3987645e-07, 0, -1.6, 705.04987, 5.3, -1265)
+visibility_range_end = 2500.0
+mesh = ExtResource("2_gr4ik")
+
+[node name="Industrial_Warehouse_alt02_7" type="MeshInstance3D" parent="Place_airport" unique_id=1197201781]
+transform = Transform3D(-1.6, 0, -1.3987645e-07, 0, 1.6, 0, 1.3987645e-07, 0, -1.6, 750.04987, 5.3, -1265)
+visibility_range_end = 2500.0
+mesh = ExtResource("2_gr4ik")
+
+[node name="Industrial_Warehouse_alt02_8" type="MeshInstance3D" parent="Place_airport" unique_id=1995761283]
+transform = Transform3D(-1.6, 0, -1.3987645e-07, 0, 1.6, 0, 1.3987645e-07, 0, -1.6, 795.04987, 5.3, -1265)
+visibility_range_end = 2500.0
+mesh = ExtResource("2_gr4ik")
+
+[node name="Industrial_Warehouse_alt02_9" type="MeshInstance3D" parent="Place_airport" unique_id=1785242915]
+transform = Transform3D(-1.6, 0, -1.3987645e-07, 0, 1.6, 0, 1.3987645e-07, 0, -1.6, 840.04987, 5.3, -1265)
+visibility_range_end = 2500.0
+mesh = ExtResource("2_gr4ik")
+
+[node name="Industrial_Warehouse_alt02_10" type="MeshInstance3D" parent="Place_airport" unique_id=1758046107]
+transform = Transform3D(-1.6, 0, -1.3987645e-07, 0, 1.6, 0, 1.3987645e-07, 0, -1.6, 885.04987, 5.3, -1265)
+visibility_range_end = 2500.0
+mesh = ExtResource("2_gr4ik")
+
+[node name="Prop_11" type="Node3D" parent="Place_airport" unique_id=1404593814 instance=ExtResource("3_086pa")]
+transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 612, 5.3, -1277)
+
+[node name="Prop_12" type="Node3D" parent="Place_airport" unique_id=1873037045 instance=ExtResource("3_086pa")]
+transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 630, 5.3, -1256)
+
+[node name="Label_13" type="Label3D" parent="Place_airport" unique_id=373983900]
+transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 329.81, 7, -1176)
+visibility_range_end = 350.0
+pixel_size = 0.006078036
+double_sided = false
+modulate = Color(0.95, 0.95, 0.9, 1)
+outline_modulate = Color(0, 0, 0, 0.6)
+text = "PRAIRIE WIND INTERNATIONAL AIRPORT"
+font_size = 64
+outline_size = 8
+
+[node name="Label_14" type="Label3D" parent="Place_airport" unique_id=44886079]
+transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 330.19, 7, -1176)
+visibility_range_end = 350.0
+pixel_size = 0.006078036
+double_sided = false
+modulate = Color(0.95, 0.95, 0.9, 1)
+outline_modulate = Color(0, 0, 0, 0.6)
+text = "PRAIRIE WIND INTERNATIONAL AIRPORT"
+font_size = 64
+outline_size = 8
+
+[node name="Asphalt" type="MeshInstance3D" parent="Place_airport" unique_id=779804771]
+cast_shadow = 0
+visibility_range_end = 2500.0
+mesh = ExtResource("4_63npr")
+
+[node name="Concrete" type="MeshInstance3D" parent="Place_airport" unique_id=764345827]
+cast_shadow = 0
+visibility_range_end = 2500.0
+mesh = ExtResource("5_nom0u")
+
+[node name="Paint" type="MeshInstance3D" parent="Place_airport" unique_id=627123995]
+visibility_range_end = 2500.0
+mesh = ExtResource("6_q52xx")
+
+[node name="Steel" type="MeshInstance3D" parent="Place_airport" unique_id=1828494410]
+cast_shadow = 0
+visibility_range_end = 700.0
+mesh = ExtResource("7_5isy1")
+
+[node name="Place_motel" type="Node3D" parent="." unique_id=426627061]
+metadata/place_id = "motel"
+metadata/display_name = "Starlite Motor Inn"
+metadata/kind = "motel"
+
+[node name="Entrance" type="Marker3D" parent="Place_motel" unique_id=222769673]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -445, 0.8, 595)
+
+[node name="Collision" type="StaticBody3D" parent="Place_motel" unique_id=1834027342]
+
+[node name="Box_0" type="CollisionShape3D" parent="Place_motel/Collision" unique_id=1052868879]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -490, 4.3, 582)
+shape = SubResource("BoxShape3D_fltb4")
+
+[node name="Box_1" type="CollisionShape3D" parent="Place_motel/Collision" unique_id=1813288122]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -483, 4.25, 582)
+shape = SubResource("BoxShape3D_jtbph")
+
+[node name="Box_2" type="CollisionShape3D" parent="Place_motel/Collision" unique_id=1138088146]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -468, 3.05, 605)
+shape = SubResource("BoxShape3D_vkkff")
+
+[node name="Box_3" type="CollisionShape3D" parent="Place_motel/Collision" unique_id=111460079]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -447, 4.9936986, 547)
+shape = SubResource("BoxShape3D_6mt5a")
+
+[node name="Surfaces" type="CollisionShape3D" parent="Place_motel/Collision" unique_id=1688267914]
+shape = ExtResource("8_xqx0o")
+
+[node name="Label_2" type="Label3D" parent="Place_motel" unique_id=537801947]
+transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, -461.9, 4.8, 605)
+visibility_range_end = 300.0
+pixel_size = 0.012
+double_sided = false
+modulate = Color(0.95, 0.3, 0.3, 1)
+outline_modulate = Color(0, 0, 0, 0.6)
+text = "OFFICE"
+font_size = 64
+outline_size = 8
+
+[node name="Label_3" type="Label3D" parent="Place_motel" unique_id=1451662096]
+transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, -447.32, 11.893699, 547)
+visibility_range_end = 500.0
+pixel_size = 0.02
+double_sided = false
+modulate = Color(1, 0.85, 0.2, 1)
+outline_modulate = Color(0, 0, 0, 0.6)
+text = "STARLITE"
+font_size = 64
+outline_size = 8
+
+[node name="Label_4" type="Label3D" parent="Place_motel" unique_id=1109574994]
+transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, -447.32, 10.493699, 547)
+visibility_range_end = 500.0
+pixel_size = 0.014
+double_sided = false
+modulate = Color(0.95, 0.95, 0.95, 1)
+outline_modulate = Color(0, 0, 0, 0.6)
+text = "MOTOR INN"
+font_size = 64
+outline_size = 8
+
+[node name="Label_5" type="Label3D" parent="Place_motel" unique_id=1490144759]
+transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, -446.68, 11.893699, 547)
+visibility_range_end = 500.0
+pixel_size = 0.02
+double_sided = false
+modulate = Color(1, 0.85, 0.2, 1)
+outline_modulate = Color(0, 0, 0, 0.6)
+text = "STARLITE"
+font_size = 64
+outline_size = 8
+
+[node name="Label_6" type="Label3D" parent="Place_motel" unique_id=2106436151]
+transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, -446.68, 10.493699, 547)
+visibility_range_end = 500.0
+pixel_size = 0.014
+double_sided = false
+modulate = Color(0.95, 0.95, 0.95, 1)
+outline_modulate = Color(0, 0, 0, 0.6)
+text = "MOTOR INN"
+font_size = 64
+outline_size = 8
+
+[node name="Asphalt" type="MeshInstance3D" parent="Place_motel" unique_id=367794104]
+cast_shadow = 0
+visibility_range_end = 2500.0
+mesh = ExtResource("9_eogck")
+
+[node name="Concrete" type="MeshInstance3D" parent="Place_motel" unique_id=255355407]
+cast_shadow = 0
+visibility_range_end = 2500.0
+mesh = ExtResource("10_swgni")
+
+[node name="Paint" type="MeshInstance3D" parent="Place_motel" unique_id=1368528607]
+visibility_range_end = 2500.0
+mesh = ExtResource("11_gmspw")
+
+[node name="Steel" type="MeshInstance3D" parent="Place_motel" unique_id=1611115882]
+cast_shadow = 0
+visibility_range_end = 700.0
+mesh = ExtResource("12_vlog1")
+
+[node name="Place_ranch" type="Node3D" parent="." unique_id=292353108]
+metadata/place_id = "ranch"
+metadata/display_name = "Coyote Creek Ranch"
+metadata/kind = "ranch"
+
+[node name="Entrance" type="Marker3D" parent="Place_ranch" unique_id=1047493677]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1700, 8.166702, -120)
+
+[node name="Collision" type="StaticBody3D" parent="Place_ranch" unique_id=591933079]
+
+[node name="Model_0" type="CollisionShape3D" parent="Place_ranch/Collision" unique_id=740631351]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 1688, 14.814029, -62)
+shape = SubResource("BoxShape3D_50dlc")
+
+[node name="Model_1" type="CollisionShape3D" parent="Place_ranch/Collision" unique_id=177500753]
+transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 1753, 14.783728, -95)
+shape = SubResource("BoxShape3D_0wxd5")
+
+[node name="Model_2" type="CollisionShape3D" parent="Place_ranch/Collision" unique_id=145530910]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 1729, 10.75469, -64)
+shape = SubResource("BoxShape3D_vyn7s")
+
+[node name="Model_3" type="CollisionShape3D" parent="Place_ranch/Collision" unique_id=1952942736]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1797, 15.657794, -28)
+shape = SubResource("BoxShape3D_jy7h2")
+
+[node name="Fence_4" type="CollisionShape3D" parent="Place_ranch/Collision" unique_id=1936625643]
+transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 1626, 12.226788, -160)
+shape = SubResource("BoxShape3D_hoo0m")
+
+[node name="Fence_5" type="CollisionShape3D" parent="Place_ranch/Collision" unique_id=2003973285]
+transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 1754, 6.898407, -160)
+shape = SubResource("BoxShape3D_um2xk")
+
+[node name="Fence_6" type="CollisionShape3D" parent="Place_ranch/Collision" unique_id=824503126]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1840, 5.10132, -60)
+shape = SubResource("BoxShape3D_jmjcv")
+
+[node name="Fence_7" type="CollisionShape3D" parent="Place_ranch/Collision" unique_id=535977161]
+transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 1720, 6.0974693, 40)
+shape = SubResource("BoxShape3D_ukv3e")
+
+[node name="Fence_8" type="CollisionShape3D" parent="Place_ranch/Collision" unique_id=1311496987]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 1600, 9.17732, -60)
+shape = SubResource("BoxShape3D_wn846")
+
+[node name="Box_9" type="CollisionShape3D" parent="Place_ranch/Collision" unique_id=83726956]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1655.5127, 13.394024, -160)
+shape = SubResource("BoxShape3D_7hglu")
+
+[node name="Box_10" type="CollisionShape3D" parent="Place_ranch/Collision" unique_id=891143403]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1664.5127, 13.394024, -160)
+shape = SubResource("BoxShape3D_07ni1")
+
+[node name="Surfaces" type="CollisionShape3D" parent="Place_ranch/Collision" unique_id=610172632]
+shape = ExtResource("13_huyt4")
+
+[node name="Residential_LargeFamilyHome_alt04_2" type="MeshInstance3D" parent="Place_ranch" unique_id=450862162]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 1688.03, 8.166702, -61.34625)
+visibility_range_end = 1200.0
+mesh = ExtResource("14_tlxvx")
+
+[node name="Farm_Barn_3" type="MeshInstance3D" parent="Place_ranch" unique_id=1756400233]
+transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 1753, 8.166702, -95)
+visibility_range_end = 1200.0
+mesh = ExtResource("15_dm7js")
+
+[node name="Farm_GardenShed_4" type="MeshInstance3D" parent="Place_ranch" unique_id=1541776368]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 1729, 8.166702, -64)
+visibility_range_end = 1200.0
+mesh = ExtResource("16_khl43")
+
+[node name="Farm_MetalWindmill_5" type="MeshInstance3D" parent="Place_ranch" unique_id=1997216217]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1797, 3.440172, -28)
+visibility_range_end = 1200.0
+mesh = ExtResource("17_ypevr")
+
+[node name="Label_6" type="Label3D" parent="Place_ranch" unique_id=2008243242]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 1660.0127, 16.194025, -160.3)
+visibility_range_end = 400.0
+pixel_size = 0.014
+double_sided = false
+modulate = Color(0.95, 0.9, 0.75, 1)
+outline_modulate = Color(0, 0, 0, 0.6)
+text = "COYOTE CREEK RANCH"
+font_size = 64
+outline_size = 8
+
+[node name="Label_7" type="Label3D" parent="Place_ranch" unique_id=2119372007]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1660.0127, 16.194025, -159.7)
+visibility_range_end = 400.0
+pixel_size = 0.014
+double_sided = false
+modulate = Color(0.95, 0.9, 0.75, 1)
+outline_modulate = Color(0, 0, 0, 0.6)
+text = "COYOTE CREEK RANCH"
+font_size = 64
+outline_size = 8
+
+[node name="Asphalt" type="MeshInstance3D" parent="Place_ranch" unique_id=1853795413]
+cast_shadow = 0
+visibility_range_end = 2500.0
+mesh = ExtResource("18_subvc")
+
+[node name="Concrete" type="MeshInstance3D" parent="Place_ranch" unique_id=2146588134]
+cast_shadow = 0
+visibility_range_end = 2500.0
+mesh = ExtResource("19_v2das")
+
+[node name="Paint" type="MeshInstance3D" parent="Place_ranch" unique_id=1215453284]
+visibility_range_end = 2500.0
+mesh = ExtResource("20_tmwhe")
+
+[node name="Place_safehouse" type="Node3D" parent="." unique_id=947146452]
+metadata/place_id = "safehouse"
+metadata/display_name = "Planque de Cedar Lane"
+metadata/kind = "safehouse"
+
+[node name="Entrance" type="Marker3D" parent="Place_safehouse" unique_id=1363844438]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 647, 4.7105956, -80)
+
+[node name="Collision" type="StaticBody3D" parent="Place_safehouse" unique_id=169426061]
+
+[node name="Model_0" type="CollisionShape3D" parent="Place_safehouse/Collision" unique_id=624207090]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 647, 8.524146, -50)
+shape = SubResource("BoxShape3D_a1a23")
+
+[node name="Model_1" type="CollisionShape3D" parent="Place_safehouse/Collision" unique_id=1967826054]
+transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 661, 7.298583, -50)
+shape = SubResource("BoxShape3D_8pncn")
+
+[node name="Surfaces" type="CollisionShape3D" parent="Place_safehouse/Collision" unique_id=602931620]
+shape = ExtResource("21_ckvow")
+
+[node name="Residential_LogCabin_alt01_2" type="MeshInstance3D" parent="Place_safehouse" unique_id=568856389]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 647, 4.7105956, -49.62372)
+visibility_range_end = 1200.0
+mesh = ExtResource("22_mbnav")
+
+[node name="Farm_GardenShed_3" type="MeshInstance3D" parent="Place_safehouse" unique_id=1974733306]
+transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 661, 4.7105956, -50)
+visibility_range_end = 1200.0
+mesh = ExtResource("16_khl43")
+
+[node name="Asphalt" type="MeshInstance3D" parent="Place_safehouse" unique_id=1001913324]
+cast_shadow = 0
+visibility_range_end = 2500.0
+mesh = ExtResource("23_mj14t")
+
+[node name="Concrete" type="MeshInstance3D" parent="Place_safehouse" unique_id=143474692]
+cast_shadow = 0
+visibility_range_end = 2500.0
+mesh = ExtResource("24_t3ygr")
+
+[node name="Paint" type="MeshInstance3D" parent="Place_safehouse" unique_id=716132493]
+visibility_range_end = 2500.0
+mesh = ExtResource("25_ndrev")
+
+[node name="Steel" type="MeshInstance3D" parent="Place_safehouse" unique_id=1822792457]
+cast_shadow = 0
+visibility_range_end = 700.0
+mesh = ExtResource("26_7no14")
+
+[node name="Place_greenfield" type="Node3D" parent="." unique_id=42154929]
+metadata/place_id = "greenfield"
+metadata/display_name = "Greenfield Botanicals"
+metadata/kind = "complex"
+
+[node name="Entrance" type="Marker3D" parent="Place_greenfield" unique_id=827517360]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -440, 0.70783377, -905)
+
+[node name="Collision" type="StaticBody3D" parent="Place_greenfield" unique_id=1099806295]
+
+[node name="Model_0" type="CollisionShape3D" parent="Place_greenfield/Collision" unique_id=421263861]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -446, 7.481597, -962)
+shape = SubResource("BoxShape3D_0s6ox")
+
+[node name="Greenhouse_1" type="CollisionShape3D" parent="Place_greenfield/Collision" unique_id=1479889641]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -530, 2.3078337, -965)
+shape = SubResource("BoxShape3D_8mabj")
+
+[node name="Greenhouse_2" type="CollisionShape3D" parent="Place_greenfield/Collision" unique_id=1304736806]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -516, 2.3078337, -965)
+shape = SubResource("BoxShape3D_lddxs")
+
+[node name="Greenhouse_3" type="CollisionShape3D" parent="Place_greenfield/Collision" unique_id=1781934848]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -502, 2.3078337, -965)
+shape = SubResource("BoxShape3D_8atxo")
+
+[node name="Greenhouse_4" type="CollisionShape3D" parent="Place_greenfield/Collision" unique_id=1479537774]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -488, 2.3078337, -965)
+shape = SubResource("BoxShape3D_h4ht3")
+
+[node name="Fence_5" type="CollisionShape3D" parent="Place_greenfield/Collision" unique_id=1154005090]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -540, 1.5176542, -972.5)
+shape = SubResource("BoxShape3D_qfjc2")
+
+[node name="Fence_6" type="CollisionShape3D" parent="Place_greenfield/Collision" unique_id=1329401709]
+transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, -480, 1.6111585, -1005)
+shape = SubResource("BoxShape3D_h8ttp")
+
+[node name="Fence_7" type="CollisionShape3D" parent="Place_greenfield/Collision" unique_id=1375282641]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -420, 1.601338, -972.5)
+shape = SubResource("BoxShape3D_o6kww")
+
+[node name="Fence_8" type="CollisionShape3D" parent="Place_greenfield/Collision" unique_id=1839392141]
+transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, -430.5, 1.5078337, -940)
+shape = SubResource("BoxShape3D_aho4m")
+
+[node name="Fence_9" type="CollisionShape3D" parent="Place_greenfield/Collision" unique_id=657421818]
+transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, -496.5, 1.5078337, -940)
+shape = SubResource("BoxShape3D_wot8n")
+
+[node name="Box_10" type="CollisionShape3D" parent="Place_greenfield/Collision" unique_id=58748632]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -462, 2.3892155, -911)
+shape = SubResource("BoxShape3D_ka5sw")
+
+[node name="Surfaces" type="CollisionShape3D" parent="Place_greenfield/Collision" unique_id=1073336724]
+shape = ExtResource("27_fqdul")
+
+[node name="Industrial_Warehouse_alt03_2" type="MeshInstance3D" parent="Place_greenfield" unique_id=1470380267]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -446, 0.70783377, -962)
+visibility_range_end = 1200.0
+mesh = ExtResource("28_5aldw")
+
+[node name="Label_3" type="Label3D" parent="Place_greenfield" unique_id=66105640]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -462, 2.3892155, -910.81)
+visibility_range_end = 350.0
+pixel_size = 0.0050403224
+double_sided = false
+modulate = Color(0.95, 0.95, 0.9, 1)
+outline_modulate = Color(0, 0, 0, 0.6)
+text = "GREENFIELD BOTANICALS"
+font_size = 64
+outline_size = 8
+
+[node name="Label_4" type="Label3D" parent="Place_greenfield" unique_id=1834901783]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -462, 2.3892155, -911.19)
+visibility_range_end = 350.0
+pixel_size = 0.0050403224
+double_sided = false
+modulate = Color(0.95, 0.95, 0.9, 1)
+outline_modulate = Color(0, 0, 0, 0.6)
+text = "GREENFIELD BOTANICALS"
+font_size = 64
+outline_size = 8
+
+[node name="Asphalt" type="MeshInstance3D" parent="Place_greenfield" unique_id=1596445661]
+cast_shadow = 0
+visibility_range_end = 2500.0
+mesh = ExtResource("29_3iyls")
+
+[node name="Concrete" type="MeshInstance3D" parent="Place_greenfield" unique_id=1102882475]
+cast_shadow = 0
+visibility_range_end = 2500.0
+mesh = ExtResource("30_xgc56")
+
+[node name="Paint" type="MeshInstance3D" parent="Place_greenfield" unique_id=1145807979]
+visibility_range_end = 2500.0
+mesh = ExtResource("31_kfmi8")
+
+[node name="Steel" type="MeshInstance3D" parent="Place_greenfield" unique_id=680143233]
+cast_shadow = 0
+visibility_range_end = 700.0
+mesh = ExtResource("32_sufbv")
+
+[node name="Place_echo_circle" type="Node3D" parent="." unique_id=1506114081]
+metadata/place_id = "echo_circle"
+metadata/display_name = "Echo Circle"
+metadata/kind = "plaza"
+
+[node name="Entrance" type="Marker3D" parent="Place_echo_circle" unique_id=604352633]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 110, 0.85, -284)
+
+[node name="Collision" type="StaticBody3D" parent="Place_echo_circle" unique_id=614500129]
+
+[node name="Box_0" type="CollisionShape3D" parent="Place_echo_circle/Collision" unique_id=929608700]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 110, 1.35, -316)
+shape = SubResource("BoxShape3D_tt7qa")
+
+[node name="Box_1" type="CollisionShape3D" parent="Place_echo_circle/Collision" unique_id=296734898]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 110, 1.85, -316)
+shape = SubResource("BoxShape3D_6w21o")
+
+[node name="Box_2" type="CollisionShape3D" parent="Place_echo_circle/Collision" unique_id=352597993]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 110, 2.3999999, -316)
+shape = SubResource("BoxShape3D_3ufg2")
+
+[node name="Obelisk" type="CollisionShape3D" parent="Place_echo_circle/Collision" unique_id=177340525]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 110, 9.2, -316)
+shape = SubResource("BoxShape3D_o6l2g")
+
+[node name="Label_2" type="Label3D" parent="Place_echo_circle" unique_id=1790349204]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 110, 2.4, -313.97)
+visibility_range_end = 200.0
+pixel_size = 0.006
+double_sided = false
+modulate = Color(0.25, 0.2, 0.12, 1)
+outline_modulate = Color(0, 0, 0, 0.6)
+text = "ECHO CIRCLE"
+font_size = 64
+outline_size = 8
+
+[node name="Label_3" type="Label3D" parent="Place_echo_circle" unique_id=1523207116]
+transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 112.03, 2.4, -316)
+visibility_range_end = 200.0
+pixel_size = 0.006
+double_sided = false
+modulate = Color(0.25, 0.2, 0.12, 1)
+outline_modulate = Color(0, 0, 0, 0.6)
+text = "ECHO CIRCLE"
+font_size = 64
+outline_size = 8
+
+[node name="Label_4" type="Label3D" parent="Place_echo_circle" unique_id=311283145]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 110, 2.4, -318.03)
+visibility_range_end = 200.0
+pixel_size = 0.006
+double_sided = false
+modulate = Color(0.25, 0.2, 0.12, 1)
+outline_modulate = Color(0, 0, 0, 0.6)
+text = "ECHO CIRCLE"
+font_size = 64
+outline_size = 8
+
+[node name="Label_5" type="Label3D" parent="Place_echo_circle" unique_id=32780991]
+transform = Transform3D(1.1924881e-08, 0, -1, 0, 1, 0, 1, 0, 1.1924881e-08, 107.97, 2.4, -316)
+visibility_range_end = 200.0
+pixel_size = 0.006
+double_sided = false
+modulate = Color(0.25, 0.2, 0.12, 1)
+outline_modulate = Color(0, 0, 0, 0.6)
+text = "ECHO CIRCLE"
+font_size = 64
+outline_size = 8
+
+[node name="Paint" type="MeshInstance3D" parent="Place_echo_circle" unique_id=50790960]
+visibility_range_end = 2500.0
+mesh = ExtResource("33_pjscd")
+
+[node name="Place_hotel" type="Node3D" parent="." unique_id=1422222223]
+metadata/place_id = "hotel"
+metadata/display_name = "Ashford Grand Hotel"
+metadata/kind = "hotel"
+
+[node name="Entrance" type="Marker3D" parent="Place_hotel" unique_id=1886194567]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -902, 0.41, -424)
+
+[node name="Collision" type="StaticBody3D" parent="Place_hotel" unique_id=500757571]
+
+[node name="Model_0" type="CollisionShape3D" parent="Place_hotel/Collision" unique_id=2125828797]
+transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, -929, 34.294186, -424)
+shape = SubResource("BoxShape3D_ksubj")
+
+[node name="Box_1" type="CollisionShape3D" parent="Place_hotel/Collision" unique_id=269826103]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -912.2, 3.47, -424)
+shape = SubResource("BoxShape3D_mh4na")
+
+[node name="Industrial_TraditionalSkyscraper_alt05_2" type="MeshInstance3D" parent="Place_hotel" unique_id=379189468]
+transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, -929.0003, -0.03, -423.99158)
+visibility_range_end = 2500.0
+mesh = ExtResource("34_yl6u5")
+
+[node name="Label_3" type="Label3D" parent="Place_hotel" unique_id=1012637201]
+transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, -905.9, 5.17, -424)
+visibility_range_end = 400.0
+pixel_size = 0.012
+double_sided = false
+modulate = Color(0.95, 0.85, 0.55, 1)
+outline_modulate = Color(0, 0, 0, 0.6)
+text = "ASHFORD GRAND HOTEL"
+font_size = 64
+outline_size = 8
+
+[node name="Label_4" type="Label3D" parent="Place_hotel" unique_id=776978998]
+transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, -918.2, 65.97, -424)
+visibility_range_end = 1500.0
+pixel_size = 0.05
+double_sided = false
+modulate = Color(0.95, 0.85, 0.55, 1)
+outline_modulate = Color(0, 0, 0, 0.6)
+text = "ASHFORD GRAND"
+font_size = 64
+outline_size = 8
+
+[node name="Paint" type="MeshInstance3D" parent="Place_hotel" unique_id=768432212]
+visibility_range_end = 2500.0
+mesh = ExtResource("35_50lt0")
+
+[node name="Steel" type="MeshInstance3D" parent="Place_hotel" unique_id=1200115327]
+cast_shadow = 0
+visibility_range_end = 700.0
+mesh = ExtResource("36_octan")
+
+[node name="Place_hospital" type="Node3D" parent="." unique_id=2090458888]
+metadata/place_id = "hospital"
+metadata/display_name = "St. Anselm Medical Center"
+metadata/kind = "hospital"
+
+[node name="Entrance" type="Marker3D" parent="Place_hospital" unique_id=905293260]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -280, 0.41, 125)
+
+[node name="Collision" type="StaticBody3D" parent="Place_hospital" unique_id=517382664]
+
+[node name="Model_0" type="CollisionShape3D" parent="Place_hospital/Collision" unique_id=1671136780]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -280, 14.722085, 168)
+shape = SubResource("BoxShape3D_duo7h")
+
+[node name="Box_1" type="CollisionShape3D" parent="Place_hospital/Collision" unique_id=214690001]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -310, 1.97, 133)
+shape = SubResource("BoxShape3D_hc7nc")
+
+[node name="Surfaces" type="CollisionShape3D" parent="Place_hospital/Collision" unique_id=877195257]
+shape = ExtResource("37_ksemg")
+
+[node name="Business_Hospital_2" type="MeshInstance3D" parent="Place_hospital" unique_id=724497370]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -274.25372, -0.03, 167.86949)
+visibility_range_end = 2500.0
+mesh = ExtResource("38_pify7")
+
+[node name="Label_3" type="Label3D" parent="Place_hospital" unique_id=1698748342]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -310, 1.97, 133.19)
+visibility_range_end = 350.0
+pixel_size = 0.004233871
+double_sided = false
+modulate = Color(0.95, 0.95, 0.9, 1)
+outline_modulate = Color(0, 0, 0, 0.6)
+text = "ST. ANSELM MEDICAL CENTER"
+font_size = 64
+outline_size = 8
+
+[node name="Label_4" type="Label3D" parent="Place_hospital" unique_id=1522094713]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -310, 1.97, 132.81)
+visibility_range_end = 350.0
+pixel_size = 0.004233871
+double_sided = false
+modulate = Color(0.95, 0.95, 0.9, 1)
+outline_modulate = Color(0, 0, 0, 0.6)
+text = "ST. ANSELM MEDICAL CENTER"
+font_size = 64
+outline_size = 8
+
+[node name="Concrete" type="MeshInstance3D" parent="Place_hospital" unique_id=368538849]
+cast_shadow = 0
+visibility_range_end = 2500.0
+mesh = ExtResource("39_4rfvk")
+
+[node name="Asphalt" type="MeshInstance3D" parent="Place_hospital" unique_id=1605420809]
+cast_shadow = 0
+visibility_range_end = 2500.0
+mesh = ExtResource("40_faxax")
+
+[node name="Paint" type="MeshInstance3D" parent="Place_hospital" unique_id=946157706]
+visibility_range_end = 2500.0
+mesh = ExtResource("41_7cjak")
+
+[node name="Place_precinct" type="Node3D" parent="." unique_id=362644162]
+metadata/place_id = "precinct"
+metadata/display_name = "Central Precinct"
+metadata/kind = "police"
+
+[node name="Entrance" type="Marker3D" parent="Place_precinct" unique_id=1826517075]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -713, 0.41, 125)
+
+[node name="Collision" type="StaticBody3D" parent="Place_precinct" unique_id=1448552667]
+
+[node name="Model_0" type="CollisionShape3D" parent="Place_precinct/Collision" unique_id=1015366695]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -713, 11.27713, 158)
+shape = SubResource("BoxShape3D_vkf2o")
+
+[node name="Fence_1" type="CollisionShape3D" parent="Place_precinct/Collision" unique_id=317048216]
+transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, -690.5, 1.07, 147)
+shape = SubResource("BoxShape3D_jkmuk")
+
+[node name="Fence_2" type="CollisionShape3D" parent="Place_precinct/Collision" unique_id=617538185]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -684, 1.07, 165)
+shape = SubResource("BoxShape3D_x6rf3")
+
+[node name="Fence_3" type="CollisionShape3D" parent="Place_precinct/Collision" unique_id=2145556985]
+transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, -690.5, 1.07, 183)
+shape = SubResource("BoxShape3D_p00r0")
+
+[node name="Box_4" type="CollisionShape3D" parent="Place_precinct/Collision" unique_id=413982506]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -726, 5.47, 141)
+shape = SubResource("BoxShape3D_bopec")
+
+[node name="Surfaces" type="CollisionShape3D" parent="Place_precinct/Collision" unique_id=1519675771]
+shape = ExtResource("42_x23sl")
+
+[node name="Business_Bank_2" type="MeshInstance3D" parent="Place_precinct" unique_id=1823732021]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -713, -0.03, 157.78615)
+visibility_range_end = 1200.0
+mesh = ExtResource("43_bx67b")
+
+[node name="Label_3" type="Label3D" parent="Place_precinct" unique_id=1017483939]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -713, 12.17, 145.4)
+visibility_range_end = 500.0
+pixel_size = 0.02
+double_sided = false
+modulate = Color(0.92, 0.92, 0.9, 1)
+outline_modulate = Color(0, 0, 0, 0.6)
+text = "CENTRAL PRECINCT"
+font_size = 64
+outline_size = 8
+
+[node name="Label_4" type="Label3D" parent="Place_precinct" unique_id=1663328326]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -713, 10.57, 145.4)
+visibility_range_end = 500.0
+pixel_size = 0.016
+double_sided = false
+modulate = Color(0.3, 0.45, 0.95, 1)
+outline_modulate = Color(0, 0, 0, 0.6)
+text = "POLICE"
+font_size = 64
+outline_size = 8
+
+[node name="Concrete" type="MeshInstance3D" parent="Place_precinct" unique_id=1332191180]
+cast_shadow = 0
+visibility_range_end = 2500.0
+mesh = ExtResource("44_hluui")
+
+[node name="Asphalt" type="MeshInstance3D" parent="Place_precinct" unique_id=1588813507]
+cast_shadow = 0
+visibility_range_end = 2500.0
+mesh = ExtResource("45_6djfj")
+
+[node name="Paint" type="MeshInstance3D" parent="Place_precinct" unique_id=719529031]
+visibility_range_end = 2500.0
+mesh = ExtResource("46_wx4co")
+
+[node name="Steel" type="MeshInstance3D" parent="Place_precinct" unique_id=1775101697]
+cast_shadow = 0
+visibility_range_end = 700.0
+mesh = ExtResource("47_ni2nn")
+
+[node name="Place_liberty_lot" type="Node3D" parent="." unique_id=1553658484]
+metadata/place_id = "liberty_lot"
+metadata/display_name = "Liberty Motors"
+metadata/kind = "car_lot"
+
+[node name="Entrance" type="Marker3D" parent="Place_liberty_lot" unique_id=1064130424]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1, 0.41, -400)
+
+[node name="Collision" type="StaticBody3D" parent="Place_liberty_lot" unique_id=561941276]
+
+[node name="Box_0" type="CollisionShape3D" parent="Place_liberty_lot/Collision" unique_id=579202893]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 22, 2.02, -364)
+shape = SubResource("BoxShape3D_ek7p8")
+
+[node name="Box_1" type="CollisionShape3D" parent="Place_liberty_lot/Collision" unique_id=1271033265]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 4.97, -408)
+shape = SubResource("BoxShape3D_nlr5e")
+
+[node name="Surfaces" type="CollisionShape3D" parent="Place_liberty_lot/Collision" unique_id=1737137459]
+shape = ExtResource("48_etc01")
+
+[node name="Label_2" type="Label3D" parent="Place_liberty_lot" unique_id=661912792]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 22, 4.87, -368.1)
+visibility_range_end = 400.0
+pixel_size = 0.012
+double_sided = false
+modulate = Color(0.85, 0.12, 0.12, 1)
+outline_modulate = Color(0, 0, 0, 0.6)
+text = "LIBERTY MOTORS"
+font_size = 64
+outline_size = 8
+
+[node name="Label_3" type="Label3D" parent="Place_liberty_lot" unique_id=1606080704]
+transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 1.6800001, 11.17, -408)
+visibility_range_end = 600.0
+pixel_size = 0.016
+double_sided = false
+modulate = Color(0.95, 0.95, 0.95, 1)
+outline_modulate = Color(0, 0, 0, 0.6)
+text = "LIBERTY MOTORS"
+font_size = 64
+outline_size = 8
+
+[node name="Label_4" type="Label3D" parent="Place_liberty_lot" unique_id=1730470929]
+transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 2.32, 11.17, -408)
+visibility_range_end = 600.0
+pixel_size = 0.016
+double_sided = false
+modulate = Color(0.95, 0.95, 0.95, 1)
+outline_modulate = Color(0, 0, 0, 0.6)
+text = "LIBERTY MOTORS"
+font_size = 64
+outline_size = 8
+
+[node name="Asphalt" type="MeshInstance3D" parent="Place_liberty_lot" unique_id=1603157224]
+cast_shadow = 0
+visibility_range_end = 2500.0
+mesh = ExtResource("49_tyt7j")
+
+[node name="Paint" type="MeshInstance3D" parent="Place_liberty_lot" unique_id=581932667]
+visibility_range_end = 2500.0
+mesh = ExtResource("50_a1ldg")
+
+[node name="Steel" type="MeshInstance3D" parent="Place_liberty_lot" unique_id=1160159572]
+cast_shadow = 0
+visibility_range_end = 700.0
+mesh = ExtResource("51_soprb")
+
+[node name="Place_casino" type="Node3D" parent="." unique_id=553552321]
+metadata/place_id = "casino"
+metadata/display_name = "Scarlet Jack Cabaret & Casino"
+metadata/kind = "casino"
+
+[node name="Entrance" type="Marker3D" parent="Place_casino" unique_id=2055496744]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -568, 0.41, -323)
+
+[node name="Collision" type="StaticBody3D" parent="Place_casino" unique_id=112751318]
+
+[node name="Label_2" type="Label3D" parent="Place_casino" unique_id=1594069625]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -586.5, 33, -365.77)
+visibility_range_end = 1200.0
+pixel_size = 0.03
+double_sided = false
+modulate = Color(1, 0.12, 0.1, 1)
+outline_modulate = Color(0, 0, 0, 0.6)
+text = "SCARLET JACK"
+font_size = 64
+outline_size = 8
+
+[node name="Label_3" type="Label3D" parent="Place_casino" unique_id=298310119]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -586.5, 31.1, -365.77)
+visibility_range_end = 900.0
+pixel_size = 0.018
+double_sided = false
+modulate = Color(1, 0.8, 0.35, 1)
+outline_modulate = Color(0, 0, 0, 0.6)
+text = "CABARET & CASINO"
+font_size = 64
+outline_size = 8
+
+[node name="Label_4" type="Label3D" parent="Place_casino" unique_id=1829418438]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -586.5, 33, -365.23)
+visibility_range_end = 1200.0
+pixel_size = 0.03
+double_sided = false
+modulate = Color(1, 0.12, 0.1, 1)
+outline_modulate = Color(0, 0, 0, 0.6)
+text = "SCARLET JACK"
+font_size = 64
+outline_size = 8
+
+[node name="Label_5" type="Label3D" parent="Place_casino" unique_id=765906012]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -586.5, 31.1, -365.23)
+visibility_range_end = 900.0
+pixel_size = 0.018
+double_sided = false
+modulate = Color(1, 0.8, 0.35, 1)
+outline_modulate = Color(0, 0, 0, 0.6)
+text = "CABARET & CASINO"
+font_size = 64
+outline_size = 8
+
+[node name="Steel" type="MeshInstance3D" parent="Place_casino" unique_id=672117314]
+cast_shadow = 0
+visibility_range_end = 700.0
+mesh = ExtResource("52_4h2ul")
+
+[node name="Paint" type="MeshInstance3D" parent="Place_casino" unique_id=2022035406]
+visibility_range_end = 2500.0
+mesh = ExtResource("53_uiqmj")
