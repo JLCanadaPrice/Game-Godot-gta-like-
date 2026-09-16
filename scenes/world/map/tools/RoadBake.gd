@@ -119,6 +119,8 @@ func _initialize() -> void:
 	for rb in modes:
 		modes[rb] = _unsupported_to_bridges(rb, modes[rb])
 	ResourceSaver.save(Image.create_from_data(model.width, model.depth, false, Image.FORMAT_RF, heights.to_byte_array()), GEN + "/terrain/heights.res")
+	# copie « routes seules » : DistrictsBake repart de celle-ci pour aplanir les lots (cuisson rejouable)
+	ResourceSaver.save(Image.create_from_data(model.width, model.depth, false, Image.FORMAT_RF, heights.to_byte_array()), GEN + "/terrain/heights_roads.res")
 	for rb in modes:
 		_ribbon(rb, modes[rb])
 	for pad: Dictionary in net.pads:

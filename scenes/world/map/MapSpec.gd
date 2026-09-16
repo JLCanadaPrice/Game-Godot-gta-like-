@@ -11,7 +11,7 @@ extends RefCounted
 # a10) sont décalées pour franchir les autoroutes hors des bretelles (étape 2a).
 
 # Dernière étape construite (0, 1, 2 = 2a, 2.5 = 2b, 3...) : active les points de contrôle correspondants.
-const BUILT_STAGE := 3.0
+const BUILT_STAGE := 4.0
 
 # --- emprises ---------------------------------------------------------------------------------------------------
 const PLAYABLE := Rect2(-2174.0, -1480.0, 4347.0, 2447.0)   # zone explorable (4,35 × 2,45 km)
@@ -250,6 +250,11 @@ const GATE_SPOTS := [
 	{"name": "extrémité sud du losange de l'aéroport", "pos": Vector2(63, -640), "yaw": 0.0, "min_stage": 2.5},
 	{"name": "chemin du ranch", "pos": Vector2(1656, -175), "yaw": 0.0, "min_stage": 2.5},
 	{"name": "artère urbaine à l'entrée ouest du centre-ville", "pos": Vector2(-935, -174), "yaw": -90.0, "min_stage": 2.5},
+	{"name": "rue locale de Bluffview Heights", "pos": Vector2(-1058.1, -779.5), "yaw": 87.0, "min_stage": 4.0},
+	{"name": "rue locale de Willow Lake", "pos": Vector2(-1668.8, -229.6), "yaw": -5.6, "min_stage": 4.0},
+	{"name": "rue locale de Westbank", "pos": Vector2(-1255.2, 165.9), "yaw": -174.5, "min_stage": 4.0},
+	{"name": "rue locale d'Eastgate", "pos": Vector2(1098.6, 338.0), "yaw": -3.3, "min_stage": 4.0},
+	{"name": "artère commerçante d'Eastside", "pos": Vector2(300, -310), "yaw": -90.0, "min_stage": 4.0},
 ]
 
 

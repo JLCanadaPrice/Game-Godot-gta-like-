@@ -4,6 +4,7 @@
 [ext_resource type="PackedScene" path="res://scenes/world/map/generated/Water.tscn" id="2_4f0h6"]
 [ext_resource type="PackedScene" path="res://scenes/world/map/generated/Boundary.tscn" id="3_f7qjr"]
 [ext_resource type="PackedScene" path="res://scenes/world/map/generated/Roads.tscn" id="4_roads"]
+[ext_resource type="PackedScene" path="res://scenes/world/map/generated/Buildings.tscn" id="5_buildings"]
 
 [node name="Map" type="Node3D" unique_id=99550813]
 
@@ -14,3 +15,5 @@
 [node name="Boundary" type="StaticBody3D" parent="." unique_id=2079558291 instance=ExtResource("3_f7qjr")]
 
 [node name="Roads" type="Node3D" parent="." unique_id=1718200424 instance=ExtResource("4_roads")]
+
+[node name="Buildings" type="Node3D" parent="." unique_id=1812030455 instance=ExtResource("5_buildings")]

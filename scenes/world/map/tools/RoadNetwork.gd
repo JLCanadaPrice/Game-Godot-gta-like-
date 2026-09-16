@@ -75,6 +75,13 @@ const PAD_MARGIN := 3.0
 const TERMINAL_OFFSET := 48.0       # distance entre l'axe de l'autoroute et le carrefour d'extrémité d'un losange
 const DIAMOND_BEND := 110.0         # courbe en S d'une bretelle de losange, avant le carrefour d'extrémité
 const MINI_RING := {"ring": 30.0, "pad": 42.0, "island": 24.0, "angle": 0.436332, "width": 8.0}   # angle 25°
+# rues locales (étape 4) : impasses perpendiculaires aux artères dans les quartiers, bordées de maisons
+const DEVELOPED_ZONES := ["suburb", "residential", "mixed"]
+const LOCAL_SPACING := 150.0        # le long de l'artère, entre deux rues d'un même côté
+const LOCAL_LENGTHS := [240.0, 210.0, 180.0, 150.0, 120.0, 90.0]
+const LOCAL_CLEAR := 36.0           # couloir libre de part et d'autre de la rue (maisons et jardins)
+const LOCAL_END_MARGIN := 70.0      # pas de rue trop près des bouts d'un ruban d'artère (carrefours)
+const LOCAL_END_FLAT := 14.0        # m de rue à plat avant le plateau du cul-de-sac
 
 
 class Ribbon:
@@ -108,6 +115,7 @@ var arterial_chains: Array[Dictionary] = []
 var stations := {}                          # id -> {"id", "kind", "pos": Vector3, "node", "lit", "ends": [{"left", "right", "dir"}]}
 var pads: Array[Dictionary] = []            # plateaux : {"id", "kind", "center": Vector3, "rim": PackedVector3Array, "island": float}
 var connectors: Array[Dictionary] = []      # trajets sur plateau : {"points": PackedVector3Array, "one_way", "lanes"}
+var local_streets: Array[Dictionary] = []   # {"id", "zone", "ribbon": Ribbon, "side": Vector2 (vers le fond de la rue)}
 var g_lit: Array[int] = []                  # noeuds du graphe à feux (carrefours éclairés, extrémités de losange)
 var g_grid: Array[int] = []                 # noeuds du graphe confondus avec la grille du centre-ville
 var levels := {}                            # anneau -> axe en tranchée ("low"/"high" s'il n'a qu'un axe traversant) ; losange -> "low"/"high"
@@ -731,6 +739,7 @@ func _build_arterials() -> void:
 				_diamond_ramps(node_id)
 			"roundabout":
 				_mini_roundabout(node_id)
+	_build_local_streets()
 	_station_pads()
 
 
@@ -1115,6 +1124,119 @@ func _diamond_ramps(node_id: String) -> void:
 		var hw := RAMP_WIDTH * 0.5
 		var lateral := right_of(end_dir) * hw
 		(terminal["ends"] as Array).append({"left": tip - Vector3(lateral.x, 0.0, lateral.y), "right": tip + Vector3(lateral.x, 0.0, lateral.y), "tip": tip, "dir": dir})
+
+
+# Rues locales : depuis les artères des quartiers (hors chemins), tous les LOCAL_SPACING m de chaque côté, une impasse
+# perpendiculaire aussi longue que possible (LOCAL_LENGTHS) dont le couloir reste dans la zone, loin de l'eau et des
+# autres routes, sur un relief modéré. Raccord : noeud coupé sur l'artère, trajet qui traverse le trottoir ;
+# cul-de-sac au bout (plateau).
+func _build_local_streets() -> void:
+	var obstacles := {}
+	for rb in ribbons:
+		_index_obstacle(obstacles, rb)
+	var sources: Array = ribbons.filter(func(r: Ribbon) -> bool: return r.kind == "arterial" and r.style != "dirt")
+	for zone: Dictionary in Spec.ZONES:
+		if not DEVELOPED_ZONES.has(zone["type"]):
+			continue
+		var poly := Spec.zone_polygon(zone)
+		for rb: Ribbon in sources:
+			var pts: PackedVector3Array = rb.points
+			var arc := PackedFloat32Array([0.0])
+			for k in range(1, pts.size()):
+				arc.append(arc[k - 1] + Vector2(pts[k].x - pts[k - 1].x, pts[k].z - pts[k - 1].z).length())
+			var total: float = arc[arc.size() - 1]
+			for side_sign: float in [-1.0, 1.0]:
+				var last := -INF
+				for k in pts.size():
+					if arc[k] < LOCAL_END_MARGIN or total - arc[k] < LOCAL_END_MARGIN or arc[k] - last < LOCAL_SPACING:
+						continue
+					var p := Vector2(pts[k].x, pts[k].z)
+					if not Geometry2D.is_point_in_polygon(p, poly):
+						continue
+					var normal := right_of(_ribbon_dir(rb, k)) * side_sign
+					var start := p + normal * (rb.width * 0.5 + (SIDEWALK_WIDTH if rb.style == "urban" else 0.0))
+					for length: float in LOCAL_LENGTHS:
+						if _street_fits(start, normal, length, poly, obstacles, rb):
+							var street := _add_local_street(zone, rb, k, start, start + normal * length)
+							_index_obstacle(obstacles, street)
+							last = arc[k]
+							break
+
+
+func _index_obstacle(obstacles: Dictionary, rb: Ribbon) -> void:
+	for p: Vector3 in rb.points:
+		var key := Vector2i(floori(p.x / 32.0), floori(p.z / 32.0))
+		if not obstacles.has(key):
+			obstacles[key] = []
+		obstacles[key].append([Vector2(p.x, p.z), rb.width * 0.5, rb])
+
+
+func _street_fits(start: Vector2, normal: Vector2, length: float, poly: PackedVector2Array, obstacles: Dictionary, source: Ribbon) -> bool:
+	var end := start + normal * length
+	var steps := ceili(length / 8.0)
+	var h0 := terrain.height_at(start)
+	if absf(terrain.height_at(end) - h0) / length > 0.09:
+		return false
+	for s in steps + 1:
+		var q := start.lerp(end, float(s) / steps)
+		if not Geometry2D.is_point_in_polygon(q, poly) or not Spec.PLAYABLE.grow(-60.0).has_point(q):
+			return false
+		if terrain.river_info(q).x < 25.0 or is_water(q):
+			return false
+		for lake: Dictionary in Spec.LAKES:
+			if ((q - lake["center"]) / (lake["radii"] + Vector2.ONE * 30.0)).length() < 1.0:
+				return false
+		if Spec.DOWNTOWN.grow(40.0).has_point(q):
+			return false
+		# couloir des maisons libre (sauf l'artère de départ près du raccord)
+		var key := Vector2i(floori(q.x / 32.0), floori(q.y / 32.0))
+		for dz in range(-2, 3):
+			for dx in range(-2, 3):
+				for entry: Array in obstacles.get(key + Vector2i(dx, dz), []):
+					if entry[2] == source and q.distance_to(start) < 30.0:
+						continue
+					if q.distance_to(entry[0]) < LOCAL_CLEAR + float(entry[1]):
+						return false
+	for poi: Dictionary in Spec.POIS:
+		var half: Vector2 = poi["size"] * 0.5 + Vector2.ONE * 30.0
+		var c: Vector2 = poi["pos"]
+		for s in steps + 1:
+			var q := start.lerp(end, float(s) / steps)
+			if absf(q.x - c.x) < half.x and absf(q.y - c.y) < half.y:
+				return false
+	return true
+
+
+func _add_local_street(zone: Dictionary, source: Ribbon, k: int, start: Vector2, end: Vector2) -> Ribbon:
+	var id := "rue_%s_%d" % [zone["id"], local_streets.size()]
+	var line := resample(PackedVector2Array([start, end]), STEP)
+	if line.size() > 2 and line[line.size() - 2].distance_to(end) < STEP * 0.6:
+		line.remove_at(line.size() - 2)   # pas de dernier segment trop court (pente mesurée sur quelques centimètres)
+	var natural := _natural_profile(line)
+	var anchor: Vector3 = source.points[k]
+	var h := solve_profile(natural, 0.07, 24.0, {0: anchor.y}, [])
+	# cul-de-sac plat : les derniers LOCAL_END_FLAT m restent au niveau où ils commencent, sinon le disque du plateau
+	# (plat, rayon ~8 m) déborde au-dessus de la rue en pente et forme une marche
+	var last := line.size() - 1
+	var flat_from := last
+	while flat_from > 1 and line[flat_from - 1].distance_to(line[last]) <= LOCAL_END_FLAT:
+		flat_from -= 1
+	for i in range(flat_from + 1, line.size()):
+		h[i] = h[flat_from]
+	var street := _new_ribbon(id, "arterial", id)
+	street.style = "access"
+	street.width = ROAD_STYLES["access"]["width"]
+	street.one_way = false
+	for i in line.size():
+		street.points.append(Vector3(line[i].x, h[i], line[i].y))
+		street.path.append(Vector3(line[i].x, h[i] - ROAD_TOP, line[i].y))
+	street.path[0] = Vector3(anchor.x, anchor.y - ROAD_TOP, anchor.z)   # le trajet part de l'axe de l'artère
+	ribbons.append(street)
+	source.splits[k] = true
+	var station := _station(id + ":bout", "end", street.points[street.points.size() - 1])
+	_register_end(station, street, street.points.size() - 1)
+	local_streets.append({"id": id, "zone": zone["id"], "ribbon": street, "side": (end - start).normalized()})
+	return street
 
 
 # Longueur d'axe laissée aux bretelles d'un losange vers le noeud suivant : moitié de l'écart avec un autre losange,
@@ -1559,6 +1681,9 @@ func _check_conflicts() -> void:
 						var ra: Ribbon = ribbons[a.x]
 						var rbb: Ribbon = ribbons[b.x]
 						if (ra.kind in ["median", "sidewalk"] or rbb.kind in ["median", "sidewalk"]) and ra.chain == rbb.chain:
+							continue
+						# trottoir qui traverse l'entrée d'une rue locale
+						if (ra.kind == "sidewalk" and String(rbb.id).begins_with("rue_")) or (rbb.kind == "sidewalk" and String(ra.id).begins_with("rue_")):
 							continue
 						var pa: Vector3 = ra.points[a.y]
 						var pb: Vector3 = rbb.points[b.y]

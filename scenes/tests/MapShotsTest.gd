@@ -30,6 +30,14 @@ const VIEWS := [
 	["entree_ouest_centre_ville", Vector3(-1000, 10, -195), Vector3(-892, 1, -172)],
 	["lampadaires_artere_urbaine", Vector3(-1606, 18, -8), Vector3(-1624, 8, -80)],
 	["lampadaires_echangeur", Vector3(-330, 22, 690), Vector3(-380, 8, 770)],
+	# étape 4 : quartiers ("sol" : hauteurs mesurées depuis le sol sous la caméra et sous le point visé)
+	["quartier_eastside_artere", Vector3(160, 2.2, -312), Vector3(460, 2, -305)],
+	["quartier_railyard_survol", Vector3(-150, 80, 700), Vector3(-380, 0, 400)],
+	["quartier_westbank_rue", Vector3(-1255.2, 1.7, 165.9), Vector3(-1245.6, 1.5, 265.4), "sol"],
+	["quartier_willow_lake_survol", Vector3(-1350, 110, 60), Vector3(-1600, 0, -250)],
+	["quartier_eastgate_rue", Vector3(1098.6, 1.7, 338.0), Vector3(1104.4, 1.5, 238.2), "sol"],
+	["quartier_bluffview_survol", Vector3(-850, 120, -700), Vector3(-1000, 0, -1050)],
+	["quartier_midtown_nord", Vector3(-230, 50, -700), Vector3(-380, 0, -1000)],
 ]
 const SETTLE_FRAMES := 40
 
@@ -52,11 +60,18 @@ func _ready() -> void:
 	cam.far = 4000.0
 	add_child(cam)
 	cam.make_current()
+	for k in 3:
+		await get_tree().physics_frame
 	for view: Array in VIEWS:
 		if not only.is_empty() and not only.has(view[0]):
 			continue
-		cam.global_position = view[1]
-		cam.look_at(view[2], Vector3.UP)
+		var from: Vector3 = view[1]
+		var to: Vector3 = view[2]
+		if view.size() > 3 and view[3] == "sol":
+			from.y += _ground(from)
+			to.y += _ground(to)
+		cam.global_position = from
+		cam.look_at(to, Vector3.UP)
 		for k in SETTLE_FRAMES:
 			await get_tree().process_frame
 		await RenderingServer.frame_post_draw
@@ -69,3 +84,9 @@ func _ready() -> void:
 				RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TOTAL_PRIMITIVES_IN_FRAME) / 1e6,
 				Engine.get_frames_per_second()])
 	get_tree().quit(0)
+
+
+func _ground(p: Vector3) -> float:
+	var query := PhysicsRayQueryParameters3D.create(Vector3(p.x, 500.0, p.z), Vector3(p.x, -200.0, p.z))
+	var hit := get_viewport().world_3d.direct_space_state.intersect_ray(query)
+	return 0.0 if hit.is_empty() else (hit["position"] as Vector3).y
