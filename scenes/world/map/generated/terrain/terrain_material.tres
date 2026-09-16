@@ -1,0 +1,17 @@
+[gd_resource type="ShaderMaterial" format=3]
+
+[ext_resource type="Shader" path="res://scenes/world/map/shaders/terrain.gdshader" id="1_g5nuv"]
+[ext_resource type="Texture2D" path="res://scenes/world/map/terrain/textures/dirt.png" id="2_v8dn3"]
+[ext_resource type="Texture2D" path="res://scenes/world/map/terrain/textures/grass.png" id="3_ahn5j"]
+[ext_resource type="Texture2D" path="res://scenes/world/map/terrain/textures/rock.png" id="4_1xnry"]
+[ext_resource type="Texture2D" path="res://scenes/world/map/terrain/textures/sand.png" id="5_0cx52"]
+
+[resource]
+render_priority = 0
+shader = ExtResource("1_g5nuv")
+shader_parameter/tex_grass = ExtResource("3_ahn5j")
+shader_parameter/tex_dirt = ExtResource("2_v8dn3")
+shader_parameter/tex_rock = ExtResource("4_1xnry")
+shader_parameter/tex_sand = ExtResource("5_0cx52")
+shader_parameter/tile_size = null
+shader_parameter/macro_size = null

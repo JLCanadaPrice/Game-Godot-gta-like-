@@ -55,6 +55,7 @@
 [ext_resource type="Texture2D" uid="uid://b7wv1g7jqvgwb" path="res://assets/city_kit/models_active/T_Concrete_BaseColor.png" id="75_bx40k"]
 [ext_resource type="PackedScene" path="res://scenes/buildings/AgencyBuilding.tscn" id="agency_building_tscn"]
 [ext_resource type="PackedScene" path="res://scenes/buildings/DealershipBuilding.tscn" id="dealership_building_tscn"]
+[ext_resource type="PackedScene" path="res://scenes/world/map/Map.tscn" id="map_carte3d"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_1"]
 
@@ -105583,6 +105584,8 @@ script = ExtResource("55_h1p51")
 
 [node name="CityRenderOptimizer" type="Node3D" parent="." unique_id=1418350213]
 script = ExtResource("56_crdopt")
+
+[node name="Map" parent="." instance=ExtResource("map_carte3d")]
 
 [editable path="District/Road11_Y_Splitter_452"]
 [editable path="District_W/Road11_Y_Splitter_452"]

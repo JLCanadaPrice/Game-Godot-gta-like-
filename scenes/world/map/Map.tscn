@@ -1,0 +1,13 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/world/map/generated/Terrain.tscn" id="1_pdxu1"]
+[ext_resource type="PackedScene" path="res://scenes/world/map/generated/Water.tscn" id="2_4f0h6"]
+[ext_resource type="PackedScene" path="res://scenes/world/map/generated/Boundary.tscn" id="3_f7qjr"]
+
+[node name="Map" type="Node3D" unique_id=99550813]
+
+[node name="Terrain" type="Node3D" parent="." unique_id=1930793479 instance=ExtResource("1_pdxu1")]
+
+[node name="Water" type="Node3D" parent="." unique_id=515889262 instance=ExtResource("2_4f0h6")]
+
+[node name="Boundary" type="StaticBody3D" parent="." unique_id=2079558291 instance=ExtResource("3_f7qjr")]

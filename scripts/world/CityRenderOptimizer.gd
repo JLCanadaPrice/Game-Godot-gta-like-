@@ -54,6 +54,11 @@ extends Node3D
 #     la limite sont touchés. Pas un lod_bias pour tous : Godot borne l'erreur d'un LOD en pixels à toute distance
 #     (4 px à 0,25), les bâtiments proches changeaient donc aussi. RenderPerfTest --verify-lod, 34 vues : écart à
 #     moins de 150 m de 47 778 px (0,25 partout) et 5 667 px (0,5 partout), 0 px avec la limite de distance.
+#  4. portées de visibilité (carte 3D ouverte) : vu depuis la campagne, un pont ou une colline, rien ne masque la ville
+#     et tout y était dessiné (MapShotsTest, campagne est vers la ville à 2 km : 884 appels, 24 481 objets). Au-delà
+#     de `far_ranges` m de la caméra, trottoirs, tuiles de route, lampadaires et feux ne sont plus dessinés (coupure
+#     nette, sans transparence) ; décalques de passage piéton et projecteurs de rue s'estompent au-delà de
+#     `decal_fade_distance` et `light_fade_distance`. Les bâtiments restent : ce sont la silhouette de la ville.
 
 const KIT_MODEL := &"KitModel"
 const WALL_MATERIAL := "InteriorWall"
@@ -71,7 +76,15 @@ const WALL_MATERIAL := "InteriorWall"
 	"res://assets/modular_roads/lamp_*.glb",
 ]
 
+@export var distance_culling := true
+@export var far_ranges := {                   # famille -> m de la caméra au-delà desquels elle n'est plus dessinée
+	"sidewalk": 380.0, "road": 1200.0, "lamp": 300.0, "traffic_light": 260.0,
+}
+@export var decal_fade_distance := 140.0
+@export var light_fade_distance := 180.0
+
 var occluders := 0                           # relevés par RenderPerfTest
+var distance_culled := {}                    # famille -> nombre d'instances avec une portée
 var batched_instances := 0
 var multimesh_nodes := 0
 var _mesh_copies := {}
@@ -97,9 +110,44 @@ func _optimize() -> void:
 			_lod_boxes.append(mi.global_transform * mi.get_aabb())
 		_lod_far.resize(_lod_meshes.size())
 		update_building_lods(true)
+	if distance_culling:
+		apply_distance_culling(world)
 	if multimesh:
 		for mi in batch_static_meshes(world):
 			mi.queue_free()
+
+
+func apply_distance_culling(world: Node) -> void:
+	for node in world.find_children("*", "", true, false):
+		if node is Decal:
+			var decal := node as Decal
+			decal.distance_fade_enabled = true
+			decal.distance_fade_begin = decal_fade_distance
+			decal.distance_fade_length = 25.0
+			distance_culled["decal"] = int(distance_culled.get("decal", 0)) + 1
+		elif node is Light3D and not node is DirectionalLight3D:
+			var light := node as Light3D
+			light.distance_fade_enabled = true
+			light.distance_fade_begin = light_fade_distance
+			light.distance_fade_length = 30.0
+			distance_culled["light"] = int(distance_culled.get("light", 0)) + 1
+		elif node is GeometryInstance3D and node.owner != null:
+			var family := _family(node.owner.scene_file_path)
+			if family != "" and far_ranges.has(family):
+				(node as GeometryInstance3D).visibility_range_end = far_ranges[family]
+				distance_culled[family] = int(distance_culled.get(family, 0)) + 1
+
+
+func _family(scene: String) -> String:
+	if scene.match("*/Sidewalk_Straight_3m.gltf"):
+		return "sidewalk"
+	if scene.match("res://assets/modular_roads/Road*.glb"):
+		return "road"
+	if scene.match("res://assets/modular_roads/lamp_*.glb"):
+		return "lamp"
+	if scene.begins_with("res://assets/traffic_light/"):
+		return "traffic_light"
+	return ""
 
 
 func _process(delta: float) -> void:

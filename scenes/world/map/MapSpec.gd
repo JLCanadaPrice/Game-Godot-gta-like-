@@ -9,7 +9,7 @@ extends RefCounted
 # la voie express riveraine entre la ville et la berge.
 
 # Dernière étape construite (0, 1, 2 = 2a, 2.5 = 2b, 3...) : active les points de contrôle correspondants.
-const BUILT_STAGE := 0.0
+const BUILT_STAGE := 1.0
 
 # --- emprises ---------------------------------------------------------------------------------------------------
 const PLAYABLE := Rect2(-2174.0, -1480.0, 4347.0, 2447.0)   # zone explorable (4,35 × 2,45 km)

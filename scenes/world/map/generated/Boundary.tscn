@@ -1,0 +1,31 @@
+[gd_scene format=3]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_ia7au"]
+size = Vector3(4355, 220, 2)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_t05xf"]
+size = Vector3(4355, 220, 2)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_cch4u"]
+size = Vector3(2, 220, 2455)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_ilyee"]
+size = Vector3(2, 220, 2455)
+
+[node name="Boundary" type="StaticBody3D" unique_id=831904746]
+
+[node name="LimiteNord" type="CollisionShape3D" parent="." unique_id=1668093569]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.5, 60, -1481)
+shape = SubResource("BoxShape3D_ia7au")
+
+[node name="LimiteSud" type="CollisionShape3D" parent="." unique_id=1746574195]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.5, 60, 968)
+shape = SubResource("BoxShape3D_t05xf")
+
+[node name="LimiteOuest" type="CollisionShape3D" parent="." unique_id=811857558]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2175, 60, -256.5)
+shape = SubResource("BoxShape3D_cch4u")
+
+[node name="LimiteEst" type="CollisionShape3D" parent="." unique_id=1455900286]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2174, 60, -256.5)
+shape = SubResource("BoxShape3D_ilyee")
