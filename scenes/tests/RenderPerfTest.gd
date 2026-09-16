@@ -23,6 +23,9 @@ extends Node
 #  --no-occlusion, --no-multimesh, --multimesh : force une optimisation de CityRenderOptimizer (ablation) ; sans
 #                        option, ses réglages livrés (occlusion oui, multimesh non).
 #  --lod-threshold=<px> : seuil de LOD du viewport (défaut 1 ; 0 = LOD0 partout, isole les écarts dus au choix du LOD).
+#  --lod-bias-batiments=<x> : lod_bias des bâtiments du kit (CityRenderOptimizer.building_lod_bias) pour la mesure.
+#  --verify-lod=<x>    : vues fixes rendues sans puis avec un lod_bias x sur les bâtiments lointains ; de près
+#                        (CityRenderOptimizer.lod_near_radius) rien ne doit changer (cf. _verify_lod).
 #  --occlusion-rays=<n> : rayons du tampon d'occultation par thread (sans option : project.godot, 2048 ; défaut de
 #                        Godot 512 ; plus = tampon plus fin).
 #  --ignore-occlusion=<familles> : jamais masqués par l'occlusion, ex. trottoirs,routes,decals (cf. CATS) ; pour les
@@ -89,6 +92,8 @@ func _ready() -> void:
 			optimizer.occlusion = false
 		if "--multimesh" in _args:
 			optimizer.multimesh = true
+		if _arg("--lod-bias-batiments=") != "":
+			optimizer.building_lod_bias = _arg("--lod-bias-batiments=").to_float()
 		# --verify-multimesh construit les MultiMesh lui-même, en gardant les sources pour comparer
 		if "--no-multimesh" in _args or "--verify-multimesh" in _args:
 			optimizer.multimesh = false
@@ -128,6 +133,8 @@ func _ready() -> void:
 		await _verify_occlusion()
 	elif "--verify-multimesh" in _args:
 		await _verify_multimesh()
+	elif _arg("--verify-lod=") != "":
+		await _verify_lod(_arg("--verify-lod=").to_float())
 	elif "--breakdown" in _args:
 		await _place("coin_SE", 8.0)
 		for step: Array in BREAKDOWN:
@@ -373,6 +380,69 @@ func _verify_multimesh() -> void:
 	for mi in sources:
 		mi.queue_free()
 	_end_verify()
+
+
+# LOD des bâtiments : chaque vue rendue sans puis avec CityRenderOptimizer.building_lod_bias = `bias` (appliqué par
+# update_building_lods au-delà de lod_near_radius de la caméra ; il faut un building_lod_bias différent de 1 au
+# chargement). D'abord avec les seuls bâtiments à moins de lod_near_radius (les autres masqués dans les deux rendus) :
+# rien ne doit changer de près, 0 px. Puis scène entière, pour mémoire : pixels et primitives qui changent au loin.
+# Mesuré le 2026-09-16 avec un lod_bias appliqué à TOUS les bâtiments (sans distance) : 0,25 -> 47 778 px de près sur
+# 34 vues, 0,5 -> 5 667 px ; d'où la distance.
+func _verify_lod(bias: float) -> void:
+	var out_dir := _begin_verify()
+	var optimizer = _world.get_node("CityRenderOptimizer")
+	var shipped: float = optimizer.building_lod_bias
+	var radius: float = optimizer.lod_near_radius
+	var meshes: Array[MeshInstance3D] = optimizer.building_meshes(_world)
+	var near_total := 0
+	var far_total := 0
+	var bad := []
+	var views := _verify_views()
+	for i in views.size():
+		var v: Array = views[i]
+		_look_from(v[1], v[2])
+		var counts := []
+		var prims := []
+		for near_only in [true, false]:
+			for mi in meshes:
+				var aabb: AABB = mi.global_transform * mi.get_aabb()
+				mi.visible = not near_only or v[1].distance_to(v[1].clamp(aabb.position, aabb.end)) <= radius
+			optimizer.building_lod_bias = 1.0
+			optimizer.update_building_lods(true)
+			var ref := await _shot_after(12)
+			var prims_ref := get_viewport().get_render_info(Viewport.RENDER_INFO_TYPE_VISIBLE, Viewport.RENDER_INFO_PRIMITIVES_IN_FRAME)
+			optimizer.building_lod_bias = bias
+			optimizer.update_building_lods(true)
+			var shot := await _shot_after(4)
+			prims.append([prims_ref, get_viewport().get_render_info(Viewport.RENDER_INFO_TYPE_VISIBLE, Viewport.RENDER_INFO_PRIMITIVES_IN_FRAME)])
+			optimizer.building_lod_bias = 1.0
+			optimizer.update_building_lods(true)
+			var ref2 := await _shot_after(4)
+			var mask := _new_mask(ref)
+			counts.append(_diff(ref, shot, [ref2], mask))
+			if near_only and counts[0] > 0:
+				_save_bad(out_dir, "lod_vue_%02d_%s" % [i, v[0]], ref, shot, mask)
+		near_total += counts[0]
+		far_total += counts[1]
+		if counts[0] > 0:
+			bad.append("vue %02d" % i)
+		print("RENDER_VERIFY %02d %-22s | lod_bias %.2f | bâtiments à moins de %.0f m seuls : %d px différents | scène entière : %d px différents, primitives %d -> %d"
+				% [i, v[0], bias, radius, counts[0], counts[1], prims[1][0], prims[1][1]])
+	for mi in meshes:
+		mi.visible = true
+	optimizer.building_lod_bias = shipped
+	optimizer.update_building_lods(true)
+	print("RENDER_VERIFY_RESULT lod %s | lod_bias %.2f au-delà de %.0f m, %d vues | de près : %d px%s | scène entière : %d px | image %s"
+			% ["OK" if near_total == 0 else "ECART", bias, radius, views.size(), near_total,
+			" dans %s" % [bad] if near_total > 0 else "", far_total, get_window().size])
+	_end_verify()
+
+
+func _arg(prefix: String) -> String:
+	for a in _args:
+		if a.begins_with(prefix):
+			return a.trim_prefix(prefix)
+	return ""
 
 
 func _begin_verify() -> String:

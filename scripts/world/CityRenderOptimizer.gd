@@ -8,15 +8,19 @@ extends Node3D
 #  - avant : 9,5 / 9,5 FPS, GPU 102,5 / 103,0 ms, rendu CPU 5,7 / 5,0 ms, 1435 appels de dessin, 24 048 objets,
 #    15,9 M primitives. Bâtiments masqués -> 82 FPS ; les 7904 trottoirs masqués -> +1 % seulement : Godot instancie
 #    déjà automatiquement les surfaces identiques. Le goulot est la géométrie des bâtiments du kit (22,9 M triangles au
-#    total, LOD0 partout : leurs LOD ne basculent qu'au-delà de 500 m à 3 km avec le seuil de 1 px).
+#    total ; au seuil de 1 px, leurs LOD utiles ne basculent qu'au-delà de 500 m à 3 km).
 #  - matériaux des lampadaires et des feux partagés (LampPoleLayer, TrafficLight) : 717 appels, rendu CPU 4,6 ms,
 #    GPU inchangé.
 #  - + occlusion, tampon d'occultation par défaut (512 rayons par thread) : 16,3 / 16,3 FPS (1 % low 16,2), GPU 60,2 /
 #    59,9 ms, rendu CPU 3,0 ms, 479 appels, 11 332 objets, 8,5 M primitives.
-#  - + tampon 4 fois plus fin (rendering/occlusion_culling/occlusion_rays_per_thread = 2048, project.godot ; réglage
-#    actuel) : 20,2 / 20,4 FPS (1 % low 20,0), GPU 48,5 / 48,2 ms, rendu CPU 3,1 / 3,0 ms, 413 appels, 6,5 M
-#    primitives : plus de bâtiments reconnus cachés, sans coût CPU mesurable. Le tampon compte ce nombre de rayons PAR
-#    thread (16 threads logiques ici) : plus grossier sur un processeur à moins de threads.
+#  - + tampon 4 fois plus fin (rendering/occlusion_culling/occlusion_rays_per_thread = 2048, project.godot) :
+#    20,2 / 20,4 FPS (1 % low 20,0), GPU 48,5 / 48,2 ms, rendu CPU 3,1 / 3,0 ms, 413 appels, 6,5 M primitives :
+#    plus de bâtiments reconnus cachés, sans coût CPU mesurable. Le tampon compte ce nombre de rayons PAR thread
+#    (16 threads logiques ici) : plus grossier sur un processeur à moins de threads.
+#  - + LOD des bâtiments lointains (lod_bias 0,25 au-delà de 150 m, cf. 3 ; réglage actuel), avant / après remesurés
+#    à la suite : 20,4 / 20,4 -> 31,7 / 31,7 FPS (1 % low 20,3 -> 30,2 / 28,7), GPU 48,1 / 48,0 -> 30,8 / 30,8 ms,
+#    rendu CPU 3,0 -> 3,2 ms, 6,5 M -> 3,3 M primitives. Même lod_bias sur tous les bâtiments : 33,5 FPS à 0,25,
+#    26,8 FPS à 0,5, mais les bâtiments proches changent aussi (cf. 3).
 #  - + multimesh en plus (mesuré avec le tampon par défaut) : 15,4 / 16,1 FPS (1 % low 13,6 / 14,8), GPU 63,5 /
 #    60,7 ms, rendu CPU 2,9 / 2,6 ms, 708 appels ; bâtiments masqués 78,9 FPS contre 85,9. Perte nette, donc
 #    désactivé : l'instanciation automatique regroupait déjà ces maillages en quelques appels pour toute la vue, alors
@@ -44,6 +48,12 @@ extends Node3D
 #     normales / le sens des faces comme un MeshInstance3D). Image identique au pixel près en LOD0
 #     (--verify-multimesh) ; au seuil de LOD normal, le LOD est choisi sur la boîte de la cellule (détail égal ou plus
 #     fin sur quelques poteaux lointains).
+#  3. LOD des bâtiments : au-delà de `lod_near_radius` (150 m) de la caméra active, les maillages des bâtiments du kit
+#     passent à lod_bias `building_lod_bias` (0,25 : leurs LOD basculent 4 fois plus près) ; en deçà, lod_bias 1, le
+#     réglage de Godot, inchangé. Mise à jour toutes les `lod_update_interval` s ; seuls les bâtiments qui franchissent
+#     la limite sont touchés. Pas un lod_bias pour tous : Godot borne l'erreur d'un LOD en pixels à toute distance
+#     (4 px à 0,25), les bâtiments proches changeaient donc aussi. RenderPerfTest --verify-lod, 34 vues : écart à
+#     moins de 150 m de 47 778 px (0,25 partout) et 5 667 px (0,5 partout), 0 px avec la limite de distance.
 
 const KIT_MODEL := &"KitModel"
 const WALL_MATERIAL := "InteriorWall"
@@ -51,6 +61,9 @@ const WALL_MATERIAL := "InteriorWall"
 @export var occlusion := true
 @export var occluder_inset := 0.5            # m retirés sur chaque face de la boîte des murs intérieurs
 @export var multimesh := false               # perte nette mesurée sur UHD 750, cf. en-tête
+@export var building_lod_bias := 0.25        # lod_bias des bâtiments du kit au-delà de lod_near_radius (1 = Godot)
+@export var lod_near_radius := 150.0         # m de la caméra : en deçà, lod_bias 1, rien ne change de près
+@export var lod_update_interval := 0.25      # s entre deux mises à jour des lod_bias
 @export var cell_size := 72.0                # m : un pâté de maisons (pas du Circuit)
 @export var batched_scenes: PackedStringArray = [
 	"*/Sidewalk_Straight_3m.gltf",
@@ -62,6 +75,10 @@ var occluders := 0                           # relevés par RenderPerfTest
 var batched_instances := 0
 var multimesh_nodes := 0
 var _mesh_copies := {}
+var _lod_meshes: Array[MeshInstance3D] = []  # bâtiments du kit et leurs AABB globales (statiques)
+var _lod_boxes: Array[AABB] = []
+var _lod_far := PackedByteArray()            # 1 si building_lod_bias appliqué
+var _lod_timer := 0.0
 
 
 func _ready() -> void:
@@ -74,9 +91,46 @@ func _optimize() -> void:
 	var world := get_parent()
 	if occlusion:
 		_add_building_occluders(world)
+	if building_lod_bias != 1.0:
+		_lod_meshes = building_meshes(world)
+		for mi in _lod_meshes:
+			_lod_boxes.append(mi.global_transform * mi.get_aabb())
+		_lod_far.resize(_lod_meshes.size())
+		update_building_lods(true)
 	if multimesh:
 		for mi in batch_static_meshes(world):
 			mi.queue_free()
+
+
+func _process(delta: float) -> void:
+	if _lod_meshes.is_empty():
+		return
+	_lod_timer -= delta
+	if _lod_timer <= 0.0:
+		_lod_timer = lod_update_interval
+		update_building_lods()
+
+
+# lod_bias 1 (réglage de Godot, inchangé) pour les bâtiments à moins de lod_near_radius de la caméra active,
+# building_lod_bias au-delà. Seuls les bâtiments qui changent de côté sont touchés, sauf `force`.
+func update_building_lods(force := false) -> void:
+	var cam := get_viewport().get_camera_3d()
+	if cam == null:
+		return
+	var eye := cam.global_position
+	for i in _lod_meshes.size():
+		var far := eye.distance_to(eye.clamp(_lod_boxes[i].position, _lod_boxes[i].end)) > lod_near_radius
+		if (force or int(far) != _lod_far[i]) and is_instance_valid(_lod_meshes[i]):
+			_lod_far[i] = int(far)
+			_lod_meshes[i].lod_bias = building_lod_bias if far else 1.0
+
+
+func building_meshes(world: Node) -> Array[MeshInstance3D]:
+	var out: Array[MeshInstance3D] = []
+	for mi: MeshInstance3D in world.find_children("*", "MeshInstance3D", true, false):
+		if mi.get_parent().name == KIT_MODEL:
+			out.append(mi)
+	return out
 
 
 func _add_building_occluders(world: Node) -> void:
