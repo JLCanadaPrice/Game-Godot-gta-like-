@@ -64,6 +64,13 @@ const ATLAS_METERS := {"junction": 3.5, "crosswalk": 11.0, "stop": 1.0, "yield":
 # voie ferrée (étape 4b) : rails en acier sans collision, passages à niveau, bouts de ligne
 const RAIL_HEAD := 0.07
 const RAIL_TOP := 0.17
+# glissière de sécurité (chantier des routes, 2026-09-18)
+const GUARD_OUT := 0.32             # m au-delà du bord de chaussée, au sol
+const GUARD_BOTTOM := 0.48          # bas de la lisse au-dessus de son appui
+const GUARD_TOP := 0.78             # haut de la lisse
+const GUARD_THICK := 0.07
+const GUARD_POST := 4.0             # m entre deux poteaux
+const GUARD_STEEL := Color(0.66, 0.67, 0.66)   # acier galvanisé, plus clair que les rails
 const RANGE_STEEL := 600.0
 const STEEL := Color(0.3, 0.29, 0.28)
 const SIGN_POST := Color(0.55, 0.55, 0.53)
@@ -101,7 +108,7 @@ var road_index := {}              # cellule de 16 m -> [[ruban, échantillon], .
 var _grid_mouths: Array[Vector3] = []   # centres des raccords au centre-ville (étape 4)
 var tunnel_spans := {}            # id de chaîne -> [[indice du portail, indice du bout], ...]
 var corridors: Array[Dictionary] = []
-var stats := {"cellules": 0, "tablier_m": 0.0, "murs_m": 0.0, "piles": 0, "tunnels": 0, "sommets_creuses": 0, "sommets_remblayes": 0, "triangles": 0}
+var stats := {"cellules": 0, "tablier_m": 0.0, "murs_m": 0.0, "glissiere_m": 0.0, "piles": 0, "tunnels": 0, "sommets_creuses": 0, "sommets_remblayes": 0, "triangles": 0}
 
 
 func _initialize() -> void:
@@ -411,6 +418,7 @@ func _ribbon(rb, mode: PackedByteArray) -> void:
 			for offset: float in [-Network.RAIL_GAUGE * 0.5, Network.RAIL_GAUGE * 0.5]:
 				_rail_bar(pts[k] + sides[k] * offset, pts[k + 1] + sides[k + 1] * offset, sides[k], sides[k + 1], 0.0, RAIL_TOP)
 	# bords : rebord ou flanc de tablier, mur de soutènement, garde-corps
+	var railed := kind == "ramp" or kind == "carriageway"
 	for side_sign: float in [-1.0, 1.0]:
 		if kind == "median" or (kind == "carriageway" and side_sign < 0.0):
 			continue   # côté terre-plein
@@ -418,6 +426,7 @@ func _ribbon(rb, mode: PackedByteArray) -> void:
 		var retain := PackedFloat32Array()
 		var parapet := PackedByteArray()
 		var open_bit := 1 if side_sign < 0.0 else 2
+		var since_post := GUARD_POST
 		for k in n:
 			var p := pts[k]
 			var out := sides[k] * side_sign
@@ -485,6 +494,22 @@ func _ribbon(rb, mode: PackedByteArray) -> void:
 				_quad("concrete", i1, i2, i2 + up, i1 + up, -(o1 + o2).normalized())
 				_quad("concrete", i1 + up, i2 + up, e2 + up, e1 + up, Vector3.UP)
 				_quad("concrete", e1, e2, e2 + up, e1 + up, (o1 + o2).normalized())
+			# glissière de sécurité (photo de référence du 2026-09-18) : posée sur la bordure béton d'un tablier ou
+			# d'un mur haut, sinon plantée sur poteaux juste au-delà du bord. Jamais sur un bord ouvert (raccord) ni
+			# dans la bande d'un anneau d'échangeur. Partie "steel" : aucune collision, donc rien ne change pour le
+			# trafic ni pour le joueur.
+			if railed and (open[k] & open_bit) == 0 and (open[k2] & open_bit) == 0 \
+					and (ring.is_empty() or not (_inside_ring(ring, pts[k]) and _inside_ring(ring, pts[k2]))):
+				var on_wall := parapet[k] == 1 and parapet[k2] == 1
+				since_post += seg_len
+				var post := not on_wall and since_post >= GUARD_POST
+				if post:
+					since_post = 0.0
+				if on_wall:
+					_guardrail(e1 - o1 * (PARAPET_WIDTH * 0.5), e2 - o2 * (PARAPET_WIDTH * 0.5), o1, o2, PARAPET_HEIGHT, false)
+				else:
+					_guardrail(e1 + o1 * GUARD_OUT, e2 + o2 * GUARD_OUT, o1, o2, 0.0, post)
+				stats["glissiere_m"] += seg_len
 	# dessous de tablier, culées, piles
 	var since_pier := PIER_SPACING * 0.5
 	for k in segs:
@@ -1071,6 +1096,22 @@ func _rail_bar(a: Vector3, b: Vector3, sa: Vector3, sb: Vector3, bottom: float, 
 	_quad("steel", a - sa * h + t, b - sb * h + t, b + sb * h + t, a + sa * h + t, Vector3.UP, [], STEEL)
 	_quad("steel", a - sa * h + d, b - sb * h + d, b - sb * h + t, a - sa * h + t, -(sa + sb).normalized(), [], STEEL)
 	_quad("steel", a + sa * h + d, b + sb * h + d, b + sb * h + t, a + sa * h + t, (sa + sb).normalized(), [], STEEL)
+
+
+# Tronçon de glissière de a à b : lisse d'acier de GUARD_BOTTOM à GUARD_TOP au-dessus de l'appui `base` (0 au sol,
+# PARAPET_HEIGHT sur une bordure béton), épaisse de GUARD_THICK vers l'intérieur, plus un poteau en a si `post`.
+func _guardrail(a: Vector3, b: Vector3, oa: Vector3, ob: Vector3, base: float, post: bool) -> void:
+	var lo := Vector3(0, base + GUARD_BOTTOM, 0)
+	var hi := Vector3(0, base + GUARD_TOP, 0)
+	var ia := a - oa * GUARD_THICK
+	var ib := b - ob * GUARD_THICK
+	var out := (oa + ob).normalized()
+	_quad("steel", a + lo, b + lo, b + hi, a + hi, out, [], GUARD_STEEL)
+	_quad("steel", ia + lo, ib + lo, ib + hi, ia + hi, -out, [], GUARD_STEEL)
+	_quad("steel", ia + hi, ib + hi, b + hi, a + hi, Vector3.UP, [], GUARD_STEEL)
+	if post:
+		var fwd := Vector3(-oa.z, 0.0, oa.x)
+		_steel_box(a - oa * (GUARD_THICK * 0.5) + Vector3(0, base, 0), fwd, oa, Vector3(0.05, (GUARD_TOP - 0.06) * 0.5, 0.05), GUARD_STEEL)
 
 
 # Pavé orienté (centre de la base, axe avant, demi-tailles) dans la partie "steel", couleur unie, sans dessous.

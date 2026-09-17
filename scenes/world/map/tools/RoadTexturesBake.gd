@@ -24,7 +24,8 @@ const CONCRETE_LIGHT := Color8(0xAE, 0xAD, 0xA8)
 const ATLAS_WIDTH := 4096
 const COLUMNS := [
 	["highway", 0, 10.7, [[0.35, 0.5, "yellow", false], [5.28, 5.43, "white", true], [10.2, 10.35, "white", false]]],
-	["ramp", 512, 7.0, [[0.35, 0.5, "yellow", false], [6.5, 6.65, "white", false]]],
+	# bretelle à sens unique : deux lignes de rive BLANCHES continues (photo de référence du 2026-09-18), pas de jaune
+	["ramp", 512, 7.0, [[0.35, 0.5, "white", false], [6.5, 6.65, "white", false]]],
 	["median", 848, 3.0, []],
 	["urban", 1024, 10.5, [[0.55, 0.7, "yellow", false], [5.08, 5.18, "yellow", false], [5.32, 5.42, "yellow", false], [9.8, 9.95, "yellow", false]]],
 	["arterial", 1536, 9.0, [[0.4, 0.55, "white", false], [4.43, 4.57, "yellow", true], [8.45, 8.6, "white", false]]],
