@@ -526,6 +526,8 @@ func _pad(pad: Dictionary) -> void:
 		_pad_corners(pad)
 		_pad_markings(pad, true)
 		_roundabout_markings(pad)
+	elif kind == "end":
+		_cul_de_sac(pad)
 	var center: Vector3 = pad["center"]
 	var island: float = pad["island"]
 	if island > 0.0:
@@ -544,29 +546,57 @@ func _pad(pad: Dictionary) -> void:
 # en travers, TEX_LENGTH le long), chaque morceau est triangulé et reçoit des UV à l'échelle 1:1 : l'enrobé a le même
 # grain que les chaussées, sans étirement ni bande unie.
 func _pad_surface(pad: Dictionary) -> void:
-	var rim: PackedVector3Array = pad["rim"]
-	var poly := PackedVector2Array()
-	var lo := Vector2(INF, INF)
-	var hi := Vector2(-INF, -INF)
-	for p in rim:
-		poly.append(Vector2(p.x, p.z))
-		lo = Vector2(minf(lo.x, p.x), minf(lo.y, p.z))
-		hi = Vector2(maxf(hi.x, p.x), maxf(hi.y, p.z))
 	var atlas: Vector2 = ATLAS["junction"]
 	var w: float = ATLAS_METERS["junction"]
-	for gx in range(floori(lo.x / w), floori(hi.x / w) + 1):
-		for gz in range(floori(lo.y / TEX_LENGTH), floori(hi.y / TEX_LENGTH) + 1):
-			var x0 := gx * w
-			var z0 := gz * TEX_LENGTH
-			var cell := PackedVector2Array([Vector2(x0, z0), Vector2(x0 + w, z0), Vector2(x0 + w, z0 + TEX_LENGTH), Vector2(x0, z0 + TEX_LENGTH)])
-			for piece: PackedVector2Array in Geometry2D.intersect_polygons(poly, cell):
-				var idx := Geometry2D.triangulate_polygon(piece)
-				for t in range(0, idx.size() - 2, 3):
-					var qa: Vector2 = piece[idx[t]]
-					var qb: Vector2 = piece[idx[t + 1]]
-					var qc: Vector2 = piece[idx[t + 2]]
-					_tri("asphalt", _pad_point(pad, qa), _pad_point(pad, qb), _pad_point(pad, qc), Vector3.UP,
-							[_pad_uv(qa, atlas, x0, w), _pad_uv(qb, atlas, x0, w), _pad_uv(qc, atlas, x0, w)])
+	for poly: PackedVector2Array in _pad_polygons(pad):
+		var lo := poly[0]
+		var hi := poly[0]
+		for q in poly:
+			lo = Vector2(minf(lo.x, q.x), minf(lo.y, q.y))
+			hi = Vector2(maxf(hi.x, q.x), maxf(hi.y, q.y))
+		for gx in range(floori(lo.x / w), floori(hi.x / w) + 1):
+			for gz in range(floori(lo.y / TEX_LENGTH), floori(hi.y / TEX_LENGTH) + 1):
+				var x0 := gx * w
+				var z0 := gz * TEX_LENGTH
+				var cell := PackedVector2Array([Vector2(x0, z0), Vector2(x0 + w, z0), Vector2(x0 + w, z0 + TEX_LENGTH), Vector2(x0, z0 + TEX_LENGTH)])
+				for piece: PackedVector2Array in Geometry2D.intersect_polygons(poly, cell):
+					var idx := Geometry2D.triangulate_polygon(piece)
+					for t in range(0, idx.size() - 2, 3):
+						var qa: Vector2 = piece[idx[t]]
+						var qb: Vector2 = piece[idx[t + 1]]
+						var qc: Vector2 = piece[idx[t + 2]]
+						_tri("asphalt", _pad_point(pad, qa), _pad_point(pad, qb), _pad_point(pad, qc), Vector3.UP,
+								[_pad_uv(qa, atlas, x0, w), _pad_uv(qb, atlas, x0, w), _pad_uv(qc, atlas, x0, w)])
+
+
+# Emprise réellement dessinée par le plateau : son pourtour moins la bande de chaussée de chaque bras. Sans cela, au
+# cul-de-sac, le disque recouvrait les derniers mètres de la rue à la même hauteur, avec une autre colonne d'atlas :
+# c'était le « triangle » qui bavait au milieu du disque (chantier des routes, étape 3).
+func _pad_polygons(pad: Dictionary) -> Array:
+	var rim: PackedVector3Array = pad["rim"]
+	var poly := PackedVector2Array()
+	for p in rim:
+		poly.append(Vector2(p.x, p.z))
+	var polys: Array = [poly]
+	var clockwise := Geometry2D.is_polygon_clockwise(poly)
+	var station: Dictionary = net.stations[pad["id"]]
+	for end: Dictionary in station["ends"]:
+		var left: Vector3 = end["left"]
+		var right: Vector3 = end["right"]
+		var d2: Vector2 = end["dir"]
+		var out := Vector2(-d2.x, -d2.y).normalized() * 80.0
+		var l := Vector2(left.x, left.z)
+		var r := Vector2(right.x, right.z)
+		if l.distance_to(r) < 0.5:
+			continue
+		var strip := PackedVector2Array([l, r, r + out, l + out])
+		var next: Array = []
+		for p: PackedVector2Array in polys:
+			for cut: PackedVector2Array in Geometry2D.clip_polygons(p, strip):
+				if cut.size() >= 3 and Geometry2D.is_polygon_clockwise(cut) == clockwise:
+					next.append(cut)
+		polys = next
+	return polys
 
 
 func _pad_uv(q: Vector2, atlas: Vector2, x0: float, w: float) -> Vector2:
@@ -673,6 +703,41 @@ func _pad_markings(pad: Dictionary, give_way := false) -> void:
 		var walk_atlas: Vector2 = ATLAS["crosswalk"]
 		var ur := lerpf(walk_atlas.x, walk_atlas.y, clampf(left.distance_to(right) / float(ATLAS_METERS["crosswalk"]), 0.0, 1.0))
 		_mark(left, right, out, slope, PAD_WALK_FROM, PAD_WALK_DEPTH, walk_atlas.x, ur)
+
+
+# Cul-de-sac (chantier des routes, étape 3) : bordure relevée et ligne de rive blanche le long du bulbe, sans couper
+# l'entrée de la rue (les bords radiaux du bulbe, le long de la chaussée, sont laissés à la chaussée elle-même).
+const CDS_KERB_HEIGHT := 0.12
+const CDS_KERB_WIDTH := 0.35
+const CDS_EDGE_INSET := 0.35
+const CDS_EDGE_WIDTH := 0.15
+
+
+func _cul_de_sac(pad: Dictionary) -> void:
+	var center: Vector3 = pad["center"]
+	var radius := 0.0
+	for p in pad["rim"] as PackedVector3Array:
+		radius = maxf(radius, Vector2(p.x - center.x, p.z - center.z).length())
+	var edge: Vector2 = ATLAS["stop"]
+	var up := Vector3(0, CDS_KERB_HEIGHT, 0)
+	for poly: PackedVector2Array in _pad_polygons(pad):
+		for k in poly.size():
+			var q0: Vector2 = poly[k]
+			var q1: Vector2 = poly[(k + 1) % poly.size()]
+			var mid := (q0 + q1) * 0.5
+			if Vector2(mid.x - center.x, mid.y - center.z).length() < radius - 0.6:
+				continue                      # bord le long de la chaussée : pas de bordure en travers de la rue
+			var a := _pad_point(pad, q0)
+			var b := _pad_point(pad, q1)
+			var oa := Vector3(q0.x - center.x, 0.0, q0.y - center.z).normalized()
+			var ob := Vector3(q1.x - center.x, 0.0, q1.y - center.z).normalized()
+			_quad("concrete", a + up, b + up, b + up + ob * CDS_KERB_WIDTH, a + up + oa * CDS_KERB_WIDTH, Vector3.UP)
+			_quad("concrete", a, b, b + up, a + up, -(oa + ob).normalized())
+			# ligne de rive, comme le bord blanc des rues locales
+			var ia := a - oa * CDS_EDGE_INSET + Vector3(0, PAD_MARK_RISE, 0)
+			var ib := b - ob * CDS_EDGE_INSET + Vector3(0, PAD_MARK_RISE, 0)
+			_quad("asphalt", ia, ib, ib - ob * CDS_EDGE_WIDTH, ia - oa * CDS_EDGE_WIDTH, Vector3.UP,
+					[Vector2(edge.x, 0.0), Vector2(edge.x, 1.0), Vector2(edge.y, 1.0), Vector2(edge.y, 0.0)], Color.BLACK, false)
 
 
 # Marquage de l'anneau d'un rond-point (chantier des routes, étape 8) : ligne continue au bord intérieur de la voie,
