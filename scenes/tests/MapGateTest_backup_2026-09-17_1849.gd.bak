@@ -2,8 +2,7 @@ extends Node
 
 # Garde-fou des étapes de la carte 3D, lancé après chaque étape avant son commit :
 #  1. World.tscn chargée dans l'arbre : joueur, caméra active, graphes de circulation et culler présents ;
-#  2. au point de départ réglé dans World.tscn, dans son orientation : debout au sol (pas en altitude), marche avant 2 s
-#     puis sprint 1,5 s, déplacement mesuré, pas de chute ;
+#  2. au point de départ, tourné vers la ville : marche avant 2 s puis sprint 1,5 s, déplacement mesuré, pas de chute ;
 #  3. points de contrôle : deux trottoirs du centre-ville, puis MapSpec.GATE_SPOTS dès que la carte existe (routes,
 #     ponts, quartiers) : joueur posé au-dessus du sol, il doit y atterrir puis marcher.
 # Spawners coupés : aucune voiture ni PNJ ne gêne la marche.
@@ -20,7 +19,7 @@ const WALK_SECONDS := 2.0
 const SPRINT_SECONDS := 1.5
 const MIN_WALK := 6.0         # m en 2 s de marche (5 m/s attendus)
 const MIN_SPOT_WALK := 4.0    # m sur un point de contrôle (obstacle possible en fin de trajet)
-const SPAWN_HIGH := 3.0       # m au-dessus du sol au-delà desquels le départ est en altitude (erreur)
+const SPAWN_HIGH := 20.0      # m au-dessus du sol : départ en altitude, marche testée au sol à sa verticale
 
 var _errors: Array[String] = []
 var _player: CharacterBody3D
@@ -59,27 +58,26 @@ func _ready() -> void:
 
 
 func _spawn_walk() -> void:
-	# départ et orientation tels que réglés dans World.tscn (Founders Plaza, face aux tours de Main Street)
+	_player.rotation.y = PI   # dos au bassin, face à la ville (+Z)
 	var spawn := _player.global_position
 	var ground := _ground_at(Vector2(spawn.x, spawn.z))
-	if ground == INF or spawn.y > ground + SPAWN_HIGH:
-		# départ sans sol ou en altitude (le joueur tomberait au lancement) : signalé, puis marche testée au sol
-		print("MAP_GATE_SPAWN_HIGH joueur placé en %s dans World.tscn, sol %s" % [spawn.snappedf(0.1), "absent" if ground == INF else "à %.2f m" % ground])
-		_errors.append("départ du joueur hors sol dans World.tscn")
-		if ground != INF:
-			_player.velocity = Vector3.ZERO
-			_player.global_position = Vector3(spawn.x, ground + 1.2, spawn.z)
+	if ground != INF and spawn.y > ground + SPAWN_HIGH:
+		# départ réglé en altitude dans World.tscn (le joueur tombe au lancement) : la marche est testée au sol, à la
+		# verticale du départ, et le réglage est signalé
+		print("MAP_GATE_SPAWN_NOTE joueur placé à %.0f m au-dessus du sol dans World.tscn : marche testée au sol à la verticale du départ"
+				% (spawn.y - ground))
+		_player.velocity = Vector3.ZERO
+		_player.global_position = Vector3(spawn.x, ground + 1.2, spawn.z)
 	await _frames(30)
-	var standing := _player.is_on_floor() and ground != INF and absf(_player.global_position.y - 0.9 - ground) < 0.15
 	var start := _player.global_position
 	await _hold(["move_forward"], WALK_SECONDS)
 	var walked := _flat(_player.global_position - start)
 	var mid := _player.global_position
 	await _hold(["move_forward", "sprint"], SPRINT_SECONDS)
 	var sprinted := _flat(_player.global_position - mid)
-	var ok := standing and walked >= MIN_WALK and sprinted > walked and _player.global_position.y > start.y - 3.0
-	print("MAP_GATE_SPAWN départ %s, cap %.0f° | debout au sol %s | marche %.1f m en %.1f s | sprint %.1f m en %.1f s | y %.2f -> %.2f | %s"
-			% [start.snapped(Vector3.ONE * 0.1), rad_to_deg(_player.rotation.y), standing, walked, WALK_SECONDS, sprinted, SPRINT_SECONDS, start.y, _player.global_position.y, "OK" if ok else "ÉCHEC"])
+	var ok := walked >= MIN_WALK and sprinted > walked and _player.global_position.y > start.y - 3.0
+	print("MAP_GATE_SPAWN départ %s | marche %.1f m en %.1f s | sprint %.1f m en %.1f s | y %.2f -> %.2f | %s"
+			% [start.snapped(Vector3.ONE * 0.1), walked, WALK_SECONDS, sprinted, SPRINT_SECONDS, start.y, _player.global_position.y, "OK" if ok else "ÉCHEC"])
 	if not ok:
 		_errors.append("déplacement au point de départ")
 

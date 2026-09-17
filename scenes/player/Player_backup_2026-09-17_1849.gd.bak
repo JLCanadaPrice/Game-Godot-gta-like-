@@ -11,10 +11,6 @@ const FREE_LOOK_RETURN_SPEED := 12.0   # vitesse de recentrage du corps quand on
 const SWIM_SPEED := 2.5                    # déplacement horizontal en nageant, réduit vs SPEED
 const SWIM_SURFACE_CORRECT_SPEED := 4.0    # "flottabilité" : vitesse de rappel vers la surface
 
-const NOCLIP_SPEED := 20.0                 # m/s en noclip (V)
-const NOCLIP_FAST_SPEED := 90.0            # m/s en noclip, Maj maintenue (traverse la carte de 4,35 km en < 1 min)
-const NOCLIP_PROBE_HEIGHT := 3000.0        # m : portée verticale des rayons qui reposent le joueur en sortie de noclip
-
 const BULLET := preload("res://scenes/weapons/Bullet.tscn")
 const WeaponRes := preload("res://scripts/data/WeaponData.gd")
 const JumpPoseMod := preload("res://scenes/player/JumpPoseModifier.gd")
@@ -122,9 +118,6 @@ var _weapon_node: Node3D
 var _pistol_ref: Node3D               # mesh "Pistol" du modèle (caché) servant de repère
 var _weapon_base_xform := Transform3D.IDENTITY  # pose locale de base (calée sur _pistol_ref)
 var _shoot_lock := 0.0                # temps restant où l'anim de tir prime sur la locomotion
-var _noclip := false
-var _noclip_saved := {}               # couches de collision du corps et de la caméra, rétablies en sortie de noclip
-var _noclip_hint: CanvasLayer
 
 func _ready() -> void:
 	add_to_group("player")
@@ -187,16 +180,12 @@ func _unhandled_input(event: InputEvent) -> void:
 		_update_weapon_visibility()
 		weapon_equipped_changed.emit(weapon_equipped)
 
-	# E : monter / descendre d'un véhicule (pas en noclip)
-	if event.is_action_pressed("interact") and not _noclip:
+	# E : monter / descendre d'un véhicule
+	if event.is_action_pressed("interact"):
 		if _driving:
 			_exit_vehicle()
 		else:
 			_try_enter_vehicle()
-
-	# V : noclip marche / arrêt (pas en conduite)
-	if event.is_action_pressed("toggle_noclip") and not _driving:
-		set_noclip(not _noclip)
 
 # Après relâchement de Alt : le corps pivote pour absorber le yaw accumulé sur
 # la SpringArm. On transfère l'écart bras -> corps par pas, en retirant autant
@@ -255,10 +244,6 @@ func _update_foot_camera(delta: float) -> void:
 func _physics_process(delta: float) -> void:
 	if _driving:
 		_update_drive_camera(delta)   # la voiture gère le reste ; la SpringArm suit le siège
-		return
-
-	if _noclip:
-		_physics_process_noclip(delta)
 		return
 
 	if _swimming:
@@ -757,107 +742,6 @@ func _physics_process_swim(delta: float) -> void:
 		velocity.z = move_toward(velocity.z, 0, SWIM_SPEED)
 
 	move_and_slide()
-
-# --- Noclip (V) ------------------------------------------------------
-# Inspection rapide de la carte. Le corps ne touche plus rien : couches et forme de collision coupées (bâtiments,
-# terrain, véhicules, PNJ, zones d'eau ou d'intérieur), et la caméra traverse aussi les murs. Pas de gravité : vol
-# libre vers où regarde la caméra (touches de déplacement habituelles), Espace / Ctrl pour monter / descendre à la
-# verticale, Maj pour aller vite. Sortie : collision et gravité rétablies ; si le joueur est resté dans un bâtiment ou
-# sous le sol, il est reposé sur la surface la plus haute à sa verticale, sinon il retombe là où il est.
-
-func is_noclip() -> bool:
-	return _noclip
-
-func set_noclip(enabled: bool) -> void:
-	if enabled == _noclip or _driving:
-		return
-	_noclip = enabled
-	velocity = Vector3.ZERO
-	var shape := $CollisionShape3D as CollisionShape3D
-	if enabled:
-		_noclip_saved = {"layer": collision_layer, "mask": collision_mask, "arm": spring_arm.collision_mask}
-		collision_layer = 0
-		collision_mask = 0
-		spring_arm.collision_mask = 0
-		shape.set_deferred("disabled", true)
-		# zones quittées d'office (eau, intérieur, voitures à portée) : elles re-signalent le joueur quand sa collision
-		# revient, là où il se trouve alors
-		_swimming = false
-		_water_zones.clear()
-		_indoor_zones = 0
-		_cars_in_range.clear()
-	else:
-		collision_layer = _noclip_saved.get("layer", 1)
-		collision_mask = _noclip_saved.get("mask", 7)
-		spring_arm.collision_mask = _noclip_saved.get("arm", 1)
-		shape.set_deferred("disabled", false)
-		_land_after_noclip()
-	_show_noclip_hint(enabled)
-	print("[Player] noclip %s en %s" % ["activé" if enabled else "désactivé", global_position.snappedf(0.1)])
-
-func _physics_process_noclip(delta: float) -> void:
-	_update_free_look_return(delta)
-	_update_foot_camera(delta)
-	var input_dir := Input.get_vector("move_left", "move_right", "move_forward", "move_back")
-	var view := camera.global_transform.basis
-	var direction := view.x * input_dir.x + view.z * input_dir.y + Vector3.UP * Input.get_axis("noclip_down", "noclip_up")
-	if direction.length() > 1.0:
-		direction = direction.normalized()
-	velocity = direction * (NOCLIP_FAST_SPEED if Input.is_action_pressed("sprint") else NOCLIP_SPEED)
-	global_position += velocity * delta
-	# pose neutre pendant le vol : ni marche ni pose de saut
-	if _anim != null and _shoot_lock <= 0.0:
-		var idle := _pick_anim("Idle_Gun" if weapon_equipped else "Idle", "Idle")
-		if idle != "" and idle != _current_anim:
-			_current_anim = idle
-			_anim.speed_scale = 1.0
-			_anim.play(idle, 0.12)
-	if _jump_mod != null:
-		_air_blend = move_toward(_air_blend, 0.0, 10.0 * delta)
-		_jump_mod.blend = _air_blend
-
-# En sortie de noclip : dans un bâtiment (capsule du joueur dans le monde statique) ou sans aucun sol en dessous (sous
-# le terrain), reposé sur la surface la plus haute à sa verticale ; ailleurs, la gravité le ramène au sol. La capsule
-# testée est un peu plus petite que celle du joueur : des pieds à peine enfoncés dans le sol ne comptent pas (le
-# personnage s'en dégage seul).
-func _land_after_noclip() -> void:
-	var space := get_world_3d().direct_space_state
-	var core := CapsuleShape3D.new()
-	core.radius = 0.3
-	core.height = 1.2
-	var overlap := PhysicsShapeQueryParameters3D.new()
-	overlap.shape = core
-	overlap.transform = Transform3D(Basis.IDENTITY, global_position)
-	overlap.collision_mask = 1
-	overlap.exclude = [get_rid()]
-	var inside := not space.intersect_shape(overlap, 1).is_empty()
-	var below := PhysicsRayQueryParameters3D.create(global_position, global_position + Vector3.DOWN * NOCLIP_PROBE_HEIGHT, 1, [get_rid()])
-	if not inside and not space.intersect_ray(below).is_empty():
-		return
-	var top := PhysicsRayQueryParameters3D.create(Vector3(global_position.x, NOCLIP_PROBE_HEIGHT, global_position.z),
-			Vector3(global_position.x, -NOCLIP_PROBE_HEIGHT, global_position.z), 1, [get_rid()])
-	var hit := space.intersect_ray(top)
-	if not hit.is_empty():
-		global_position = (hit["position"] as Vector3) + Vector3.UP * 0.95   # capsule de 1,8 m centrée sur l'origine
-
-# Bandeau en haut de l'écran tant que le noclip est actif.
-func _show_noclip_hint(shown: bool) -> void:
-	if _noclip_hint == null:
-		_noclip_hint = CanvasLayer.new()
-		_noclip_hint.name = "NoclipHint"
-		_noclip_hint.layer = 10
-		var label := Label.new()
-		label.text = "NOCLIP  —  déplacement habituel · Espace / Ctrl : monter / descendre · Maj : rapide · V : quitter"
-		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		label.anchor_right = 1.0
-		label.offset_top = 12.0
-		label.offset_bottom = 40.0
-		label.add_theme_color_override("font_color", Color(1.0, 0.85, 0.3))
-		label.add_theme_color_override("font_outline_color", Color.BLACK)
-		label.add_theme_constant_override("outline_size", 6)
-		_noclip_hint.add_child(label)
-		add_child(_noclip_hint)
-	_noclip_hint.visible = shown
 
 # --- Véhicules -----------------------------------------------------
 
