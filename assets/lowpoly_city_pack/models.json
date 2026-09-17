@@ -1,0 +1,697 @@
+{
+    "pack":  "low_Poly_City_Pack",
+    "scale_rule":  "x1 (etages de 3 m) sauf chair x0,68, table x0,78, parasols x0,6",
+    "texture":  "res://assets/lowpoly_city_pack/lowpoly_city_palette.png",
+    "axes":  "Godot : x largeur, y hauteur, z profondeur ; pied a y = 0",
+    "models":  [
+                   {
+                       "name":  "building_01",
+                       "category":  "buildings",
+                       "path":  "res://assets/lowpoly_city_pack/buildings/building_01.glb",
+                       "source":  "building_01.fbx",
+                       "scale":  1.0,
+                       "size":  [
+                                    10.74,
+                                    21.29,
+                                    26.04
+                                ],
+                       "triangles":  8788
+                   },
+                   {
+                       "name":  "building_01_top",
+                       "category":  "buildings",
+                       "path":  "res://assets/lowpoly_city_pack/buildings/building_01_top.glb",
+                       "source":  "building_01_Top.fbx",
+                       "scale":  1.0,
+                       "size":  [
+                                    10.74,
+                                    18.98,
+                                    26.05
+                                ],
+                       "triangles":  8756
+                   },
+                   {
+                       "name":  "building_02",
+                       "category":  "buildings",
+                       "path":  "res://assets/lowpoly_city_pack/buildings/building_02.glb",
+                       "source":  "building_02.fbx",
+                       "scale":  1.0,
+                       "size":  [
+                                    10.72,
+                                    21.42,
+                                    10.72
+                                ],
+                       "triangles":  4876
+                   },
+                   {
+                       "name":  "building_02_top",
+                       "category":  "buildings",
+                       "path":  "res://assets/lowpoly_city_pack/buildings/building_02_top.glb",
+                       "source":  "building_02_Top.fbx",
+                       "scale":  1.0,
+                       "size":  [
+                                    10.72,
+                                    18.87,
+                                    10.72
+                                ],
+                       "triangles":  4844
+                   },
+                   {
+                       "name":  "building_03",
+                       "category":  "buildings",
+                       "path":  "res://assets/lowpoly_city_pack/buildings/building_03.glb",
+                       "source":  "building_03.fbx",
+                       "scale":  1.0,
+                       "size":  [
+                                    10.72,
+                                    56.57,
+                                    10.72
+                                ],
+                       "triangles":  10972
+                   },
+                   {
+                       "name":  "building_04",
+                       "category":  "buildings",
+                       "path":  "res://assets/lowpoly_city_pack/buildings/building_04.glb",
+                       "source":  "building_04.fbx",
+                       "scale":  1.0,
+                       "size":  [
+                                    10.72,
+                                    42.42,
+                                    10.72
+                                ],
+                       "triangles":  8066
+                   },
+                   {
+                       "name":  "building_05",
+                       "category":  "buildings",
+                       "path":  "res://assets/lowpoly_city_pack/buildings/building_05.glb",
+                       "source":  "building_05.fbx",
+                       "scale":  1.0,
+                       "size":  [
+                                    10.72,
+                                    27.1,
+                                    31.16
+                                ],
+                       "triangles":  11712
+                   },
+                   {
+                       "name":  "building_06",
+                       "category":  "buildings",
+                       "path":  "res://assets/lowpoly_city_pack/buildings/building_06.glb",
+                       "source":  "building_06.fbx",
+                       "scale":  1.0,
+                       "size":  [
+                                    14.87,
+                                    8.36,
+                                    24.05
+                                ],
+                       "triangles":  6514
+                   },
+                   {
+                       "name":  "church",
+                       "category":  "buildings",
+                       "path":  "res://assets/lowpoly_city_pack/buildings/church.glb",
+                       "source":  "churche.fbx",
+                       "scale":  1.0,
+                       "size":  [
+                                    10.41,
+                                    15.09,
+                                    11.15
+                                ],
+                       "triangles":  2150
+                   },
+                   {
+                       "name":  "bench",
+                       "category":  "street_furniture",
+                       "path":  "res://assets/lowpoly_city_pack/street_furniture/bench.glb",
+                       "source":  "bench.fbx",
+                       "scale":  1.0,
+                       "size":  [
+                                    0.59,
+                                    0.64,
+                                    2.05
+                                ],
+                       "triangles":  48
+                   },
+                   {
+                       "name":  "bin",
+                       "category":  "street_furniture",
+                       "path":  "res://assets/lowpoly_city_pack/street_furniture/bin.glb",
+                       "source":  "bin.fbx",
+                       "scale":  1.0,
+                       "size":  [
+                                    0.72,
+                                    0.77,
+                                    0.72
+                                ],
+                       "triangles":  60
+                   },
+                   {
+                       "name":  "bus_stop",
+                       "category":  "street_furniture",
+                       "path":  "res://assets/lowpoly_city_pack/street_furniture/bus_stop.glb",
+                       "source":  "bus_Stop.fbx",
+                       "scale":  1.0,
+                       "size":  [
+                                    2.57,
+                                    2.83,
+                                    4.24
+                                ],
+                       "triangles":  428
+                   },
+                   {
+                       "name":  "chair",
+                       "category":  "street_furniture",
+                       "path":  "res://assets/lowpoly_city_pack/street_furniture/chair.glb",
+                       "source":  "chair.fbx",
+                       "scale":  0.68,
+                       "size":  [
+                                    0.6,
+                                    0.9,
+                                    0.6
+                                ],
+                       "triangles":  108
+                   },
+                   {
+                       "name":  "table",
+                       "category":  "street_furniture",
+                       "path":  "res://assets/lowpoly_city_pack/street_furniture/table.glb",
+                       "source":  "table.fbx",
+                       "scale":  0.78,
+                       "size":  [
+                                    1.02,
+                                    0.75,
+                                    1.28
+                                ],
+                       "triangles":  60
+                   },
+                   {
+                       "name":  "parasol_close",
+                       "category":  "street_furniture",
+                       "path":  "res://assets/lowpoly_city_pack/street_furniture/parasol_close.glb",
+                       "source":  "parasol_Close.fbx",
+                       "scale":  0.6,
+                       "size":  [
+                                    0.34,
+                                    2.77,
+                                    0.34
+                                ],
+                       "triangles":  152
+                   },
+                   {
+                       "name":  "parasol_open",
+                       "category":  "street_furniture",
+                       "path":  "res://assets/lowpoly_city_pack/street_furniture/parasol_open.glb",
+                       "source":  "parasol_Open.fbx",
+                       "scale":  0.6,
+                       "size":  [
+                                    2.1,
+                                    2.77,
+                                    2.1
+                                ],
+                       "triangles":  152
+                   },
+                   {
+                       "name":  "sunshade",
+                       "category":  "street_furniture",
+                       "path":  "res://assets/lowpoly_city_pack/street_furniture/sunshade.glb",
+                       "source":  "sunshade.fbx",
+                       "scale":  1.0,
+                       "size":  [
+                                    1.89,
+                                    3.87,
+                                    4.24
+                                ],
+                       "triangles":  328
+                   },
+                   {
+                       "name":  "sunshade_long",
+                       "category":  "street_furniture",
+                       "path":  "res://assets/lowpoly_city_pack/street_furniture/sunshade_long.glb",
+                       "source":  "sunshade_Long.fbx",
+                       "scale":  1.0,
+                       "size":  [
+                                    1.89,
+                                    3.87,
+                                    7.94
+                                ],
+                       "triangles":  560
+                   },
+                   {
+                       "name":  "fountain",
+                       "category":  "street_furniture",
+                       "path":  "res://assets/lowpoly_city_pack/street_furniture/fountain.glb",
+                       "source":  "fountain.fbx",
+                       "scale":  1.0,
+                       "size":  [
+                                    3.59,
+                                    3.09,
+                                    3.59
+                                ],
+                       "triangles":  284
+                   },
+                   {
+                       "name":  "billboard_01",
+                       "category":  "signage",
+                       "path":  "res://assets/lowpoly_city_pack/signage/billboard_01.glb",
+                       "source":  "billboard_01.fbx",
+                       "scale":  1.0,
+                       "size":  [
+                                    0.23,
+                                    6.11,
+                                    3.46
+                                ],
+                       "triangles":  100
+                   },
+                   {
+                       "name":  "billboard_02",
+                       "category":  "signage",
+                       "path":  "res://assets/lowpoly_city_pack/signage/billboard_02.glb",
+                       "source":  "billboard_02.fbx",
+                       "scale":  1.0,
+                       "size":  [
+                                    0.23,
+                                    6.11,
+                                    3.46
+                                ],
+                       "triangles":  124
+                   },
+                   {
+                       "name":  "billboard_03",
+                       "category":  "signage",
+                       "path":  "res://assets/lowpoly_city_pack/signage/billboard_03.glb",
+                       "source":  "billboard_03.fbx",
+                       "scale":  1.0,
+                       "size":  [
+                                    1.98,
+                                    4.03,
+                                    6.11
+                                ],
+                       "triangles":  148
+                   },
+                   {
+                       "name":  "traffic_sign_01",
+                       "category":  "signage",
+                       "path":  "res://assets/lowpoly_city_pack/signage/traffic_sign_01.glb",
+                       "source":  "traffic_Sign_01.fbx",
+                       "scale":  1.0,
+                       "size":  [
+                                    0.61,
+                                    2.44,
+                                    0.94
+                                ],
+                       "triangles":  84
+                   },
+                   {
+                       "name":  "traffic_sign_02",
+                       "category":  "signage",
+                       "path":  "res://assets/lowpoly_city_pack/signage/traffic_sign_02.glb",
+                       "source":  "traffic_Sign_02.fbx",
+                       "scale":  1.0,
+                       "size":  [
+                                    0.61,
+                                    2.44,
+                                    1.06
+                                ],
+                       "triangles":  60
+                   },
+                   {
+                       "name":  "traffic_sign_03",
+                       "category":  "signage",
+                       "path":  "res://assets/lowpoly_city_pack/signage/traffic_sign_03.glb",
+                       "source":  "traffic_Sign_03.fbx",
+                       "scale":  1.0,
+                       "size":  [
+                                    0.61,
+                                    2.44,
+                                    0.75
+                                ],
+                       "triangles":  54
+                   },
+                   {
+                       "name":  "traffic_sign_04",
+                       "category":  "signage",
+                       "path":  "res://assets/lowpoly_city_pack/signage/traffic_sign_04.glb",
+                       "source":  "traffic_Sign_04.fbx",
+                       "scale":  1.0,
+                       "size":  [
+                                    0.61,
+                                    2.44,
+                                    0.75
+                                ],
+                       "triangles":  54
+                   },
+                   {
+                       "name":  "traffic_sign_05",
+                       "category":  "signage",
+                       "path":  "res://assets/lowpoly_city_pack/signage/traffic_sign_05.glb",
+                       "source":  "traffic_Sign_05.fbx",
+                       "scale":  1.0,
+                       "size":  [
+                                    0.61,
+                                    2.44,
+                                    0.75
+                                ],
+                       "triangles":  60
+                   },
+                   {
+                       "name":  "traffic_sign_06",
+                       "category":  "signage",
+                       "path":  "res://assets/lowpoly_city_pack/signage/traffic_sign_06.glb",
+                       "source":  "traffic_Sign_06.fbx",
+                       "scale":  1.0,
+                       "size":  [
+                                    0.39,
+                                    1.14,
+                                    0.66
+                                ],
+                       "triangles":  92
+                   },
+                   {
+                       "name":  "traffic_lights",
+                       "category":  "signage",
+                       "path":  "res://assets/lowpoly_city_pack/signage/traffic_lights.glb",
+                       "source":  "traffic_Lights.fbx",
+                       "scale":  1.0,
+                       "size":  [
+                                    0.61,
+                                    2.74,
+                                    0.61
+                                ],
+                       "triangles":  238
+                   },
+                   {
+                       "name":  "traffic_cone_new",
+                       "category":  "signage",
+                       "path":  "res://assets/lowpoly_city_pack/signage/traffic_cone_new.glb",
+                       "source":  "traffic_Cone_New.fbx",
+                       "scale":  1.0,
+                       "size":  [
+                                    0.7,
+                                    0.91,
+                                    0.7
+                                ],
+                       "triangles":  124
+                   },
+                   {
+                       "name":  "traffic_cone_old",
+                       "category":  "signage",
+                       "path":  "res://assets/lowpoly_city_pack/signage/traffic_cone_old.glb",
+                       "source":  "traffic_Cone_Old.fbx",
+                       "scale":  1.0,
+                       "size":  [
+                                    0.7,
+                                    0.75,
+                                    0.7
+                                ],
+                       "triangles":  124
+                   },
+                   {
+                       "name":  "fence_01",
+                       "category":  "structures",
+                       "path":  "res://assets/lowpoly_city_pack/structures/fence_01.glb",
+                       "source":  "fence_01.fbx",
+                       "scale":  1.0,
+                       "size":  [
+                                    0.11,
+                                    2.68,
+                                    2.69
+                                ],
+                       "triangles":  751
+                   },
+                   {
+                       "name":  "fence_02",
+                       "category":  "structures",
+                       "path":  "res://assets/lowpoly_city_pack/structures/fence_02.glb",
+                       "source":  "fence_02.fbx",
+                       "scale":  1.0,
+                       "size":  [
+                                    0.34,
+                                    2.06,
+                                    2.7
+                                ],
+                       "triangles":  715
+                   },
+                   {
+                       "name":  "fence_03",
+                       "category":  "structures",
+                       "path":  "res://assets/lowpoly_city_pack/structures/fence_03.glb",
+                       "source":  "fence_03.fbx",
+                       "scale":  1.0,
+                       "size":  [
+                                    0.2,
+                                    1.32,
+                                    2.7
+                                ],
+                       "triangles":  176
+                   },
+                   {
+                       "name":  "fence_03_end",
+                       "category":  "structures",
+                       "path":  "res://assets/lowpoly_city_pack/structures/fence_03_end.glb",
+                       "source":  "fence_03_end.fbx",
+                       "scale":  1.0,
+                       "size":  [
+                                    0.2,
+                                    1.32,
+                                    2.86
+                                ],
+                       "triangles":  272
+                   },
+                   {
+                       "name":  "fence_04",
+                       "category":  "structures",
+                       "path":  "res://assets/lowpoly_city_pack/structures/fence_04.glb",
+                       "source":  "fence_04.fbx",
+                       "scale":  1.0,
+                       "size":  [
+                                    0.12,
+                                    1.45,
+                                    1.83
+                                ],
+                       "triangles":  144
+                   },
+                   {
+                       "name":  "wall",
+                       "category":  "structures",
+                       "path":  "res://assets/lowpoly_city_pack/structures/wall.glb",
+                       "source":  "wall.fbx",
+                       "scale":  1.0,
+                       "size":  [
+                                    0.39,
+                                    1.16,
+                                    2.18
+                                ],
+                       "triangles":  72
+                   },
+                   {
+                       "name":  "wall_pillar",
+                       "category":  "structures",
+                       "path":  "res://assets/lowpoly_city_pack/structures/wall_pillar.glb",
+                       "source":  "wall_Pillar.fbx",
+                       "scale":  1.0,
+                       "size":  [
+                                    0.39,
+                                    1.16,
+                                    0.39
+                                ],
+                       "triangles":  60
+                   },
+                   {
+                       "name":  "garage_closed",
+                       "category":  "structures",
+                       "path":  "res://assets/lowpoly_city_pack/structures/garage_closed.glb",
+                       "source":  "garage_Closed.fbx",
+                       "scale":  1.0,
+                       "size":  [
+                                    4.71,
+                                    3.88,
+                                    4.4
+                                ],
+                       "triangles":  184
+                   },
+                   {
+                       "name":  "garage_open",
+                       "category":  "structures",
+                       "path":  "res://assets/lowpoly_city_pack/structures/garage_open.glb",
+                       "source":  "garage_Open.fbx",
+                       "scale":  1.0,
+                       "size":  [
+                                    4.71,
+                                    3.88,
+                                    4.4
+                                ],
+                       "triangles":  100
+                   },
+                   {
+                       "name":  "stairs_01",
+                       "category":  "structures",
+                       "path":  "res://assets/lowpoly_city_pack/structures/stairs_01.glb",
+                       "source":  "stairs_01.fbx",
+                       "scale":  1.0,
+                       "size":  [
+                                    2.09,
+                                    1.56,
+                                    2.31
+                                ],
+                       "triangles":  96
+                   },
+                   {
+                       "name":  "stairs_01_platform",
+                       "category":  "structures",
+                       "path":  "res://assets/lowpoly_city_pack/structures/stairs_01_platform.glb",
+                       "source":  "stairs_01_Platform.fbx",
+                       "scale":  1.0,
+                       "size":  [
+                                    3.96,
+                                    1.56,
+                                    2.31
+                                ],
+                       "triangles":  96
+                   },
+                   {
+                       "name":  "stairs_02",
+                       "category":  "structures",
+                       "path":  "res://assets/lowpoly_city_pack/structures/stairs_02.glb",
+                       "source":  "stairs_02.fbx",
+                       "scale":  1.0,
+                       "size":  [
+                                    2.0,
+                                    1.66,
+                                    2.0
+                                ],
+                       "triangles":  60
+                   },
+                   {
+                       "name":  "ladder",
+                       "category":  "structures",
+                       "path":  "res://assets/lowpoly_city_pack/structures/ladder.glb",
+                       "source":  "ladder.fbx",
+                       "scale":  1.0,
+                       "size":  [
+                                    1.11,
+                                    2.74,
+                                    0.11
+                                ],
+                       "triangles":  116
+                   },
+                   {
+                       "name":  "ladder_end",
+                       "category":  "structures",
+                       "path":  "res://assets/lowpoly_city_pack/structures/ladder_end.glb",
+                       "source":  "ladder_end.fbx",
+                       "scale":  1.0,
+                       "size":  [
+                                    1.11,
+                                    3.04,
+                                    1.1
+                                ],
+                       "triangles":  308
+                   },
+                   {
+                       "name":  "bush_01_basic",
+                       "category":  "vegetation",
+                       "path":  "res://assets/lowpoly_city_pack/vegetation/bush_01_basic.glb",
+                       "source":  "bush_01_Basic.fbx",
+                       "scale":  1.0,
+                       "size":  [
+                                    1.0,
+                                    2.1,
+                                    1.0
+                                ],
+                       "triangles":  84
+                   },
+                   {
+                       "name":  "bush_01_long",
+                       "category":  "vegetation",
+                       "path":  "res://assets/lowpoly_city_pack/vegetation/bush_01_long.glb",
+                       "source":  "bush_01_Long.fbx",
+                       "scale":  1.0,
+                       "size":  [
+                                    1.0,
+                                    2.1,
+                                    7.03
+                                ],
+                       "triangles":  172
+                   },
+                   {
+                       "name":  "bush_01_medium",
+                       "category":  "vegetation",
+                       "path":  "res://assets/lowpoly_city_pack/vegetation/bush_01_medium.glb",
+                       "source":  "bush_01_Medium.fbx",
+                       "scale":  1.0,
+                       "size":  [
+                                    1.0,
+                                    2.1,
+                                    2.94
+                                ],
+                       "triangles":  172
+                   },
+                   {
+                       "name":  "bush_02_basic",
+                       "category":  "vegetation",
+                       "path":  "res://assets/lowpoly_city_pack/vegetation/bush_02_basic.glb",
+                       "source":  "bush_02_Basic.fbx",
+                       "scale":  1.0,
+                       "size":  [
+                                    1.0,
+                                    1.47,
+                                    1.0
+                                ],
+                       "triangles":  84
+                   },
+                   {
+                       "name":  "bush_02_long",
+                       "category":  "vegetation",
+                       "path":  "res://assets/lowpoly_city_pack/vegetation/bush_02_long.glb",
+                       "source":  "bush_02_Long.fbx",
+                       "scale":  1.0,
+                       "size":  [
+                                    1.0,
+                                    1.47,
+                                    7.03
+                                ],
+                       "triangles":  172
+                   },
+                   {
+                       "name":  "bush_02_medium",
+                       "category":  "vegetation",
+                       "path":  "res://assets/lowpoly_city_pack/vegetation/bush_02_medium.glb",
+                       "source":  "bush_02_Medium.fbx",
+                       "scale":  1.0,
+                       "size":  [
+                                    1.0,
+                                    1.47,
+                                    2.94
+                                ],
+                       "triangles":  172
+                   },
+                   {
+                       "name":  "lamp_single",
+                       "category":  "lighting",
+                       "path":  "res://assets/lowpoly_city_pack/lighting/lamp_single.glb",
+                       "source":  "lamp_Single.fbx",
+                       "scale":  1.0,
+                       "size":  [
+                                    1.94,
+                                    6.34,
+                                    0.48
+                                ],
+                       "triangles":  186
+                   },
+                   {
+                       "name":  "lamp_double",
+                       "category":  "lighting",
+                       "path":  "res://assets/lowpoly_city_pack/lighting/lamp_double.glb",
+                       "source":  "lamp_Double.fbx",
+                       "scale":  1.0,
+                       "size":  [
+                                    3.21,
+                                    6.34,
+                                    0.48
+                                ],
+                       "triangles":  200
+                   }
+               ]
+}

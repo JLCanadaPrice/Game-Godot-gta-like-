@@ -19,7 +19,6 @@ const WALK_SECONDS := 2.0
 const SPRINT_SECONDS := 1.5
 const MIN_WALK := 6.0         # m en 2 s de marche (5 m/s attendus)
 const MIN_SPOT_WALK := 4.0    # m sur un point de contrôle (obstacle possible en fin de trajet)
-const SPAWN_HIGH := 20.0      # m au-dessus du sol : départ en altitude, marche testée au sol à sa verticale
 
 var _errors: Array[String] = []
 var _player: CharacterBody3D
@@ -59,15 +58,6 @@ func _ready() -> void:
 
 func _spawn_walk() -> void:
 	_player.rotation.y = PI   # dos au bassin, face à la ville (+Z)
-	var spawn := _player.global_position
-	var ground := _ground_at(Vector2(spawn.x, spawn.z))
-	if ground != INF and spawn.y > ground + SPAWN_HIGH:
-		# départ réglé en altitude dans World.tscn (le joueur tombe au lancement) : la marche est testée au sol, à la
-		# verticale du départ, et le réglage est signalé
-		print("MAP_GATE_SPAWN_NOTE joueur placé à %.0f m au-dessus du sol dans World.tscn : marche testée au sol à la verticale du départ"
-				% (spawn.y - ground))
-		_player.velocity = Vector3.ZERO
-		_player.global_position = Vector3(spawn.x, ground + 1.2, spawn.z)
 	await _frames(30)
 	var start := _player.global_position
 	await _hold(["move_forward"], WALK_SECONDS)

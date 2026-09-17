@@ -1,0 +1,159 @@
+{
+    "pack":  "SkyScraperBundle",
+    "scale_rule":  "x6 : etage de la texture de Scraper001 a 3,7 m, trames modelisees de Mk1-Mk6 a 2,6 m",
+    "texture":  "res://assets/skyscraper_bundle/SkyScraperUVEdit.png",
+    "axes":  "Godot : x largeur, y hauteur, z profondeur ; pied a y = 0 (fondation de below_ground m sous le sol)",
+    "models":  [
+                   {
+                       "name":  "Mk1",
+                       "path":  "res://assets/skyscraper_bundle/Mk1.glb",
+                       "source":  "Mk1.fbx",
+                       "scale":  6.0,
+                       "size":  [
+                                    39.43,
+                                    264.54,
+                                    49.11
+                                ],
+                       "below_ground":  1.29,
+                       "triangles":  6122,
+                       "materials_textured":  [
+                                                  "Material.001",
+                                                  "LightWindow",
+                                                  "DarkWindow"
+                                              ],
+                       "materials_flat":  [
+                                              "Material.004",
+                                              "Material.002",
+                                              "Material.003"
+                                          ]
+                   },
+                   {
+                       "name":  "Mk2",
+                       "path":  "res://assets/skyscraper_bundle/Mk2.glb",
+                       "source":  "Mk2.fbx",
+                       "scale":  6.0,
+                       "size":  [
+                                    45.0,
+                                    245.06,
+                                    45.0
+                                ],
+                       "below_ground":  1.29,
+                       "triangles":  8624,
+                       "materials_textured":  [
+                                                  "Material",
+                                                  "LightGlass",
+                                                  "Material.002"
+                                              ],
+                       "materials_flat":  [
+                                              "Material.003",
+                                              "Bark",
+                                              "Leaves",
+                                              "Material.004",
+                                              "Material.005"
+                                          ]
+                   },
+                   {
+                       "name":  "Mk3",
+                       "path":  "res://assets/skyscraper_bundle/Mk3.glb",
+                       "source":  "Mk3.fbx",
+                       "scale":  6.0,
+                       "size":  [
+                                    53.07,
+                                    154.85,
+                                    18.63
+                                ],
+                       "below_ground":  0.0,
+                       "triangles":  5995,
+                       "materials_textured":  [
+                                                  "Material.002",
+                                                  "Material.003"
+                                              ],
+                       "materials_flat":  [
+                                              "Material.001",
+                                              "Material.001",
+                                              "Material"
+                                          ]
+                   },
+                   {
+                       "name":  "Mk4",
+                       "path":  "res://assets/skyscraper_bundle/Mk4.glb",
+                       "source":  "Mk4.fbx",
+                       "scale":  6.0,
+                       "size":  [
+                                    36.0,
+                                    129.7,
+                                    36.0
+                                ],
+                       "below_ground":  1.29,
+                       "triangles":  12990,
+                       "materials_textured":  [
+                                                  "DarkWindow",
+                                                  "LightWindow"
+                                              ],
+                       "materials_flat":  [
+                                              "Material",
+                                              "Material.001"
+                                          ]
+                   },
+                   {
+                       "name":  "Mk5",
+                       "path":  "res://assets/skyscraper_bundle/Mk5.glb",
+                       "source":  "Mk5.fbx",
+                       "scale":  6.0,
+                       "size":  [
+                                    35.94,
+                                    113.15,
+                                    35.94
+                                ],
+                       "below_ground":  1.29,
+                       "triangles":  10336,
+                       "materials_textured":  [
+                                                  "LightWindow",
+                                                  "DarkWindow"
+                                              ],
+                       "materials_flat":  [
+                                              "Frame"
+                                          ]
+                   },
+                   {
+                       "name":  "Mk6",
+                       "path":  "res://assets/skyscraper_bundle/Mk6.glb",
+                       "source":  "MK6.fbx",
+                       "scale":  6.0,
+                       "size":  [
+                                    33.0,
+                                    152.33,
+                                    33.0
+                                ],
+                       "below_ground":  1.29,
+                       "triangles":  13490,
+                       "materials_textured":  [
+                                                  "LightWindow",
+                                                  "DarkWindow"
+                                              ],
+                       "materials_flat":  [
+                                              "Frame",
+                                              "Material.001"
+                                          ]
+                   },
+                   {
+                       "name":  "Scraper001",
+                       "path":  "res://assets/skyscraper_bundle/Scraper001.glb",
+                       "source":  "Scraper001.fbx",
+                       "scale":  6.0,
+                       "size":  [
+                                    33.0,
+                                    153.0,
+                                    33.0
+                                ],
+                       "below_ground":  0.0,
+                       "triangles":  28,
+                       "materials_textured":  [
+                                                  "Material"
+                                              ],
+                       "materials_flat":  [
+
+                                          ]
+                   }
+               ]
+}
