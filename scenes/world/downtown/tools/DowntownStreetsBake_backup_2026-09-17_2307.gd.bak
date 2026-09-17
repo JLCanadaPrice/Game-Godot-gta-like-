@@ -1,4 +1,4 @@
-﻿extends SceneTree
+extends SceneTree
 
 # Chantier centre-ville, étape D2 : rues du centre-ville reconstruit, tirées du plan (DowntownLayout), dans
 # generated/Streets.tscn :
@@ -37,8 +37,6 @@ const MARGIN_Y := -0.05              # sous le sol des lieux posés dans les mar
 const SKIRT_Y := -0.5                # jupe au bord extérieur des marges (raccord au terrain)
 const BOX_BOTTOM := -1.0
 const STOP_WIDTH := 0.4
-const NODE_WALK_FROM := 0.8          # m : retrait du passage piéton peint à l'intérieur d'une dalle de carrefour
-const NODE_MARK_RISE := 0.008        # m : film de peinture au-dessus de l'enrobé (sous le seuil "terre-plein" du sol lointain)
 const MEDIAN_NOSE := 1.0             # enrobé nu entre la ligne d'arrêt et le nez du terre-plein
 const PAVING_TILE := 3.0
 const LAWN_TILE := 8.0
@@ -138,7 +136,7 @@ func _segment(i: int) -> void:
 	if layout.nodes[a]["lit"]:
 		var band := _along_range(layout.crosswalk(a, "S" if axis == "x" else "E")["rect"], axis)
 		band.x = maxf(band.x, start)
-		_road(s, "junction", 0.0, width, start, band.x)
+		_road(s, "plain", 0.0, width, start, band.x)
 		_road(s, "crosswalk", 0.0, width, band.x, band.y)
 		_stop_strip(s, band.y, band.y + STOP_WIDTH, -1)
 		lo = band.y + STOP_WIDTH
@@ -146,7 +144,7 @@ func _segment(i: int) -> void:
 		var band := _along_range(layout.crosswalk(b, "N" if axis == "x" else "W")["rect"], axis)
 		band.y = minf(band.y, end)
 		_road(s, "crosswalk", 0.0, width, band.x, band.y)
-		_road(s, "junction", 0.0, width, band.y, end)
+		_road(s, "plain", 0.0, width, band.y, end)
 		_stop_strip(s, band.x - STOP_WIDTH, band.x, 1)
 		hi = band.x - STOP_WIDTH
 	# milieu : voies, avec terre-plein planté sur les boulevards
@@ -156,8 +154,8 @@ func _segment(i: int) -> void:
 		var m1 := half + median * 0.5
 		_road(s, _lane_column(s), 0.0, m0, lo, hi)
 		_road(s, _lane_column(s), m1, width, lo, hi)
-		_road(s, "junction", m0, m1, lo, lo + MEDIAN_NOSE)
-		_road(s, "junction", m0, m1, hi - MEDIAN_NOSE, hi)
+		_road(s, "plain", m0, m1, lo, lo + MEDIAN_NOSE)
+		_road(s, "plain", m0, m1, hi - MEDIAN_NOSE, hi)
 		_median(s, m0, m1, lo + MEDIAN_NOSE, hi - MEDIAN_NOSE)
 	else:
 		_road(s, _lane_column(s), 0.0, width, lo, hi)
@@ -292,17 +290,13 @@ func _node(n: int) -> void:
 	var hx := float(node["hx"])
 	var hz := float(node["hz"])
 	var box := Rect2(p.x - hx, p.y - hz, hx * 2.0, hz * 2.0)
-	# dalle : colonne "junction" (enrobé nu, grain fin) et non "plain", dont les taches basse fréquence faisaient une
-	# dalle grise nuageuse, étirée et étrangère à la chaussée qui l'entoure.
-	var col: Dictionary = columns["junction"]
+	var col: Dictionary = columns["plain"]
 	var ub := _u(col, box.size.x)
 	var v0 := box.position.y / tex_length
 	var v1 := box.end.y / tex_length
 	_flat("asphalt", box, ROAD_Y, [Vector2(float(col["u0"]), v0), Vector2(ub, v0), Vector2(ub, v1), Vector2(float(col["u0"]), v1)], Color.WHITE)
 	_tops.append(box)
 	_collide(box, ROAD_Y)
-	if not bool(node["lit"]):
-		_node_crosswalks(node, box)
 	var arms: Dictionary = node["arms"]
 	for q: Vector2i in Traffic.QUADRANTS:
 		var ext := _extents(n, q)
@@ -313,48 +307,6 @@ func _node(n: int) -> void:
 		# au-delà du carrefour côté z (hors de la chaussée de la branche z), puis à côté du carrefour côté x
 		_walk(_local_rect(p, q, half_z, ext.x, hz, ext.y), "sidewalk")
 		_walk(_local_rect(p, q, hx, ext.x, half_x, hz), "sidewalk")
-
-
-# Les carrefours à feux (3 branches ou plus) reçoivent passage piéton et ligne d'arrêt de `_segment`, juste en dehors de
-# la boîte. Les carrefours à deux branches — les quatre coins du pourtour — n'ont pas de feu, donc jusqu'ici aucun
-# marquage du tout. La bande est peinte à l'intérieur de la dalle, à la gueule de chaque branche, comme sur les plateaux
-# de la carte : 8 mm au-dessus de l'enrobé, sans collision, sans toucher au trottoir ni au chemin piéton.
-func _node_crosswalks(node: Dictionary, box: Rect2) -> void:
-	var col: Dictionary = columns["crosswalk"]
-	var done: Array[Rect2] = []
-	for arm: String in node["arms"]:
-		var seg: Dictionary = layout.segments[node["arms"][arm]]
-		var half := float(seg["half"])
-		var at := float(seg["at"])
-		var r: Rect2
-		match arm:
-			"N":
-				r = Rect2(at - half, box.position.y + NODE_WALK_FROM, half * 2.0, Layout.CROSSWALK_WIDTH)
-			"S":
-				r = Rect2(at - half, box.end.y - NODE_WALK_FROM - Layout.CROSSWALK_WIDTH, half * 2.0, Layout.CROSSWALK_WIDTH)
-			"W":
-				r = Rect2(box.position.x + NODE_WALK_FROM, at - half, Layout.CROSSWALK_WIDTH, half * 2.0)
-			_:
-				r = Rect2(box.end.x - NODE_WALK_FROM - Layout.CROSSWALK_WIDTH, at - half, Layout.CROSSWALK_WIDTH, half * 2.0)
-		if not box.grow(0.01).encloses(r):
-			continue
-		# à un coin, la bande de la branche en z et celle de la branche en x se chevauchent : la seconde est rognée sur
-		# la première (deux quads coplanaires se battraient en profondeur).
-		for piece: Rect2 in _subtract(r, done):
-			var uv: Array
-			if arm == "N" or arm == "S":
-				# bande en travers de la chaussée nord-sud : u suit x depuis le bord − de la chaussée, v suit z
-				var ua := _u(col, piece.position.x - (at - half))
-				var ub := _u(col, piece.end.x - (at - half))
-				uv = [Vector2(ua, piece.position.y / tex_length), Vector2(ub, piece.position.y / tex_length),
-						Vector2(ub, piece.end.y / tex_length), Vector2(ua, piece.end.y / tex_length)]
-			else:
-				var ua := _u(col, piece.position.y - (at - half))
-				var ub := _u(col, piece.end.y - (at - half))
-				uv = [Vector2(ua, piece.position.x / tex_length), Vector2(ua, piece.end.x / tex_length),
-						Vector2(ub, piece.end.x / tex_length), Vector2(ub, piece.position.x / tex_length)]
-			_flat("asphalt", piece, ROAD_Y + NODE_MARK_RISE, uv, Color.WHITE)
-		done.append(r)
 
 
 # Rectangle monde du quartier q à partir de distances positives au centre : |dx| de lx0 à lx1, |dz| de lz0 à lz1.
@@ -468,7 +420,7 @@ func _connection_gaps() -> void:
 # bord laissait voir la pelouse (jusqu'ici masquée par le quai 2, retiré de la scène). Toute la brèche est donc pavée en
 # enrobé nu, 1 cm sous la chaussée : la route de la carte passe par-dessus, le reste fait la gueule du raccord.
 func _connection_aprons() -> void:
-	var col: Dictionary = columns["junction"]
+	var col: Dictionary = columns["plain"]
 	for r: Rect2 in _gaps:
 		var ub := _u(col, r.size.x)
 		var v0 := r.position.y / tex_length

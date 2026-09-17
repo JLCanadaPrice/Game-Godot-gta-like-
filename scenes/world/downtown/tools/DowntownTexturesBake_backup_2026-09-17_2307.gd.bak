@@ -41,8 +41,6 @@ const COLUMNS := [
 	["median", 2.0, []],
 	["alley", 6.0, []],
 	["driveway", 6.0, []],
-	# colonne ajoutée après coup : les u des colonnes ci-dessus ne bougent pas
-	["junction", 16.0, []],              # enrobé nu des dalles de carrefour (largeur de la plus grande boîte : 16 m)
 ]
 const IMPORT_TEMPLATE := """[remap]
 
@@ -162,11 +160,6 @@ func _base_color(kind: String, across: float, width: float, along: float, noise:
 			return CONCRETE.darkened(clampf(noise * 0.08 + patch * 0.06, 0.0, 0.2))
 		"plain":
 			return ASPHALT_MID.lerp(ASPHALT_EDGE, clampf(0.35 + patch * 0.5, 0.0, 1.0)).darkened(noise * 0.04)
-		"junction":
-			# même enrobé nu que les plateaux de la carte (RoadTexturesBake colonne "junction") : ton uni entre le bord et
-			# le milieu d'une chaussée, grain fin seul. Pas de taches basse fréquence : c'est ce qui faisait la dalle
-			# nuageuse et étirée (36 px/m en travers contre 42,7 px/m en long).
-			return ASPHALT_EDGE.lerp(ASPHALT_MID, 0.72).darkened(noise * 0.05)
 		_:
 			var shade := 1.0 - absf(across / width - 0.5) * 2.0
 			return ASPHALT_EDGE.lerp(ASPHALT_MID, smoothstep(0.0, 0.8, shade)).darkened(noise * 0.04)
