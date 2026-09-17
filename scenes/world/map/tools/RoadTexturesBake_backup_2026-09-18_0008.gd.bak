@@ -27,8 +27,7 @@ const COLUMNS := [
 	# bretelle à sens unique : deux lignes de rive BLANCHES continues (photo de référence du 2026-09-18), pas de jaune
 	["ramp", 512, 7.0, [[0.35, 0.5, "white", false], [6.5, 6.65, "white", false]]],
 	["median", 848, 3.0, []],
-	# artère urbaine (photo de référence 3) : rives BLANCHES, double ligne orange au centre
-	["urban", 1024, 10.5, [[0.55, 0.7, "white", false], [5.08, 5.18, "yellow", false], [5.32, 5.42, "yellow", false], [9.8, 9.95, "white", false]]],
+	["urban", 1024, 10.5, [[0.55, 0.7, "yellow", false], [5.08, 5.18, "yellow", false], [5.32, 5.42, "yellow", false], [9.8, 9.95, "yellow", false]]],
 	["arterial", 1536, 9.0, [[0.4, 0.55, "white", false], [4.43, 4.57, "yellow", true], [8.45, 8.6, "white", false]]],
 	["access", 2000, 6.5, [[0.35, 0.48, "white", false], [6.02, 6.15, "white", false]]],
 	["dirt", 2344, 5.0, []],
@@ -133,14 +132,9 @@ func _base_color(kind: String, across: float, width: float, along: float, noise:
 			var c := DIRT_LIGHT.lerp(DIRT_DARK, clampf(1.0 - rut * 2.5, 0.0, 1.0) * 0.8)
 			return c.darkened(noise * 0.12)
 		"sidewalk":
-			# dalles de 1,2 m (photo de référence 3) : joints en long ET en travers, chaque dalle avec sa propre
-			# nuance, et une bande de bordure béton plus claire sur les deux rives (un trottoir peut border la
-			# chaussée d'un côté comme de l'autre) pour que la bordure se lise depuis le sol.
-			if across < 0.28 or across > width - 0.28:
-				return CONCRETE_LIGHT.lerp(CONCRETE_DARK, 0.3).darkened(maxf(0.0, noise) * 0.06)
-			var slab := fposmod(floorf(along / 1.2) * 7.0 + floorf(across / 1.2) * 13.0, 5.0) / 5.0
-			var c := WALK_LIGHT.lerp(WALK_DARK, clampf(0.3 + noise * 0.45 + slab * 0.35, 0.0, 1.0))
-			return c.darkened(0.22) if fposmod(along, 1.2) < 0.05 or fposmod(across, 1.2) < 0.05 else c
+			var joint := fposmod(along, 3.0) < 0.04 or across < 0.08
+			var c := WALK_LIGHT.lerp(WALK_DARK, 0.5 + noise * 0.5)
+			return c.darkened(0.15) if joint else c
 		"rail":
 			# ballast moucheté, traverses de 2,6 m tous les 0,6 m (20 par longueur de texture), ombre sous les rails
 			var speck := fposmod(sin(across * 917.3 + along * 571.9) * 43758.5, 1.0)

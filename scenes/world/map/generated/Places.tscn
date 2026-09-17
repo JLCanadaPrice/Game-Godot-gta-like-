@@ -253,110 +253,110 @@ size = Vector3(0.45, 10, 0.45)
 [sub_resource type="BoxShape3D" id="BoxShape3D_icxrl"]
 size = Vector3(48.38246, 24.081972, 23.250107)
 
-[node name="Places" type="Node3D" unique_id=45115055]
+[node name="Places" type="Node3D" unique_id=236419953]
 
-[node name="Place_airport" type="Node3D" parent="." unique_id=211367151]
+[node name="Place_airport" type="Node3D" parent="." unique_id=599942732]
 metadata/place_id = "airport"
 metadata/display_name = "Prairie Wind International Airport"
 metadata/kind = "airport"
 
-[node name="Entrance" type="Marker3D" parent="Place_airport" unique_id=1004891022]
+[node name="Entrance" type="Marker3D" parent="Place_airport" unique_id=1579766403]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 470, 5.3, -1195)
 
-[node name="Collision" type="StaticBody3D" parent="Place_airport" unique_id=137963522]
+[node name="Collision" type="StaticBody3D" parent="Place_airport" unique_id=975666695]
 
-[node name="Box_0" type="CollisionShape3D" parent="Place_airport/Collision" unique_id=414860235]
+[node name="Box_0" type="CollisionShape3D" parent="Place_airport/Collision" unique_id=1251789391]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 470, 11.3, -1229)
 shape = SubResource("BoxShape3D_rfgxr")
 
-[node name="Box_1" type="CollisionShape3D" parent="Place_airport/Collision" unique_id=1547879031]
+[node name="Box_1" type="CollisionShape3D" parent="Place_airport/Collision" unique_id=2065597685]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 470, 10.5, -1210)
 shape = SubResource("BoxShape3D_p43w2")
 
-[node name="Box_2" type="CollisionShape3D" parent="Place_airport/Collision" unique_id=560309235]
+[node name="Box_2" type="CollisionShape3D" parent="Place_airport/Collision" unique_id=389251354]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 442, 7.8, -1207)
 shape = SubResource("BoxShape3D_g1cjc")
 
-[node name="Box_3" type="CollisionShape3D" parent="Place_airport/Collision" unique_id=297454322]
+[node name="Box_3" type="CollisionShape3D" parent="Place_airport/Collision" unique_id=1599625048]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 470, 7.8, -1207)
 shape = SubResource("BoxShape3D_p5e12")
 
-[node name="Box_4" type="CollisionShape3D" parent="Place_airport/Collision" unique_id=670046919]
+[node name="Box_4" type="CollisionShape3D" parent="Place_airport/Collision" unique_id=2126681595]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 498, 7.8, -1207)
 shape = SubResource("BoxShape3D_yva7b")
 
-[node name="Box_5" type="CollisionShape3D" parent="Place_airport/Collision" unique_id=720156005]
+[node name="Box_5" type="CollisionShape3D" parent="Place_airport/Collision" unique_id=1561551962]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 620, 8.3, -1205)
 shape = SubResource("BoxShape3D_cqes2")
 
-[node name="Box_6" type="CollisionShape3D" parent="Place_airport/Collision" unique_id=278581756]
+[node name="Box_6" type="CollisionShape3D" parent="Place_airport/Collision" unique_id=1241524379]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 620, 25.3, -1205)
 shape = SubResource("BoxShape3D_afrpj")
 
-[node name="Box_7" type="CollisionShape3D" parent="Place_airport/Collision" unique_id=1731330120]
+[node name="Box_7" type="CollisionShape3D" parent="Place_airport/Collision" unique_id=674683473]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 620, 42.3, -1205)
 shape = SubResource("BoxShape3D_48xpo")
 
-[node name="Box_8" type="CollisionShape3D" parent="Place_airport/Collision" unique_id=965844112]
+[node name="Box_8" type="CollisionShape3D" parent="Place_airport/Collision" unique_id=1109150335]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 620, 45.7, -1205)
 shape = SubResource("BoxShape3D_uhomv")
 
-[node name="Model_9" type="CollisionShape3D" parent="Place_airport/Collision" unique_id=655211692]
+[node name="Model_9" type="CollisionShape3D" parent="Place_airport/Collision" unique_id=58452423]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 705, 16.138021, -1265)
 shape = SubResource("BoxShape3D_2qm8d")
 
-[node name="Model_10" type="CollisionShape3D" parent="Place_airport/Collision" unique_id=483799000]
+[node name="Model_10" type="CollisionShape3D" parent="Place_airport/Collision" unique_id=1790620283]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 750, 16.138021, -1265)
 shape = SubResource("BoxShape3D_hmwt8")
 
-[node name="Model_11" type="CollisionShape3D" parent="Place_airport/Collision" unique_id=572027517]
+[node name="Model_11" type="CollisionShape3D" parent="Place_airport/Collision" unique_id=1752138326]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 795, 16.138021, -1265)
 shape = SubResource("BoxShape3D_a0lif")
 
-[node name="Model_12" type="CollisionShape3D" parent="Place_airport/Collision" unique_id=568293386]
+[node name="Model_12" type="CollisionShape3D" parent="Place_airport/Collision" unique_id=1002645446]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 840, 16.138021, -1265)
 shape = SubResource("BoxShape3D_2recx")
 
-[node name="Model_13" type="CollisionShape3D" parent="Place_airport/Collision" unique_id=1604714058]
+[node name="Model_13" type="CollisionShape3D" parent="Place_airport/Collision" unique_id=162339222]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 885, 16.138021, -1265)
 shape = SubResource("BoxShape3D_fucuy")
 
-[node name="Fence_14" type="CollisionShape3D" parent="Place_airport/Collision" unique_id=472199201]
+[node name="Fence_14" type="CollisionShape3D" parent="Place_airport/Collision" unique_id=1286965989]
 transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 220, 6.2, -1214)
 shape = SubResource("BoxShape3D_w7sw6")
 
-[node name="Fence_15" type="CollisionShape3D" parent="Place_airport/Collision" unique_id=1092368610]
+[node name="Fence_15" type="CollisionShape3D" parent="Place_airport/Collision" unique_id=2071611025]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 70, 6.2, -1293)
 shape = SubResource("BoxShape3D_hvlt3")
 
-[node name="Fence_16" type="CollisionShape3D" parent="Place_airport/Collision" unique_id=988822953]
+[node name="Fence_16" type="CollisionShape3D" parent="Place_airport/Collision" unique_id=39760238]
 transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 570, 6.2, -1372)
 shape = SubResource("BoxShape3D_b7w3c")
 
-[node name="Fence_17" type="CollisionShape3D" parent="Place_airport/Collision" unique_id=1240749695]
+[node name="Fence_17" type="CollisionShape3D" parent="Place_airport/Collision" unique_id=1633033911]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1070, 6.2, -1171)
 shape = SubResource("BoxShape3D_n1tis")
 
-[node name="Fence_18" type="CollisionShape3D" parent="Place_airport/Collision" unique_id=1476777912]
+[node name="Fence_18" type="CollisionShape3D" parent="Place_airport/Collision" unique_id=1592250746]
 transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 855, 6.2, -970)
 shape = SubResource("BoxShape3D_0vcuk")
 
-[node name="Fence_19" type="CollisionShape3D" parent="Place_airport/Collision" unique_id=1950965925]
+[node name="Fence_19" type="CollisionShape3D" parent="Place_airport/Collision" unique_id=500936467]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 640, 6.2, -1092)
 shape = SubResource("BoxShape3D_ohto7")
 
-[node name="Fence_20" type="CollisionShape3D" parent="Place_airport/Collision" unique_id=297918315]
+[node name="Fence_20" type="CollisionShape3D" parent="Place_airport/Collision" unique_id=904615162]
 transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 605, 6.2, -1214)
 shape = SubResource("BoxShape3D_fltb4")
 
-[node name="Box_21" type="CollisionShape3D" parent="Place_airport/Collision" unique_id=1354341851]
+[node name="Box_21" type="CollisionShape3D" parent="Place_airport/Collision" unique_id=866822124]
 transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 330, 7, -1176)
 shape = SubResource("BoxShape3D_jtbph")
 
-[node name="Surfaces" type="CollisionShape3D" parent="Place_airport/Collision" unique_id=1615199130]
+[node name="Surfaces" type="CollisionShape3D" parent="Place_airport/Collision" unique_id=714805121]
 shape = ExtResource("1_gr4ik")
 
-[node name="Runway_09" type="Label3D" parent="Place_airport" unique_id=1346030476]
+[node name="Runway_09" type="Label3D" parent="Place_airport" unique_id=427906581]
 transform = Transform3D(-4.371139e-08, 1, 4.371139e-08, 0, -4.371139e-08, 1, 1, 4.371139e-08, 1.9106855e-15, 200, 5.3250003, -1350)
 visibility_range_end = 900.0
 pixel_size = 0.06
@@ -365,7 +365,7 @@ modulate = Color(0.93, 0.93, 0.9, 1)
 text = "09"
 font_size = 256
 
-[node name="Runway_27" type="Label3D" parent="Place_airport" unique_id=1448383364]
+[node name="Runway_27" type="Label3D" parent="Place_airport" unique_id=1753831508]
 transform = Transform3D(-4.371139e-08, -1, -4.371139e-08, 0, -4.371139e-08, 1, -1, 4.371139e-08, 1.9106855e-15, 980, 5.3250003, -1350)
 visibility_range_end = 900.0
 pixel_size = 0.06
@@ -374,7 +374,7 @@ modulate = Color(0.93, 0.93, 0.9, 1)
 text = "27"
 font_size = 256
 
-[node name="Label_4" type="Label3D" parent="Place_airport" unique_id=555245213]
+[node name="Label_4" type="Label3D" parent="Place_airport" unique_id=1117781875]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 470, 13.6, -1213.8)
 visibility_range_end = 1500.0
 pixel_size = 0.028
@@ -385,7 +385,7 @@ text = "PRAIRIE WIND INTERNATIONAL AIRPORT"
 font_size = 64
 outline_size = 8
 
-[node name="Label_5" type="Label3D" parent="Place_airport" unique_id=1599850675]
+[node name="Label_5" type="Label3D" parent="Place_airport" unique_id=1014966800]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 470, 13.6, -1244.2)
 visibility_range_end = 1500.0
 pixel_size = 0.035
@@ -396,27 +396,27 @@ text = "PRAIRIE WIND"
 font_size = 64
 outline_size = 8
 
-[node name="Industrial_Warehouse_alt02_6" type="MeshInstance3D" parent="Place_airport" unique_id=612032375]
+[node name="Industrial_Warehouse_alt02_6" type="MeshInstance3D" parent="Place_airport" unique_id=665601977]
 transform = Transform3D(-1.6, 0, -1.3987645e-07, 0, 1.6, 0, 1.3987645e-07, 0, -1.6, 705.04987, 5.3, -1265)
 visibility_range_end = 2500.0
 mesh = ExtResource("2_086pa")
 
-[node name="Industrial_Warehouse_alt02_7" type="MeshInstance3D" parent="Place_airport" unique_id=890780899]
+[node name="Industrial_Warehouse_alt02_7" type="MeshInstance3D" parent="Place_airport" unique_id=773252407]
 transform = Transform3D(-1.6, 0, -1.3987645e-07, 0, 1.6, 0, 1.3987645e-07, 0, -1.6, 750.04987, 5.3, -1265)
 visibility_range_end = 2500.0
 mesh = ExtResource("2_086pa")
 
-[node name="Industrial_Warehouse_alt02_8" type="MeshInstance3D" parent="Place_airport" unique_id=103389844]
+[node name="Industrial_Warehouse_alt02_8" type="MeshInstance3D" parent="Place_airport" unique_id=1374326885]
 transform = Transform3D(-1.6, 0, -1.3987645e-07, 0, 1.6, 0, 1.3987645e-07, 0, -1.6, 795.04987, 5.3, -1265)
 visibility_range_end = 2500.0
 mesh = ExtResource("2_086pa")
 
-[node name="Industrial_Warehouse_alt02_9" type="MeshInstance3D" parent="Place_airport" unique_id=179857408]
+[node name="Industrial_Warehouse_alt02_9" type="MeshInstance3D" parent="Place_airport" unique_id=1429491189]
 transform = Transform3D(-1.6, 0, -1.3987645e-07, 0, 1.6, 0, 1.3987645e-07, 0, -1.6, 840.04987, 5.3, -1265)
 visibility_range_end = 2500.0
 mesh = ExtResource("2_086pa")
 
-[node name="Industrial_Warehouse_alt02_10" type="MeshInstance3D" parent="Place_airport" unique_id=814320534]
+[node name="Industrial_Warehouse_alt02_10" type="MeshInstance3D" parent="Place_airport" unique_id=1288428969]
 transform = Transform3D(-1.6, 0, -1.3987645e-07, 0, 1.6, 0, 1.3987645e-07, 0, -1.6, 885.04987, 5.3, -1265)
 visibility_range_end = 2500.0
 mesh = ExtResource("2_086pa")
@@ -424,10 +424,10 @@ mesh = ExtResource("2_086pa")
 [node name="Prop_11" type="Node3D" parent="Place_airport" unique_id=1404593814 instance=ExtResource("3_63npr")]
 transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 612, 5.3, -1277)
 
-[node name="Prop_12" type="Node3D" parent="Place_airport" unique_id=115351736 instance=ExtResource("3_63npr")]
+[node name="Prop_12" type="Node3D" parent="Place_airport" unique_id=334032804 instance=ExtResource("3_63npr")]
 transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 630, 5.3, -1256)
 
-[node name="Label_13" type="Label3D" parent="Place_airport" unique_id=573497285]
+[node name="Label_13" type="Label3D" parent="Place_airport" unique_id=576659542]
 transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 329.81, 7, -1176)
 visibility_range_end = 350.0
 pixel_size = 0.006078036
@@ -438,7 +438,7 @@ text = "PRAIRIE WIND INTERNATIONAL AIRPORT"
 font_size = 64
 outline_size = 8
 
-[node name="Label_14" type="Label3D" parent="Place_airport" unique_id=932199632]
+[node name="Label_14" type="Label3D" parent="Place_airport" unique_id=1436824433]
 transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 330.19, 7, -1176)
 visibility_range_end = 350.0
 pixel_size = 0.006078036
@@ -449,55 +449,55 @@ text = "PRAIRIE WIND INTERNATIONAL AIRPORT"
 font_size = 64
 outline_size = 8
 
-[node name="Asphalt" type="MeshInstance3D" parent="Place_airport" unique_id=1903305833]
+[node name="Asphalt" type="MeshInstance3D" parent="Place_airport" unique_id=2109996485]
 cast_shadow = 0
 visibility_range_end = 2500.0
 mesh = ExtResource("4_nom0u")
 
-[node name="Concrete" type="MeshInstance3D" parent="Place_airport" unique_id=1806089269]
+[node name="Concrete" type="MeshInstance3D" parent="Place_airport" unique_id=1243079513]
 cast_shadow = 0
 visibility_range_end = 2500.0
 mesh = ExtResource("5_q52xx")
 
-[node name="Paint" type="MeshInstance3D" parent="Place_airport" unique_id=881739609]
+[node name="Paint" type="MeshInstance3D" parent="Place_airport" unique_id=690323589]
 visibility_range_end = 2500.0
 mesh = ExtResource("6_5isy1")
 
-[node name="Steel" type="MeshInstance3D" parent="Place_airport" unique_id=1966011321]
+[node name="Steel" type="MeshInstance3D" parent="Place_airport" unique_id=1255170501]
 cast_shadow = 0
 visibility_range_end = 700.0
 mesh = ExtResource("7_xqx0o")
 
-[node name="Place_motel" type="Node3D" parent="." unique_id=1701689183]
+[node name="Place_motel" type="Node3D" parent="." unique_id=862384648]
 metadata/place_id = "motel"
 metadata/display_name = "Starlite Motor Inn"
 metadata/kind = "motel"
 
-[node name="Entrance" type="Marker3D" parent="Place_motel" unique_id=597409411]
+[node name="Entrance" type="Marker3D" parent="Place_motel" unique_id=233356198]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -445, 0.8, 595)
 
-[node name="Collision" type="StaticBody3D" parent="Place_motel" unique_id=889139875]
+[node name="Collision" type="StaticBody3D" parent="Place_motel" unique_id=217646115]
 
-[node name="Box_0" type="CollisionShape3D" parent="Place_motel/Collision" unique_id=393403338]
+[node name="Box_0" type="CollisionShape3D" parent="Place_motel/Collision" unique_id=1800377558]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -490, 4.3, 582)
 shape = SubResource("BoxShape3D_vkkff")
 
-[node name="Box_1" type="CollisionShape3D" parent="Place_motel/Collision" unique_id=520690442]
+[node name="Box_1" type="CollisionShape3D" parent="Place_motel/Collision" unique_id=921610544]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -483, 4.25, 582)
 shape = SubResource("BoxShape3D_6mt5a")
 
-[node name="Box_2" type="CollisionShape3D" parent="Place_motel/Collision" unique_id=1989037240]
+[node name="Box_2" type="CollisionShape3D" parent="Place_motel/Collision" unique_id=56403985]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -468, 3.05, 605)
 shape = SubResource("BoxShape3D_50dlc")
 
-[node name="Box_3" type="CollisionShape3D" parent="Place_motel/Collision" unique_id=1284424036]
+[node name="Box_3" type="CollisionShape3D" parent="Place_motel/Collision" unique_id=758331913]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -447, 4.9936986, 547)
 shape = SubResource("BoxShape3D_0wxd5")
 
-[node name="Surfaces" type="CollisionShape3D" parent="Place_motel/Collision" unique_id=1593622385]
+[node name="Surfaces" type="CollisionShape3D" parent="Place_motel/Collision" unique_id=828251995]
 shape = ExtResource("8_eogck")
 
-[node name="Label_2" type="Label3D" parent="Place_motel" unique_id=1013746804]
+[node name="Label_2" type="Label3D" parent="Place_motel" unique_id=1769772850]
 transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, -461.9, 4.8, 605)
 visibility_range_end = 300.0
 pixel_size = 0.012
@@ -508,7 +508,7 @@ text = "OFFICE"
 font_size = 64
 outline_size = 8
 
-[node name="Label_3" type="Label3D" parent="Place_motel" unique_id=25735874]
+[node name="Label_3" type="Label3D" parent="Place_motel" unique_id=167568228]
 transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, -447.32, 11.893699, 547)
 visibility_range_end = 500.0
 pixel_size = 0.02
@@ -519,7 +519,7 @@ text = "STARLITE"
 font_size = 64
 outline_size = 8
 
-[node name="Label_4" type="Label3D" parent="Place_motel" unique_id=1200773624]
+[node name="Label_4" type="Label3D" parent="Place_motel" unique_id=1722649346]
 transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, -447.32, 10.493699, 547)
 visibility_range_end = 500.0
 pixel_size = 0.014
@@ -530,7 +530,7 @@ text = "MOTOR INN"
 font_size = 64
 outline_size = 8
 
-[node name="Label_5" type="Label3D" parent="Place_motel" unique_id=859812047]
+[node name="Label_5" type="Label3D" parent="Place_motel" unique_id=337601569]
 transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, -446.68, 11.893699, 547)
 visibility_range_end = 500.0
 pixel_size = 0.02
@@ -541,7 +541,7 @@ text = "STARLITE"
 font_size = 64
 outline_size = 8
 
-[node name="Label_6" type="Label3D" parent="Place_motel" unique_id=545111457]
+[node name="Label_6" type="Label3D" parent="Place_motel" unique_id=1359556986]
 transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, -446.68, 10.493699, 547)
 visibility_range_end = 500.0
 pixel_size = 0.014
@@ -552,103 +552,103 @@ text = "MOTOR INN"
 font_size = 64
 outline_size = 8
 
-[node name="Asphalt" type="MeshInstance3D" parent="Place_motel" unique_id=1996459778]
+[node name="Asphalt" type="MeshInstance3D" parent="Place_motel" unique_id=1927916494]
 cast_shadow = 0
 visibility_range_end = 2500.0
 mesh = ExtResource("9_swgni")
 
-[node name="Concrete" type="MeshInstance3D" parent="Place_motel" unique_id=482532503]
+[node name="Concrete" type="MeshInstance3D" parent="Place_motel" unique_id=1023462963]
 cast_shadow = 0
 visibility_range_end = 2500.0
 mesh = ExtResource("10_gmspw")
 
-[node name="Paint" type="MeshInstance3D" parent="Place_motel" unique_id=1819076182]
+[node name="Paint" type="MeshInstance3D" parent="Place_motel" unique_id=948430918]
 visibility_range_end = 2500.0
 mesh = ExtResource("11_vlog1")
 
-[node name="Steel" type="MeshInstance3D" parent="Place_motel" unique_id=271880335]
+[node name="Steel" type="MeshInstance3D" parent="Place_motel" unique_id=2049527911]
 cast_shadow = 0
 visibility_range_end = 700.0
 mesh = ExtResource("12_huyt4")
 
-[node name="Place_ranch" type="Node3D" parent="." unique_id=843627127]
+[node name="Place_ranch" type="Node3D" parent="." unique_id=542146961]
 metadata/place_id = "ranch"
 metadata/display_name = "Coyote Creek Ranch"
 metadata/kind = "ranch"
 
-[node name="Entrance" type="Marker3D" parent="Place_ranch" unique_id=1591421431]
+[node name="Entrance" type="Marker3D" parent="Place_ranch" unique_id=1832650219]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1700, 8.166702, -120)
 
-[node name="Collision" type="StaticBody3D" parent="Place_ranch" unique_id=515345663]
+[node name="Collision" type="StaticBody3D" parent="Place_ranch" unique_id=582377863]
 
-[node name="Model_0" type="CollisionShape3D" parent="Place_ranch/Collision" unique_id=227260095]
+[node name="Model_0" type="CollisionShape3D" parent="Place_ranch/Collision" unique_id=337245682]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 1688, 14.814029, -62)
 shape = SubResource("BoxShape3D_vyn7s")
 
-[node name="Model_1" type="CollisionShape3D" parent="Place_ranch/Collision" unique_id=1272029084]
+[node name="Model_1" type="CollisionShape3D" parent="Place_ranch/Collision" unique_id=1770394284]
 transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 1753, 14.783728, -95)
 shape = SubResource("BoxShape3D_jy7h2")
 
-[node name="Model_2" type="CollisionShape3D" parent="Place_ranch/Collision" unique_id=746355165]
+[node name="Model_2" type="CollisionShape3D" parent="Place_ranch/Collision" unique_id=865035551]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 1729, 10.75469, -64)
 shape = SubResource("BoxShape3D_hoo0m")
 
-[node name="Model_3" type="CollisionShape3D" parent="Place_ranch/Collision" unique_id=588766909]
+[node name="Model_3" type="CollisionShape3D" parent="Place_ranch/Collision" unique_id=951886438]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1797, 15.657794, -28)
 shape = SubResource("BoxShape3D_um2xk")
 
-[node name="Fence_4" type="CollisionShape3D" parent="Place_ranch/Collision" unique_id=81614132]
+[node name="Fence_4" type="CollisionShape3D" parent="Place_ranch/Collision" unique_id=754883802]
 transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 1626, 12.226788, -160)
 shape = SubResource("BoxShape3D_jmjcv")
 
-[node name="Fence_5" type="CollisionShape3D" parent="Place_ranch/Collision" unique_id=527312915]
+[node name="Fence_5" type="CollisionShape3D" parent="Place_ranch/Collision" unique_id=1870832873]
 transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 1754, 6.898407, -160)
 shape = SubResource("BoxShape3D_ukv3e")
 
-[node name="Fence_6" type="CollisionShape3D" parent="Place_ranch/Collision" unique_id=376769177]
+[node name="Fence_6" type="CollisionShape3D" parent="Place_ranch/Collision" unique_id=682995518]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1840, 5.10132, -60)
 shape = SubResource("BoxShape3D_wn846")
 
-[node name="Fence_7" type="CollisionShape3D" parent="Place_ranch/Collision" unique_id=43767010]
+[node name="Fence_7" type="CollisionShape3D" parent="Place_ranch/Collision" unique_id=1284282556]
 transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 1720, 6.0974693, 40)
 shape = SubResource("BoxShape3D_7hglu")
 
-[node name="Fence_8" type="CollisionShape3D" parent="Place_ranch/Collision" unique_id=2121905445]
+[node name="Fence_8" type="CollisionShape3D" parent="Place_ranch/Collision" unique_id=510630256]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 1600, 9.17732, -60)
 shape = SubResource("BoxShape3D_07ni1")
 
-[node name="Box_9" type="CollisionShape3D" parent="Place_ranch/Collision" unique_id=246678800]
+[node name="Box_9" type="CollisionShape3D" parent="Place_ranch/Collision" unique_id=100168886]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1655.5127, 13.394024, -160)
 shape = SubResource("BoxShape3D_a1a23")
 
-[node name="Box_10" type="CollisionShape3D" parent="Place_ranch/Collision" unique_id=831924630]
+[node name="Box_10" type="CollisionShape3D" parent="Place_ranch/Collision" unique_id=783639153]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1664.5127, 13.394024, -160)
 shape = SubResource("BoxShape3D_8pncn")
 
-[node name="Surfaces" type="CollisionShape3D" parent="Place_ranch/Collision" unique_id=1905731384]
+[node name="Surfaces" type="CollisionShape3D" parent="Place_ranch/Collision" unique_id=243049430]
 shape = ExtResource("13_tlxvx")
 
-[node name="Residential_LargeFamilyHome_alt04_2" type="MeshInstance3D" parent="Place_ranch" unique_id=1510588340]
+[node name="Residential_LargeFamilyHome_alt04_2" type="MeshInstance3D" parent="Place_ranch" unique_id=606823565]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 1688.03, 8.166702, -61.34625)
 visibility_range_end = 1200.0
 mesh = ExtResource("14_dm7js")
 
-[node name="Farm_Barn_3" type="MeshInstance3D" parent="Place_ranch" unique_id=277707465]
+[node name="Farm_Barn_3" type="MeshInstance3D" parent="Place_ranch" unique_id=1934604466]
 transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 1753, 8.166702, -95)
 visibility_range_end = 1200.0
 mesh = ExtResource("15_khl43")
 
-[node name="Farm_GardenShed_4" type="MeshInstance3D" parent="Place_ranch" unique_id=836625886]
+[node name="Farm_GardenShed_4" type="MeshInstance3D" parent="Place_ranch" unique_id=664590361]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 1729, 8.166702, -64)
 visibility_range_end = 1200.0
 mesh = ExtResource("16_ypevr")
 
-[node name="Farm_MetalWindmill_5" type="MeshInstance3D" parent="Place_ranch" unique_id=1457011587]
+[node name="Farm_MetalWindmill_5" type="MeshInstance3D" parent="Place_ranch" unique_id=1962905193]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1797, 3.440172, -28)
 visibility_range_end = 1200.0
 mesh = ExtResource("17_subvc")
 
-[node name="Label_6" type="Label3D" parent="Place_ranch" unique_id=536786898]
+[node name="Label_6" type="Label3D" parent="Place_ranch" unique_id=472495165]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 1660.0127, 16.194025, -160.3)
 visibility_range_end = 400.0
 pixel_size = 0.014
@@ -659,7 +659,7 @@ text = "COYOTE CREEK RANCH"
 font_size = 64
 outline_size = 8
 
-[node name="Label_7" type="Label3D" parent="Place_ranch" unique_id=862556678]
+[node name="Label_7" type="Label3D" parent="Place_ranch" unique_id=1014154043]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1660.0127, 16.194025, -159.7)
 visibility_range_end = 400.0
 pixel_size = 0.014
@@ -670,133 +670,133 @@ text = "COYOTE CREEK RANCH"
 font_size = 64
 outline_size = 8
 
-[node name="Asphalt" type="MeshInstance3D" parent="Place_ranch" unique_id=503743865]
+[node name="Asphalt" type="MeshInstance3D" parent="Place_ranch" unique_id=717457268]
 cast_shadow = 0
 visibility_range_end = 2500.0
 mesh = ExtResource("18_v2das")
 
-[node name="Concrete" type="MeshInstance3D" parent="Place_ranch" unique_id=482157606]
+[node name="Concrete" type="MeshInstance3D" parent="Place_ranch" unique_id=715065516]
 cast_shadow = 0
 visibility_range_end = 2500.0
 mesh = ExtResource("19_tmwhe")
 
-[node name="Paint" type="MeshInstance3D" parent="Place_ranch" unique_id=737452531]
+[node name="Paint" type="MeshInstance3D" parent="Place_ranch" unique_id=211887527]
 visibility_range_end = 2500.0
 mesh = ExtResource("20_ckvow")
 
-[node name="Place_safehouse" type="Node3D" parent="." unique_id=45272182]
+[node name="Place_safehouse" type="Node3D" parent="." unique_id=299890817]
 metadata/place_id = "safehouse"
 metadata/display_name = "Planque de Cedar Lane"
 metadata/kind = "safehouse"
 
-[node name="Entrance" type="Marker3D" parent="Place_safehouse" unique_id=717976721]
+[node name="Entrance" type="Marker3D" parent="Place_safehouse" unique_id=1931306071]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 647, 4.7105956, -80)
 
-[node name="Collision" type="StaticBody3D" parent="Place_safehouse" unique_id=1215477303]
+[node name="Collision" type="StaticBody3D" parent="Place_safehouse" unique_id=86301922]
 
-[node name="Model_0" type="CollisionShape3D" parent="Place_safehouse/Collision" unique_id=351862892]
+[node name="Model_0" type="CollisionShape3D" parent="Place_safehouse/Collision" unique_id=1592699580]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 647, 8.524146, -50)
 shape = SubResource("BoxShape3D_0s6ox")
 
-[node name="Model_1" type="CollisionShape3D" parent="Place_safehouse/Collision" unique_id=1128031428]
+[node name="Model_1" type="CollisionShape3D" parent="Place_safehouse/Collision" unique_id=432074940]
 transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 661, 7.298583, -50)
 shape = SubResource("BoxShape3D_8mabj")
 
-[node name="Surfaces" type="CollisionShape3D" parent="Place_safehouse/Collision" unique_id=1245771078]
+[node name="Surfaces" type="CollisionShape3D" parent="Place_safehouse/Collision" unique_id=1569844594]
 shape = ExtResource("21_mbnav")
 
-[node name="Residential_LogCabin_alt01_2" type="MeshInstance3D" parent="Place_safehouse" unique_id=944899377]
+[node name="Residential_LogCabin_alt01_2" type="MeshInstance3D" parent="Place_safehouse" unique_id=1476934681]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 647, 4.7105956, -49.62372)
 visibility_range_end = 1200.0
 mesh = ExtResource("22_mj14t")
 
-[node name="Farm_GardenShed_3" type="MeshInstance3D" parent="Place_safehouse" unique_id=786197632]
+[node name="Farm_GardenShed_3" type="MeshInstance3D" parent="Place_safehouse" unique_id=1528718953]
 transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 661, 4.7105956, -50)
 visibility_range_end = 1200.0
 mesh = ExtResource("16_ypevr")
 
-[node name="Asphalt" type="MeshInstance3D" parent="Place_safehouse" unique_id=212029375]
+[node name="Asphalt" type="MeshInstance3D" parent="Place_safehouse" unique_id=555190172]
 cast_shadow = 0
 visibility_range_end = 2500.0
 mesh = ExtResource("23_t3ygr")
 
-[node name="Concrete" type="MeshInstance3D" parent="Place_safehouse" unique_id=407614379]
+[node name="Concrete" type="MeshInstance3D" parent="Place_safehouse" unique_id=74701716]
 cast_shadow = 0
 visibility_range_end = 2500.0
 mesh = ExtResource("24_ndrev")
 
-[node name="Paint" type="MeshInstance3D" parent="Place_safehouse" unique_id=1436025645]
+[node name="Paint" type="MeshInstance3D" parent="Place_safehouse" unique_id=502147908]
 visibility_range_end = 2500.0
 mesh = ExtResource("25_7no14")
 
-[node name="Steel" type="MeshInstance3D" parent="Place_safehouse" unique_id=125249821]
+[node name="Steel" type="MeshInstance3D" parent="Place_safehouse" unique_id=1876460936]
 cast_shadow = 0
 visibility_range_end = 700.0
 mesh = ExtResource("26_fqdul")
 
-[node name="Place_greenfield" type="Node3D" parent="." unique_id=1707475768]
+[node name="Place_greenfield" type="Node3D" parent="." unique_id=1449803320]
 metadata/place_id = "greenfield"
 metadata/display_name = "Greenfield Botanicals"
 metadata/kind = "complex"
 
-[node name="Entrance" type="Marker3D" parent="Place_greenfield" unique_id=1093470123]
+[node name="Entrance" type="Marker3D" parent="Place_greenfield" unique_id=730873873]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -440, 0.70783377, -905)
 
-[node name="Collision" type="StaticBody3D" parent="Place_greenfield" unique_id=255950749]
+[node name="Collision" type="StaticBody3D" parent="Place_greenfield" unique_id=1830003467]
 
-[node name="Model_0" type="CollisionShape3D" parent="Place_greenfield/Collision" unique_id=1930656274]
+[node name="Model_0" type="CollisionShape3D" parent="Place_greenfield/Collision" unique_id=642113879]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -446, 7.481597, -962)
 shape = SubResource("BoxShape3D_lddxs")
 
-[node name="Greenhouse_1" type="CollisionShape3D" parent="Place_greenfield/Collision" unique_id=1158502226]
+[node name="Greenhouse_1" type="CollisionShape3D" parent="Place_greenfield/Collision" unique_id=1976642754]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -530, 2.3078337, -965)
 shape = SubResource("BoxShape3D_8atxo")
 
-[node name="Greenhouse_2" type="CollisionShape3D" parent="Place_greenfield/Collision" unique_id=1597030640]
+[node name="Greenhouse_2" type="CollisionShape3D" parent="Place_greenfield/Collision" unique_id=1429423847]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -516, 2.3078337, -965)
 shape = SubResource("BoxShape3D_h4ht3")
 
-[node name="Greenhouse_3" type="CollisionShape3D" parent="Place_greenfield/Collision" unique_id=1724273228]
+[node name="Greenhouse_3" type="CollisionShape3D" parent="Place_greenfield/Collision" unique_id=452814483]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -502, 2.3078337, -965)
 shape = SubResource("BoxShape3D_qfjc2")
 
-[node name="Greenhouse_4" type="CollisionShape3D" parent="Place_greenfield/Collision" unique_id=626035009]
+[node name="Greenhouse_4" type="CollisionShape3D" parent="Place_greenfield/Collision" unique_id=1593038613]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -488, 2.3078337, -965)
 shape = SubResource("BoxShape3D_h8ttp")
 
-[node name="Fence_5" type="CollisionShape3D" parent="Place_greenfield/Collision" unique_id=589855933]
+[node name="Fence_5" type="CollisionShape3D" parent="Place_greenfield/Collision" unique_id=1475968076]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -540, 1.5176542, -972.5)
 shape = SubResource("BoxShape3D_o6kww")
 
-[node name="Fence_6" type="CollisionShape3D" parent="Place_greenfield/Collision" unique_id=1186934491]
+[node name="Fence_6" type="CollisionShape3D" parent="Place_greenfield/Collision" unique_id=739945720]
 transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, -480, 1.6111585, -1005)
 shape = SubResource("BoxShape3D_aho4m")
 
-[node name="Fence_7" type="CollisionShape3D" parent="Place_greenfield/Collision" unique_id=817061329]
+[node name="Fence_7" type="CollisionShape3D" parent="Place_greenfield/Collision" unique_id=1565798049]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -420, 1.601338, -972.5)
 shape = SubResource("BoxShape3D_wot8n")
 
-[node name="Fence_8" type="CollisionShape3D" parent="Place_greenfield/Collision" unique_id=1108674466]
+[node name="Fence_8" type="CollisionShape3D" parent="Place_greenfield/Collision" unique_id=1035143691]
 transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, -430.5, 1.5078337, -940)
 shape = SubResource("BoxShape3D_ka5sw")
 
-[node name="Fence_9" type="CollisionShape3D" parent="Place_greenfield/Collision" unique_id=616206433]
+[node name="Fence_9" type="CollisionShape3D" parent="Place_greenfield/Collision" unique_id=1967049179]
 transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, -496.5, 1.5078337, -940)
 shape = SubResource("BoxShape3D_tt7qa")
 
-[node name="Box_10" type="CollisionShape3D" parent="Place_greenfield/Collision" unique_id=880715577]
+[node name="Box_10" type="CollisionShape3D" parent="Place_greenfield/Collision" unique_id=1738117276]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -462, 2.3892155, -911)
 shape = SubResource("BoxShape3D_6w21o")
 
-[node name="Surfaces" type="CollisionShape3D" parent="Place_greenfield/Collision" unique_id=83499351]
+[node name="Surfaces" type="CollisionShape3D" parent="Place_greenfield/Collision" unique_id=791545357]
 shape = ExtResource("27_5aldw")
 
-[node name="Industrial_Warehouse_alt03_2" type="MeshInstance3D" parent="Place_greenfield" unique_id=108063105]
+[node name="Industrial_Warehouse_alt03_2" type="MeshInstance3D" parent="Place_greenfield" unique_id=1007331413]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -446, 0.70783377, -962)
 visibility_range_end = 1200.0
 mesh = ExtResource("28_3iyls")
 
-[node name="Label_3" type="Label3D" parent="Place_greenfield" unique_id=870666591]
+[node name="Label_3" type="Label3D" parent="Place_greenfield" unique_id=1323547480]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -462, 2.3892155, -910.81)
 visibility_range_end = 350.0
 pixel_size = 0.0050403224
@@ -807,7 +807,7 @@ text = "GREENFIELD BOTANICALS"
 font_size = 64
 outline_size = 8
 
-[node name="Label_4" type="Label3D" parent="Place_greenfield" unique_id=1318670875]
+[node name="Label_4" type="Label3D" parent="Place_greenfield" unique_id=454318047]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -462, 2.3892155, -911.19)
 visibility_range_end = 350.0
 pixel_size = 0.0050403224
@@ -818,52 +818,52 @@ text = "GREENFIELD BOTANICALS"
 font_size = 64
 outline_size = 8
 
-[node name="Asphalt" type="MeshInstance3D" parent="Place_greenfield" unique_id=1924314813]
+[node name="Asphalt" type="MeshInstance3D" parent="Place_greenfield" unique_id=1822687309]
 cast_shadow = 0
 visibility_range_end = 2500.0
 mesh = ExtResource("29_xgc56")
 
-[node name="Concrete" type="MeshInstance3D" parent="Place_greenfield" unique_id=1423621645]
+[node name="Concrete" type="MeshInstance3D" parent="Place_greenfield" unique_id=1328656422]
 cast_shadow = 0
 visibility_range_end = 2500.0
 mesh = ExtResource("30_kfmi8")
 
-[node name="Paint" type="MeshInstance3D" parent="Place_greenfield" unique_id=1365384704]
+[node name="Paint" type="MeshInstance3D" parent="Place_greenfield" unique_id=1739556602]
 visibility_range_end = 2500.0
 mesh = ExtResource("31_sufbv")
 
-[node name="Steel" type="MeshInstance3D" parent="Place_greenfield" unique_id=1653767643]
+[node name="Steel" type="MeshInstance3D" parent="Place_greenfield" unique_id=1181777197]
 cast_shadow = 0
 visibility_range_end = 700.0
 mesh = ExtResource("32_pjscd")
 
-[node name="Place_echo_circle" type="Node3D" parent="." unique_id=72860748]
+[node name="Place_echo_circle" type="Node3D" parent="." unique_id=178072156]
 metadata/place_id = "echo_circle"
 metadata/display_name = "Echo Circle"
 metadata/kind = "plaza"
 
-[node name="Entrance" type="Marker3D" parent="Place_echo_circle" unique_id=806000931]
+[node name="Entrance" type="Marker3D" parent="Place_echo_circle" unique_id=1724567112]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 110, 0.85, -284)
 
-[node name="Collision" type="StaticBody3D" parent="Place_echo_circle" unique_id=2044340662]
+[node name="Collision" type="StaticBody3D" parent="Place_echo_circle" unique_id=579252438]
 
-[node name="Box_0" type="CollisionShape3D" parent="Place_echo_circle/Collision" unique_id=421543538]
+[node name="Box_0" type="CollisionShape3D" parent="Place_echo_circle/Collision" unique_id=1368289886]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 110, 1.35, -316)
 shape = SubResource("BoxShape3D_3ufg2")
 
-[node name="Box_1" type="CollisionShape3D" parent="Place_echo_circle/Collision" unique_id=234028160]
+[node name="Box_1" type="CollisionShape3D" parent="Place_echo_circle/Collision" unique_id=1874028475]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 110, 1.85, -316)
 shape = SubResource("BoxShape3D_o6l2g")
 
-[node name="Box_2" type="CollisionShape3D" parent="Place_echo_circle/Collision" unique_id=1599498357]
+[node name="Box_2" type="CollisionShape3D" parent="Place_echo_circle/Collision" unique_id=1620496529]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 110, 2.3999999, -316)
 shape = SubResource("BoxShape3D_ksubj")
 
-[node name="Obelisk" type="CollisionShape3D" parent="Place_echo_circle/Collision" unique_id=1751144455]
+[node name="Obelisk" type="CollisionShape3D" parent="Place_echo_circle/Collision" unique_id=1444482727]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 110, 9.2, -316)
 shape = SubResource("BoxShape3D_mh4na")
 
-[node name="Label_2" type="Label3D" parent="Place_echo_circle" unique_id=1800961895]
+[node name="Label_2" type="Label3D" parent="Place_echo_circle" unique_id=1854506964]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 110, 2.4, -313.97)
 visibility_range_end = 200.0
 pixel_size = 0.006
@@ -874,7 +874,7 @@ text = "ECHO CIRCLE"
 font_size = 64
 outline_size = 8
 
-[node name="Label_3" type="Label3D" parent="Place_echo_circle" unique_id=643692622]
+[node name="Label_3" type="Label3D" parent="Place_echo_circle" unique_id=890713238]
 transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 112.03, 2.4, -316)
 visibility_range_end = 200.0
 pixel_size = 0.006
@@ -885,7 +885,7 @@ text = "ECHO CIRCLE"
 font_size = 64
 outline_size = 8
 
-[node name="Label_4" type="Label3D" parent="Place_echo_circle" unique_id=1131204945]
+[node name="Label_4" type="Label3D" parent="Place_echo_circle" unique_id=1684274584]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 110, 2.4, -318.03)
 visibility_range_end = 200.0
 pixel_size = 0.006
@@ -896,7 +896,7 @@ text = "ECHO CIRCLE"
 font_size = 64
 outline_size = 8
 
-[node name="Label_5" type="Label3D" parent="Place_echo_circle" unique_id=446788429]
+[node name="Label_5" type="Label3D" parent="Place_echo_circle" unique_id=673075130]
 transform = Transform3D(1.1924881e-08, 0, -1, 0, 1, 0, 1, 0, 1.1924881e-08, 107.97, 2.4, -316)
 visibility_range_end = 200.0
 pixel_size = 0.006
@@ -907,34 +907,34 @@ text = "ECHO CIRCLE"
 font_size = 64
 outline_size = 8
 
-[node name="Paint" type="MeshInstance3D" parent="Place_echo_circle" unique_id=1025484369]
+[node name="Paint" type="MeshInstance3D" parent="Place_echo_circle" unique_id=1856055627]
 visibility_range_end = 2500.0
 mesh = ExtResource("33_yl6u5")
 
-[node name="Place_hotel" type="Node3D" parent="." unique_id=608052573]
+[node name="Place_hotel" type="Node3D" parent="." unique_id=1884408981]
 metadata/place_id = "hotel"
 metadata/display_name = "Ashford Grand Hotel"
 metadata/kind = "hotel"
 
-[node name="Entrance" type="Marker3D" parent="Place_hotel" unique_id=265188436]
+[node name="Entrance" type="Marker3D" parent="Place_hotel" unique_id=66327593]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -902, 0.41, -424)
 
-[node name="Collision" type="StaticBody3D" parent="Place_hotel" unique_id=770407164]
+[node name="Collision" type="StaticBody3D" parent="Place_hotel" unique_id=1260683811]
 
-[node name="Model_0" type="CollisionShape3D" parent="Place_hotel/Collision" unique_id=451363729]
+[node name="Model_0" type="CollisionShape3D" parent="Place_hotel/Collision" unique_id=371468727]
 transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, -929, 34.294186, -424)
 shape = SubResource("BoxShape3D_duo7h")
 
-[node name="Box_1" type="CollisionShape3D" parent="Place_hotel/Collision" unique_id=1237563437]
+[node name="Box_1" type="CollisionShape3D" parent="Place_hotel/Collision" unique_id=1753629972]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -912.2, 3.47, -424)
 shape = SubResource("BoxShape3D_hc7nc")
 
-[node name="Industrial_TraditionalSkyscraper_alt05_2" type="MeshInstance3D" parent="Place_hotel" unique_id=301027500]
+[node name="Industrial_TraditionalSkyscraper_alt05_2" type="MeshInstance3D" parent="Place_hotel" unique_id=671357516]
 transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, -929.0003, -0.03, -423.99158)
 visibility_range_end = 2500.0
 mesh = ExtResource("34_50lt0")
 
-[node name="Label_3" type="Label3D" parent="Place_hotel" unique_id=706868638]
+[node name="Label_3" type="Label3D" parent="Place_hotel" unique_id=972198870]
 transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, -905.9, 5.17, -424)
 visibility_range_end = 400.0
 pixel_size = 0.012
@@ -945,7 +945,7 @@ text = "ASHFORD GRAND HOTEL"
 font_size = 64
 outline_size = 8
 
-[node name="Label_4" type="Label3D" parent="Place_hotel" unique_id=1555180911]
+[node name="Label_4" type="Label3D" parent="Place_hotel" unique_id=635514069]
 transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, -918.2, 65.97, -424)
 visibility_range_end = 1500.0
 pixel_size = 0.05
@@ -956,42 +956,42 @@ text = "ASHFORD GRAND"
 font_size = 64
 outline_size = 8
 
-[node name="Paint" type="MeshInstance3D" parent="Place_hotel" unique_id=1409375734]
+[node name="Paint" type="MeshInstance3D" parent="Place_hotel" unique_id=963790121]
 visibility_range_end = 2500.0
 mesh = ExtResource("35_octan")
 
-[node name="Steel" type="MeshInstance3D" parent="Place_hotel" unique_id=1582103280]
+[node name="Steel" type="MeshInstance3D" parent="Place_hotel" unique_id=1892969026]
 cast_shadow = 0
 visibility_range_end = 700.0
 mesh = ExtResource("36_ksemg")
 
-[node name="Place_hospital" type="Node3D" parent="." unique_id=1878711817]
+[node name="Place_hospital" type="Node3D" parent="." unique_id=1751617992]
 metadata/place_id = "hospital"
 metadata/display_name = "St. Anselm Medical Center"
 metadata/kind = "hospital"
 
-[node name="Entrance" type="Marker3D" parent="Place_hospital" unique_id=1002143160]
+[node name="Entrance" type="Marker3D" parent="Place_hospital" unique_id=1187330868]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -280, 0.41, 125)
 
-[node name="Collision" type="StaticBody3D" parent="Place_hospital" unique_id=840318614]
+[node name="Collision" type="StaticBody3D" parent="Place_hospital" unique_id=612126086]
 
-[node name="Model_0" type="CollisionShape3D" parent="Place_hospital/Collision" unique_id=1324235823]
+[node name="Model_0" type="CollisionShape3D" parent="Place_hospital/Collision" unique_id=163739268]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -280, 14.722085, 168)
 shape = SubResource("BoxShape3D_vkf2o")
 
-[node name="Box_1" type="CollisionShape3D" parent="Place_hospital/Collision" unique_id=846195203]
+[node name="Box_1" type="CollisionShape3D" parent="Place_hospital/Collision" unique_id=1197605868]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -310, 1.97, 133)
 shape = SubResource("BoxShape3D_jkmuk")
 
-[node name="Surfaces" type="CollisionShape3D" parent="Place_hospital/Collision" unique_id=139667496]
+[node name="Surfaces" type="CollisionShape3D" parent="Place_hospital/Collision" unique_id=1757530341]
 shape = ExtResource("37_pify7")
 
-[node name="Business_Hospital_2" type="MeshInstance3D" parent="Place_hospital" unique_id=467419321]
+[node name="Business_Hospital_2" type="MeshInstance3D" parent="Place_hospital" unique_id=468973740]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -274.25372, -0.03, 167.86949)
 visibility_range_end = 2500.0
 mesh = ExtResource("38_4rfvk")
 
-[node name="Label_3" type="Label3D" parent="Place_hospital" unique_id=743139723]
+[node name="Label_3" type="Label3D" parent="Place_hospital" unique_id=637119101]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -310, 1.97, 133.19)
 visibility_range_end = 350.0
 pixel_size = 0.004233871
@@ -1002,7 +1002,7 @@ text = "ST. ANSELM MEDICAL CENTER"
 font_size = 64
 outline_size = 8
 
-[node name="Label_4" type="Label3D" parent="Place_hospital" unique_id=465084850]
+[node name="Label_4" type="Label3D" parent="Place_hospital" unique_id=692307262]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -310, 1.97, 132.81)
 visibility_range_end = 350.0
 pixel_size = 0.004233871
@@ -1013,59 +1013,59 @@ text = "ST. ANSELM MEDICAL CENTER"
 font_size = 64
 outline_size = 8
 
-[node name="Concrete" type="MeshInstance3D" parent="Place_hospital" unique_id=1783718690]
+[node name="Concrete" type="MeshInstance3D" parent="Place_hospital" unique_id=1972938935]
 cast_shadow = 0
 visibility_range_end = 2500.0
 mesh = ExtResource("39_faxax")
 
-[node name="Asphalt" type="MeshInstance3D" parent="Place_hospital" unique_id=432007182]
+[node name="Asphalt" type="MeshInstance3D" parent="Place_hospital" unique_id=706525447]
 cast_shadow = 0
 visibility_range_end = 2500.0
 mesh = ExtResource("40_7cjak")
 
-[node name="Paint" type="MeshInstance3D" parent="Place_hospital" unique_id=683800468]
+[node name="Paint" type="MeshInstance3D" parent="Place_hospital" unique_id=695141543]
 visibility_range_end = 2500.0
 mesh = ExtResource("41_x23sl")
 
-[node name="Place_precinct" type="Node3D" parent="." unique_id=2061509987]
+[node name="Place_precinct" type="Node3D" parent="." unique_id=38239985]
 metadata/place_id = "precinct"
 metadata/display_name = "Central Precinct"
 metadata/kind = "police"
 
-[node name="Entrance" type="Marker3D" parent="Place_precinct" unique_id=1649011724]
+[node name="Entrance" type="Marker3D" parent="Place_precinct" unique_id=1687251569]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -713, 0.41, 125)
 
-[node name="Collision" type="StaticBody3D" parent="Place_precinct" unique_id=1882311193]
+[node name="Collision" type="StaticBody3D" parent="Place_precinct" unique_id=251978776]
 
-[node name="Model_0" type="CollisionShape3D" parent="Place_precinct/Collision" unique_id=542851174]
+[node name="Model_0" type="CollisionShape3D" parent="Place_precinct/Collision" unique_id=580430142]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -713, 11.27713, 158)
 shape = SubResource("BoxShape3D_x6rf3")
 
-[node name="Fence_1" type="CollisionShape3D" parent="Place_precinct/Collision" unique_id=892478101]
+[node name="Fence_1" type="CollisionShape3D" parent="Place_precinct/Collision" unique_id=145211257]
 transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, -690.5, 1.07, 147)
 shape = SubResource("BoxShape3D_p00r0")
 
-[node name="Fence_2" type="CollisionShape3D" parent="Place_precinct/Collision" unique_id=1095277109]
+[node name="Fence_2" type="CollisionShape3D" parent="Place_precinct/Collision" unique_id=587740123]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -684, 1.07, 165)
 shape = SubResource("BoxShape3D_bopec")
 
-[node name="Fence_3" type="CollisionShape3D" parent="Place_precinct/Collision" unique_id=535782525]
+[node name="Fence_3" type="CollisionShape3D" parent="Place_precinct/Collision" unique_id=1336989456]
 transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, -690.5, 1.07, 183)
 shape = SubResource("BoxShape3D_ek7p8")
 
-[node name="Box_4" type="CollisionShape3D" parent="Place_precinct/Collision" unique_id=1869444066]
+[node name="Box_4" type="CollisionShape3D" parent="Place_precinct/Collision" unique_id=1253167888]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -726, 5.47, 141)
 shape = SubResource("BoxShape3D_nlr5e")
 
-[node name="Surfaces" type="CollisionShape3D" parent="Place_precinct/Collision" unique_id=27261297]
+[node name="Surfaces" type="CollisionShape3D" parent="Place_precinct/Collision" unique_id=1870786594]
 shape = ExtResource("42_bx67b")
 
-[node name="Business_Bank_2" type="MeshInstance3D" parent="Place_precinct" unique_id=782442579]
+[node name="Business_Bank_2" type="MeshInstance3D" parent="Place_precinct" unique_id=1497680580]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -713, -0.03, 157.78615)
 visibility_range_end = 1200.0
 mesh = ExtResource("43_hluui")
 
-[node name="Label_3" type="Label3D" parent="Place_precinct" unique_id=1631210121]
+[node name="Label_3" type="Label3D" parent="Place_precinct" unique_id=252323338]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -713, 12.17, 145.4)
 visibility_range_end = 500.0
 pixel_size = 0.02
@@ -1076,7 +1076,7 @@ text = "CENTRAL PRECINCT"
 font_size = 64
 outline_size = 8
 
-[node name="Label_4" type="Label3D" parent="Place_precinct" unique_id=628914118]
+[node name="Label_4" type="Label3D" parent="Place_precinct" unique_id=1748654475]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -713, 10.57, 145.4)
 visibility_range_end = 500.0
 pixel_size = 0.016
@@ -1087,47 +1087,47 @@ text = "POLICE"
 font_size = 64
 outline_size = 8
 
-[node name="Concrete" type="MeshInstance3D" parent="Place_precinct" unique_id=2040560132]
+[node name="Concrete" type="MeshInstance3D" parent="Place_precinct" unique_id=1408645253]
 cast_shadow = 0
 visibility_range_end = 2500.0
 mesh = ExtResource("44_6djfj")
 
-[node name="Asphalt" type="MeshInstance3D" parent="Place_precinct" unique_id=1677044262]
+[node name="Asphalt" type="MeshInstance3D" parent="Place_precinct" unique_id=1365349496]
 cast_shadow = 0
 visibility_range_end = 2500.0
 mesh = ExtResource("45_wx4co")
 
-[node name="Paint" type="MeshInstance3D" parent="Place_precinct" unique_id=1668815956]
+[node name="Paint" type="MeshInstance3D" parent="Place_precinct" unique_id=893673045]
 visibility_range_end = 2500.0
 mesh = ExtResource("46_ni2nn")
 
-[node name="Steel" type="MeshInstance3D" parent="Place_precinct" unique_id=1075523274]
+[node name="Steel" type="MeshInstance3D" parent="Place_precinct" unique_id=1542781427]
 cast_shadow = 0
 visibility_range_end = 700.0
 mesh = ExtResource("47_etc01")
 
-[node name="Place_liberty_lot" type="Node3D" parent="." unique_id=1492765707]
+[node name="Place_liberty_lot" type="Node3D" parent="." unique_id=1170252552]
 metadata/place_id = "liberty_lot"
 metadata/display_name = "Liberty Motors"
 metadata/kind = "car_lot"
 
-[node name="Entrance" type="Marker3D" parent="Place_liberty_lot" unique_id=352601102]
+[node name="Entrance" type="Marker3D" parent="Place_liberty_lot" unique_id=2123870253]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1, 0.41, -400)
 
-[node name="Collision" type="StaticBody3D" parent="Place_liberty_lot" unique_id=2103728340]
+[node name="Collision" type="StaticBody3D" parent="Place_liberty_lot" unique_id=2079871786]
 
-[node name="Box_0" type="CollisionShape3D" parent="Place_liberty_lot/Collision" unique_id=325882940]
+[node name="Box_0" type="CollisionShape3D" parent="Place_liberty_lot/Collision" unique_id=477655821]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 22, 2.02, -364)
 shape = SubResource("BoxShape3D_jnapo")
 
-[node name="Box_1" type="CollisionShape3D" parent="Place_liberty_lot/Collision" unique_id=1005963625]
+[node name="Box_1" type="CollisionShape3D" parent="Place_liberty_lot/Collision" unique_id=2065997680]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 4.97, -408)
 shape = SubResource("BoxShape3D_3a8qa")
 
-[node name="Surfaces" type="CollisionShape3D" parent="Place_liberty_lot/Collision" unique_id=693984326]
+[node name="Surfaces" type="CollisionShape3D" parent="Place_liberty_lot/Collision" unique_id=1799668914]
 shape = ExtResource("48_tyt7j")
 
-[node name="Label_2" type="Label3D" parent="Place_liberty_lot" unique_id=1294240272]
+[node name="Label_2" type="Label3D" parent="Place_liberty_lot" unique_id=650559294]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 22, 4.87, -368.1)
 visibility_range_end = 400.0
 pixel_size = 0.012
@@ -1138,7 +1138,7 @@ text = "LIBERTY MOTORS"
 font_size = 64
 outline_size = 8
 
-[node name="Label_3" type="Label3D" parent="Place_liberty_lot" unique_id=436785056]
+[node name="Label_3" type="Label3D" parent="Place_liberty_lot" unique_id=10116017]
 transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 1.6800001, 11.17, -408)
 visibility_range_end = 600.0
 pixel_size = 0.016
@@ -1149,7 +1149,7 @@ text = "LIBERTY MOTORS"
 font_size = 64
 outline_size = 8
 
-[node name="Label_4" type="Label3D" parent="Place_liberty_lot" unique_id=1944120093]
+[node name="Label_4" type="Label3D" parent="Place_liberty_lot" unique_id=67194126]
 transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 2.32, 11.17, -408)
 visibility_range_end = 600.0
 pixel_size = 0.016
@@ -1160,40 +1160,40 @@ text = "LIBERTY MOTORS"
 font_size = 64
 outline_size = 8
 
-[node name="Asphalt" type="MeshInstance3D" parent="Place_liberty_lot" unique_id=2002228141]
+[node name="Asphalt" type="MeshInstance3D" parent="Place_liberty_lot" unique_id=154722037]
 cast_shadow = 0
 visibility_range_end = 2500.0
 mesh = ExtResource("49_a1ldg")
 
-[node name="Paint" type="MeshInstance3D" parent="Place_liberty_lot" unique_id=1204956096]
+[node name="Paint" type="MeshInstance3D" parent="Place_liberty_lot" unique_id=1972579891]
 visibility_range_end = 2500.0
 mesh = ExtResource("50_soprb")
 
-[node name="Steel" type="MeshInstance3D" parent="Place_liberty_lot" unique_id=358698286]
+[node name="Steel" type="MeshInstance3D" parent="Place_liberty_lot" unique_id=2129364136]
 cast_shadow = 0
 visibility_range_end = 700.0
 mesh = ExtResource("51_4h2ul")
 
-[node name="Place_casino" type="Node3D" parent="." unique_id=1375754926]
+[node name="Place_casino" type="Node3D" parent="." unique_id=1982237132]
 metadata/place_id = "casino"
 metadata/display_name = "Scarlet Jack Cabaret & Casino"
 metadata/kind = "casino"
 
-[node name="Entrance" type="Marker3D" parent="Place_casino" unique_id=1666629714]
+[node name="Entrance" type="Marker3D" parent="Place_casino" unique_id=1131011703]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -570, 0.2, -325)
 
-[node name="Collision" type="StaticBody3D" parent="Place_casino" unique_id=646078564]
+[node name="Collision" type="StaticBody3D" parent="Place_casino" unique_id=289174269]
 
-[node name="Model_0" type="CollisionShape3D" parent="Place_casino/Collision" unique_id=1746073000]
+[node name="Model_0" type="CollisionShape3D" parent="Place_casino/Collision" unique_id=685632185]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -570, 12.240986, -338.7)
 shape = SubResource("BoxShape3D_icxrl")
 
-[node name="Industrial_WideOfficeBuilding_alt02_2" type="MeshInstance3D" parent="Place_casino" unique_id=1315457971]
+[node name="Industrial_WideOfficeBuilding_alt02_2" type="MeshInstance3D" parent="Place_casino" unique_id=166168526]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -569.9775, 0.2, -338.70596)
 visibility_range_end = 1200.0
 mesh = ExtResource("52_uiqmj")
 
-[node name="Label_3" type="Label3D" parent="Place_casino" unique_id=2132783379]
+[node name="Label_3" type="Label3D" parent="Place_casino" unique_id=1453597879]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -570, 6.6, -327.01495)
 visibility_range_end = 700.0
 pixel_size = 0.022
@@ -1204,7 +1204,7 @@ text = "SCARLET JACK"
 font_size = 64
 outline_size = 8
 
-[node name="Label_4" type="Label3D" parent="Place_casino" unique_id=651394263]
+[node name="Label_4" type="Label3D" parent="Place_casino" unique_id=152877944]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -570, 29.281973, -338.97)
 visibility_range_end = 1200.0
 pixel_size = 0.03
@@ -1215,7 +1215,7 @@ text = "SCARLET JACK"
 font_size = 64
 outline_size = 8
 
-[node name="Label_5" type="Label3D" parent="Place_casino" unique_id=1354277812]
+[node name="Label_5" type="Label3D" parent="Place_casino" unique_id=124844403]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -570, 27.381973, -338.97)
 visibility_range_end = 900.0
 pixel_size = 0.018
@@ -1226,7 +1226,7 @@ text = "CABARET & CASINO"
 font_size = 64
 outline_size = 8
 
-[node name="Label_6" type="Label3D" parent="Place_casino" unique_id=389683344]
+[node name="Label_6" type="Label3D" parent="Place_casino" unique_id=264037921]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -570, 29.281973, -338.43002)
 visibility_range_end = 1200.0
 pixel_size = 0.03
@@ -1237,7 +1237,7 @@ text = "SCARLET JACK"
 font_size = 64
 outline_size = 8
 
-[node name="Label_7" type="Label3D" parent="Place_casino" unique_id=1649591916]
+[node name="Label_7" type="Label3D" parent="Place_casino" unique_id=1382757730]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -570, 27.381973, -338.43002)
 visibility_range_end = 900.0
 pixel_size = 0.018
@@ -1248,11 +1248,11 @@ text = "CABARET & CASINO"
 font_size = 64
 outline_size = 8
 
-[node name="Paint" type="MeshInstance3D" parent="Place_casino" unique_id=1166429869]
+[node name="Paint" type="MeshInstance3D" parent="Place_casino" unique_id=125000210]
 visibility_range_end = 2500.0
 mesh = ExtResource("53_84aac")
 
-[node name="Steel" type="MeshInstance3D" parent="Place_casino" unique_id=891615545]
+[node name="Steel" type="MeshInstance3D" parent="Place_casino" unique_id=1532666329]
 cast_shadow = 0
 visibility_range_end = 700.0
 mesh = ExtResource("54_akulq")
