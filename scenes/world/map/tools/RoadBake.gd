@@ -108,9 +108,9 @@ var road_index := {}              # cellule de 16 m -> [[ruban, échantillon], .
 var _grid_mouths: Array[Vector3] = []   # centres des raccords au centre-ville (étape 4)
 var tunnel_spans := {}            # id de chaîne -> [[indice du portail, indice du bout], ...]
 var corridors: Array[Dictionary] = []
-# Non vide : seul ce cul-de-sac reçoit le trottoir du bulbe. Essai demandé avant d'appliquer aux 113 autres ; remis à
-# "" à l'étape suivante. Surchargeable par --cds=<id>.
-var _cds_only := "rue_bluffview_0:bout"
+# Non vide : seul ce cul-de-sac reçoit le trottoir du bulbe (essai). L'essai ayant été jugé concluant, tous les
+# bulbes sont traités. Surchargeable par --cds=<id> pour revenir à un seul.
+var _cds_only := ""
 var stats := {"cellules": 0, "tablier_m": 0.0, "murs_m": 0.0, "glissiere_m": 0.0, "piles": 0, "tunnels": 0, "sommets_creuses": 0, "sommets_remblayes": 0, "triangles": 0}
 
 
