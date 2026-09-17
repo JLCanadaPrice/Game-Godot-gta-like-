@@ -1085,13 +1085,7 @@ func _register_end(station: Dictionary, rb: Ribbon, k: int) -> void:
 	if station["kind"] == "end":
 		var c0: Vector3 = station["pos"]
 		station["pos"] = Vector3(c0.x, p.y, c0.z)   # cul-de-sac plat, à la hauteur du bout de chaussée
-	# pente et trottoirs du bras : RoadBake s'en sert pour poser le marquage sur la chaussée et arrondir les angles
-	var neighbour: Vector3 = rb.points[mini(1, rb.points.size() - 1)] if k == 0 else rb.points[maxi(rb.points.size() - 2, 0)]
-	var flat := Vector2(neighbour.x - p.x, neighbour.z - p.z).length()
-	var has_walk: bool = rb.kind == "arterial" and ROAD_STYLES.has(rb.style) and bool(ROAD_STYLES[rb.style]["sidewalk"])
-	(station["ends"] as Array).append({"left": Vector3(p.x - side.x, p.y, p.z - side.y), "right": Vector3(p.x + side.x, p.y, p.z + side.y),
-			"tip": p, "dir": dir, "kind": rb.kind, "style": rb.style, "sidewalk": has_walk,
-			"slope": (neighbour.y - p.y) / maxf(flat, 0.001)})
+	(station["ends"] as Array).append({"left": Vector3(p.x - side.x, p.y, p.z - side.y), "right": Vector3(p.x + side.x, p.y, p.z + side.y), "tip": p, "dir": dir})
 	var center: Vector3 = station["pos"]
 	match String(station["kind"]):
 		"edge", "roundabout":
@@ -1153,8 +1147,7 @@ func _diamond_ramps(node_id: String) -> void:
 		var dir := end_dir
 		var hw := RAMP_WIDTH * 0.5
 		var lateral := right_of(end_dir) * hw
-		(terminal["ends"] as Array).append({"left": tip - Vector3(lateral.x, 0.0, lateral.y), "right": tip + Vector3(lateral.x, 0.0, lateral.y),
-				"tip": tip, "dir": dir, "kind": "ramp", "style": "", "sidewalk": false, "slope": 0.0})
+		(terminal["ends"] as Array).append({"left": tip - Vector3(lateral.x, 0.0, lateral.y), "right": tip + Vector3(lateral.x, 0.0, lateral.y), "tip": tip, "dir": dir})
 
 
 # Rues locales : depuis les artères des quartiers (hors chemins), tous les LOCAL_SPACING m de chaque côté, une impasse
@@ -1376,7 +1369,6 @@ func _station_pads() -> void:
 			continue
 		var rim := PackedVector3Array()
 		var island := 0.0
-		var gaps: Array[Dictionary] = []   # portions de pourtour entre deux bras (angles de trottoir, étape 2)
 		if kind == "roundabout":
 			# disque un peu plus large et 1 cm plus bas : recouvre le bout plat des bras sans jour ni scintillement
 			rim = _disc(center - Vector3(0, 0.01, 0), float(MINI_RING["pad"]) + 1.2, 48)
@@ -1389,13 +1381,13 @@ func _station_pads() -> void:
 		else:
 			var corners: Array[Vector3] = []
 			var arms: Array[int] = []
+			var reach := 0.0
 			for end: Dictionary in station["ends"]:
 				corners.append(end["left"])
 				corners.append(end["right"])
 				arms.append_array([arms.size() / 2, arms.size() / 2])
-			# arcs entre deux bras éloignés (jamais entre les deux coins d'un même bras) : le plateau reste arrondi.
-			# Le rayon de l'arc suit les deux coins qu'il relie (et sa hauteur aussi) : le plateau ne déborde plus de
-			# l'enveloppe des chaussées et se raccorde sans marche (chantier des routes, étape 2).
+				reach = maxf(reach, Vector2(center.x, center.z).distance_to(Vector2(Vector3(end["tip"]).x, Vector3(end["tip"]).z)))
+			# arcs entre deux bras éloignés (jamais entre les deux coins d'un même bras) : le plateau reste arrondi
 			var angles: Array[float] = []
 			for c in corners:
 				angles.append(fposmod(atan2(c.z - center.z, c.x - center.x), TAU))
@@ -1404,21 +1396,14 @@ func _station_pads() -> void:
 			for n in order.size():
 				var a: int = order[n]
 				var b: int = order[(n + 1) % order.size()]
-				var start := rim.size()
 				rim.append(corners[a])
 				var gap := fposmod(angles[b] - angles[a], TAU)
 				if arms[a] != arms[b] and gap > 0.6:
-					var ra := Vector2(corners[a].x - center.x, corners[a].z - center.z).length()
-					var rb := Vector2(corners[b].x - center.x, corners[b].z - center.z).length()
 					var fill := int(gap / 0.35)
 					for f in range(1, fill):
-						var t := float(f) / fill
-						var ang := angles[a] + gap * t
-						var rad := lerpf(ra, rb, t)
-						rim.append(Vector3(center.x + cos(ang) * rad, lerpf(corners[a].y, corners[b].y, t), center.z + sin(ang) * rad))
-				if arms[a] != arms[b]:
-					gaps.append({"from": start, "count": rim.size() - start, "arm_a": arms[a], "arm_b": arms[b]})
-		pads.append({"id": id, "kind": kind, "center": center, "rim": rim, "island": island, "gaps": gaps})
+						var ang := angles[a] + gap * f / fill
+						rim.append(Vector3(center.x + cos(ang) * reach * 0.8, center.y, center.z + sin(ang) * reach * 0.8))
+		pads.append({"id": id, "kind": kind, "center": center, "rim": rim, "island": island})
 
 
 static func _disc(center: Vector3, radius: float, segments: int) -> PackedVector3Array:

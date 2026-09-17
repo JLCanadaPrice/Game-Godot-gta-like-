@@ -144,9 +144,9 @@ func _base_color(kind: String, across: float, width: float, along: float, noise:
 				c = RAIL_SHADOW
 			return c
 		"junction":
-			# enrobé nu : la teinte du milieu d'une chaussée, sans dégradé transversal (les plateaux se raccordent à
-			# des chaussées dans tous les sens)
-			return ASPHALT_MID.darkened(noise * 0.05)
+			# enrobé nu, sans dégradé transversal (les plateaux se raccordent à des chaussées dans tous les sens) :
+			# teinte entre le milieu et le bord d'une chaussée, pour que le plateau ne tranche pas avec elles
+			return ASPHALT_EDGE.lerp(ASPHALT_MID, 0.72).darkened(noise * 0.05)
 		"crosswalk":
 			# bandes de 0,5 m tous les mètres en travers de la route, constantes le long de la route
 			return _paint(noise) if fposmod(across, 1.0) < 0.5 else ASPHALT_MID.darkened(noise * 0.05)

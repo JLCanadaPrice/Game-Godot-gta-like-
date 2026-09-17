@@ -500,29 +500,22 @@ func _open_edges(rb) -> PackedByteArray:
 	return out
 
 
-# Plateau de carrefour (chantier des routes, étape 2) : surface d'enrobé à l'échelle 1:1 découpée sur la grille de
-# l'atlas, hauteurs prises sur le pourtour (raccord sans marche avec les chaussées), rebord vertical, angles de
-# trottoir arrondis entre deux bras qui en ont, et marquage posé 1,2 cm au-dessus de la chaussée (ligne d'arrêt sur
-# les voies qui arrivent, passage piéton sur les bras à trottoir, jamais de ligne d'axe dans le carrefour) ; îlot en
-# herbe surélevé pour un rond-point.
-const PAD_MARK_RISE := 0.012
-const PAD_STOP_FROM := 0.8          # m depuis le bord du plateau
-const PAD_STOP_DEPTH := 0.5
-const PAD_WALK_FROM := 1.6
-const PAD_WALK_DEPTH := 3.0
-
-
+# Plateau de carrefour : éventail depuis le centre jusqu'au pourtour (coins des rubans), rebord vertical ; îlot en herbe
+# surélevé pour un rond-point.
 func _pad(pad: Dictionary) -> void:
-	var rim: PackedVector3Array = pad["rim"]
-	if rim.size() < 3:
-		return
-	_pad_surface(pad)
-	_pad_rim(pad)
-	var kind := String(pad["kind"])
-	if kind == "junction" or kind == "terminal":
-		_pad_corners(pad)
-		_pad_markings(pad)
 	var center: Vector3 = pad["center"]
+	var rim: PackedVector3Array = pad["rim"]
+	var n := rim.size()
+	if n < 3:
+		return
+	var atlas: Vector2 = ATLAS["median"]
+	var u := (atlas.x + atlas.y) * 0.5
+	for k in n:
+		var a := rim[k]
+		var b := rim[(k + 1) % n]
+		_tri("asphalt", center, a, b, Vector3.UP, [Vector2(u, center.z / TEX_LENGTH), Vector2(u, a.z / TEX_LENGTH), Vector2(u, b.z / TEX_LENGTH)])
+		var out := Vector3((a + b).x * 0.5 - center.x, 0.0, (a + b).z * 0.5 - center.z).normalized()
+		_quad("concrete", a, b, b - Vector3(0, LIP, 0), a - Vector3(0, LIP, 0), out)
 	var island: float = pad["island"]
 	if island > 0.0:
 		var grass := Color(0.85, 0.1, 0.05, 0.0)
@@ -534,146 +527,6 @@ func _pad(pad: Dictionary) -> void:
 			_tri("roof", top, a, b, Vector3.UP, [], grass)
 			var out := Vector3((a + b).x * 0.5 - center.x, 0.0, (a + b).z * 0.5 - center.z).normalized()
 			_quad("concrete", a, b, b - Vector3(0, ISLAND_RISE + 0.1, 0), a - Vector3(0, ISLAND_RISE + 0.1, 0), out)
-
-
-# Surface du plateau : le polygone du pourtour est découpé sur la grille de l'atlas (largeur de la colonne "junction"
-# en travers, TEX_LENGTH le long), chaque morceau est triangulé et reçoit des UV à l'échelle 1:1 : l'enrobé a le même
-# grain que les chaussées, sans étirement ni bande unie.
-func _pad_surface(pad: Dictionary) -> void:
-	var rim: PackedVector3Array = pad["rim"]
-	var poly := PackedVector2Array()
-	var lo := Vector2(INF, INF)
-	var hi := Vector2(-INF, -INF)
-	for p in rim:
-		poly.append(Vector2(p.x, p.z))
-		lo = Vector2(minf(lo.x, p.x), minf(lo.y, p.z))
-		hi = Vector2(maxf(hi.x, p.x), maxf(hi.y, p.z))
-	var atlas: Vector2 = ATLAS["junction"]
-	var w: float = ATLAS_METERS["junction"]
-	for gx in range(floori(lo.x / w), floori(hi.x / w) + 1):
-		for gz in range(floori(lo.y / TEX_LENGTH), floori(hi.y / TEX_LENGTH) + 1):
-			var x0 := gx * w
-			var z0 := gz * TEX_LENGTH
-			var cell := PackedVector2Array([Vector2(x0, z0), Vector2(x0 + w, z0), Vector2(x0 + w, z0 + TEX_LENGTH), Vector2(x0, z0 + TEX_LENGTH)])
-			for piece: PackedVector2Array in Geometry2D.intersect_polygons(poly, cell):
-				var idx := Geometry2D.triangulate_polygon(piece)
-				for t in range(0, idx.size() - 2, 3):
-					var qa: Vector2 = piece[idx[t]]
-					var qb: Vector2 = piece[idx[t + 1]]
-					var qc: Vector2 = piece[idx[t + 2]]
-					_tri("asphalt", _pad_point(pad, qa), _pad_point(pad, qb), _pad_point(pad, qc), Vector3.UP,
-							[_pad_uv(qa, atlas, x0, w), _pad_uv(qb, atlas, x0, w), _pad_uv(qc, atlas, x0, w)])
-
-
-func _pad_uv(q: Vector2, atlas: Vector2, x0: float, w: float) -> Vector2:
-	return Vector2(lerpf(atlas.x, atlas.y, clampf((q.x - x0) / w, 0.0, 1.0)), q.y / TEX_LENGTH)
-
-
-# Hauteur d'un point du plateau : exactement celle du pourtour quand le point est dessus (raccord sans marche avec les
-# chaussées), moyenne pondérée par l'inverse du carré de la distance ailleurs.
-func _pad_point(pad: Dictionary, q: Vector2) -> Vector3:
-	var rim: PackedVector3Array = pad["rim"]
-	var n := rim.size()
-	var best := INF
-	var on_rim := 0.0
-	for k in n:
-		var a: Vector3 = rim[k]
-		var b: Vector3 = rim[(k + 1) % n]
-		var pa := Vector2(a.x, a.z)
-		var pb := Vector2(b.x, b.z)
-		var s := Geometry2D.get_closest_point_to_segment(q, pa, pb)
-		var d := s.distance_to(q)
-		if d < best:
-			best = d
-			var ab := pb - pa
-			var t := 0.0 if ab.length_squared() < 0.0001 else clampf((s - pa).dot(ab) / ab.length_squared(), 0.0, 1.0)
-			on_rim = lerpf(a.y, b.y, t)
-	if best < 0.05:
-		return Vector3(q.x, on_rim, q.y)
-	var center: Vector3 = pad["center"]
-	var d2 := Vector2(center.x - q.x, center.z - q.y).length_squared() + 1.0
-	var sum := center.y / d2
-	var weight := 1.0 / d2
-	for p in rim:
-		var d3 := Vector2(p.x - q.x, p.z - q.y).length_squared() + 1.0
-		sum += p.y / d3
-		weight += 1.0 / d3
-	return Vector3(q.x, sum / weight, q.y)
-
-
-# Rebord vertical sous le pourtour.
-func _pad_rim(pad: Dictionary) -> void:
-	var rim: PackedVector3Array = pad["rim"]
-	var center: Vector3 = pad["center"]
-	for k in rim.size():
-		var a: Vector3 = rim[k]
-		var b: Vector3 = rim[(k + 1) % rim.size()]
-		var out := Vector3((a + b).x * 0.5 - center.x, 0.0, (a + b).z * 0.5 - center.z).normalized()
-		_quad("concrete", a, b, b - Vector3(0, LIP, 0), a - Vector3(0, LIP, 0), out)
-
-
-# Angles de trottoir arrondis : entre deux bras qui ont des trottoirs, une bande large comme eux suit le pourtour du
-# plateau à la hauteur du trottoir, avec sa bordure côté chaussée.
-func _pad_corners(pad: Dictionary) -> void:
-	var station: Dictionary = net.stations[pad["id"]]
-	var ends: Array = station["ends"]
-	var rim: PackedVector3Array = pad["rim"]
-	var n := rim.size()
-	var center: Vector3 = pad["center"]
-	var atlas: Vector2 = ATLAS["sidewalk"]
-	var rise := Vector3(0, Network.SIDEWALK_RISE, 0)
-	for gap: Dictionary in pad.get("gaps", []):
-		var a: int = gap["arm_a"]
-		var b: int = gap["arm_b"]
-		if a >= ends.size() or b >= ends.size():
-			continue
-		if not bool((ends[a] as Dictionary).get("sidewalk", false)) or not bool((ends[b] as Dictionary).get("sidewalk", false)):
-			continue
-		var count: int = gap["count"]
-		var first: int = gap["from"]
-		var along := 0.0
-		for s in count:
-			var p0: Vector3 = rim[(first + s) % n]
-			var p1: Vector3 = rim[(first + s + 1) % n]
-			var o0 := Vector3(p0.x - center.x, 0.0, p0.z - center.z).normalized() * Network.SIDEWALK_WIDTH
-			var o1 := Vector3(p1.x - center.x, 0.0, p1.z - center.z).normalized() * Network.SIDEWALK_WIDTH
-			var v0 := along / TEX_LENGTH
-			along += p0.distance_to(p1)
-			var v1 := along / TEX_LENGTH
-			_quad("asphalt", p0 + rise, p1 + rise, p1 + rise + o1, p0 + rise + o0, Vector3.UP,
-					[Vector2(atlas.x, v0), Vector2(atlas.x, v1), Vector2(atlas.y, v1), Vector2(atlas.y, v0)])
-			_quad("concrete", p0, p1, p1 + rise, p0 + rise, Vector3(center.x - p0.x, 0.0, center.z - p0.z).normalized())
-
-
-# Marquage du plateau, posé sur la chaussée juste en dehors : ligne d'arrêt sur la moitié qui arrive, puis passage
-# piéton sur les bras à trottoir. La pente du bras est suivie pour que le marquage colle à la chaussée.
-func _pad_markings(pad: Dictionary) -> void:
-	var station: Dictionary = net.stations[pad["id"]]
-	for end: Dictionary in station["ends"]:
-		if String(end.get("kind", "")) == "ramp":
-			continue
-		var tip: Vector3 = end["tip"]
-		var left: Vector3 = end["left"]
-		var right: Vector3 = end["right"]
-		var slope: float = end.get("slope", 0.0)
-		var d2: Vector2 = end["dir"]          # direction du bras vers le plateau, en 2D (repère du réseau)
-		var out := Vector3(-d2.x, 0.0, -d2.y).normalized()
-		var stop_atlas: Vector2 = ATLAS["stop"]
-		_mark(tip, right, out, slope, PAD_STOP_FROM, PAD_STOP_DEPTH, stop_atlas.x, stop_atlas.y)
-		if not bool(end.get("sidewalk", false)):
-			continue
-		var walk_atlas: Vector2 = ATLAS["crosswalk"]
-		var ur := lerpf(walk_atlas.x, walk_atlas.y, clampf(left.distance_to(right) / float(ATLAS_METERS["crosswalk"]), 0.0, 1.0))
-		_mark(left, right, out, slope, PAD_WALK_FROM, PAD_WALK_DEPTH, walk_atlas.x, ur)
-
-
-# Bande de marquage entre deux points du bord du plateau, de `from` à `from + depth` m vers la route.
-func _mark(a: Vector3, b: Vector3, out: Vector3, slope: float, from: float, depth: float, u0: float, u1: float) -> void:
-	var rise := Vector3(0, PAD_MARK_RISE, 0)
-	var near := out * from + Vector3(0, from * slope, 0) + rise
-	var far := out * (from + depth) + Vector3(0, (from + depth) * slope, 0) + rise
-	_quad("asphalt", a + near, b + near, b + far, a + far, Vector3.UP,
-			[Vector2(u0, 0.0), Vector2(u1, 0.0), Vector2(u1, depth / TEX_LENGTH), Vector2(u0, depth / TEX_LENGTH)], Color.BLACK, false)
 
 
 func _tri(part: String, a: Vector3, b: Vector3, c: Vector3, normal: Vector3, uv: Array = [], color := Color.BLACK) -> void:
@@ -1041,7 +894,7 @@ func _group(p: Vector3) -> Dictionary:
 
 # Quadrilatère a-b-c-d (dans l'ordre du pourtour), face visible du côté de `normal` (sommets en sens horaire vu de ce
 # côté, convention de Godot), ajouté au maillage `part` de sa cellule et à la collision.
-func _quad(part: String, a: Vector3, b: Vector3, c: Vector3, d: Vector3, normal: Vector3, uv: Array = [], color := Color.BLACK, collide := true) -> void:
+func _quad(part: String, a: Vector3, b: Vector3, c: Vector3, d: Vector3, normal: Vector3, uv: Array = [], color := Color.BLACK) -> void:
 	if (c - a).length_squared() < 0.0001 and (d - b).length_squared() < 0.0001:
 		return
 	var g := _group((a + c) * 0.5)
@@ -1063,7 +916,7 @@ func _quad(part: String, a: Vector3, b: Vector3, c: Vector3, d: Vector3, normal:
 		batch.uvs.append(uv_order[i] if not uv_order.is_empty() else Vector2.ZERO)
 		batch.colors.append(color)
 	batch.indices.append_array(PackedInt32Array([base, base + 1, base + 2, base, base + 2, base + 3]))
-	if part != "steel" and collide:   # rails, panneaux et marquage : sans collision (pas de marche pour le joueur ni les roues)
+	if part != "steel":   # rails et panneaux : sans collision (pas de marche pour le joueur ni les roues)
 		var faces: PackedVector3Array = g["faces"]
 		faces.append_array(PackedVector3Array([order[0], order[1], order[2], order[0], order[2], order[3]]))
 		g["faces"] = faces
