@@ -98,6 +98,7 @@ var heights := PackedFloat32Array()
 var excluded := PackedByteArray()
 var groups := {}                  # Vector2i -> {"asphalt": Batch, "concrete": Batch, "roof": Batch, "faces": PackedVector3Array}
 var road_index := {}              # cellule de 16 m -> [[ruban, échantillon], ...] (piles)
+var _grid_mouths: Array[Vector3] = []   # centres des raccords au centre-ville (étape 4)
 var tunnel_spans := {}            # id de chaîne -> [[indice du portail, indice du bout], ...]
 var corridors: Array[Dictionary] = []
 var stats := {"cellules": 0, "tablier_m": 0.0, "murs_m": 0.0, "piles": 0, "tunnels": 0, "sommets_creuses": 0, "sommets_remblayes": 0, "triangles": 0}
@@ -139,6 +140,7 @@ func _initialize() -> void:
 		_ribbon(rb, modes[rb])
 	for pad: Dictionary in net.pads:
 		_pad(pad)
+	_grid_stop_lines()
 	_place_lamps(modes)
 	for lc: Dictionary in net.level_crossings:
 		_level_crossing(lc)
@@ -383,7 +385,9 @@ func _ribbon(rb, mode: PackedByteArray) -> void:
 		var r1 := pts[k] + sides[k] * hw
 		var l2 := pts[k2] - sides[k2] * hw
 		var r2 := pts[k2] + sides[k2] * hw
-		_quad("asphalt", l1, l2, r2, r1, Vector3.UP, [Vector2(atlas.x, v1), Vector2(atlas.x, v2), Vector2(atlas.y, v2), Vector2(atlas.y, v1)])
+		# derniers mètres à l'entrée du centre-ville : enrobé nu, pas de ligne d'axe qui rentre dans le carrefour
+		var seg_atlas := ATLAS["junction"] if kind == "arterial" and _at_grid_mouth((pts[k] + pts[k2]) * 0.5) else atlas
+		_quad("asphalt", l1, l2, r2, r1, Vector3.UP, [Vector2(seg_atlas.x, v1), Vector2(seg_atlas.x, v2), Vector2(seg_atlas.y, v2), Vector2(seg_atlas.y, v1)])
 	if kind == "median":
 		_jersey(pts, sides, segs)
 	if kind == "rail":
@@ -483,6 +487,32 @@ func _ribbon(rb, mode: PackedByteArray) -> void:
 			if pts[k].y - Network.DECK - ground > PIER_MIN_HEIGHT and not _road_under(pts[k], rb):
 				_pier(pts[k], sides[k], 1.2 if kind == "ramp" else 1.8, ground - 0.5, pts[k].y - Network.DECK)
 				since_pier = 0.0
+
+
+# Raccords au centre-ville (chantier des routes, étape 4) : la grille du centre-ville dessine sa propre chaussée
+# jusqu'au bord du raccord ; les derniers mètres de l'artère de la carte passent donc en enrobé nu.
+func _at_grid_mouth(p: Vector3) -> bool:
+	if _grid_mouths.is_empty():
+		for id: String in net.stations:
+			if String(net.stations[id]["kind"]) == "grid":
+				_grid_mouths.append(net.stations[id]["pos"])
+	for q: Vector3 in _grid_mouths:
+		if Vector2(p.x - q.x, p.z - q.z).length() < Network.GRID_TRIM + 3.0:
+			return true
+	return false
+
+
+# Ligne d'arrêt sur la moitié qui arrive de chaque artère, à l'entrée du centre-ville.
+func _grid_stop_lines() -> void:
+	for id: String in net.stations:
+		var station: Dictionary = net.stations[id]
+		if String(station["kind"]) != "grid":
+			continue
+		for end: Dictionary in station["ends"]:
+			var d2: Vector2 = end["dir"]
+			var stop_atlas: Vector2 = ATLAS["stop"]
+			_mark(end["tip"], end["right"], Vector3(-d2.x, 0.0, -d2.y).normalized(), end.get("slope", 0.0),
+					0.6, PAD_STOP_DEPTH, stop_atlas.x, stop_atlas.y)
 
 
 # Bords ouverts d'un ruban (bit 1 gauche, bit 2 droite) le long des raccords décrits par RoadNetwork.attachments.
