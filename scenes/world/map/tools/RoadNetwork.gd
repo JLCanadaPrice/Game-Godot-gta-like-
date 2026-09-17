@@ -1903,6 +1903,14 @@ func is_water(p: Vector2) -> bool:
 
 # Deux rubans se chevauchent (en plan, à moins de 5 m de hauteur l'un de l'autre) hors de leurs raccords prévus :
 # extrémités communes du trajet (70 m autour), terre-plein contre ses chaussées.
+#
+# Chantier des routes, étape 7 (2026-09-17) : les « croisements de bretelles à la même hauteur » soupçonnés à
+# l'inventaire ont été mesurés un par un. Aucun n'en est un. Les 4 cas x_ne x d_e5 et x_st x d_s7 sont des bretelles
+# chaînées bout à bout (leurs trajets partagent le même point : x_ne:sortie commence en (1017,7 ; 6,12 ; -416,5) là où
+# d_e5:i_on finit en (1018,0 ; 6,11 ; -416,4)), et les 22 cas anneau x bretelle sont les raccords à l'anneau, dont les
+# surfaces se recouvraient : c'est le maillage qui a été découpé (RoadBake, étape 6), pas le tracé. Une détection qui
+# ignore les jonctions trouve 0 vrai croisement à plat sur tout le réseau, et ce contrôle-ci en rapporte 0 aussi.
+# Aucun point de trajet n'a donc été déplacé à l'étape 7.
 func _check_conflicts() -> void:
 	const CELL := 16.0
 	var grid := {}
