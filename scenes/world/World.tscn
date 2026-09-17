@@ -1,14 +1,14 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://c1wxwcjet2fhj"]
 
-[ext_resource type="PackedScene" path="res://scenes/player/Player.tscn" id="1"]
-[ext_resource type="PackedScene" path="res://scenes/ui/HUD.tscn" id="2"]
+[ext_resource type="PackedScene" uid="uid://csryoo0wwc28y" path="res://scenes/player/Player.tscn" id="1"]
+[ext_resource type="PackedScene" uid="uid://c3au1f1btxufy" path="res://scenes/ui/HUD.tscn" id="2"]
 [ext_resource type="PackedScene" path="res://scenes/ui/MapMenu.tscn" id="3"]
-[ext_resource type="PackedScene" path="res://scenes/ui/BuildingPurchaseUI.tscn" id="6"]
+[ext_resource type="PackedScene" uid="uid://ujk3wq5k15fd" path="res://scenes/ui/BuildingPurchaseUI.tscn" id="6"]
 [ext_resource type="PackedScene" path="res://scenes/ui/BusinessPanel.tscn" id="7"]
 [ext_resource type="PackedScene" path="res://scenes/npc/NPC.tscn" id="13"]
-[ext_resource type="Script" path="res://scenes/vehicles/LoopSpawner.gd" id="15"]
+[ext_resource type="Script" uid="uid://fr7o83xddefn" path="res://scenes/vehicles/LoopSpawner.gd" id="15"]
 [ext_resource type="PackedScene" path="res://scenes/world/downtown/generated/Streets.tscn" id="15_lplgh"]
-[ext_resource type="Script" path="res://scenes/world/CircuitPath.gd" id="16"]
+[ext_resource type="Script" uid="uid://b0jexoxb3ha47" path="res://scenes/world/CircuitPath.gd" id="16"]
 [ext_resource type="PackedScene" path="res://scenes/ui/InventoryPanel.tscn" id="16_ajmhc"]
 [ext_resource type="PackedScene" path="res://scenes/world/downtown/generated/Buildings.tscn" id="16_d6tky"]
 [ext_resource type="PackedScene" path="res://scenes/world/downtown/generated/Furniture.tscn" id="17_6mhxi"]
@@ -16,14 +16,14 @@
 [ext_resource type="PackedScene" path="res://scenes/ui/PhonePanel.tscn" id="20_7vsg4"]
 [ext_resource type="PackedScene" path="res://scenes/ui/CarDealershipPanel.tscn" id="20_hp5di"]
 [ext_resource type="PackedScene" path="res://scenes/ui/ApartmentAgencyPanel.tscn" id="22_0mng5"]
-[ext_resource type="Script" path="res://scenes/world/PathGraph.gd" id="24"]
-[ext_resource type="PackedScene" path="res://assets/water_shader/assets/ocean_mesh.glb" id="26_ekb8v"]
-[ext_resource type="Material" path="res://assets/water_shader/materials/WaterShader.tres" id="26_sadf8"]
-[ext_resource type="Script" path="res://scenes/world/OceanWaterMaterial.gd" id="27_7vsg4"]
-[ext_resource type="Script" path="res://scenes/world/WaterZone.gd" id="27_aacc1"]
-[ext_resource type="Script" path="res://scripts/world/SimulationCuller.gd" id="55_h1p51"]
-[ext_resource type="Script" path="res://scripts/world/CityRenderOptimizer.gd" id="56_crdopt"]
-[ext_resource type="PackedScene" path="res://assets/dock_models/FBX/Dock_Wide.fbx" id="71_h0frk"]
+[ext_resource type="Script" uid="uid://duyyld2lrvnws" path="res://scenes/world/PathGraph.gd" id="24"]
+[ext_resource type="PackedScene" uid="uid://fgkxt3fulk2c" path="res://assets/water_shader/assets/ocean_mesh.glb" id="26_ekb8v"]
+[ext_resource type="Material" uid="uid://lo6vfw8xxxk3" path="res://assets/water_shader/materials/WaterShader.tres" id="26_sadf8"]
+[ext_resource type="Script" uid="uid://dlodf5msnv3ta" path="res://scenes/world/OceanWaterMaterial.gd" id="27_7vsg4"]
+[ext_resource type="Script" uid="uid://csg4udf2qnjji" path="res://scenes/world/WaterZone.gd" id="27_aacc1"]
+[ext_resource type="Script" uid="uid://yeshwryih4c5" path="res://scripts/world/SimulationCuller.gd" id="55_h1p51"]
+[ext_resource type="Script" uid="uid://t6rv8jlqkhf2" path="res://scripts/world/CityRenderOptimizer.gd" id="56_crdopt"]
+[ext_resource type="PackedScene" uid="uid://bip2wv2ye3bia" path="res://assets/dock_models/FBX/Dock_Wide.fbx" id="71_h0frk"]
 [ext_resource type="PackedScene" path="res://scenes/buildings/AgencyBuilding.tscn" id="agency_building_tscn"]
 [ext_resource type="PackedScene" path="res://scenes/buildings/DealershipBuilding.tscn" id="dealership_building_tscn"]
 [ext_resource type="PackedScene" path="res://scenes/world/map/Map.tscn" id="map_carte3d"]
@@ -2323,7 +2323,7 @@ grow_vertical = 2
 
 [node name="Buildings" parent="Downtown" unique_id=1040207261 instance=ExtResource("16_d6tky")]
 
-[node name="Furniture" type="Node3D" parent="Downtown" unique_id=1271874688 instance=ExtResource("17_6mhxi")]
+[node name="Furniture" parent="Downtown" unique_id=1271874688 instance=ExtResource("17_6mhxi")]
 
 [node name="Quay" type="Node3D" parent="Downtown" unique_id=1945273478]
 
@@ -2398,96 +2398,19 @@ transform = Transform3D(0.6, 0, 0, 0, 0.6, 0, 0, 0, 0.6, 0, -2.16, 0)
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Downtown/Quay/Pier_x-100/StaticBody3D" unique_id=629751598]
 shape = SubResource("BoxShape3D_hv5vx")
 
-[node name="Quay2" type="Node3D" parent="Downtown" unique_id=1000319272]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -488.18082, 0, 0)
-
-[node name="QuayPavement" type="StaticBody3D" parent="Downtown/Quay2" unique_id=723111245]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -244, -0.5, -480)
-
-[node name="Mesh" type="MeshInstance3D" parent="Downtown/Quay2/QuayPavement" unique_id=1863123469]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.921936, 0, 0)
-mesh = SubResource("BoxMesh_knsw5")
-surface_material_override/0 = SubResource("StandardMaterial3D_u020x")
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="Downtown/Quay2/QuayPavement" unique_id=1505944162]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.7763062, 0, 0)
-shape = SubResource("BoxShape3D_gttih")
-
-[node name="Water" type="StaticBody3D" parent="Downtown/Quay2" unique_id=1512003141]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -250, -1.3, -575)
-
-[node name="Mesh" parent="Downtown/Quay2/Water" unique_id=663168100 instance=ExtResource("26_ekb8v")]
-transform = Transform3D(15.656336, 0, 0, 0, 1, 0, 0, 0, 3.3066711, 0, -0.91656876, 6.4489746)
-script = ExtResource("27_7vsg4")
-water_material = ExtResource("26_sadf8")
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="Downtown/Quay2/Water" unique_id=1689431935]
-shape = SubResource("BoxShape3D_6f2ay")
-
-[node name="WaterZone" type="Area3D" parent="Downtown/Quay2/Water" unique_id=1904948305]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.5842056, 0)
-script = ExtResource("27_aacc1")
-
-[node name="_CollisionShape3D_2" type="CollisionShape3D" parent="Downtown/Quay2/Water/WaterZone" unique_id=1082775772]
-shape = SubResource("BoxShape3D_hp5di")
-
-[node name="Seabed" type="Node3D" parent="Downtown/Quay2" unique_id=1767494277]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -250, -3, -575)
-
-[node name="Mesh" type="MeshInstance3D" parent="Downtown/Quay2/Seabed" unique_id=1538711381]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -6.027687, 0)
-mesh = SubResource("BoxMesh_cagv5")
-surface_material_override/0 = SubResource("StandardMaterial3D_b6hsc")
-
-[node name="Pier_x-388" type="Node3D" parent="Downtown/Quay2" unique_id=102840161]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -388, 0, -506.504)
-
-[node name="DockModel" parent="Downtown/Quay2/Pier_x-388" unique_id=443629316 instance=ExtResource("71_h0frk")]
-transform = Transform3D(0.6, 0, 0, 0, 0.6, 0, 0, 0, 0.6, 0, -2.16, 0)
-
-[node name="StaticBody3D" type="StaticBody3D" parent="Downtown/Quay2/Pier_x-388" unique_id=1847772566]
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="Downtown/Quay2/Pier_x-388/StaticBody3D" unique_id=19160598]
-shape = SubResource("BoxShape3D_a1xlp")
-
-[node name="Pier_x-244" type="Node3D" parent="Downtown/Quay2" unique_id=1071442098]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -244, 0, -506.504)
-
-[node name="DockModel" parent="Downtown/Quay2/Pier_x-244" unique_id=1547186457 instance=ExtResource("71_h0frk")]
-transform = Transform3D(0.6, 0, 0, 0, 0.6, 0, 0, 0, 0.6, 0, -2.16, 0)
-
-[node name="StaticBody3D" type="StaticBody3D" parent="Downtown/Quay2/Pier_x-244" unique_id=13970321]
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="Downtown/Quay2/Pier_x-244/StaticBody3D" unique_id=2052159598]
-shape = SubResource("BoxShape3D_yjx18")
-
-[node name="Pier_x-100" type="Node3D" parent="Downtown/Quay2" unique_id=1071232122]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -100, 0, -506.504)
-
-[node name="DockModel" parent="Downtown/Quay2/Pier_x-100" unique_id=319447695 instance=ExtResource("71_h0frk")]
-transform = Transform3D(0.6, 0, 0, 0, 0.6, 0, 0, 0, 0.6, 0, -2.16, 0)
-
-[node name="StaticBody3D" type="StaticBody3D" parent="Downtown/Quay2/Pier_x-100" unique_id=560595823]
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="Downtown/Quay2/Pier_x-100/StaticBody3D" unique_id=525744264]
-shape = SubResource("BoxShape3D_hv5vx")
-
 [node name="Shops" type="Node3D" parent="Downtown" unique_id=1594019264]
 
 [node name="Dealership_Building" parent="Downtown/Shops" unique_id=766067854 instance=ExtResource("dealership_building_tscn")]
 transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, -116.02784, -0.21, -437.21)
-display_models = PackedStringArray()
+display_models = []
 
 [node name="Agency_Building" parent="Downtown/Shops" unique_id=229057307 instance=ExtResource("agency_building_tscn")]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -64, -0.21, -443.232)
-display_models = PackedStringArray()
 
 [node name="SimulationCuller" type="Node" parent="." unique_id=1935290176]
 script = ExtResource("55_h1p51")
-groups = PackedStringArray("vehicle", "npc")
 
 [node name="CityRenderOptimizer" type="Node3D" parent="." unique_id=1418350213]
 script = ExtResource("56_crdopt")
-batched_scenes = PackedStringArray("*/Sidewalk_Straight_3m.gltf", "res://assets/modular_roads/Road*.glb", "res://assets/modular_roads/lamp_*.glb")
 
 [node name="Map" parent="." unique_id=431075310 instance=ExtResource("map_carte3d")]
