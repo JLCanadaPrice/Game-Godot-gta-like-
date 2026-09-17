@@ -1,9 +1,8 @@
 extends SceneTree
 
-# Étapes 2a, 2b et 4b (puis chantier des routes, étape 1) : textures des routes de la carte 3D, dans la palette des
-# routes du centre-ville (assets/modular_roads : enrobé gris plus sombre sur les bords, lignes jaunes), plateforme
-# ballastée de la voie ferrée, et colonnes de marquage des carrefours et des bretelles. Atlas roads.png
-# (4096 x 512) : une colonne par type de ruban ou de marquage,
+# Étapes 2a, 2b et 4b : textures des routes de la carte 3D, dans la palette des routes du centre-ville (assets/modular_roads :
+# enrobé gris plus sombre sur les bords, lignes jaunes), plateforme ballastée de la voie ferrée. Atlas roads.png
+# (4096 x 512) : une colonne par type de ruban,
 # u = travers de la chaussée (bord gauche du sens de marche -> bord droit), v = long de la route sur TEX_LENGTH m ;
 # concrete.png pour les ouvrages. Réglages d'import écrits avec (compression VRAM, mipmaps) : lancer avant l'import
 # puis RoadBake.
@@ -32,16 +31,6 @@ const COLUMNS := [
 	["dirt", 2344, 5.0, []],
 	["sidewalk", 2616, 3.0, []],
 	["rail", 2800, 5.0, []],
-	# Chantier des routes, étape 1 : colonnes de marquage posées dans les pixels libres après "rail" (qui finit à 3039).
-	# Les 9 colonnes ci-dessus gardent exactement leurs bornes u : ni leur x0 ni la largeur de l'atlas ne changent, et
-	# le grain est tiré sur les coordonnées absolues (x0 + x), donc leurs pixels sont identiques au texel près.
-	# Motifs dessinés par _base_color ; largeurs choisies pour que le marquage se pose à l'échelle 1:1 en mètres.
-	["junction", 3048, 3.5, []],     # enrobé nu des plateaux (carrefours, culs-de-sac, anneau)
-	["crosswalk", 3222, 11.0, []],   # bandes piétonnes, plus large que la plus large chaussée (10,7 m)
-	["stop", 3754, 1.0, []],         # ligne d'arrêt
-	["yield", 3808, 2.0, []],        # cédez-le-passage : triangles puis ligne pointillée
-	["chevron", 3910, 2.5, []],      # museau de divergence (colonne retournée en u de l'autre côté)
-	["dashed", 4036, 1.0, []],       # ligne pointillée de séparation (3 m de trait, 9 m d'intervalle)
 ]
 const BALLAST_DARK := Color8(0x57, 0x53, 0x4f)
 const BALLAST_LIGHT := Color8(0x8b, 0x85, 0x7d)
@@ -143,37 +132,9 @@ func _base_color(kind: String, across: float, width: float, along: float, noise:
 			if absf(absf(across - width * 0.5) - 0.7175) < 0.06:
 				c = RAIL_SHADOW
 			return c
-		"junction":
-			# enrobé nu : la teinte du milieu d'une chaussée, sans dégradé transversal (les plateaux se raccordent à
-			# des chaussées dans tous les sens)
-			return ASPHALT_MID.darkened(noise * 0.05)
-		"crosswalk":
-			# bandes de 0,5 m tous les mètres en travers de la route, constantes le long de la route
-			return _paint(noise) if fposmod(across, 1.0) < 0.5 else ASPHALT_MID.darkened(noise * 0.05)
-		"stop":
-			return _paint(noise)
-		"yield":
-			# triangles de 0,6 x 0,7 m tous les mètres, puis ligne pointillée : le marquage couvre 2 m de long
-			if along <= 0.7 and absf(fposmod(across, 1.0) - 0.5) < 0.3 * (1.0 - along / 0.7):
-				return _paint(noise)
-			if along >= 0.9 and along <= 1.4 and fposmod(across, 1.0) < 0.5:
-				return _paint(noise)
-			return ASPHALT_MID.darkened(noise * 0.05)
-		"chevron":
-			# chevrons à 45°, un tous les 2,4 m le long de la route
-			return _paint(noise) if fposmod(along - across, 2.4) < 0.5 else ASPHALT_MID.darkened(noise * 0.05)
-		"dashed":
-			if absf(across - width * 0.5) < 0.075 and fposmod(along, 12.0) < 3.0:
-				return _paint(noise)
-			return ASPHALT_MID.darkened(noise * 0.05)
 		_:
 			var shade := 1.0 - absf(across / width - 0.5) * 2.0
 			return ASPHALT_EDGE.lerp(ASPHALT_MID, smoothstep(0.0, 0.8, shade)).darkened(noise * 0.04)
-
-
-# Peinture blanche des colonnes de marquage, à peine grenue comme les lignes des colonnes de chaussée.
-func _paint(noise: float) -> Color:
-	return WHITE.darkened(maxf(0.0, noise) * 0.08)
 
 
 func _save(img: Image, tex_name: String) -> void:

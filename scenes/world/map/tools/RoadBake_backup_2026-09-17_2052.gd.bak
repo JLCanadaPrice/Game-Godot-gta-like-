@@ -55,12 +55,7 @@ const RANGE_CONCRETE := 1500.0
 # colonnes de l'atlas roads.png (bornes en u affichées par RoadTexturesBake)
 const ATLAS := {"highway": Vector2(0.0, 0.125), "ramp": Vector2(0.125, 0.206787), "median": Vector2(0.207031, 0.242188),
 		"urban": Vector2(0.25, 0.372559), "arterial": Vector2(0.375, 0.480225), "access": Vector2(0.488281, 0.564209),
-		"dirt": Vector2(0.572266, 0.630615), "sidewalk": Vector2(0.638672, 0.673828), "rail": Vector2(0.683594, 0.741943),
-		# chantier des routes, étape 1 : colonnes de marquage (pixels libres de l'atlas, bornes relevées à la cuisson)
-		"junction": Vector2(0.744141, 0.784912), "crosswalk": Vector2(0.786621, 0.915039), "stop": Vector2(0.916504, 0.928223),
-		"yield": Vector2(0.929688, 0.953125), "chevron": Vector2(0.954590, 0.983887), "dashed": Vector2(0.985352, 0.997070)}
-# largeur couverte par chaque colonne, en m : le marquage se pose à l'échelle 1:1 (u = travers / largeur, v = long / TEX_LENGTH)
-const ATLAS_METERS := {"junction": 3.5, "crosswalk": 11.0, "stop": 1.0, "yield": 2.0, "chevron": 2.5, "dashed": 1.0}
+		"dirt": Vector2(0.572266, 0.630615), "sidewalk": Vector2(0.638672, 0.673828), "rail": Vector2(0.683594, 0.741943)}
 # voie ferrée (étape 4b) : rails en acier sans collision, passages à niveau, bouts de ligne
 const RAIL_HEAD := 0.07
 const RAIL_TOP := 0.17
