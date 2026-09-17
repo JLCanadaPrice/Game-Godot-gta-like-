@@ -1,4 +1,4 @@
-extends SceneTree
+﻿extends SceneTree
 
 # Étapes 2a et 2b : cuisson des routes de la carte 3D à partir de RoadNetwork (autoroutes, voies express, artères,
 # dessertes, chemins, losanges, carrefours et rond-point) :
@@ -108,17 +108,11 @@ var road_index := {}              # cellule de 16 m -> [[ruban, échantillon], .
 var _grid_mouths: Array[Vector3] = []   # centres des raccords au centre-ville (étape 4)
 var tunnel_spans := {}            # id de chaîne -> [[indice du portail, indice du bout], ...]
 var corridors: Array[Dictionary] = []
-# Non vide : seul ce cul-de-sac reçoit le trottoir du bulbe. Essai demandé avant d'appliquer aux 113 autres ; remis à
-# "" à l'étape suivante. Surchargeable par --cds=<id>.
-var _cds_only := "rue_bluffview_0:bout"
 var stats := {"cellules": 0, "tablier_m": 0.0, "murs_m": 0.0, "glissiere_m": 0.0, "piles": 0, "tunnels": 0, "sommets_creuses": 0, "sommets_remblayes": 0, "triangles": 0}
 
 
 func _initialize() -> void:
 	var t0 := Time.get_ticks_msec()
-	for arg in OS.get_cmdline_user_args():
-		if arg.begins_with("--cds="):
-			_cds_only = arg.trim_prefix("--cds=")
 	model = Model.new()
 	net = Network.new(model)
 	net.build()
@@ -858,9 +852,8 @@ func _pad_markings(pad: Dictionary, give_way := false) -> void:
 
 # Cul-de-sac (chantier des routes, étape 3) : bordure relevée et ligne de rive blanche le long du bulbe, sans couper
 # l'entrée de la rue (les bords radiaux du bulbe, le long de la chaussée, sont laissés à la chaussée elle-même).
-const CDS_KERB_HEIGHT := 0.15       # hauteur des trottoirs du réseau (Network.SIDEWALK_RISE) : le trottoir du bulbe
-const CDS_KERB_WIDTH := 0.30        # est au même niveau que celui des rues
-const CDS_WALK_WIDTH := 1.80        # trottoir continu tout autour du bulbe (photo de référence 4)
+const CDS_KERB_HEIGHT := 0.12
+const CDS_KERB_WIDTH := 0.35
 const CDS_EDGE_INSET := 0.35
 const CDS_EDGE_WIDTH := 0.15
 
@@ -870,13 +863,8 @@ func _cul_de_sac(pad: Dictionary) -> void:
 	var radius := 0.0
 	for p in pad["rim"] as PackedVector3Array:
 		radius = maxf(radius, Vector2(p.x - center.x, p.z - center.z).length())
-	# essai d'abord sur un seul bulbe (--cds=<id>) avant de l'appliquer aux 113 autres
-	var full := _cds_only == "" or String(pad["id"]) == _cds_only
 	var edge: Vector2 = ATLAS["stop"]
-	var walk: Vector2 = ATLAS["sidewalk"]
-	var walk_u := lerpf(walk.x, walk.y, clampf(CDS_WALK_WIDTH / float(Network.WIDTHS["sidewalk"]), 0.0, 1.0))
 	var up := Vector3(0, CDS_KERB_HEIGHT, 0)
-	var arc := 0.0
 	for poly: PackedVector2Array in _pad_polygons(pad):
 		for k in poly.size():
 			var q0: Vector2 = poly[k]
@@ -890,36 +878,11 @@ func _cul_de_sac(pad: Dictionary) -> void:
 			var ob := Vector3(q1.x - center.x, 0.0, q1.y - center.z).normalized()
 			_quad("concrete", a + up, b + up, b + up + ob * CDS_KERB_WIDTH, a + up + oa * CDS_KERB_WIDTH, Vector3.UP)
 			_quad("concrete", a, b, b + up, a + up, -(oa + ob).normalized())
-			# trottoir dallé derrière la bordure, puis jupe jusqu'au terrain : le bulbe n'est plus du bitume posé
-			# contre l'herbe (photo de référence 4)
-			var v0 := arc / TEX_LENGTH
-			arc += q0.distance_to(q1)
-			var v1 := arc / TEX_LENGTH
-			if full:
-				var wa := a + up + oa * CDS_KERB_WIDTH
-				var wb := b + up + ob * CDS_KERB_WIDTH
-				var oa2 := wa + oa * CDS_WALK_WIDTH
-				var ob2 := wb + ob * CDS_WALK_WIDTH
-				_quad("asphalt", wa, wb, ob2, oa2, Vector3.UP,
-						[Vector2(walk.x, v0), Vector2(walk.x, v1), Vector2(walk_u, v1), Vector2(walk_u, v0)])
-				var da := clampf(oa2.y - _sample(heights, Vector2(oa2.x, oa2.z)) + 0.3, LIP, 12.0)
-				var db := clampf(ob2.y - _sample(heights, Vector2(ob2.x, ob2.z)) + 0.3, LIP, 12.0)
-				_quad("concrete", oa2, ob2, ob2 - Vector3(0, db, 0), oa2 - Vector3(0, da, 0), (oa + ob).normalized())
 			# ligne de rive, comme le bord blanc des rues locales
 			var ia := a - oa * CDS_EDGE_INSET + Vector3(0, PAD_MARK_RISE, 0)
 			var ib := b - ob * CDS_EDGE_INSET + Vector3(0, PAD_MARK_RISE, 0)
 			_quad("asphalt", ia, ib, ib - ob * CDS_EDGE_WIDTH, ia - oa * CDS_EDGE_WIDTH, Vector3.UP,
 					[Vector2(edge.x, 0.0), Vector2(edge.x, 1.0), Vector2(edge.y, 1.0), Vector2(edge.y, 0.0)], Color.BLACK, false)
-	if not full:
-		return
-	# lampadaire au fond du bulbe, planté sur le trottoir, crosse tournée vers la chaussée (photo de référence 4).
-	# Même modèle et même matériau que les lampadaires de trottoir : il rejoint leur multimesh de cellule.
-	var ends: Array = net.stations[pad["id"]]["ends"]
-	if ends.is_empty():
-		return
-	var d2: Vector2 = ends[0]["dir"]
-	var away := Vector3(d2.x, 0.0, d2.y).normalized()
-	_lamp("lamp_single", center + away * (radius + CDS_KERB_WIDTH + CDS_WALK_WIDTH * 0.5) + Vector3(0, CDS_KERB_HEIGHT, 0), -away)
 
 
 # Marquage de l'anneau d'un rond-point (chantier des routes, étape 8) : ligne continue au bord intérieur de la voie,
