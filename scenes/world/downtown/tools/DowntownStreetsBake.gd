@@ -39,6 +39,7 @@ const BOX_BOTTOM := -1.0
 const STOP_WIDTH := 0.4
 const MEDIAN_NOSE := 1.0             # enrobé nu entre la ligne d'arrêt et le nez du terre-plein
 const PAVING_TILE := 3.0
+const LAWN_TILE := 8.0
 const FAR_RANGE := 1400.0
 const CIRCUIT_FROM_LIGHT := "../../../../Circuit"   # World/Downtown/Streets/TrafficLights/<feu>
 const LANE_COLUMNS := ["avenue", "street", "one_way"]
@@ -376,7 +377,7 @@ func _margins() -> void:
 			while z < piece.end.y - 0.01:
 				var z1 := minf(piece.end.y, down.position.y + (floorf((z - down.position.y) / CHUNK) + 1.0) * CHUNK)
 				var r := Rect2(x, z, x1 - x, z1 - z)
-				_flat("paving", r, MARGIN_Y, _world_uv(r), TINT["margin"])
+				_flat("lawn", r, MARGIN_Y, [r.position / LAWN_TILE, Vector2(r.end.x, r.position.y) / LAWN_TILE, r.end / LAWN_TILE, Vector2(r.position.x, r.end.y) / LAWN_TILE], Color.WHITE)
 				_tops.append(r)
 				_collide(r, MARGIN_Y)
 				_stats["pieces_dallage"] += 1
@@ -585,8 +586,13 @@ func _write_scene() -> Dictionary:
 	paving.vertex_color_use_as_albedo = true
 	paving.roughness = 0.9
 	paving.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
+	var lawn := StandardMaterial3D.new()
+	lawn.resource_name = "CentreVillePelouse"
+	lawn.albedo_texture = load(TEXTURES.path_join("lawn.png"))
+	lawn.roughness = 1.0
+	lawn.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
 	var mats := {}
-	for pair in [["asphalt", asphalt], ["paving", paving]]:
+	for pair in [["asphalt", asphalt], ["paving", paving], ["lawn", lawn]]:
 		var path := MESHES.path_join("%s_material.tres" % pair[0])
 		ResourceSaver.save(pair[1], path)
 		mats[pair[0]] = load(path)
@@ -611,7 +617,7 @@ func _write_scene() -> Dictionary:
 		var mesh_path := MESHES.path_join("%s_%s_%s.res" % [parts[0], parts[1], parts[2]])
 		ResourceSaver.save(mesh, mesh_path)
 		var mi := MeshInstance3D.new()
-		mi.name = "%s_%s_%s" % ["Enrobe" if parts[0] == "asphalt" else "Dallage", parts[1], parts[2]]
+		mi.name = "%s_%s_%s" % [{"asphalt": "Enrobe", "paving": "Dallage", "lawn": "Pelouse"}[parts[0]], parts[1], parts[2]]
 		mi.mesh = load(mesh_path)
 		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		mi.visibility_range_end = FAR_RANGE

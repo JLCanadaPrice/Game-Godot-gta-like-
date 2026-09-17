@@ -1,0 +1,609 @@
+extends SceneTree
+
+# Chantier centre-ville, étape D4 : mobilier urbain et végétation du centre-ville reconstruit (generated/Furniture.tscn),
+# tirés du plan (DowntownLayout) et des bâtiments posés (buildings.json) :
+#  - trottoirs : lampadaires simples au bord de la chaussée (bras au-dessus de la chaussée), arbres d'alignement entre
+#    eux, bancs et poubelles côté façades sur les trottoirs larges, panneaux (sens unique à l'approche des carrefours,
+#    stationnement sur les rues) ; rien à moins de 12 m d'un carrefour (feux, passages piétons) ni devant une ruelle ;
+#  - terre-pleins des boulevards : lampadaires doubles et arbres ;
+#  - places : Founders Plaza (fontaines, allées d'arbres, bancs autour des fontaines, haies, lampadaires), parvis des
+#    gratte-ciels et de Lincoln Plaza (fontaine, bancs, arbres, terrasses de café, abribus au bord des grandes rues),
+#    îlot civique (arbres, bancs) ;
+#  - quartier du Scarlet Jack : panneaux publicitaires sur les toits bas voisins ; entrées de la ville : panneaux au bord
+#    des marges ;
+#  - ruelles : poubelles, échelles contre les façades arrière, cônes et barrières de chantier dans deux ruelles ;
+#  - marges engazonnées : bosquets d'arbres hors des lieux et des routes d'accès.
+# Rien sur les chemins du réseau piéton (mobilier près de la bordure ou contre les façades). Instances regroupées par
+# modèle et par bloc de CHUNK m (MultiMesh construits au lancement par BuildingField : un MultiMesh cuit sans serveur de
+# rendu perd ses positions), portée de visibilité par famille, ombres portées pour les lampadaires et
+# les arbres seulement ; collisions (cylindres, boîtes) pour les mâts, troncs, fontaines, abribus et panneaux.
+# Pas de lumières : le jeu n'a pas de nuit. Tirages déterministes.
+#
+# Lancer (après DowntownBuildingsBake) :
+#   Godot --headless --path <projet> --script res://scenes/world/downtown/tools/DowntownFurnitureBake.gd
+
+const Layout := preload("res://scenes/world/downtown/DowntownLayout.gd")
+const Spec := preload("res://scenes/world/downtown/DowntownSpec.gd")
+const MapSpec := preload("res://scenes/world/map/MapSpec.gd")
+const Network := preload("res://scenes/world/map/tools/RoadNetwork.gd")
+const Field := preload("res://scenes/world/map/BuildingField.gd")
+
+const OUT := "res://scenes/world/downtown/generated"
+const MODELS := OUT + "/furniture"
+const PACK := "res://assets/lowpoly_city_pack/"
+const BUILDINGS_JSON := OUT + "/buildings.json"
+const PLACES_JSON := "res://scenes/world/map/generated/places/places.json"
+const CHUNK := 216.0
+const WALK_Y := Spec.ROAD_TOP + Spec.SIDEWALK_RISE
+const MARGIN_Y := -0.05
+const SEED := 917
+const NODE_CLEAR := 12.0
+const LAMP_SPACING := 30.0
+# modèle -> [chemin, portée de visibilité m, ombre]
+const KINDS := {
+	"lamp_single": [PACK + "lighting/lamp_single.glb", 350.0, true],
+	"lamp_double": [PACK + "lighting/lamp_double.glb", 350.0, true],
+	"tree_slim": ["res://assets/modular_roads/Tree3.glb", 420.0, true],
+	"tree_tall": ["res://assets/modular_roads/Tree4.glb", 420.0, true],
+	"bench": [PACK + "street_furniture/bench.glb", 160.0, false],
+	"bin": [PACK + "street_furniture/bin.glb", 140.0, false],
+	"bus_stop": [PACK + "street_furniture/bus_stop.glb", 260.0, false],
+	"fountain": [PACK + "street_furniture/fountain.glb", 320.0, true],
+	"table": [PACK + "street_furniture/table.glb", 140.0, false],
+	"chair": [PACK + "street_furniture/chair.glb", 120.0, false],
+	"parasol": [PACK + "street_furniture/parasol_open.glb", 200.0, false],
+	"bush_long": [PACK + "vegetation/bush_01_long.glb", 220.0, false],
+	"bush": [PACK + "vegetation/bush_02_basic.glb", 200.0, false],
+	"sign_oneway": [PACK + "signage/traffic_sign_02.glb", 160.0, false],
+	"sign_parking": [PACK + "signage/traffic_sign_05.glb", 160.0, false],
+	"billboard_roof": [PACK + "signage/billboard_03.glb", 900.0, false],
+	"billboard_pole": [PACK + "signage/billboard_01.glb", 700.0, false],
+	"ladder": [PACK + "structures/ladder_end.glb", 140.0, false],
+	"cone": [PACK + "signage/traffic_cone_new.glb", 120.0, false],
+	"barrier": [PACK + "structures/fence_04.glb", 140.0, false],
+}
+
+var layout: Layout
+var rng := RandomNumberGenerator.new()
+var buildings: Array = []
+var place_rects: Array[Rect2] = []
+var gaps: Array[Rect2] = []
+var _instances := {}                 # "modèle|i|j" -> Array[Transform3D]
+var _collisions := {}                # Vector2i -> [[forme, Transform3D]]
+var _shapes := {}
+var _counts := {}
+
+
+func _initialize() -> void:
+	rng.seed = SEED
+	layout = Layout.new()
+	buildings = JSON.parse_string(FileAccess.get_file_as_string(BUILDINGS_JSON))["buildings"]
+	var places: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(PLACES_JSON))
+	for fp: Dictionary in places["footprints"]:
+		var r := Rect2(Vector2(fp["poly"][0][0], fp["poly"][0][1]), Vector2.ZERO)
+		for q: Array in fp["poly"]:
+			r = r.expand(Vector2(q[0], q[1]))
+		place_rects.append(r)
+	_connection_corridors()
+	for i in layout.segments.size():
+		_sidewalks(i)
+		if float(layout.segments[i]["median"]) > 0.0:
+			_median(i)
+	for b in layout.blocks.size():
+		var block: Dictionary = layout.blocks[b]
+		match String(block["zone"]):
+			"plaza":
+				_founders(b)
+			"core":
+				_parvis(b)
+			"civic":
+				_civic(b)
+	_nightlife()
+	_alleys()
+	_margins()
+	var scene := _write_scene()
+	var total := 0
+	for k in _counts:
+		total += int(_counts[k])
+	print("DOWNTOWN_FURNITURE " + JSON.stringify({"instances": total, "par_modele": _counts, "multimesh": _instances.size(),
+			"collisions": _collision_count(), "scene": scene}))
+	quit(0 if scene == "OK" else 1)
+
+
+# Couloirs des routes de la carte qui traversent les marges depuis les 8 raccords (pas d'arbre ni de panneau dessus).
+func _connection_corridors() -> void:
+	for road: Dictionary in MapSpec.ROADS:
+		var poly: PackedVector2Array = MapSpec.road_polyline(road)
+		for end: String in ["from", "to"]:
+			var id: String = road[end]
+			if MapSpec.NODES[id]["kind"] != "grid":
+				continue
+			var p: Vector2 = MapSpec.NODES[id]["pos"]
+			var d: Vector2 = (poly[1] if end == "from" else poly[poly.size() - 2]) - p
+			var out := Vector2(signf(d.x), 0.0) if absf(d.x) > absf(d.y) else Vector2(0.0, signf(d.y))
+			var r := Rect2(p, Vector2.ZERO).expand(p + out * 120.0)
+			gaps.append(r.grow(14.0))
+
+
+func _free(p: Vector2, radius: float) -> bool:
+	for r in place_rects:
+		if r.grow(radius).has_point(p):
+			return false
+	for g in gaps:
+		if g.has_point(p):
+			return false
+	for building: Dictionary in buildings:
+		var b := Rect2(building["rect"][0], building["rect"][1], building["rect"][2], building["rect"][3])
+		if b.grow(radius).has_point(p):
+			return false
+	return true
+
+
+# --- trottoirs et terre-pleins ------------------------------------------------------------------------------------------
+
+func _sidewalks(i: int) -> void:
+	var s: Dictionary = layout.segments[i]
+	var axis: String = s["axis"]
+	var at := float(s["at"])
+	var half := float(s["half"])
+	var a := int(s["a"])
+	var b := int(s["b"])
+	var start := float(s["from"]) + (float(layout.nodes[a]["hz"]) if axis == "x" else float(layout.nodes[a]["hx"])) + NODE_CLEAR
+	var end := float(s["to"]) - (float(layout.nodes[b]["hz"]) if axis == "x" else float(layout.nodes[b]["hx"])) - NODE_CLEAR
+	var length := end - start
+	if length < 10.0:
+		return
+	var profile: String = s["profile"]
+	for side: int in [-1, 1]:
+		var width := float(s["sidewalks"][0 if side < 0 else 1])
+		var outer_side := int(s["outer"]) == side
+		var inward := Vector3(side, 0, 0) if axis == "x" else Vector3(0, 0, side)
+		var count := maxi(1, roundi(length / LAMP_SPACING))
+		var step := length / count
+		for k in count + 1:
+			var along := start + step * k
+			# trottoir étroit (2 m) : mât au ras de la bordure, hors du chemin piéton (au milieu du trottoir)
+			var lamp := _point(axis, at, half, side, along, 0.6 if width >= 3.0 else 0.35)
+			if _near_driveway(lamp, 4.0):
+				continue
+			_add("lamp_single", Transform3D(Basis(Vector3.UP, atan2(inward.z, -inward.x)), lamp))
+			_collide_cylinder(lamp, 0.15, 6.3)
+			if k == count or outer_side or width < 3.4:
+				continue
+			# arbre au milieu de l'intervalle, banc et poubelle un intervalle sur deux (trottoirs larges)
+			var mid := along + step * 0.5
+			var tree := _point(axis, at, half, side, mid, 1.0)
+			if not _near_driveway(tree, 4.0) and (profile != "street" or rng.randf() < 0.6):
+				_add("tree_tall" if rng.randf() < 0.45 else "tree_slim", Transform3D(Basis(Vector3.UP, rng.randf() * TAU), tree))
+				_collide_cylinder(tree, 0.2, 3.0)
+			if width >= 3.9 and k % 2 == 0:
+				var bench := _point(axis, at, half, side, mid + 6.0, width - 0.45)
+				if not _near_driveway(bench, 3.0):
+					_add("bench", Transform3D(Basis(Vector3.UP, 0.0 if axis == "x" else PI * 0.5), bench))
+					_add("bin", Transform3D(Basis.IDENTITY, _point(axis, at, half, side, mid + 7.7, width - 0.5)))
+		# panneaux : sens unique à l'approche du carrefour d'arrivée, stationnement au milieu des rues
+		if outer_side:
+			continue
+		if bool(s["one_way"]):
+			var arrive_end := end if int(s["dir"]) > 0 else start
+			_add("sign_oneway", Transform3D(Basis(Vector3.UP, atan2(inward.z, -inward.x)), _point(axis, at, half, side, arrive_end, 0.35)))
+			_collide_cylinder(_point(axis, at, half, side, arrive_end, 0.35), 0.06, 2.4)
+		elif profile == "street" and length > 30.0:
+			var p := _point(axis, at, half, side, start + length * 0.5 + 4.0, 0.35)
+			if not _near_driveway(p, 3.0):
+				_add("sign_parking", Transform3D(Basis(Vector3.UP, atan2(inward.z, -inward.x)), p))
+				_collide_cylinder(p, 0.06, 2.4)
+
+
+# Point sur le trottoir du côté `side` : à `offset` m du bord de la chaussée vers les façades, le long à `along`.
+func _point(axis: String, at: float, half: float, side: int, along: float, offset: float) -> Vector3:
+	var c := at + side * (half + offset)
+	return Vector3(c, WALK_Y, along) if axis == "x" else Vector3(along, WALK_Y, c)
+
+
+func _near_driveway(p: Vector3, radius: float) -> bool:
+	for alley: Dictionary in layout.alleys:
+		if (alley["curb_rect"] as Rect2).grow(radius).has_point(Vector2(p.x, p.z)):
+			return true
+	return false
+
+
+func _median(i: int) -> void:
+	var s: Dictionary = layout.segments[i]
+	var axis: String = s["axis"]
+	var at := float(s["at"])
+	var a := int(s["a"])
+	var b := int(s["b"])
+	var start := float(s["from"]) + (float(layout.nodes[a]["hz"]) if axis == "x" else float(layout.nodes[a]["hx"])) + 16.0
+	var end := float(s["to"]) - (float(layout.nodes[b]["hz"]) if axis == "x" else float(layout.nodes[b]["hx"])) - 16.0
+	var length := end - start
+	if length < 6.0:
+		return
+	var count := maxi(1, roundi(length / LAMP_SPACING))
+	var step := length / count
+	for k in count + 1:
+		var along := start + step * k
+		var p := Vector3(at, WALK_Y, along) if axis == "x" else Vector3(along, WALK_Y, at)
+		_add("lamp_double", Transform3D(Basis(Vector3.UP, 0.0 if axis == "x" else PI * 0.5), p))
+		_collide_cylinder(p, 0.15, 6.3)
+		if k < count:
+			var t := Vector3(at, WALK_Y, along + step * 0.5) if axis == "x" else Vector3(along + step * 0.5, WALK_Y, at)
+			_add("tree_slim", Transform3D(Basis(Vector3.UP, rng.randf() * TAU), t))
+			_collide_cylinder(t, 0.2, 3.0)
+
+
+# --- places ---------------------------------------------------------------------------------------------------------------
+
+func _founders(b: int) -> void:
+	var inner: Rect2 = layout.blocks[b]["interior"]
+	var c := inner.get_center()
+	for dx: float in [-inner.size.x * 0.3, inner.size.x * 0.3]:
+		var f := Vector3(c.x + dx, WALK_Y, c.y)
+		_fountain_with_benches(f)
+	# allées d'arbres le long des grands côtés, haies le long des bords (entrées au milieu)
+	var x := inner.position.x + 6.0
+	while x < inner.end.x - 5.0:
+		for z: float in [inner.position.y + 5.0, inner.end.y - 5.0]:
+			if absf(x - c.x) > 9.0:
+				var t := Vector3(x, WALK_Y, z)
+				_add("tree_tall", Transform3D(Basis(Vector3.UP, rng.randf() * TAU), t))
+				_collide_cylinder(t, 0.2, 3.0)
+		x += 11.0
+	for z: float in [inner.position.y + 1.0, inner.end.y - 1.0]:
+		var hx := inner.position.x + 4.0
+		while hx < inner.end.x - 11.0:
+			if absf(hx + 3.5 - c.x) > 10.0:
+				_add("bush_long", Transform3D(Basis.IDENTITY.rotated(Vector3.UP, PI * 0.5), Vector3(hx + 3.5, WALK_Y, z)))
+			hx += 8.0
+	for k in 5:
+		for z: float in [inner.position.y + 9.0, inner.end.y - 9.0]:
+			var lx := inner.position.x + 12.0 + k * (inner.size.x - 24.0) / 4.0
+			var lp := Vector3(lx, WALK_Y, z)
+			_add("lamp_single", Transform3D(Basis(Vector3.UP, PI * 0.5 if z < c.y else -PI * 0.5), lp))
+			_collide_cylinder(lp, 0.15, 6.3)
+
+
+func _fountain_with_benches(f: Vector3) -> void:
+	_add("fountain", Transform3D(Basis.IDENTITY, f))
+	_collide_cylinder(f, 1.8, 1.2)
+	for k in 4:
+		var angle := k * PI * 0.5 + PI * 0.25
+		var p := f + Vector3(cos(angle), 0, sin(angle)) * 5.5
+		_add("bench", Transform3D(Basis(Vector3.UP, -angle), p))
+		if k % 2 == 0:
+			_add("bin", Transform3D(Basis.IDENTITY, f + Vector3(cos(angle + 0.35), 0, sin(angle + 0.35)) * 6.5))
+
+
+# Parvis d'un îlot du cœur : plus grand rectangle libre à côté du gratte-ciel (ou des tours) ; fontaine, bancs, arbres,
+# terrasses et abribus s'il borde une grande rue.
+func _parvis(b: int) -> void:
+	var inner: Rect2 = layout.blocks[b]["interior"]
+	var taken: Array[Rect2] = []
+	for building: Dictionary in buildings:
+		if int(building["block"]) == b:
+			taken.append(Rect2(building["rect"][0], building["rect"][1], building["rect"][2], building["rect"][3]))
+	if taken.is_empty():
+		return
+	var tower := taken[0]
+	for t in taken:
+		tower = tower.merge(t)
+	var candidates: Array[Rect2] = [
+		Rect2(inner.position.x, inner.position.y, tower.position.x - inner.position.x, inner.size.y),
+		Rect2(tower.end.x, inner.position.y, inner.end.x - tower.end.x, inner.size.y),
+		Rect2(inner.position.x, inner.position.y, inner.size.x, tower.position.y - inner.position.y),
+		Rect2(inner.position.x, tower.end.y, inner.size.x, inner.end.y - tower.end.y),
+	]
+	var best := Rect2()
+	for r in candidates:
+		if minf(r.size.x, r.size.y) >= 7.0 and r.get_area() > best.get_area():
+			best = r
+	if best.get_area() <= 0.0:
+		return
+	var c := best.get_center()
+	if minf(best.size.x, best.size.y) >= 12.0:
+		_fountain_with_benches(Vector3(c.x, WALK_Y, c.y))
+	for corner: Vector2 in [Vector2(-1, -1), Vector2(1, -1), Vector2(-1, 1), Vector2(1, 1)]:
+		var t := Vector3(c.x + corner.x * (best.size.x * 0.5 - 2.5), WALK_Y, c.y + corner.y * (best.size.y * 0.5 - 2.5))
+		_add("tree_tall", Transform3D(Basis(Vector3.UP, rng.randf() * TAU), t))
+		_collide_cylinder(t, 0.2, 3.0)
+	# terrasse de café : table, parasol, quatre chaises, sur le côté le plus long du parvis
+	if maxf(best.size.x, best.size.y) >= 24.0:
+		var long_x := best.size.x >= best.size.y
+		for k: float in [-1.0, 1.0]:
+			var tp := Vector3(c.x + (k * best.size.x * 0.3 if long_x else 0.0), WALK_Y, c.y + (0.0 if long_x else k * best.size.y * 0.3))
+			if minf(best.size.x, best.size.y) >= 12.0:
+				tp += Vector3(0.0 if long_x else 4.5, 0, 4.5 if long_x else 0.0)
+			_add("table", Transform3D(Basis.IDENTITY, tp))
+			_add("parasol", Transform3D(Basis.IDENTITY, tp))
+			for j in 4:
+				var angle := j * PI * 0.5
+				_add("chair", Transform3D(Basis(Vector3.UP, -angle + PI * 0.5), tp + Vector3(cos(angle), 0, sin(angle)) * 1.05))
+	# abribus au bord du parvis s'il touche un boulevard ou une avenue
+	_bus_stop(b, best)
+
+
+func _bus_stop(b: int, free: Rect2) -> void:
+	var outer: Rect2 = layout.blocks[b]["outer"]
+	var inner: Rect2 = layout.blocks[b]["interior"]
+	for side: Array in [["x", outer.position.x, Vector3(1, 0, 0), free.position.x <= inner.position.x + 0.1],
+			["x", outer.end.x, Vector3(-1, 0, 0), free.end.x >= inner.end.x - 0.1],
+			["z", outer.position.y, Vector3(0, 0, 1), free.position.y <= inner.position.y + 0.1],
+			["z", outer.end.y, Vector3(0, 0, -1), free.end.y >= inner.end.y - 0.1]]:
+		if not side[3]:
+			continue
+		var profile := ""
+		for s: Dictionary in layout.segments:
+			if s["axis"] == side[0] and absf(float(s["at"]) - float(side[1])) < 0.01:
+				var lo := outer.position.y if side[0] == "x" else outer.position.x
+				var hi := outer.end.y if side[0] == "x" else outer.end.x
+				if float(s["to"]) > lo + 0.01 and float(s["from"]) < hi - 0.01:
+					profile = s["profile"]
+		if not profile in ["boulevard", "avenue"]:
+			continue
+		var into: Vector3 = side[2]   # de la rue vers l'intérieur de l'îlot
+		var c := free.get_center()
+		var edge := Vector3(inner.position.x if into.x > 0 else inner.end.x, WALK_Y, c.y) if side[0] == "x" else Vector3(c.x, WALK_Y, inner.position.y if into.z > 0 else inner.end.y)
+		# abri : dos côté îlot, ouverture (+X local) vers la rue ; longueur (Z local) le long de la rue
+		var p := edge + into * 1.9
+		var basis := Basis(Vector3.UP, atan2(into.z, -into.x))
+		_add("bus_stop", Transform3D(basis, p))
+		_collide_box(Transform3D(basis, p + Vector3(0, 1.4, 0)), Vector3(0.3, 2.8, 4.2), Vector3(-0.75, 0, 0))
+		return
+
+
+func _civic(b: int) -> void:
+	var inner: Rect2 = layout.blocks[b]["interior"]
+	for corner: Vector2 in [Vector2(-1, -1), Vector2(1, -1), Vector2(-1, 1), Vector2(1, 1)]:
+		for k: float in [4.0, 12.0]:
+			var t := Vector3(inner.get_center().x + corner.x * (inner.size.x * 0.5 - 3.0), WALK_Y, inner.get_center().y + corner.y * (inner.size.y * 0.5 - k))
+			if _free(Vector2(t.x, t.z), 2.0):
+				_add("tree_tall", Transform3D(Basis(Vector3.UP, rng.randf() * TAU), t))
+				_collide_cylinder(t, 0.2, 3.0)
+		var bench := Vector3(inner.get_center().x + corner.x * (inner.size.x * 0.5 - 7.0), WALK_Y, inner.get_center().y + corner.y * (inner.size.y * 0.5 - 2.0))
+		if _free(Vector2(bench.x, bench.z), 1.0):
+			_add("bench", Transform3D(Basis(Vector3.UP, PI * 0.5), bench))
+
+
+# --- casino, entrées, ruelles, marges ---------------------------------------------------------------------------------
+
+func _nightlife() -> void:
+	var casino := Vector2.ZERO
+	for poi: Dictionary in MapSpec.POIS:
+		if poi["id"] == "casino":
+			casino = poi["pos"]
+	var picked := 0
+	var ordered := buildings.duplicate()
+	ordered.sort_custom(func(x: Dictionary, y: Dictionary) -> bool: return _center(x).distance_to(casino) < _center(y).distance_to(casino))
+	for building: Dictionary in ordered:
+		if picked >= 7 or _center(building).distance_to(casino) > 190.0:
+			break
+		var h := float(building["height"])
+		var r := Rect2(building["rect"][0], building["rect"][1], building["rect"][2], building["rect"][3])
+		if h > 26.0 or minf(r.size.x, r.size.y) < 9.0 or String(building["model"]).begins_with("sky:"):
+			continue
+		# panneau sur le toit, face vers la rue la plus proche (normale ±X locale)
+		var inner: Rect2 = layout.blocks[int(building["block"])]["interior"]
+		var c := r.get_center()
+		var to_street := Vector2(-1.0 if c.x - inner.position.x < inner.end.x - c.x else 1.0, 0.0)
+		if minf(c.y - inner.position.y, inner.end.y - c.y) < minf(c.x - inner.position.x, inner.end.x - c.x):
+			to_street = Vector2(0.0, -1.0 if c.y - inner.position.y < inner.end.y - c.y else 1.0)
+		_add("billboard_roof", Transform3D(Basis(Vector3.UP, atan2(-to_street.y, to_street.x)), Vector3(c.x, WALK_Y + h, c.y)))
+		picked += 1
+	# panneaux publicitaires aux entrées de la ville, dans les marges, tournés vers l'artère qui arrive
+	for id: String in ["g_o172", "g_e316", "g_s388", "g_n532"]:
+		var p: Vector2 = MapSpec.NODES[id]["pos"]
+		var out := Vector2(-1, 0) if p.x < -800.0 else (Vector2(1, 0) if p.x > -40.0 else (Vector2(0, 1) if p.y > 100.0 else Vector2(0, -1)))
+		var side := Vector2(-out.y, out.x)
+		var at := p + out * 30.0 + side * 16.0
+		if MapSpec.DOWNTOWN.has_point(at):
+			_add("billboard_pole", Transform3D(Basis(Vector3.UP, atan2(-out.y, out.x)), Vector3(at.x, MARGIN_Y, at.y)))
+
+
+func _center(building: Dictionary) -> Vector2:
+	return Rect2(building["rect"][0], building["rect"][1], building["rect"][2], building["rect"][3]).get_center()
+
+
+func _alleys() -> void:
+	for k in layout.alleys.size():
+		var alley: Dictionary = layout.alleys[k]
+		var r: Rect2 = alley["rect"]
+		var along_x: bool = alley["axis"] == "z"
+		for end: float in [0.18, 0.82]:
+			var p := Vector3(r.position.x + r.size.x * end, Spec.ROAD_TOP, r.position.y + 0.6) if along_x \
+					else Vector3(r.position.x + 0.6, Spec.ROAD_TOP, r.position.y + r.size.y * end)
+			_add("bin", Transform3D(Basis.IDENTITY, p))
+		# échelle de secours contre la façade arrière d'un bâtiment qui borde la ruelle (profondeur +Z locale vers la ruelle)
+		var ladder := Vector3(r.get_center().x, Spec.ROAD_TOP, r.end.y) if along_x else Vector3(r.end.x, Spec.ROAD_TOP, r.get_center().y)
+		if _backs_onto(Vector2(ladder.x, ladder.z)):
+			_add("ladder", Transform3D(Basis(Vector3.UP, PI if along_x else -PI * 0.5), ladder))
+		if k % 7 == 3:
+			for j in 4:
+				var cone := Vector3(r.position.x + 6.0 + j * 1.6, Spec.ROAD_TOP, r.get_center().y) if along_x else Vector3(r.get_center().x, Spec.ROAD_TOP, r.position.y + 6.0 + j * 1.6)
+				_add("cone", Transform3D(Basis.IDENTITY, cone))
+			var barrier := Vector3(r.position.x + 12.5, Spec.ROAD_TOP, r.get_center().y) if along_x else Vector3(r.get_center().x, Spec.ROAD_TOP, r.position.y + 12.5)
+			_add("barrier", Transform3D(Basis(Vector3.UP, 0.0 if along_x else PI * 0.5), barrier))
+
+
+# Vrai si un bâtiment a une façade à moins de 0,6 m du point (façade arrière sur la ruelle).
+func _backs_onto(p: Vector2) -> bool:
+	for building: Dictionary in buildings:
+		var b := Rect2(building["rect"][0], building["rect"][1], building["rect"][2], building["rect"][3])
+		if b.grow(0.6).has_point(p) and not b.grow(-0.6).has_point(p):
+			return true
+	return false
+
+
+func _margins() -> void:
+	var spots: Array[Vector2] = []
+	for spot: Dictionary in MapSpec.GATE_SPOTS:
+		spots.append(spot["pos"])
+	var down := MapSpec.DOWNTOWN
+	var net := Rect2(-901.0, -469.0, 882.0, 594.0)   # réseau de rues (bords extérieurs des trottoirs du pourtour)
+	var z := down.position.y + 7.0
+	while z < down.end.y - 3.0:
+		var x := down.position.x + 7.0
+		while x < down.end.x - 3.0:
+			var p := Vector2(x + rng.randf_range(-3.0, 3.0), z + rng.randf_range(-3.0, 3.0))
+			var near_spot := false
+			for s in spots:
+				near_spot = near_spot or s.distance_to(p) < 14.0
+			# pas sur le quai ouest (Quay2, jusqu'à z −460) ni près d'un point de contrôle du garde-fou
+			if not net.grow(4.0).has_point(p) and _free(p, 5.0) and not near_spot and p.y > -455.0 and rng.randf() < 0.55:
+				var t := Vector3(p.x, MARGIN_Y, p.y)
+				_add("tree_tall" if rng.randf() < 0.6 else "tree_slim", Transform3D(Basis(Vector3.UP, rng.randf() * TAU), t))
+				_collide_cylinder(t, 0.2, 3.0)
+			x += 13.0
+		z += 13.0
+
+
+# --- instances et collisions ----------------------------------------------------------------------------------------------
+
+func _add(kind: String, t: Transform3D) -> void:
+	var down := MapSpec.DOWNTOWN
+	var key := "%s|%d|%d" % [kind, floori((t.origin.x - down.position.x) / CHUNK), floori((t.origin.z - down.position.y) / CHUNK)]
+	if not _instances.has(key):
+		_instances[key] = []
+	_instances[key].append(t)
+	_counts[kind] = int(_counts.get(kind, 0)) + 1
+
+
+func _chunk(p: Vector3) -> Vector2i:
+	var down := MapSpec.DOWNTOWN
+	return Vector2i(floori((p.x - down.position.x) / CHUNK), floori((p.z - down.position.y) / CHUNK))
+
+
+func _collide_cylinder(base: Vector3, radius: float, height: float) -> void:
+	var skey := "cyl|%.2f|%.2f" % [radius, height]
+	if not _shapes.has(skey):
+		var shape := CylinderShape3D.new()
+		shape.radius = radius
+		shape.height = height
+		_shapes[skey] = shape
+	var key := _chunk(base)
+	if not _collisions.has(key):
+		_collisions[key] = []
+	_collisions[key].append([_shapes[skey], Transform3D(Basis.IDENTITY, base + Vector3(0, height * 0.5, 0))])
+
+
+func _collide_box(t: Transform3D, size: Vector3, local_offset: Vector3) -> void:
+	var skey := "box|%s" % str(size.snappedf(0.01))
+	if not _shapes.has(skey):
+		var shape := BoxShape3D.new()
+		shape.size = size
+		_shapes[skey] = shape
+	var key := _chunk(t.origin)
+	if not _collisions.has(key):
+		_collisions[key] = []
+	_collisions[key].append([_shapes[skey], Transform3D(t.basis, t.origin + t.basis * local_offset)])
+
+
+func _collision_count() -> int:
+	var n := 0
+	for key in _collisions:
+		n += (_collisions[key] as Array).size()
+	return n
+
+
+# Maillage d'un modèle : sous-maillages du .glb fusionnés par matériau, transformations appliquées.
+func _mesh(kind: String) -> Mesh:
+	var path := MODELS.path_join("models/%s.res" % kind)
+	var inst := (load(KINDS[kind][0]) as PackedScene).instantiate()
+	var surfaces := {}   # matériau -> [SurfaceTool]
+	_collect(inst, Transform3D.IDENTITY, surfaces)
+	inst.free()
+	var mesh := ArrayMesh.new()
+	for mat in surfaces:
+		var st: SurfaceTool = surfaces[mat]
+		st.set_material(mat)
+		st.commit(mesh)
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(MODELS.path_join("models")))
+	ResourceSaver.save(mesh, path)
+	return load(path)
+
+
+func _collect(node: Node, parent: Transform3D, surfaces: Dictionary) -> void:
+	var xform := parent
+	if node is Node3D:
+		xform = parent * (node as Node3D).transform
+	if node is MeshInstance3D and (node as MeshInstance3D).mesh != null:
+		var mi := node as MeshInstance3D
+		for s in mi.mesh.get_surface_count():
+			var mat := mi.get_active_material(s)
+			if not surfaces.has(mat):
+				var st := SurfaceTool.new()
+				st.begin(Mesh.PRIMITIVE_TRIANGLES)
+				surfaces[mat] = st
+			(surfaces[mat] as SurfaceTool).append_from(mi.mesh, s, xform)
+	for child in node.get_children():
+		_collect(child, xform, surfaces)
+
+
+func _write_scene() -> String:
+	var root := Node3D.new()
+	root.name = "Furniture"
+	var meshes := {}
+	# un BuildingField par bloc et par réglage d'ombre : un modèle = un MultiMesh construit au lancement
+	var fields := {}   # "i|j|ombre" -> {"kinds": [], "data": []}
+	var keys := _instances.keys()
+	keys.sort()
+	for key: String in keys:
+		var parts := key.split("|")
+		var kind := parts[0]
+		if not meshes.has(kind):
+			meshes[kind] = _mesh(kind)
+		var fkey := "%s|%s|%d" % [parts[1], parts[2], 1 if KINDS[kind][2] else 0]
+		if not fields.has(fkey):
+			fields[fkey] = {"kinds": [], "data": []}
+		var data := PackedFloat32Array()
+		for t: Transform3D in _instances[key]:
+			data.append_array(PackedFloat32Array([t.basis.x.x, t.basis.x.y, t.basis.x.z, t.basis.y.x, t.basis.y.y, t.basis.y.z,
+					t.basis.z.x, t.basis.z.y, t.basis.z.z, t.origin.x, t.origin.y, t.origin.z, 1.0, 1.0, 1.0, 1.0]))
+		fields[fkey]["kinds"].append(kind)
+		fields[fkey]["data"].append(data)
+	var fkeys := fields.keys()
+	fkeys.sort()
+	for fkey: String in fkeys:
+		var parts := fkey.split("|")
+		var field := Node3D.new()
+		field.set_script(Field)
+		field.name = "Mobilier_%s_%s%s" % [parts[0], parts[1], "_ombres" if parts[2] == "1" else ""]
+		var field_meshes: Array[Mesh] = []
+		var field_data: Array[PackedFloat32Array] = []
+		var ranges := PackedFloat32Array()
+		for k in (fields[fkey]["kinds"] as Array).size():
+			var kind: String = fields[fkey]["kinds"][k]
+			field_meshes.append(meshes[kind])
+			field_data.append(fields[fkey]["data"][k])
+			ranges.append(float(KINDS[kind][1]))
+		field.set("meshes", field_meshes)
+		field.set("instance_data", field_data)
+		field.set("ranges", ranges)
+		field.set("shadows", parts[2] == "1")
+		root.add_child(field)
+		field.owner = root
+	var collision := Node3D.new()
+	collision.name = "Collision"
+	root.add_child(collision)
+	collision.owner = root
+	var ckeys := _collisions.keys()
+	ckeys.sort()
+	for key: Vector2i in ckeys:
+		var body := StaticBody3D.new()
+		body.name = "Mobilier_%d_%d" % [key.x, key.y]
+		collision.add_child(body)
+		body.owner = root
+		var k := 0
+		for entry: Array in _collisions[key]:
+			var cs := CollisionShape3D.new()
+			cs.name = "C%d" % k
+			cs.shape = entry[0]
+			cs.transform = entry[1]
+			body.add_child(cs)
+			cs.owner = root
+			k += 1
+	var packed := PackedScene.new()
+	var err := packed.pack(root)
+	if err == OK:
+		err = ResourceSaver.save(packed, OUT.path_join("Furniture.tscn"))
+	root.free()
+	return error_string(err)

@@ -3,8 +3,9 @@ extends Node
 # Test headless d'exploration de la carte 3D (étape 7), monde complet (World.tscn, spawners coupés) :
 #  - itinéraires : depuis le point de départ du joueur, plus court chemin sur le Circuit (centre-ville et graphe de la
 #    carte fusionnés, sens uniques respectés) jusqu'au noeud le plus proche de l'entrée de chaque lieu ;
-#  - parcours en voiture simulé le long de chaque itinéraire, tous les 3 m, sur l'axe et sur la voie de droite : sol
-#    roulable à la hauteur du trajet et gabarit libre (boîte de 1,4 m de large de 0,7 à 2,5 m au-dessus du trajet) ;
+#  - parcours en voiture simulé le long de chaque itinéraire, tous les 3 m, sur chacune des voies décrites par l'arête
+#    (boulevards à terre-plein : jamais sur l'axe, planté), sinon sur l'axe et sur la voie de droite : sol roulable à la
+#    hauteur du trajet et gabarit libre (boîte de 1,4 m de large de 0,7 à 2,5 m au-dessus du trajet) ;
 #  - bilan des collisions de la carte par famille (routes, bâtiments, lieux, troncs, terrain).
 #
 # Lancer : Godot --headless --fixed-fps 60 --quit-after 3000 res://scenes/tests/MapExplorationTest.tscn
@@ -59,8 +60,12 @@ func _ready() -> void:
 			var from_node: int = step[1]
 			var edge_len := circuit.edge_length(edge)
 			var s := 0.0
+			var laterals: Array = [0.0, circuit.lane_offset(edge, 1.75)]
+			var lanes: Variant = circuit.edges[edge].get("lanes")
+			if lanes != null and not (lanes as PackedFloat32Array).is_empty():
+				laterals = Array(lanes as PackedFloat32Array)
 			while s < edge_len:
-				for lateral: float in [0.0, circuit.lane_offset(edge, 1.75)]:
+				for lateral: float in laterals:
 					var p := circuit.sample_offset(edge, from_node, s, lateral)
 					samples += 1
 					var hit := space.intersect_ray(_ray(p + Vector3.UP * 3.0, p + Vector3.DOWN * 2.0, exclude))

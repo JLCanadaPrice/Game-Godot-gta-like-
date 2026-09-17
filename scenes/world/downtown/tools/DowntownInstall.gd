@@ -6,7 +6,7 @@ extends SceneTree
 #    leur contenu (intérieur, comptoir, repères, place de livraison) et abaissées de SHOP_DROP m : leur sol (0,41 m,
 #    calé sur les anciens trottoirs) arrive au niveau des nouveaux trottoirs (0,20 m) ; puis les 4 districts et leurs
 #    carrefours de couture (tuiles de route, trottoirs, 1049 bâtiments du kit, sols) sont retirés ;
-#  - à chaque passage : scènes générées (rues : Streets.tscn, bâtiments : Buildings.tscn) instanciées dans Downtown si absentes, données du Circuit
+#  - à chaque passage : scènes générées (rues : Streets.tscn, bâtiments : Buildings.tscn, mobilier : Furniture.tscn) instanciées dans Downtown si absentes, données du Circuit
 #    (nœuds, arêtes et voies, distances d'arrêt aux passages piétons) et du PedGraph remplacées par celles du plan
 #    (DowntownTraffic : mêmes indices que les feux de Streets.tscn), points d'apparition des spawners.
 # Sauvegarde, puis renumérotation des unique_id en double éventuels.
@@ -17,6 +17,7 @@ const Traffic := preload("res://scenes/world/downtown/DowntownTraffic.gd")
 const WORLD_PATH := "res://scenes/world/World.tscn"
 const STREETS := "res://scenes/world/downtown/generated/Streets.tscn"
 const BUILDINGS := "res://scenes/world/downtown/generated/Buildings.tscn"
+const FURNITURE := "res://scenes/world/downtown/generated/Furniture.tscn"
 const OLD := ["District", "District_W", "District_N", "District_NW", "DistrictSeams"]
 const SHOPS := ["Dealership_Building", "Agency_Building"]
 const SHOP_DROP := 0.21
@@ -66,7 +67,7 @@ func _initialize() -> void:
 					root.remove_child(node)
 					node.free()
 			_report["noeuds_retires"] = removed
-	for pair: Array in [["Streets", STREETS, 0], ["Buildings", BUILDINGS, 1]]:
+	for pair: Array in [["Streets", STREETS, 0], ["Buildings", BUILDINGS, 1], ["Furniture", FURNITURE, 2]]:
 		if not downtown.has_node(String(pair[0])) and ResourceLoader.exists(pair[1]):
 			var generated := (load(pair[1]) as PackedScene).instantiate()
 			generated.name = pair[0]

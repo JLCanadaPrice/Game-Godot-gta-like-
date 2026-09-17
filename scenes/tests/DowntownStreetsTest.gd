@@ -1,8 +1,9 @@
 extends Node
 
-# Test headless des rues du centre-ville reconstruit (chantier centre-ville, étape D2), monde complet (World.tscn,
+# Test headless des rues du centre-ville reconstruit (chantier centre-ville, étapes D2 et D4), monde complet (World.tscn,
 # spawners coupés) :
-#  - structure : Downtown/Streets instancié, quais et boutiques conservés dans Downtown, plus aucun ancien district ;
+#  - structure : Downtown/Streets instancié, mobilier (Downtown/Furniture) construit, quais et boutiques conservés dans
+#    Downtown, plus aucun ancien district ;
 #  - graphes : Circuit (après fusion du graphe de la carte) fortement connexe, sens uniques compris ; réseau piéton
 #    d'un seul tenant ; ni arête en double ni nœuds confondus ;
 #  - chaque branche d'arrivée d'un carrefour à feux : feu visible câblé (nœud, arête, Circuit trouvé), phase simulée,
@@ -57,7 +58,7 @@ func _ready() -> void:
 func _check_structure(world: Node) -> void:
 	var missing := []
 	for path in ["Downtown/Streets/Surfaces", "Downtown/Streets/Collision", "Downtown/Streets/TrafficLights", "Downtown/Quay/QuayPavement",
-			"Downtown/Quay2", "Downtown/Shops/Dealership_Building", "Downtown/Shops/Agency_Building"]:
+			"Downtown/Quay2", "Downtown/Shops/Dealership_Building", "Downtown/Shops/Agency_Building", "Downtown/Furniture/Collision"]:
 		if world.get_node_or_null(path) == null:
 			missing.append(path)
 	var old := []
@@ -65,11 +66,20 @@ func _check_structure(world: Node) -> void:
 		if String(n.name).begins_with("District"):
 			old.append(n.name)
 	var surfaces := world.get_node_or_null("Downtown/Streets/Surfaces")
-	print("DOWNTOWN_STREETS_STRUCTURE %d maillages de rue, %d corps de collision, %d feux | manquants %s | anciens districts %s"
+	# mobilier : MultiMesh construits au lancement par les BuildingField de Downtown/Furniture, avec des instances
+	var furniture_instances := 0
+	var furniture_meshes := 0
+	var furniture := world.get_node_or_null("Downtown/Furniture")
+	if furniture != null:
+		for mmi: MultiMeshInstance3D in furniture.find_children("*", "MultiMeshInstance3D", true, false):
+			if mmi.multimesh != null and mmi.multimesh.mesh != null:
+				furniture_meshes += 1
+				furniture_instances += mmi.multimesh.instance_count
+	print("DOWNTOWN_STREETS_STRUCTURE %d maillages de rue, %d corps de collision, %d feux, mobilier %d instances en %d MultiMesh | manquants %s | anciens districts %s"
 			% [surfaces.get_child_count() if surfaces != null else 0, world.get_node("Downtown/Streets/Collision").get_child_count() if world.has_node("Downtown/Streets/Collision") else 0,
-			_lights(world).size(), missing, old])
-	if not missing.is_empty() or not old.is_empty():
-		_errors.append("structure : manquants %s, anciens districts %s" % [missing, old])
+			_lights(world).size(), furniture_instances, furniture_meshes, missing, old])
+	if not missing.is_empty() or not old.is_empty() or furniture_instances < 1000:
+		_errors.append("structure : manquants %s, anciens districts %s, mobilier %d instances" % [missing, old, furniture_instances])
 
 
 func _check_graphs(circuit: CircuitPath, ped: PathGraph, traffic: Traffic) -> void:

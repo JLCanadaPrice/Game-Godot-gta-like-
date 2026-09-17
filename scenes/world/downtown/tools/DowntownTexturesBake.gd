@@ -7,6 +7,7 @@ extends SceneTree
 #    stationnement), demi-chaussée de boulevard (ligne jaune côté terre-plein), enrobé nu (carrefours), passage piéton
 #    (bandes), ligne d'arrêt, terre-plein planté, ruelle, bateau (entrée de ruelle).
 #  - paving.png (512 x 512 = PAVING_TILE m de côté) : dalles des trottoirs et des sols d'îlot, UV en coordonnées monde.
+#  - lawn.png (512 x 512 = LAWN_TILE m de côté) : pelouse des marges du centre-ville, UV en coordonnées monde.
 # Réglages d'import écrits avec (compression VRAM, mipmaps).
 #
 # Lancer : Godot --headless --path <projet> --script res://scenes/world/downtown/tools/DowntownTexturesBake.gd
@@ -15,6 +16,7 @@ const DIR := "res://scenes/world/downtown/generated/textures"
 const TEX_LENGTH := 12.0
 const PX_PER_M := 36.0
 const PAVING_TILE := 3.0
+const LAWN_TILE := 8.0
 const GUTTER := 4
 const ASPHALT_EDGE := Color8(0x72, 0x71, 0x71)
 const ASPHALT_MID := Color8(0x8C, 0x8C, 0x8F)
@@ -125,6 +127,18 @@ func _initialize() -> void:
 				c = c.darkened(0.18)
 			paving.set_pixel(x, y, c)
 	_save(paving, "paving")
+	var lawn := Image.create(512, 512, false, Image.FORMAT_RGB8)
+	for y in 512:
+		for x in 512:
+			# bruit périodique (4 coins d'une tuile de bruit mélangés) : pelouse sans raccord visible d'une tuile à l'autre
+			var u := x / 512.0
+			var v := y / 512.0
+			var n := grain.get_noise_2d(x, y) * (1.0 - u) * (1.0 - v) + grain.get_noise_2d(x - 512, y) * u * (1.0 - v) \
+					+ grain.get_noise_2d(x, y - 512) * (1.0 - u) * v + grain.get_noise_2d(x - 512, y - 512) * u * v
+			var p := patches.get_noise_2d(x, y) * (1.0 - u) * (1.0 - v) + patches.get_noise_2d(x - 512, y) * u * (1.0 - v) \
+					+ patches.get_noise_2d(x, y - 512) * (1.0 - u) * v + patches.get_noise_2d(x - 512, y - 512) * u * v
+			lawn.set_pixel(x, y, GRASS_LIGHT.lerp(GRASS_DARK, clampf(0.5 + n * 0.9 + p * 0.5, 0.0, 1.0)))
+	_save(lawn, "lawn")
 	quit(0)
 
 
