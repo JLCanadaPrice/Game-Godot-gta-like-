@@ -135,10 +135,18 @@ func _add_light(circuit: CircuitPath, lights: Array[TrafficLight], node: int, ed
 	added_lights += 1
 
 
-# Feux du centre-ville : enfants des tuiles de route des districts (find_children ne filtre pas les class_name).
+# Feux du centre-ville : Downtown/Streets/TrafficLights (centre-ville reconstruit), à défaut enfants des tuiles de
+# route des anciens districts (find_children ne filtre pas les class_name).
 func _world_lights(circuit: CircuitPath) -> Array[TrafficLight]:
 	var out: Array[TrafficLight] = []
-	for district in circuit.get_parent().get_children():
+	var world := circuit.get_parent()
+	var holder := world.get_node_or_null("Downtown/Streets/TrafficLights")
+	if holder != null:
+		for child in holder.get_children():
+			if child is TrafficLight and (child as TrafficLight).circuit_edge >= 0:
+				out.append(child as TrafficLight)
+		return out
+	for district in world.get_children():
 		var roads := district.get_node_or_null("Roads") if String(district.name).begins_with("District") else null
 		if roads == null:
 			continue

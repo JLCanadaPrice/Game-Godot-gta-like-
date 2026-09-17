@@ -76,7 +76,9 @@ const SIDEWALK_RISE := 0.15
 const ARTERIAL_GRADE := 0.07
 const ARTERIAL_WATER_DECK := Spec.WATER_LEVEL + 3.5   # ponts d'artères plus bas que ceux des autoroutes
 const ARTERIAL_SMOOTH := 60.0
-const GRID_TRIM := 6.0              # bras libre de la tuile en X du centre-ville
+const GRID_TRIM := 7.0              # demi-chaussée des avenues du pourtour du centre-ville (DowntownSpec, 4 voies)
+const GRID_FLAT := 2                 # échantillons à plat (ROAD_TOP) depuis un raccord du centre-ville (8 m)
+const GRID_RAMP := 0.01              # pente maximale ensuite, jusqu'à la hauteur naturelle de l'artère (pas de marche)
 const PAD_MARGIN := 3.0
 const TERMINAL_OFFSET := 48.0       # distance entre l'axe de l'autoroute et le carrefour d'extrémité d'un losange
 const DIAMOND_BEND := 110.0         # courbe en S d'une bretelle de losange, avant le carrefour d'extrémité
@@ -859,7 +861,13 @@ func _profile_arterial(chain: Dictionary) -> void:
 		var idx: int = chain["node_index"][node_id]
 		match String(Spec.NODES[node_id]["kind"]):
 			"grid":
-				fixed[idx] = ROAD_TOP
+				# raccord au centre-ville : à plat au niveau de ses rues jusqu'au-delà de son trottoir, puis rampe douce
+				for j in range(maxi(idx - GRID_FLAT - 10, 0), mini(idx + GRID_FLAT + 10, pts.size() - 1) + 1):
+					var steps := absi(j - idx)
+					if steps <= GRID_FLAT:
+						fixed[j] = ROAD_TOP
+					else:
+						constraints.append({"i0": j, "i1": j, "h": ROAD_TOP + GRID_RAMP * STEP * (steps - GRID_FLAT), "type": "max"})
 			"edge":
 				pass
 			"roundabout":

@@ -1,12 +1,12 @@
 extends Node
 
 # Test headless des boutiques construites sur Blender, dans la vraie carte (World.tscn) :
-#  1. plus de téléportation : ni nœud Interiors ni porte ShopEntrance, l'ancien bâtiment d'angle retiré ;
+#  1. plus de téléportation : ni nœud Interiors ni porte ShopEntrance ; anciens districts retirés (centre-ville reconstruit) ;
 #  2. le joueur marche (vraie action move_forward) depuis le parvis à travers la porte et arrive dans le
 #     volume intérieur : toit masqué pour la caméra (ombre conservée) ;
 #  3. face à un mur ou une vitrine hors porte, il reste dehors (collisions) ;
 #  4. au comptoir, [E] ouvre le panneau de la boutique ; concessionnaire : un achat serait livré sur la
-#     place du parvis, au sol, hors du bâtiment ;
+#     place du parvis, au sol (niveau du parvis, repère Socket_Delivery), hors du bâtiment ;
 #  5. il ressort à pied par la porte : toit réaffiché ;
 #  6. le téléphone ouvre toujours le panneau ; l'empreinte du bâtiment reste lisible par la carte.
 #
@@ -15,8 +15,8 @@ extends Node
 const WORLD := preload("res://scenes/world/World.tscn")
 const MapTexture := preload("res://scenes/ui/DistrictMapTexture.gd")
 const SHOPS := [
-	{"path": "District/Buildings/Dealership_Building", "panel": "car_dealership_panel", "phone": "_on_dealership_pressed", "cars": 2},
-	{"path": "District/Buildings/Agency_Building", "panel": "apartment_agency_panel", "phone": "_on_agency_pressed", "cars": 0},
+	{"path": "Downtown/Shops/Dealership_Building", "panel": "car_dealership_panel", "phone": "_on_dealership_pressed", "cars": 2},
+	{"path": "Downtown/Shops/Agency_Building", "panel": "apartment_agency_panel", "phone": "_on_agency_pressed", "cars": 0},
 ]
 
 var _errors: Array[String] = []
@@ -31,8 +31,8 @@ func _ready() -> void:
 	_player = get_tree().get_first_node_in_group("player") as CharacterBody3D
 	await _frames(10)
 	if _world.get_node_or_null("Interiors") != null or _world.find_child("ShopEntrance", true, false) != null \
-			or _world.get_node_or_null("District/Buildings/Building_Small_1_152") != null:
-		_errors.append("restes de l'ancien système (Interiors / ShopEntrance / bâtiment d'angle)")
+			or _world.get_node_or_null("District") != null:
+		_errors.append("restes de l'ancien système (Interiors / ShopEntrance / anciens districts)")
 	for shop: Dictionary in SHOPS:
 		await _check_shop(shop)
 	print("SHOP_BUILDINGS_RESULT %s %s" % ["OK" if _errors.is_empty() else "FAIL", " | ".join(_errors)])
@@ -89,7 +89,7 @@ func _check_shop(shop: Dictionary) -> void:
 		print("SHOP_BUILDINGS_DELIVERY %s voitures_exposées=%d livraison=(%.1f, %.1f, %.1f) sol=%.2f" % [tag, cars, spot.origin.x, spot.origin.y, spot.origin.z, ground])
 		if cars != shop.cars:
 			_errors.append("%s : %d voitures exposées au lieu de %d" % [tag, cars, shop.cars])
-		if spot.origin.distance_to(expected.origin) > 0.01 or building.is_player_inside_point(spot.origin) or absf(ground - 0.41) > 0.05:
+		if spot.origin.distance_to(expected.origin) > 0.01 or building.is_player_inside_point(spot.origin) or absf(ground - expected.origin.y) > 0.05:
 			_errors.append("%s : livraison hors de la place du parvis" % tag)
 	panel.call("hide_ui")
 	await _frames(2)

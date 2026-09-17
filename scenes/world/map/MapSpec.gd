@@ -16,7 +16,7 @@ const BUILT_STAGE := 7.0
 # --- emprises ---------------------------------------------------------------------------------------------------
 const PLAYABLE := Rect2(-2174.0, -1480.0, 4347.0, 2447.0)   # zone explorable (4,35 × 2,45 km)
 const TERRAIN := Rect2(-2432.0, -1792.0, 4864.0, 3072.0)    # terrain généré, bordure de collines comprise
-const DOWNTOWN := Rect2(-952.0, -469.0, 992.0, 676.0)       # sol des 4 districts existants
+const DOWNTOWN := Rect2(-952.0, -469.0, 992.0, 676.0)       # centre-ville (scenes/world/downtown : DowntownSpec)
 const HARBOR := Rect2(-520.0, -650.0, 560.0, 190.0)         # quai, bassin et fonds existants du District
 const WATER_LEVEL := -0.95                                   # surface du bassin existant, reprise par la rivière
 

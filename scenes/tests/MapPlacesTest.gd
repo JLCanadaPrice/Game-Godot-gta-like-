@@ -75,7 +75,7 @@ func _check_entrances(space: PhysicsDirectSpaceState3D, net: Network, data: Dict
 					var hit := _ray(space, Vector3(s.x, e.y + 10.0, s.y), Vector3(s.x, e.y - 10.0, s.y))
 					if not hit.is_empty():
 						var n := String((hit["collider"] as Node).name)
-						if n.begins_with("Sidewalk") or n.begins_with("Road"):
+						if n.begins_with("Sidewalk") or n.begins_with("Road") or String((hit["collider"] as Node).get_path()).contains("/Downtown/Streets/"):
 							access = minf(access, float(r))
 				if access < INF:
 					break

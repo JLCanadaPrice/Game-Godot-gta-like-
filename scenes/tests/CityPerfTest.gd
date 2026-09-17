@@ -1,21 +1,21 @@
 extends Node
 
-# Test de performance headless dans la vraie carte à 4 districts, joueur et caméra réels, spawners réels :
+# Test de performance headless dans la vraie carte (centre-ville reconstruit), joueur et caméra réels, spawners réels :
 #  - volume d'avant (84 voitures / 105 PNJ) sans culling, pour référence ;
 #  - volume x3 (252 / 315) sans culling, puis avec SimulationCuller : caméra de départ (vers la mer), caméra tournée
-#    vers la ville avec le champ seul (sans test d'occlusion) puis avec occlusion, joueur au croisement des 4
-#    districts regardant dans l'axe de l'avenue de couture (avec et sans culling).
+#    vers la ville avec le champ seul (sans test d'occlusion) puis avec occlusion, joueur au croisement Union Street ×
+#    Central Boulevard regardant dans l'axe du boulevard (avec et sans culling).
 # Par phase : temps réel de frame (moyenne, p95, max), pics process / physique (moniteurs Godot, max sur 1 s),
-# voitures et PNJ actifs / endormis, coût du culler et rayons de ligne de vue. Relève aussi la répartition par
-# district et les voitures qui passent d'un district à l'autre. Headless = pas de rendu : coûts CPU (scripts +
+# voitures et PNJ actifs / endormis, coût du culler et rayons de ligne de vue. Relève aussi la répartition par quart
+# du centre-ville (autour de ce croisement) et les voitures qui passent d'un quart à l'autre. Headless = pas de rendu : coûts CPU (scripts +
 # physique Jolt), pas le GPU.
 #
 # Lancer : Godot --headless --fixed-fps 60 --quit-after 25000 res://scenes/tests/CityPerfTest.tscn
 
 const WORLD := preload("res://scenes/world/World.tscn")
 const META := &"sim_sleeping"
-const CENTER := Vector3(-452.5, 1.5, -164.5)       # coin de trottoir au croisement des 4 districts
-const LOOK_TARGETS := {"city": Vector3(-460.0, 0.0, -172.0), "avenue": Vector3(-900.0, 0.0, -164.5)}
+const CENTER := Vector3(-452.75, 1.5, -161.5)      # coin de trottoir au croisement Union Street × Central Boulevard
+const LOOK_TARGETS := {"city": Vector3(-460.0, 0.0, -172.0), "avenue": Vector3(-900.0, 0.0, -161.5)}
 const SETTLE := 3.0
 const MEASURE := 15.0
 const PHASES := [
@@ -24,8 +24,8 @@ const PHASES := [
 	{"key": "on", "name": "x3, avec culling, caméra de départ (vers la mer)", "cars": 252, "npcs": 315, "culling": true, "occlusion": true, "center": false, "look": "", "fill": 0.0},
 	{"key": "on_view_frustum", "name": "x3, culling par le champ seul (sans occlusion), caméra tournée vers la ville", "cars": 252, "npcs": 315, "culling": true, "occlusion": false, "center": false, "look": "city", "fill": 0.0},
 	{"key": "on_view", "name": "x3, avec culling, caméra tournée vers la ville", "cars": 252, "npcs": 315, "culling": true, "occlusion": true, "center": false, "look": "city", "fill": 0.0},
-	{"key": "on_center", "name": "x3, avec culling, croisement des 4 districts, regard dans l'axe de l'avenue", "cars": 252, "npcs": 315, "culling": true, "occlusion": true, "center": true, "look": "avenue", "fill": 0.0},
-	{"key": "off_center", "name": "x3, sans culling, croisement des 4 districts, regard dans l'axe de l'avenue", "cars": 252, "npcs": 315, "culling": false, "occlusion": true, "center": true, "look": "avenue", "fill": 0.0},
+	{"key": "on_center", "name": "x3, avec culling, croisement Union Street × Central Boulevard, regard dans l'axe du boulevard", "cars": 252, "npcs": 315, "culling": true, "occlusion": true, "center": true, "look": "avenue", "fill": 0.0},
+	{"key": "off_center", "name": "x3, sans culling, croisement Union Street × Central Boulevard, regard dans l'axe du boulevard", "cars": 252, "npcs": 315, "culling": false, "occlusion": true, "center": true, "look": "avenue", "fill": 0.0},
 ]
 
 var _world: Node
@@ -140,13 +140,13 @@ func _summary(phase: Dictionary) -> Dictionary:
 
 
 func _population_spread() -> Array:
-	var cars := {"District": 0, "District_W": 0, "District_N": 0, "District_NW": 0}
+	var cars := {"nord-est": 0, "nord-ouest": 0, "sud-est": 0, "sud-ouest": 0}
 	var npcs := cars.duplicate()
 	for v in _group("vehicle"):
 		cars[_district(v.global_position, 0.0)] += 1
 	for n in _group("npc"):
 		npcs[_district(n.global_position, 0.0)] += 1
-	print("CITY_PERF_SPREAD voitures par district %s | PNJ par district %s" % [cars, npcs])
+	print("CITY_PERF_SPREAD voitures par quart %s | PNJ par quart %s" % [cars, npcs])
 	return [cars, npcs]
 
 
@@ -158,13 +158,13 @@ func _verdict(results: Dictionary) -> void:
 	var off_center: Dictionary = results.off_center
 	print("CITY_PERF_GAIN à 252 / 315, frame moyenne : sans culling %.2f ms (%.2f au croisement) | avec culling %.2f ms caméra de départ, %.2f ms caméra vers la ville (%.2f avec le champ seul), %.2f ms au croisement | volume d'avant sans culling %.2f ms | budget 60 fps 16.67 ms"
 			% [off.frame, off_center.frame, on.frame, on_view.frame, results.on_view_frustum.frame, on_center.frame, results.avant.frame])
-	print("CITY_PERF_SEAMS %d passages de voitures (actives) d'un district à l'autre pendant le test" % _crossings)
+	print("CITY_PERF_SEAMS %d passages de voitures (actives) d'un quart du centre-ville à l'autre pendant le test" % _crossings)
 	if int(on.cars) < 240 or int(on.npcs) < 300:
 		_errors.append("population x3 non atteinte : %d voitures, %d PNJ" % [on.cars, on.npcs])
 	if float(on.frame) >= float(off.frame) or float(on_view.frame) >= float(off.frame) or float(on_center.frame) >= float(off_center.frame):
 		_errors.append("le culling ne réduit pas le temps de frame")
 	if _crossings == 0:
-		_errors.append("aucune voiture n'est passée d'un district à l'autre")
+		_errors.append("aucune voiture n'est passée d'un quart à l'autre")
 	for i in 2:
 		for d in _spread[i]:
 			if int(_spread[i][d]) < (25 if i == 0 else 30):
@@ -177,8 +177,8 @@ func _district(p: Vector3, margin: float) -> String:
 	if absf(p.x + 460.0) < margin or absf(p.z + 172.0) < margin:
 		return ""
 	if p.z <= -172.0:
-		return "District" if p.x >= -460.0 else "District_W"
-	return "District_N" if p.x >= -460.0 else "District_NW"
+		return "nord-est" if p.x >= -460.0 else "nord-ouest"
+	return "sud-est" if p.x >= -460.0 else "sud-ouest"
 
 
 func _group(group: StringName) -> Array[Node]:

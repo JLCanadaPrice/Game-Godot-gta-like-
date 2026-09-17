@@ -12,8 +12,8 @@ extends Node
 const WORLD := preload("res://scenes/world/World.tscn")
 const SPEC_PATH := "res://scenes/world/map/MapSpec.gd"
 const CITY_SPOTS := [
-	{"name": "trottoir du croisement des 4 districts", "pos": Vector2(-452.0, -179.5), "yaw": -90.0},
-	{"name": "trottoir de l'avenue sud du centre-ville", "pos": Vector2(-290.0, 108.5), "yaw": -90.0},
+	{"name": "trottoir du croisement Main Street × Central Boulevard", "pos": Vector2(-521.5, -161.5), "yaw": -90.0},
+	{"name": "trottoir de South Avenue", "pos": Vector2(-290.0, 107.25), "yaw": -90.0},
 ]
 const WALK_SECONDS := 2.0
 const SPRINT_SECONDS := 1.5

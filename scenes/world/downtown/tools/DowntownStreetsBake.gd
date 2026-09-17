@@ -1,0 +1,675 @@
+extends SceneTree
+
+# Chantier centre-ville, étape D2 : rues du centre-ville reconstruit, tirées du plan (DowntownLayout), dans
+# generated/Streets.tscn :
+#  - chaussées à la hauteur des routes de la carte (Spec.ROAD_TOP) texturées par profil (voies, axe, stationnement),
+#    carrefours en enrobé nu, passage piéton et ligne d'arrêt (côté des voies qui arrivent) sur chaque branche d'un
+#    carrefour à feux, terre-plein planté et surélevé au milieu des boulevards, ruelles et bateaux à leurs entrées ;
+#  - trottoirs (+ Spec.SIDEWALK_RISE) le long des tronçons et, autour de chaque carrefour, par quartier : au-delà du
+#    carrefour hors de la chaussée de la branche (trottoir continu si la branche manque), à côté du carrefour hors de
+#    la chaussée de l'autre branche ; sols d'îlots au niveau des trottoirs (hors emprise des boutiques), marges du
+#    rectangle du centre-ville hors réseau (lieux, raccords de la carte) juste sous le sol des lieux ; bordures ;
+#  - collisions en boîtes ; feux tricolores câblés sur le Circuit (DowntownTraffic : mêmes indices que ceux installés
+#    dans World.tscn) sur leur mât.
+# Maillages regroupés par blocs de CHUNK m et par matériau (enrobé en atlas, dallage en UV monde teinté par sommet) :
+# 2 appels de dessin par bloc, sans ombre portée. Contrôle de couverture : chaque point du rectangle du centre-ville
+# (pas de 1 m) est couvert par exactement une surface, sauf l'emprise des boutiques (elles ont leur sol).
+#
+# Lancer (après DowntownTexturesBake et un import) :
+#   Godot --headless --path <projet> --script res://scenes/world/downtown/tools/DowntownStreetsBake.gd
+
+const Layout := preload("res://scenes/world/downtown/DowntownLayout.gd")
+const Spec := preload("res://scenes/world/downtown/DowntownSpec.gd")
+const Traffic := preload("res://scenes/world/downtown/DowntownTraffic.gd")
+const MapSpec := preload("res://scenes/world/map/MapSpec.gd")
+const Network := preload("res://scenes/world/map/tools/RoadNetwork.gd")
+const TRAFFIC_LIGHT := preload("res://scenes/world/TrafficLight.tscn")
+const LAMP_POST := preload("res://assets/modular_roads/lamp_1.glb")
+
+const OUT := "res://scenes/world/downtown/generated"
+const TEXTURES := OUT + "/textures"
+const MESHES := OUT + "/streets"
+const CHUNK := 216.0
+const ROAD_Y := Spec.ROAD_TOP
+const WALK_Y := Spec.ROAD_TOP + Spec.SIDEWALK_RISE
+const CURB_BOTTOM := Spec.ROAD_TOP - 0.1
+const MARGIN_Y := -0.05              # sous le sol des lieux posés dans les marges (-0,02 à 0,02)
+const SKIRT_Y := -0.5                # jupe au bord extérieur des marges (raccord au terrain)
+const BOX_BOTTOM := -1.0
+const STOP_WIDTH := 0.4
+const MEDIAN_NOSE := 1.0             # enrobé nu entre la ligne d'arrêt et le nez du terre-plein
+const PAVING_TILE := 3.0
+const FAR_RANGE := 1400.0
+const CIRCUIT_FROM_LIGHT := "../../../../Circuit"   # World/Downtown/Streets/TrafficLights/<feu>
+const LANE_COLUMNS := ["avenue", "street", "one_way"]
+const TINT := {"sidewalk": Color(1, 1, 1), "interior": Color(0.93, 0.92, 0.9), "margin": Color(0.8, 0.78, 0.74), "curb": Color(0.86, 0.86, 0.85)}
+
+var layout: Layout
+var traffic: Traffic
+var columns := {}
+var tex_length := 12.0
+var _batches := {}                   # "asphalt|i|j" / "paving|i|j" -> Batch
+var _boxes := {}                     # Vector2i -> [[Rect2, bas, haut]]
+var _tops: Array[Rect2] = []         # surfaces du dessus (contrôle de couverture)
+var _gaps: Array[Rect2] = []         # trottoir extérieur interrompu à l'arrivée d'une route de la carte
+var _stats := {"pieces_enrobe": 0, "pieces_dallage": 0, "boites": 0}
+
+
+func _initialize() -> void:
+	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(TEXTURES.path_join("columns.json")))
+	if parsed == null:
+		push_error("columns.json absent : lancer DowntownTexturesBake puis l'import")
+		quit(1)
+		return
+	columns = parsed["columns"]
+	tex_length = float(parsed["tex_length"])
+	layout = Layout.new()
+	traffic = Traffic.new(layout)
+	_connection_gaps()
+	var problems := _check_extents()
+	for i in layout.segments.size():
+		_segment(i)
+	for n in layout.nodes.size():
+		_node(n)
+	for b in layout.blocks.size():
+		_block(b)
+	_margins()
+	var coverage := _coverage()
+	if int(coverage["trous"]) > 0 or int(coverage["chevauchements"]) > 0:
+		problems.append("couverture : %s" % coverage)
+	_stats.merge(_write_scene())
+	_stats["couverture"] = coverage
+	_stats["circulation"] = traffic.stats()
+	print("DOWNTOWN_STREETS " + JSON.stringify(_stats))
+	if not problems.is_empty():
+		print("DOWNTOWN_STREETS_ERROR " + " | ".join(problems))
+	quit(0 if problems.is_empty() else 1)
+
+
+# Le découpage par quartiers suppose une seule emprise (demi-chaussée + trottoir) le long d'un même côté d'îlot, et
+# des branches au moins aussi larges (chaussée + trottoir) que la moitié du carrefour.
+func _check_extents() -> Array[String]:
+	var out: Array[String] = []
+	for block: Dictionary in layout.blocks:
+		var outer: Rect2 = block["outer"]
+		for side: Array in [["x", outer.position.x, outer.position.y, outer.end.y, 1], ["x", outer.end.x, outer.position.y, outer.end.y, 0],
+				["z", outer.position.y, outer.position.x, outer.end.x, 1], ["z", outer.end.y, outer.position.x, outer.end.x, 0]]:
+			var extents := {}
+			for s: Dictionary in layout.segments:
+				if s["axis"] == side[0] and absf(float(s["at"]) - float(side[1])) < 0.01 and float(s["to"]) > float(side[2]) + 0.01 and float(s["from"]) < float(side[3]) - 0.01:
+					extents[snappedf(float(s["half"]) + float(s["sidewalks"][side[4]]), 0.01)] = true
+			if extents.size() > 1:
+				out.append("emprises différentes le long de l'îlot %s : %s" % [outer, extents.keys()])
+	for n in layout.nodes.size():
+		var node: Dictionary = layout.nodes[n]
+		for arm: String in node["arms"]:
+			var s: Dictionary = layout.segments[node["arms"][arm]]
+			var box := float(node["hx"]) if arm == "N" or arm == "S" else float(node["hz"])
+			if float(s["half"]) + minf(float(s["sidewalks"][0]), float(s["sidewalks"][1])) < box - 0.01:
+				out.append("branche %s du carrefour %s plus étroite que le carrefour" % [arm, node["pos"]])
+	return out
+
+
+# --- tronçons ---------------------------------------------------------------------------------------------------------
+
+func _segment(i: int) -> void:
+	var s: Dictionary = layout.segments[i]
+	var axis: String = s["axis"]
+	var half := float(s["half"])
+	var width := half * 2.0
+	var a := int(s["a"])
+	var b := int(s["b"])
+	var start := float(s["from"]) + (float(layout.nodes[a]["hz"]) if axis == "x" else float(layout.nodes[a]["hx"]))
+	var end := float(s["to"]) - (float(layout.nodes[b]["hz"]) if axis == "x" else float(layout.nodes[b]["hx"]))
+	var one_way := bool(s["one_way"])
+	var dir := int(s["dir"])
+	var lo := start
+	var hi := end
+	# bande du passage piéton rognée au bord du carrefour (trottoir de 2 m : la bande centrée sur le chemin piéton
+	# commencerait 0,5 m dans le carrefour)
+	if layout.nodes[a]["lit"]:
+		var band := _along_range(layout.crosswalk(a, "S" if axis == "x" else "E")["rect"], axis)
+		band.x = maxf(band.x, start)
+		_road(s, "plain", 0.0, width, start, band.x)
+		_road(s, "crosswalk", 0.0, width, band.x, band.y)
+		_stop_strip(s, band.y, band.y + STOP_WIDTH, -1)
+		lo = band.y + STOP_WIDTH
+	if layout.nodes[b]["lit"]:
+		var band := _along_range(layout.crosswalk(b, "N" if axis == "x" else "W")["rect"], axis)
+		band.y = minf(band.y, end)
+		_road(s, "crosswalk", 0.0, width, band.x, band.y)
+		_road(s, "plain", 0.0, width, band.y, end)
+		_stop_strip(s, band.x - STOP_WIDTH, band.x, 1)
+		hi = band.x - STOP_WIDTH
+	# milieu : voies, avec terre-plein planté sur les boulevards
+	var median := float(s["median"])
+	if median > 0.0 and hi - lo > MEDIAN_NOSE * 2.0 + 1.0:
+		var m0 := half - median * 0.5
+		var m1 := half + median * 0.5
+		_road(s, _lane_column(s), 0.0, m0, lo, hi)
+		_road(s, _lane_column(s), m1, width, lo, hi)
+		_road(s, "plain", m0, m1, lo, lo + MEDIAN_NOSE)
+		_road(s, "plain", m0, m1, hi - MEDIAN_NOSE, hi)
+		_median(s, m0, m1, lo + MEDIAN_NOSE, hi - MEDIAN_NOSE)
+	else:
+		_road(s, _lane_column(s), 0.0, width, lo, hi)
+	_collide(_rect(s, 0.0, width, start, end), ROAD_Y)
+	# trottoirs, d'un quartier de carrefour à l'autre, coupés par les entrées de ruelles (bateaux)
+	for side in [-1, 1]:
+		var w := float(s["sidewalks"][0 if side < 0 else 1])
+		var w0 := start + _reach(a, axis, side, 1)
+		var w1 := end - _reach(b, axis, side, -1)
+		var across0 := -w if side < 0 else width
+		_walk_with_driveways(_rect(s, across0, across0 + w, w0, w1))
+
+
+# Bande de STOP_WIDTH m juste après un passage piéton, côté tronçon : ligne d'arrêt sur les voies qui arrivent au
+# carrefour du bout `end_sign` (−1 : bout `a`, les voitures y roulent vers les coordonnées décroissantes ; +1 : bout `b`),
+# marquages ordinaires sur les voies qui en partent.
+func _stop_strip(s: Dictionary, along0: float, along1: float, end_sign: int) -> void:
+	var half := float(s["half"])
+	var width := half * 2.0
+	if bool(s["one_way"]):
+		_road(s, "stop" if int(s["dir"]) == end_sign else _lane_column(s), 0.0, width, along0, along1)
+		return
+	# circulation à droite : vers −Z la droite est +X, vers −X la droite est −Z
+	var plus: bool = (s["axis"] == "x") == (end_sign < 0)
+	var stop := Vector2(half, width) if plus else Vector2(0.0, half)
+	var lanes := Vector2(0.0, half) if plus else Vector2(half, width)
+	_road(s, "stop", stop.x, stop.y, along0, along1)
+	_road(s, _lane_column(s), lanes.x, lanes.y, along0, along1)
+
+
+# Profondeur, le long de la rue du tronçon, du quartier du carrefour `n` situé du côté `side` du tronçon et vers
+# `toward` (+1 : coordonnées croissantes) : bord extérieur du quartier moins la demi-taille du carrefour.
+func _reach(n: int, axis: String, side: int, toward: int) -> float:
+	var node: Dictionary = layout.nodes[n]
+	if axis == "x":
+		return _extents(n, Vector2i(side, toward)).y - float(node["hz"])
+	return _extents(n, Vector2i(toward, side)).x - float(node["hx"])
+
+
+# Étendue (x, z) du quartier q = (±1, ±1) du carrefour `n` : demi-chaussée + trottoir de la rue nord-sud de ce côté x
+# (branche du côté z du quartier, sinon l'opposée), idem pour la rue est-ouest de ce côté z.
+func _extents(n: int, q: Vector2i) -> Vector2:
+	var arms: Dictionary = layout.nodes[n]["arms"]
+	var z_arm := "S" if q.y > 0 else "N"
+	var x_arm := "E" if q.x > 0 else "W"
+	var ns: Dictionary = layout.segments[arms[z_arm] if arms.has(z_arm) else arms["N" if z_arm == "S" else "S"]]
+	var ew: Dictionary = layout.segments[arms[x_arm] if arms.has(x_arm) else arms["W" if x_arm == "E" else "E"]]
+	return Vector2(float(ns["half"]) + float(ns["sidewalks"][1 if q.x > 0 else 0]),
+			float(ew["half"]) + float(ew["sidewalks"][1 if q.y > 0 else 0]))
+
+
+func _along_range(r: Rect2, axis: String) -> Vector2:
+	return Vector2(r.position.y, r.end.y) if axis == "x" else Vector2(r.position.x, r.end.x)
+
+
+func _lane_column(s: Dictionary) -> String:
+	match String(s["profile"]):
+		"boulevard":
+			return "boulevard_half"
+		"perimeter":
+			return "avenue"
+	return s["profile"]
+
+
+# Rectangle (x, z) d'une portion du tronçon : en travers [across0, across1] m depuis le bord − de la chaussée, le long
+# [along0, along1].
+func _rect(s: Dictionary, across0: float, across1: float, along0: float, along1: float) -> Rect2:
+	var c0 := float(s["at"]) - float(s["half"]) + across0
+	if s["axis"] == "x":
+		return Rect2(c0, along0, across1 - across0, along1 - along0)
+	return Rect2(along0, c0, along1 - along0, across1 - across0)
+
+
+# Pièce d'enrobé d'un tronçon texturée par une colonne de l'atlas. Position t (m) dans la colonne : colonnes de voies
+# et passage piéton = travers depuis le bord − de la chaussée ; demi-chaussée de boulevard = distance au terre-plein ;
+# autres = travers local de la pièce.
+func _road(s: Dictionary, column: String, across0: float, across1: float, along0: float, along1: float) -> void:
+	if across1 - across0 < 0.01 or along1 - along0 < 0.01:
+		return
+	var half := float(s["half"])
+	var t0 := 0.0
+	var t1 := across1 - across0
+	if column in LANE_COLUMNS or column == "crosswalk":
+		t0 = across0
+		t1 = across1
+	elif column == "boulevard_half":
+		var m := float(s["median"]) * 0.5
+		if across1 <= half + 0.01:
+			t0 = half - m - across0
+			t1 = half - m - across1
+		else:
+			t0 = across0 - half - m
+			t1 = across1 - half - m
+	var col: Dictionary = columns[column]
+	var ua := _u(col, t0)
+	var ub := _u(col, t1)
+	var v0 := along0 / tex_length
+	var v1 := along1 / tex_length
+	# coins (x0,z0) (x1,z0) (x1,z1) (x0,z1) : u suit le travers, v la longueur
+	var uv: Array = [Vector2(ua, v0), Vector2(ub, v0), Vector2(ub, v1), Vector2(ua, v1)] if s["axis"] == "x" \
+			else [Vector2(ua, v0), Vector2(ua, v1), Vector2(ub, v1), Vector2(ub, v0)]
+	var r := _rect(s, across0, across1, along0, along1)
+	_flat("asphalt", r, ROAD_Y, uv, Color.WHITE)
+	_tops.append(r)
+	_stats["pieces_enrobe"] += 1
+
+
+func _u(col: Dictionary, t: float) -> float:
+	return float(col["u0"]) + (float(col["u1"]) - float(col["u0"])) * clampf(t / float(col["width"]), 0.0, 1.0)
+
+
+func _median(s: Dictionary, across0: float, across1: float, along0: float, along1: float) -> void:
+	var r := _rect(s, across0, across1, along0, along1)
+	var col: Dictionary = columns["median"]
+	var v0 := along0 / tex_length
+	var v1 := along1 / tex_length
+	var ua := float(col["u0"])
+	var ub := float(col["u1"])
+	var uv: Array = [Vector2(ua, v0), Vector2(ub, v0), Vector2(ub, v1), Vector2(ua, v1)] if s["axis"] == "x" \
+			else [Vector2(ua, v0), Vector2(ua, v1), Vector2(ub, v1), Vector2(ub, v0)]
+	_flat("asphalt", r, WALK_Y, uv, Color.WHITE)
+	_sides(r, TINT["curb"])
+	_tops.append(r)
+	_collide(r, WALK_Y)
+
+
+# --- carrefours -------------------------------------------------------------------------------------------------------
+
+func _node(n: int) -> void:
+	var node: Dictionary = layout.nodes[n]
+	var p: Vector2 = node["pos"]
+	var hx := float(node["hx"])
+	var hz := float(node["hz"])
+	var box := Rect2(p.x - hx, p.y - hz, hx * 2.0, hz * 2.0)
+	var col: Dictionary = columns["plain"]
+	var ub := _u(col, box.size.x)
+	var v0 := box.position.y / tex_length
+	var v1 := box.end.y / tex_length
+	_flat("asphalt", box, ROAD_Y, [Vector2(float(col["u0"]), v0), Vector2(ub, v0), Vector2(ub, v1), Vector2(float(col["u0"]), v1)], Color.WHITE)
+	_tops.append(box)
+	_collide(box, ROAD_Y)
+	var arms: Dictionary = node["arms"]
+	for q: Vector2i in Traffic.QUADRANTS:
+		var ext := _extents(n, q)
+		var z_arm := "S" if q.y > 0 else "N"
+		var x_arm := "E" if q.x > 0 else "W"
+		var half_z := float(layout.segments[arms[z_arm]]["half"]) if arms.has(z_arm) else 0.0
+		var half_x := float(layout.segments[arms[x_arm]]["half"]) if arms.has(x_arm) else 0.0
+		# au-delà du carrefour côté z (hors de la chaussée de la branche z), puis à côté du carrefour côté x
+		_walk(_local_rect(p, q, half_z, ext.x, hz, ext.y), "sidewalk")
+		_walk(_local_rect(p, q, hx, ext.x, half_x, hz), "sidewalk")
+
+
+# Rectangle monde du quartier q à partir de distances positives au centre : |dx| de lx0 à lx1, |dz| de lz0 à lz1.
+func _local_rect(p: Vector2, q: Vector2i, lx0: float, lx1: float, lz0: float, lz1: float) -> Rect2:
+	var xa := p.x + q.x * lx0
+	var xb := p.x + q.x * lx1
+	var za := p.y + q.y * lz0
+	var zb := p.y + q.y * lz1
+	return Rect2(minf(xa, xb), minf(za, zb), absf(xb - xa), absf(zb - za))
+
+
+# --- îlots, ruelles et marges -----------------------------------------------------------------------------------------
+
+func _block(b: int) -> void:
+	var block: Dictionary = layout.blocks[b]
+	var inner: Rect2 = block["interior"]
+	var holes: Array[Rect2] = []
+	for shop: Dictionary in Spec.SHOPS:
+		var r: Rect2 = shop["rect"]
+		if r.intersects(inner):
+			holes.append(r.intersection(inner))
+	if block.has("alley"):
+		var alley: Dictionary = layout.alleys[block["alley"]]
+		_alley_piece(alley["rect"], alley["axis"], "alley")
+		holes.append(alley["rect"])
+	for piece in _subtract(inner, holes):
+		_walk(piece, "interior")
+
+
+# Ruelle ou bateau : colonne de l'atlas en travers de la ruelle, le long de son axe (ruelle "z" = est-ouest).
+func _alley_piece(r: Rect2, axis: String, column: String) -> void:
+	var col: Dictionary = columns[column]
+	var ua := float(col["u0"])
+	var ub := float(col["u1"])
+	var uv: Array
+	if axis == "z":
+		uv = [Vector2(ua, r.position.x / tex_length), Vector2(ua, r.end.x / tex_length), Vector2(ub, r.end.x / tex_length), Vector2(ub, r.position.x / tex_length)]
+	else:
+		uv = [Vector2(ua, r.position.y / tex_length), Vector2(ub, r.position.y / tex_length), Vector2(ub, r.end.y / tex_length), Vector2(ua, r.end.y / tex_length)]
+	_flat("asphalt", r, ROAD_Y, uv, Color.WHITE)
+	_tops.append(r)
+	_collide(r, ROAD_Y)
+	_stats["pieces_enrobe"] += 1
+
+
+func _walk_with_driveways(r: Rect2) -> void:
+	if r.size.x < 0.01 or r.size.y < 0.01:
+		return
+	var holes: Array[Rect2] = []
+	for alley: Dictionary in layout.alleys:
+		var cr: Rect2 = alley["curb_rect"]
+		if cr.intersects(r):
+			var d := cr.intersection(r)
+			if d.size.x > 0.01 and d.size.y > 0.01:
+				holes.append(d)
+				_alley_piece(d, alley["axis"], "driveway")
+	for piece in _subtract(r, holes):
+		_walk(piece, "sidewalk")
+
+
+func _margins() -> void:
+	var down := MapSpec.DOWNTOWN
+	var net := Rect2()
+	for i in layout.segments.size():
+		for side in [-1, 1]:
+			var r := layout.sidewalk_rect(i, side)
+			net = r if i == 0 and side < 0 else net.merge(r)
+	for piece in _subtract(down, [net]):
+		var x := piece.position.x
+		while x < piece.end.x - 0.01:
+			var x1 := minf(piece.end.x, down.position.x + (floorf((x - down.position.x) / CHUNK) + 1.0) * CHUNK)
+			var z := piece.position.y
+			while z < piece.end.y - 0.01:
+				var z1 := minf(piece.end.y, down.position.y + (floorf((z - down.position.y) / CHUNK) + 1.0) * CHUNK)
+				var r := Rect2(x, z, x1 - x, z1 - z)
+				_flat("paving", r, MARGIN_Y, _world_uv(r), TINT["margin"])
+				_tops.append(r)
+				_collide(r, MARGIN_Y)
+				_stats["pieces_dallage"] += 1
+				z = z1
+			x = x1
+	_skirt(down)
+
+
+# Raccords des routes de la carte (nœuds "grid" de MapSpec, tous sur le pourtour) : la route arrive au bord de la
+# chaussée du pourtour (RoadNetwork.GRID_TRIM) ; sur la largeur de sa chaussée et de ses trottoirs, le trottoir extérieur
+# du centre-ville est interrompu (sa route et ses trottoirs le remplacent).
+func _connection_gaps() -> void:
+	for road: Dictionary in MapSpec.ROADS:
+		var poly: PackedVector2Array = MapSpec.road_polyline(road)
+		for end: String in ["from", "to"]:
+			var id: String = road[end]
+			if MapSpec.NODES[id]["kind"] != "grid":
+				continue
+			var p: Vector2 = MapSpec.NODES[id]["pos"]
+			var next: Vector2 = poly[1] if end == "from" else poly[poly.size() - 2]
+			var d := next - p
+			var out := Vector2(signf(d.x), 0.0) if absf(d.x) > absf(d.y) else Vector2(0.0, signf(d.y))
+			var style: Dictionary = Network.ROAD_STYLES["urban" if road.get("urban", false) else "arterial"]
+			var half := float(style["width"]) * 0.5 + (Network.SIDEWALK_WIDTH if style["sidewalk"] else 0.0)
+			var near := Network.GRID_TRIM
+			var far := Network.GRID_TRIM + Spec.OUTER_SIDEWALK
+			var a := p + out * near
+			var b := p + out * far
+			var r := Rect2(a, Vector2.ZERO).expand(b)
+			r = r.grow_individual(half if out.x == 0.0 else 0.0, half if out.y == 0.0 else 0.0, half if out.x == 0.0 else 0.0, half if out.y == 0.0 else 0.0)
+			_gaps.append(r)
+
+
+# --- surfaces -----------------------------------------------------------------------------------------------------------
+
+func _walk(r: Rect2, kind: String) -> void:
+	if r.size.x < 0.01 or r.size.y < 0.01:
+		return
+	for piece in _subtract(r, _gaps):
+		_flat("paving", piece, WALK_Y, _world_uv(piece), TINT[kind])
+		_sides(piece, TINT["curb"])
+		_tops.append(piece)
+		_collide(piece, WALK_Y)
+		_stats["pieces_dallage"] += 1
+
+
+func _world_uv(r: Rect2) -> Array:
+	return [Vector2(r.position.x, r.position.y) / PAVING_TILE, Vector2(r.end.x, r.position.y) / PAVING_TILE,
+			Vector2(r.end.x, r.end.y) / PAVING_TILE, Vector2(r.position.x, r.end.y) / PAVING_TILE]
+
+
+# Tableaux d'un maillage en construction (membres d'objet : les Packed*Array d'un dictionnaire seraient copiés).
+class Batch:
+	var v := PackedVector3Array()
+	var n := PackedVector3Array()
+	var uv := PackedVector2Array()
+	var c := PackedColorArray()
+
+
+func _batch(material: String, center: Vector2) -> Batch:
+	var down := MapSpec.DOWNTOWN
+	var key := "%s|%d|%d" % [material, floori((center.x - down.position.x) / CHUNK), floori((center.y - down.position.y) / CHUNK)]
+	if not _batches.has(key):
+		_batches[key] = Batch.new()
+	return _batches[key]
+
+
+# Quad horizontal, face vers le haut ; uv dans l'ordre des coins (x0,z0) (x1,z0) (x1,z1) (x0,z1).
+func _flat(material: String, r: Rect2, y: float, uv: Array, color: Color) -> void:
+	var c := [Vector3(r.position.x, y, r.position.y), Vector3(r.end.x, y, r.position.y), Vector3(r.end.x, y, r.end.y), Vector3(r.position.x, y, r.end.y)]
+	_quad(_batch(material, r.get_center()), c, uv, Vector3.UP, color)
+
+
+# Bordures verticales d'une surface surélevée (cachées sous les surfaces voisines de même hauteur).
+func _sides(r: Rect2, color: Color) -> void:
+	var batch := _batch("paving", r.get_center())
+	var h := WALK_Y - CURB_BOTTOM
+	var corners := [Vector3(r.position.x, 0, r.position.y), Vector3(r.end.x, 0, r.position.y), Vector3(r.end.x, 0, r.end.y), Vector3(r.position.x, 0, r.end.y)]
+	var normals := [Vector3(0, 0, -1), Vector3(1, 0, 0), Vector3(0, 0, 1), Vector3(-1, 0, 0)]
+	for k in 4:
+		var a: Vector3 = corners[k]
+		var b: Vector3 = corners[(k + 1) % 4]
+		var length := a.distance_to(b) / PAVING_TILE
+		var c := [Vector3(a.x, CURB_BOTTOM, a.z), Vector3(b.x, CURB_BOTTOM, b.z), Vector3(b.x, WALK_Y, b.z), Vector3(a.x, WALK_Y, a.z)]
+		_quad(batch, c, [Vector2(0, h / PAVING_TILE), Vector2(length, h / PAVING_TILE), Vector2(length, 0), Vector2(0, 0)], normals[k], color)
+
+
+func _skirt(r: Rect2) -> void:
+	var corners := [Vector3(r.position.x, 0, r.position.y), Vector3(r.end.x, 0, r.position.y), Vector3(r.end.x, 0, r.end.y), Vector3(r.position.x, 0, r.end.y)]
+	var normals := [Vector3(0, 0, -1), Vector3(1, 0, 0), Vector3(0, 0, 1), Vector3(-1, 0, 0)]
+	for k in 4:
+		var a: Vector3 = corners[k]
+		var b: Vector3 = corners[(k + 1) % 4]
+		var length := a.distance_to(b)
+		# découpé au pas des blocs pour rester dans les blocs de maillage voisins
+		var steps := maxi(1, ceili(length / CHUNK))
+		for j in steps:
+			var p0 := a.lerp(b, float(j) / steps)
+			var p1 := a.lerp(b, float(j + 1) / steps)
+			var c := [Vector3(p0.x, SKIRT_Y, p0.z), Vector3(p1.x, SKIRT_Y, p1.z), Vector3(p1.x, MARGIN_Y, p1.z), Vector3(p0.x, MARGIN_Y, p0.z)]
+			var mid: Vector3 = (p0 + p1) * 0.5 - (normals[k] as Vector3) * 1.0
+			var seg_len := p0.distance_to(p1) / PAVING_TILE
+			_quad(_batch("paving", Vector2(mid.x, mid.z)), c, [Vector2(0, 0.15), Vector2(seg_len, 0.15), Vector2(seg_len, 0), Vector2(0, 0)], normals[k], TINT["margin"])
+
+
+# Deux triangles dans le sens attendu par Godot (horaire vu de la face avant).
+func _quad(batch: Batch, c: Array, uv: Array, normal: Vector3, color: Color) -> void:
+	var order := [0, 1, 2, 0, 2, 3]
+	if ((c[1] as Vector3) - (c[0] as Vector3)).cross((c[2] as Vector3) - (c[0] as Vector3)).dot(normal) > 0.0:
+		order = [0, 2, 1, 0, 3, 2]
+	for k: int in order:
+		batch.v.append(c[k])
+		batch.n.append(normal)
+		batch.uv.append(uv[k])
+		batch.c.append(color)
+
+
+func _collide(r: Rect2, top: float) -> void:
+	var down := MapSpec.DOWNTOWN
+	var key := Vector2i(floori((r.get_center().x - down.position.x) / CHUNK), floori((r.get_center().y - down.position.y) / CHUNK))
+	if not _boxes.has(key):
+		_boxes[key] = []
+	_boxes[key].append([r, BOX_BOTTOM, top])
+	_stats["boites"] += 1
+
+
+# Rectangle moins des rectangles : morceaux disjoints.
+func _subtract(r: Rect2, holes: Array) -> Array[Rect2]:
+	var pieces: Array[Rect2] = [r]
+	for h: Rect2 in holes:
+		var next: Array[Rect2] = []
+		for p in pieces:
+			if not p.intersects(h):
+				next.append(p)
+				continue
+			var i := p.intersection(h)
+			if i.position.y > p.position.y:
+				next.append(Rect2(p.position.x, p.position.y, p.size.x, i.position.y - p.position.y))
+			if i.end.y < p.end.y:
+				next.append(Rect2(p.position.x, i.end.y, p.size.x, p.end.y - i.end.y))
+			if i.position.x > p.position.x:
+				next.append(Rect2(p.position.x, i.position.y, i.position.x - p.position.x, i.size.y))
+			if i.end.x < p.end.x:
+				next.append(Rect2(i.end.x, i.position.y, p.end.x - i.end.x, i.size.y))
+		pieces = next
+	return pieces.filter(func(q: Rect2) -> bool: return q.size.x > 0.01 and q.size.y > 0.01)
+
+
+# --- contrôle de couverture -------------------------------------------------------------------------------------------
+
+func _coverage() -> Dictionary:
+	var grid := {}
+	for k in _tops.size():
+		var r: Rect2 = _tops[k]
+		for gz in range(floori(r.position.y / 16.0), floori(r.end.y / 16.0) + 1):
+			for gx in range(floori(r.position.x / 16.0), floori(r.end.x / 16.0) + 1):
+				var key := Vector2i(gx, gz)
+				if not grid.has(key):
+					grid[key] = []
+				grid[key].append(k)
+	var down := MapSpec.DOWNTOWN
+	var holes := 0
+	var overlaps := 0
+	var first_hole := ""
+	var first_overlap := ""
+	var z := down.position.y + 0.37
+	while z < down.end.y:
+		var x := down.position.x + 0.37
+		while x < down.end.x:
+			var q := Vector2(x, z)
+			var count := 0
+			for k: int in grid.get(Vector2i(floori(x / 16.0), floori(z / 16.0)), []):
+				if _tops[k].has_point(q):
+					count += 1
+			if count == 0:
+				var in_shop := false
+				for shop: Dictionary in Spec.SHOPS:
+					in_shop = in_shop or (shop["rect"] as Rect2).has_point(q)
+				for gap in _gaps:
+					in_shop = in_shop or gap.has_point(q)
+				if not in_shop:
+					holes += 1
+					if first_hole == "":
+						first_hole = str(q)
+			elif count > 1:
+				overlaps += 1
+				if first_overlap == "":
+					first_overlap = str(q)
+			x += 1.0
+		z += 1.0
+	return {"trous": holes, "premier_trou": first_hole, "chevauchements": overlaps, "premier_chevauchement": first_overlap}
+
+
+# --- scène ------------------------------------------------------------------------------------------------------------
+
+func _write_scene() -> Dictionary:
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(MESHES))
+	var asphalt := StandardMaterial3D.new()
+	asphalt.resource_name = "CentreVilleEnrobe"
+	asphalt.albedo_texture = load(TEXTURES.path_join("streets_atlas.png"))
+	asphalt.roughness = 0.95
+	asphalt.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
+	var paving := StandardMaterial3D.new()
+	paving.resource_name = "CentreVilleDallage"
+	paving.albedo_texture = load(TEXTURES.path_join("paving.png"))
+	paving.vertex_color_use_as_albedo = true
+	paving.roughness = 0.9
+	paving.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
+	var mats := {}
+	for pair in [["asphalt", asphalt], ["paving", paving]]:
+		var path := MESHES.path_join("%s_material.tres" % pair[0])
+		ResourceSaver.save(pair[1], path)
+		mats[pair[0]] = load(path)
+	var root := Node3D.new()
+	root.name = "Streets"
+	var surfaces := _child(root, "Surfaces", root)
+	var triangles := 0
+	var keys := _batches.keys()
+	keys.sort()
+	for key: String in keys:
+		var batch: Batch = _batches[key]
+		var arrays := []
+		arrays.resize(Mesh.ARRAY_MAX)
+		arrays[Mesh.ARRAY_VERTEX] = batch.v
+		arrays[Mesh.ARRAY_NORMAL] = batch.n
+		arrays[Mesh.ARRAY_TEX_UV] = batch.uv
+		arrays[Mesh.ARRAY_COLOR] = batch.c
+		var mesh := ArrayMesh.new()
+		mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+		var parts := key.split("|")
+		mesh.surface_set_material(0, mats[parts[0]])
+		var mesh_path := MESHES.path_join("%s_%s_%s.res" % [parts[0], parts[1], parts[2]])
+		ResourceSaver.save(mesh, mesh_path)
+		var mi := MeshInstance3D.new()
+		mi.name = "%s_%s_%s" % ["Enrobe" if parts[0] == "asphalt" else "Dallage", parts[1], parts[2]]
+		mi.mesh = load(mesh_path)
+		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		mi.visibility_range_end = FAR_RANGE
+		surfaces.add_child(mi)
+		mi.owner = root
+		triangles += batch.v.size() / 3
+	var collision := _child(root, "Collision", root)
+	var shapes := {}
+	var box_keys := _boxes.keys()
+	box_keys.sort()
+	for key: Vector2i in box_keys:
+		var body := StaticBody3D.new()
+		body.name = "Sol_%d_%d" % [key.x, key.y]
+		collision.add_child(body)
+		body.owner = root
+		var k := 0
+		for entry: Array in _boxes[key]:
+			var r: Rect2 = entry[0]
+			var size := Vector3(r.size.x, float(entry[2]) - float(entry[1]), r.size.y)
+			var skey := str(size.snappedf(0.001))
+			if not shapes.has(skey):
+				var shape := BoxShape3D.new()
+				shape.size = size
+				shapes[skey] = shape
+			var cs := CollisionShape3D.new()
+			cs.name = "B%d" % k
+			cs.shape = shapes[skey]
+			cs.position = Vector3(r.get_center().x, (float(entry[1]) + float(entry[2])) * 0.5, r.get_center().y)
+			body.add_child(cs)
+			cs.owner = root
+			k += 1
+	var lights := _child(root, "TrafficLights", root)
+	for entry: Dictionary in traffic.lights:
+		var light := TRAFFIC_LIGHT.instantiate() as Node3D
+		light.name = "Feu_%d_%d" % [entry["node"], entry["edge"]]
+		light.set("circuit_path", NodePath(CIRCUIT_FROM_LIGHT))
+		light.set("circuit_node", int(entry["node"]))
+		light.set("circuit_edge", int(entry["edge"]))
+		light.transform = entry["transform"]
+		lights.add_child(light)
+		light.owner = root
+		var post := LAMP_POST.instantiate() as Node3D
+		post.name = "Mat_%d_%d" % [entry["node"], entry["edge"]]
+		var t: Transform3D = entry["transform"]
+		post.transform = Transform3D(t.basis, t.origin - Vector3.UP * Traffic.LIGHT_HEIGHT)
+		lights.add_child(post)
+		post.owner = root
+	var packed := PackedScene.new()
+	var err := packed.pack(root)
+	if err == OK:
+		err = ResourceSaver.save(packed, OUT.path_join("Streets.tscn"))
+	root.free()
+	return {"scene": error_string(err), "blocs_maillage": _batches.size(), "triangles": triangles, "formes_partagees": shapes.size(), "feux": traffic.lights.size()}
+
+
+func _child(parent: Node, child_name: String, root: Node) -> Node3D:
+	var n := Node3D.new()
+	n.name = child_name
+	parent.add_child(n)
+	n.owner = root
+	return n

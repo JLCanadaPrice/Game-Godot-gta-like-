@@ -1,27 +1,23 @@
 class_name DistrictMapTexture
 extends RefCounted
 
-# Génère une ImageTexture des routes/bâtiments du quartier à partir des
-# vraies positions dans la scène -- logique partagée entre Minimap.gd
-# (petit widget HUD) et MapMenu.gd (carte plein écran, plus grande
-# résolution), seule l'échelle (pixels_per_meter) diffère entre les deux.
+# Génère une ImageTexture des routes/bâtiments du centre-ville -- logique partagée entre Minimap.gd (petit widget HUD)
+# et MapMenu.gd (carte plein écran, plus grande résolution), seule l'échelle (pixels_per_meter) diffère entre les deux.
 #
-# Routes : carrés de ROAD_TILE_SIZE (la largeur de tuile TILE de
-# DistrictBaker.gd) -- inutile de connaître la rotation, un carré a la même
-# empreinte peu importe l'angle. Bâtiments : rectangles, taille réelle
-# prise sur StaticBody3D/CollisionShape3D de chaque bâtiment, projetée en
-# espace monde pour rester correcte même avec des rotations à 90°.
+# Centre-ville reconstruit : chaussées, carrefours et ruelles tirés du plan (DowntownLayout, mêmes rectangles que les
+# rues générées) ; bâtiments : rectangles, taille réelle prise sur StaticBody3D/CollisionShape3D (boîte) de chaque
+# bâtiment de Downtown/Buildings et des boutiques (Downtown/Shops), projetée en espace monde pour rester correcte
+# quelle que soit la rotation.
 
-# Bbox monde couvrant tout le quartier (routes + bâtiments), reprise du
-# StaticBody3D "District/DistrictGround" déjà présent dans la scène (fait
-# pour englober la grille de routes + tous les bâtiments/trottoirs).
-# Carte à 4 districts : District (quai) + copies District_W (x -432) et District_N / District_NW (z +288).
+const Layout := preload("res://scenes/world/downtown/DowntownLayout.gd")
+
+# Bbox monde couvrant tout le centre-ville (rues du pourtour et bâtiments).
 const WORLD_MIN := Vector2(-952.0, -460.0)
 const WORLD_MAX := Vector2(20.0, 208.0)
 
-const ROAD_TILE_SIZE := 12.0  # DistrictBaker.TILE
 const ROAD_COLOR := Color(0.55, 0.55, 0.58, 1.0)
 const BUILDING_COLOR := Color(0.3, 0.26, 0.22, 1.0)
+const BUILDING_HOLDERS := ["Downtown/Buildings", "Downtown/Shops"]
 
 static func world_to_pixel(world_pos: Vector3, pixels_per_meter: float) -> Vector2:
 	return Vector2(
@@ -37,23 +33,26 @@ static func build(scene_root: Node, pixels_per_meter: float) -> ImageTexture:
 	if scene_root == null:
 		return ImageTexture.create_from_image(img)
 
-	# tous les districts (District, District_W, District_N, District_NW) et les carrefours de couture (DistrictSeams)
-	for district in scene_root.get_children():
-		if not String(district.name).begins_with("District"):
+	var layout := Layout.new()
+	for i in layout.segments.size():
+		_draw_rect2(img, layout.carriageway_rect(i), ROAD_COLOR, pixels_per_meter)
+	for node: Dictionary in layout.nodes:
+		var p: Vector2 = node["pos"]
+		var hx := float(node["hx"])
+		var hz := float(node["hz"])
+		_draw_rect2(img, Rect2(p.x - hx, p.y - hz, hx * 2.0, hz * 2.0), ROAD_COLOR, pixels_per_meter)
+	for alley: Dictionary in layout.alleys:
+		_draw_rect2(img, alley["curb_rect"], ROAD_COLOR, pixels_per_meter)
+
+	for holder_path in BUILDING_HOLDERS:
+		var holder := scene_root.get_node_or_null(holder_path)
+		if holder == null:
 			continue
-		var roads := district.get_node_or_null("Roads")
-		if roads != null:
-			for road in roads.get_children():
-				if road is Node3D:
-					_draw_world_rect(img, (road as Node3D).global_position,
-						ROAD_TILE_SIZE, ROAD_TILE_SIZE, ROAD_COLOR, pixels_per_meter)
-		var buildings := district.get_node_or_null("Buildings")
-		if buildings != null:
-			for building in buildings.get_children():
-				var footprint := _get_building_footprint(building)
-				if not footprint.is_empty():
-					_draw_world_rect(img, footprint["position"],
-						footprint["width"], footprint["depth"], BUILDING_COLOR, pixels_per_meter)
+		for building in holder.get_children():
+			var footprint := _get_building_footprint(building)
+			if not footprint.is_empty():
+				_draw_world_rect(img, footprint["position"],
+					footprint["width"], footprint["depth"], BUILDING_COLOR, pixels_per_meter)
 
 	return ImageTexture.create_from_image(img)
 
@@ -76,6 +75,9 @@ static func _get_building_footprint(building: Node) -> Dictionary:
 		"width": world_hx * 2.0,
 		"depth": world_hz * 2.0,
 	}
+
+static func _draw_rect2(img: Image, r: Rect2, color: Color, pixels_per_meter: float) -> void:
+	_draw_world_rect(img, Vector3(r.get_center().x, 0.0, r.get_center().y), r.size.x, r.size.y, color, pixels_per_meter)
 
 static func _draw_world_rect(img: Image, world_center: Vector3, width_m: float, depth_m: float, color: Color, pixels_per_meter: float) -> void:
 	var px := (world_center.x - WORLD_MIN.x) * pixels_per_meter
