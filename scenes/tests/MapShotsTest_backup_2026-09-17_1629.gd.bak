@@ -62,15 +62,6 @@ const VIEWS := [
 	["foret_cedar_gulch_sous_bois", Vector3(-1950, 1.7, 150), Vector3(-1900, 3.0, 60), "sol"],
 	["foret_nord_ouest_survol", Vector3(-1500, 90, -700), Vector3(-1900, 10, -1100)],
 	["bordure_est_depuis_campagne", Vector3(1900, 20, -300), Vector3(2300, 20, -500)],
-	# chantier du centre-ville : vues fixes valables avant et après la reconstruction (caméras sur les voies de
-	# circulation des axes conservés, sur le quai ou en hauteur), mesurées avant (référence) puis après
-	["cv_main_street_vers_nord", Vector3(-529, 1.7, -100), Vector3(-529, 3, -460)],
-	["cv_boulevard_vers_ouest", Vector3(-100, 1.7, -175), Vector3(-892, 3, -175)],
-	["cv_rue_du_casino", Vector3(-420, 1.7, -318), Vector3(-800, 3, -318)],
-	["cv_rue_est_vers_nord", Vector3(-170, 1.7, 100), Vector3(-170, 3, -460)],
-	["cv_quai_vers_ville", Vector3(-250, 1.7, -490), Vector3(-300, 20, -100)],
-	["cv_coeur_40m", Vector3(-460, 40, -100), Vector3(-600, 0, -300)],
-	["cv_survol_sud_est", Vector3(-100, 90, 300), Vector3(-500, 0, -150)],
 ]
 const SETTLE_FRAMES := 40
 
