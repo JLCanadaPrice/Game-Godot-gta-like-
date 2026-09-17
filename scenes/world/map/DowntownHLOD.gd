@@ -1,11 +1,14 @@
 extends Node3D
 
-# Étape 7 : silhouettes lointaines du centre-ville existant (HLOD), sans toucher à ses scènes. Au lancement, les
-# bâtiments des districts (World/District*/Buildings) sont regroupés par blocs de `chunk_size` m ; chaque bloc reçoit
-# une silhouette fusionnée (une boîte par bâtiment, façade brique ou béton selon ses matériaux, toit plus sombre)
-# visible au-delà de `hlod_distance` m du centre du bloc. Les maillages des bâtiments du bloc prennent la silhouette
-# pour visibility_parent : ils sont dessinés en deçà, la silhouette au-delà, jamais les deux ni aucun des deux.
-# Collisions, occulteurs, boutiques et scripts des bâtiments restent tels quels. Sans districts (carte seule) : rien.
+# Étape 7 : silhouettes lointaines du centre-ville (HLOD), sans toucher à ses scènes. Au lancement, les bâtiments du
+# centre-ville (World/Downtown/Buildings ; à défaut ceux des anciens districts, World/District*/Buildings) sont regroupés
+# par blocs de `chunk_size` m ; chaque bloc reçoit une silhouette fusionnée (une boîte par bâtiment, de sa couleur
+# "hlod_color" relevée à la génération, sinon brique ou béton, toit plus sombre) visible au-delà de `hlod_distance` m
+# du centre du bloc. Les maillages des
+# bâtiments du bloc prennent la silhouette pour visibility_parent : ils sont dessinés en deçà, la silhouette au-delà,
+# jamais les deux ni aucun des deux. Un bâtiment marqué "no_hlod" (gratte-ciels : silhouette propre, niveaux de détail)
+# garde son maillage à toute distance. Collisions, occulteurs, boutiques et scripts des bâtiments restent tels quels.
+# Sans centre-ville (carte seule) : rien.
 
 @export var enabled := true
 @export var hlod_distance := 650.0
@@ -25,24 +28,30 @@ func _ready() -> void:
 		call_deferred("_build")
 
 
+func _holders(world: Node) -> Array[Node]:
+	var out: Array[Node] = []
+	var downtown := world.get_node_or_null("Downtown/Buildings")
+	if downtown != null:
+		out.append(downtown)
+	for district in world.get_children():
+		if String(district.name).begins_with("District") and district.get_node_or_null("Buildings") != null:
+			out.append(district.get_node("Buildings"))
+	return out
+
+
 func _build() -> void:
 	var map: Node = get_parent()
 	var world: Node = map.get_parent() if map != null else null
 	if world == null:
 		return
 	var groups := {}   # Vector2i -> [[aabb, couleur, [GeometryInstance3D...]], ...]
-	for district in world.get_children():
-		if not String(district.name).begins_with("District"):
-			continue
-		var holder := district.get_node_or_null("Buildings")
-		if holder == null:
-			continue
+	for holder in _holders(world):
 		for building in holder.get_children():
-			if not building is Node3D or not (building as Node3D).visible:
+			if not building is Node3D or not (building as Node3D).visible or building.has_meta(&"no_hlod"):
 				continue
 			var box := AABB()
 			var has_box := false
-			var brick := false
+			var color := CONCRETE
 			var instances: Array = []
 			for node in building.find_children("*", "GeometryInstance3D", true, false):
 				instances.append(node)
@@ -54,17 +63,17 @@ func _build() -> void:
 					continue
 				box = box.merge(b) if has_box else b
 				has_box = true
-				brick = brick or _is_brick(mi)
+				color = building.get_meta(&"hlod_color") if building.has_meta(&"hlod_color") else (BRICK if _is_brick(mi) else CONCRETE)
 			if not has_box or box.size.y < 3.0:
 				continue
 			var key := Vector2i(floori(box.get_center().x / chunk_size), floori(box.get_center().z / chunk_size))
 			if not groups.has(key):
 				groups[key] = []
-			groups[key].append([box, BRICK if brick else CONCRETE, instances])
+			groups[key].append([box, color, instances])
 			buildings += 1
 	var material := StandardMaterial3D.new()
 	material.vertex_color_use_as_albedo = true
-	material.vertex_color_is_srgb = true   # couleurs choisies à la main (sRGB)
+	material.vertex_color_is_srgb = true   # couleurs en sRGB (choisies à la main ou converties)
 	material.roughness = 0.9
 	for key: Vector2i in groups:
 		var verts := PackedVector3Array()

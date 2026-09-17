@@ -49,6 +49,8 @@ extends Node3D
 #     (--verify-multimesh) ; au seuil de LOD normal, le LOD est choisi sur la boîte de la cellule (détail égal ou plus
 #     fin sur quelques poteaux lointains).
 #  3. LOD des bâtiments : au-delà de `lod_near_radius` (150 m) de la caméra active, les maillages des bâtiments du kit
+#     et du centre-ville reconstruit (groupe "city_building", Downtown/Buildings ; leurs boîtes d'occultation sont
+#     posées à la génération par DowntownBuildingsBake)
 #     passent à lod_bias `building_lod_bias` (0,25 : leurs LOD basculent 4 fois plus près) ; en deçà, lod_bias 1, le
 #     réglage de Godot, inchangé. Mise à jour toutes les `lod_update_interval` s ; seuls les bâtiments qui franchissent
 #     la limite sont touchés. Pas un lod_bias pour tous : Godot borne l'erreur d'un LOD en pixels à toute distance
@@ -61,6 +63,7 @@ extends Node3D
 #     `decal_fade_distance` et `light_fade_distance`. Les bâtiments restent : ce sont la silhouette de la ville.
 
 const KIT_MODEL := &"KitModel"
+const CITY_BUILDING := &"city_building"
 const WALL_MATERIAL := "InteriorWall"
 
 @export var occlusion := true
@@ -176,7 +179,7 @@ func update_building_lods(force := false) -> void:
 func building_meshes(world: Node) -> Array[MeshInstance3D]:
 	var out: Array[MeshInstance3D] = []
 	for mi: MeshInstance3D in world.find_children("*", "MeshInstance3D", true, false):
-		if mi.get_parent().name == KIT_MODEL:
+		if mi.get_parent().name == KIT_MODEL or mi.is_in_group(CITY_BUILDING):
 			out.append(mi)
 	return out
 

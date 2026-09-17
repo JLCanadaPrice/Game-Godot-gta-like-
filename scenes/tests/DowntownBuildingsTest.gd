@@ -1,0 +1,133 @@
+extends Node
+
+# Test headless des bâtiments du centre-ville reconstruit (chantier centre-ville, étape D3), monde complet (World.tscn,
+# spawners coupés) :
+#  - chaque bâtiment de Downtown/Buildings : maillage, collision (un rayon descendant au centre de son emprise touche
+#    son toit), emprise dans l'intérieur de son îlot, hors des boutiques, des lieux (places.json) et des autres bâtiments ;
+#  - silhouette : gratte-ciels du SkyScraperBundle au cœur (tous présents, marqués sans boîte lointaine), plus haut
+#    bâtiment du cœur au moins deux fois plus haut que la moyenne des îlots bas ;
+#  - optimisations : boîtes d'occultation posées, bâtiments pris en charge par CityRenderOptimizer (LOD lointain) et
+#    par DowntownHLOD (silhouettes lointaines) ; casino du lieu Scarlet Jack bâti.
+#
+# Lancer : Godot --headless --fixed-fps 60 --quit-after 3000 res://scenes/tests/DowntownBuildingsTest.tscn
+
+const WORLD := preload("res://scenes/world/World.tscn")
+const Layout := preload("res://scenes/world/downtown/DowntownLayout.gd")
+const Spec := preload("res://scenes/world/downtown/DowntownSpec.gd")
+const PLACES_JSON := "res://scenes/world/map/generated/places/places.json"
+const SKY_MODELS := ["Mk1", "Mk2", "Mk3", "Mk4", "Mk5", "Mk6", "Scraper001"]
+
+var _errors: Array[String] = []
+
+
+func _ready() -> void:
+	print("DOWNTOWN_BUILDINGS_BEGIN")
+	var world := WORLD.instantiate()
+	add_child(world)
+	for spawner in ["CarSpawner", "NpcSpawner"]:
+		world.get_node(spawner).set_process(false)
+	for k in 6:
+		await get_tree().physics_frame
+	var holder := world.get_node_or_null("Downtown/Buildings")
+	if holder == null:
+		_errors.append("Downtown/Buildings absent")
+		_finish()
+		return
+	var layout := Layout.new()
+	var space := get_viewport().world_3d.direct_space_state
+	var places: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(PLACES_JSON))
+	var place_rects: Array[Rect2] = []
+	for fp: Dictionary in places["footprints"]:
+		var r := Rect2(Vector2(fp["poly"][0][0], fp["poly"][0][1]), Vector2.ZERO)
+		for q: Array in fp["poly"]:
+			r = r.expand(Vector2(q[0], q[1]))
+		place_rects.append(r)
+	var rects: Array[Rect2] = []
+	var no_mesh := 0
+	var no_roof := 0
+	var outside := 0
+	var on_reserved := 0
+	var first := ""
+	var sky := {}
+	var heights := {"core": [], "lowrise": []}
+	var occluders := 0
+	for building in holder.get_children():
+		var mi := building.get_node_or_null("Mesh") as MeshInstance3D
+		var cs := building.get_node_or_null("StaticBody3D/CollisionShape3D") as CollisionShape3D
+		if mi == null or mi.mesh == null or cs == null:
+			no_mesh += 1
+			continue
+		var box := mi.global_transform * mi.get_aabb()
+		var foot := Rect2(box.position.x, box.position.z, box.size.x, box.size.z).grow(-0.1)
+		rects.append(foot)
+		var zone := String(building.get_meta("zone", ""))
+		if heights.has(zone):
+			heights[zone].append(box.size.y)
+		var model := String(building.get_meta("model", ""))
+		if model.begins_with("sky:"):
+			sky[model.get_slice(":", 1)] = building.has_meta("no_hlod")
+		if building.get_node_or_null("Occluder") != null:
+			occluders += 1
+		var c := foot.get_center()
+		var hit := space.intersect_ray(PhysicsRayQueryParameters3D.create(Vector3(c.x, box.end.y + 20.0, c.y), Vector3(c.x, box.position.y - 2.0, c.y), 1))
+		if hit.is_empty() or not (hit["collider"] as Node).get_parent() == building or (hit["position"] as Vector3).y < box.position.y + 2.0:
+			no_roof += 1
+			if first == "":
+				first = "%s sans toit touché (%s)" % [building.name, "rien" if hit.is_empty() else (hit["collider"] as Node).get_path()]
+		var inside := false
+		for block: Dictionary in layout.blocks:
+			inside = inside or (block["interior"] as Rect2).grow(0.1).encloses(foot)
+		if not inside:
+			outside += 1
+			if first == "":
+				first = "%s hors d'un îlot %s" % [building.name, foot]
+		for shop: Dictionary in Spec.SHOPS:
+			if (shop["rect"] as Rect2).intersects(foot):
+				on_reserved += 1
+		for r in place_rects:
+			if r.intersects(foot):
+				on_reserved += 1
+				if first == "":
+					first = "%s sur un lieu %s" % [building.name, r]
+	var overlaps := 0
+	for i in rects.size():
+		for j in range(i + 1, rects.size()):
+			if rects[i].intersects(rects[j]):
+				overlaps += 1
+	var core_top := 0.0
+	for h: float in heights["core"]:
+		core_top = maxf(core_top, h)
+	var low_mean := 0.0
+	for h: float in heights["lowrise"]:
+		low_mean += h / maxf(1.0, heights["lowrise"].size())
+	var optimizer = world.get_node_or_null("CityRenderOptimizer")
+	var lod_count: int = optimizer._lod_meshes.size() if optimizer != null else 0
+	var hlod = world.get_node_or_null("Map/DowntownHLOD")
+	print("DOWNTOWN_BUILDINGS_CHECK %d bâtiments : %d sans maillage ou collision, %d sans toit touché, %d hors îlot, %d sur une boutique ou un lieu, %d chevauchements %s"
+			% [holder.get_child_count(), no_mesh, no_roof, outside, on_reserved, overlaps, first])
+	print("DOWNTOWN_BUILDINGS_SKYLINE gratte-ciels %s | cœur jusqu'à %.0f m, îlots bas %.1f m en moyenne | %d boîtes d'occultation | %d maillages suivis par le LOD lointain | silhouettes : %d blocs, %d bâtiments"
+			% [sky, core_top, low_mean, occluders, lod_count, hlod.chunks if hlod != null else -1, hlod.buildings if hlod != null else -1])
+	if no_mesh > 0 or no_roof > 0 or outside > 0 or on_reserved > 0 or overlaps > 0:
+		_errors.append("bâtiments : %d sans maillage, %d sans toit, %d hors îlot, %d sur réservé, %d chevauchements, premier %s" % [no_mesh, no_roof, outside, on_reserved, overlaps, first])
+	for name: String in SKY_MODELS:
+		if not sky.has(name) or not sky[name]:
+			_errors.append("gratte-ciel %s absent ou sans marque no_hlod" % name)
+	if core_top < low_mean * 2.0:
+		_errors.append("silhouette plate : cœur %.0f m, îlots bas %.0f m" % [core_top, low_mean])
+	if occluders < holder.get_child_count() / 5 or lod_count < holder.get_child_count() or hlod == null or hlod.buildings < holder.get_child_count() / 2:
+		_errors.append("optimisations : %d occulteurs, %d maillages LOD, silhouettes %s" % [occluders, lod_count, hlod.buildings if hlod != null else "absentes"])
+	var casino := world.get_node_or_null("Map/Places/Place_casino")
+	var casino_meshes := 0
+	if casino != null:
+		for n in casino.find_children("*", "MeshInstance3D", true, false):
+			if (n as MeshInstance3D).mesh != null and (n as MeshInstance3D).get_aabb().size.y > 15.0:
+				casino_meshes += 1
+	print("DOWNTOWN_BUILDINGS_CASINO lieu %s, bâtiment %s" % [casino != null, casino_meshes > 0])
+	if casino_meshes == 0:
+		_errors.append("Scarlet Jack sans bâtiment")
+	_finish()
+
+
+func _finish() -> void:
+	print("DOWNTOWN_BUILDINGS_RESULT %s %s" % ["OK" if _errors.is_empty() else "FAIL", " | ".join(_errors)])
+	get_tree().quit(0 if _errors.is_empty() else 1)

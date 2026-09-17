@@ -29,7 +29,8 @@ const TEX_LENGTH := 12.0
 const PLAIN_U := 0.2246                  # colonne « median » de roads.png : enrobé sans marquage
 const DIRT_U := 0.6015
 const LIP := 0.3                         # surfaces hors centre-ville : 0,3 m au-dessus du terrain, rebord
-const DOWNTOWN_GROUND := -0.03           # sol des lots vides du centre-ville (DistrictGround)
+const DOWNTOWN_GROUND := -0.03           # sol des marges du centre-ville autour du réseau de rues (sous la marge générée, -0,05)
+const DOWNTOWN_BLOCK := 0.2              # sol des îlots du centre-ville reconstruit (DowntownSpec : chaussée + trottoir)
 const BLEND := 10.0
 const WHITE := Color(0.93, 0.93, 0.9)
 const YELLOW := Color(0.95, 0.72, 0.1)
@@ -328,16 +329,29 @@ func _liberty_lot() -> void:
 	_end("Liberty Motors", "car_lot")
 
 
-# Enseigne sur le toit du pâté de maisons existant (rien n'est remplacé) : panneau double face.
+# Scarlet Jack : immeuble large sur son îlot du centre-ville reconstruit, façade sur Jackson Avenue, marquise rouge et
+# enseigne de façade au-dessus de l'entrée, panneau double face sur le toit.
+const CASINO_MODEL := "Industrial_WideOfficeBuilding_alt02"
+const CASINO_CENTER := Vector2(-570, -338.7)
+
 func _casino() -> void:
-	_begin("casino", Vector3(-568, 0.41, -323))
-	var c := Vector3(-586.5, 28.0, -365.5)
+	var y := DOWNTOWN_BLOCK
+	_begin("casino", Vector3(CASINO_CENTER.x, y, -325.0))
+	_model(CASINO_MODEL, CASINO_CENTER, 0.0, y)
+	var front := CASINO_CENTER.y + (models.get_model(CASINO_MODEL)["aabb"] as AABB).size.z * 0.5
+	_box("paint", Vector3(CASINO_CENTER.x, y + 3.6, front + 1.4), Vector3(18, 0.4, 2.8), Color(0.55, 0.05, 0.08), false)
+	for x: float in [-8.5, 8.5]:
+		_box("steel", Vector3(CASINO_CENTER.x + x, y, front + 2.6), Vector3(0.2, 3.6, 0.2), Color(0.8, 0.65, 0.3), false)
+	_label("SCARLET JACK", Vector3(CASINO_CENTER.x, y + 6.4, front + 0.06), 0.0, 0.022, Color(1.0, 0.12, 0.1), 700.0)
+	var c := Vector3(CASINO_CENTER.x, y + (models.get_model(CASINO_MODEL)["aabb"] as AABB).end.y, CASINO_CENTER.y)
 	for x: float in [-6.0, 6.0]:
 		_box("steel", c + Vector3(x, 0, 0), Vector3(0.3, 6.5, 0.3), STEEL, false)
 	_box("paint", c + Vector3(0, 2.0, 0), Vector3(15, 4.6, 0.5), Color(0.1, 0.02, 0.03), false)
 	for side: float in [-1.0, 1.0]:
 		_label("SCARLET JACK", c + Vector3(0, 5.0, side * 0.27), 0.0 if side > 0.0 else PI, 0.03, Color(1.0, 0.12, 0.1), 1200.0)
 		_label("CABARET & CASINO", c + Vector3(0, 3.1, side * 0.27), 0.0 if side > 0.0 else PI, 0.018, Color(1.0, 0.8, 0.35), 900.0)
+	var aabb: AABB = models.get_model(CASINO_MODEL)["aabb"]
+	footprints.append(_rect_footprint("building", CASINO_CENTER, Vector2(aabb.size.x, aabb.size.z)))
 	_end("Scarlet Jack Cabaret & Casino", "casino")
 
 

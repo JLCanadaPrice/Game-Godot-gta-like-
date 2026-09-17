@@ -498,2605 +498,2605 @@ size = Vector3(502.4, 10.1, 1.2)
 [sub_resource type="BoxShape3D" id="BoxShape3D_sorq7"]
 size = Vector3(502.4, 10.1, 1.2)
 
-[node name="Terrain" type="Node3D" unique_id=1577226595]
+[node name="Terrain" type="Node3D" unique_id=191208409]
 
-[node name="Chunk_00_00" type="StaticBody3D" parent="." unique_id=1047000296]
+[node name="Chunk_00_00" type="StaticBody3D" parent="." unique_id=607119721]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2304, 0, -1664)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_00_00" unique_id=277623527]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_00_00" unique_id=822492458]
 cast_shadow = 0
 mesh = ExtResource("1_aqbgw")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_00_00" unique_id=1256202886]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_00_00" unique_id=1980154358]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("2_cpmrj")
 
-[node name="Chunk_01_00" type="StaticBody3D" parent="." unique_id=2039130452]
+[node name="Chunk_01_00" type="StaticBody3D" parent="." unique_id=1210875988]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2048, 0, -1664)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_01_00" unique_id=1451849877]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_01_00" unique_id=1416816991]
 cast_shadow = 0
 mesh = ExtResource("3_k3jpu")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_01_00" unique_id=1091367882]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_01_00" unique_id=148593530]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("4_wq716")
 
-[node name="Chunk_02_00" type="StaticBody3D" parent="." unique_id=1399353933]
+[node name="Chunk_02_00" type="StaticBody3D" parent="." unique_id=2031881019]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1792, 0, -1664)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_02_00" unique_id=235646125]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_02_00" unique_id=1266058716]
 cast_shadow = 0
 mesh = ExtResource("5_ylmhf")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_02_00" unique_id=1090841241]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_02_00" unique_id=1642410137]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("6_ro6u8")
 
-[node name="Chunk_03_00" type="StaticBody3D" parent="." unique_id=156759692]
+[node name="Chunk_03_00" type="StaticBody3D" parent="." unique_id=1899379871]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1536, 0, -1664)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_03_00" unique_id=503341451]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_03_00" unique_id=1875222757]
 cast_shadow = 0
 mesh = ExtResource("7_cjsed")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_03_00" unique_id=89503408]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_03_00" unique_id=335853609]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("8_tdff5")
 
-[node name="Chunk_04_00" type="StaticBody3D" parent="." unique_id=2002275473]
+[node name="Chunk_04_00" type="StaticBody3D" parent="." unique_id=989878301]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1280, 0, -1664)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_04_00" unique_id=466687067]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_04_00" unique_id=1984766859]
 cast_shadow = 0
 mesh = ExtResource("9_ymgaw")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_04_00" unique_id=2046987594]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_04_00" unique_id=1477823152]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("10_336yg")
 
-[node name="Chunk_05_00" type="StaticBody3D" parent="." unique_id=406168208]
+[node name="Chunk_05_00" type="StaticBody3D" parent="." unique_id=1998197423]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1024, 0, -1664)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_05_00" unique_id=749435875]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_05_00" unique_id=1902480924]
 cast_shadow = 0
 mesh = ExtResource("11_2istn")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_05_00" unique_id=273266207]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_05_00" unique_id=1891346948]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("12_bk7ba")
 
-[node name="Chunk_06_00" type="StaticBody3D" parent="." unique_id=2012387636]
+[node name="Chunk_06_00" type="StaticBody3D" parent="." unique_id=883058823]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -768, 0, -1664)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_06_00" unique_id=644191108]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_06_00" unique_id=263767948]
 cast_shadow = 0
 mesh = ExtResource("13_77g6t")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_06_00" unique_id=293604578]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_06_00" unique_id=1027632116]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("14_htffs")
 
-[node name="Roof" type="MeshInstance3D" parent="Chunk_06_00" unique_id=536204851]
+[node name="Roof" type="MeshInstance3D" parent="Chunk_06_00" unique_id=2130673948]
 cast_shadow = 0
 mesh = ExtResource("15_8h6e0")
 
-[node name="RoofShape" type="CollisionShape3D" parent="Chunk_06_00" unique_id=2069510446]
+[node name="RoofShape" type="CollisionShape3D" parent="Chunk_06_00" unique_id=592097458]
 shape = ExtResource("16_ivoao")
 
-[node name="Chunk_07_00" type="StaticBody3D" parent="." unique_id=672064883]
+[node name="Chunk_07_00" type="StaticBody3D" parent="." unique_id=1725677288]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -512, 0, -1664)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_07_00" unique_id=338233477]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_07_00" unique_id=1020889649]
 cast_shadow = 0
 mesh = ExtResource("17_3404b")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_07_00" unique_id=473900266]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_07_00" unique_id=1493725852]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("18_6qvln")
 
-[node name="Chunk_08_00" type="StaticBody3D" parent="." unique_id=1204153237]
+[node name="Chunk_08_00" type="StaticBody3D" parent="." unique_id=1409181826]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -256, 0, -1664)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_08_00" unique_id=376072611]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_08_00" unique_id=742290784]
 cast_shadow = 0
 mesh = ExtResource("19_n64jf")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_08_00" unique_id=1936922807]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_08_00" unique_id=1477613104]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("20_dhcs1")
 
-[node name="Chunk_09_00" type="StaticBody3D" parent="." unique_id=1808757555]
+[node name="Chunk_09_00" type="StaticBody3D" parent="." unique_id=680138201]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -1664)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_09_00" unique_id=1557131139]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_09_00" unique_id=751568089]
 cast_shadow = 0
 mesh = ExtResource("21_3cg0x")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_09_00" unique_id=83733752]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_09_00" unique_id=372504645]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("22_50edw")
 
-[node name="Chunk_10_00" type="StaticBody3D" parent="." unique_id=1656542824]
+[node name="Chunk_10_00" type="StaticBody3D" parent="." unique_id=591619532]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 256, 0, -1664)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_10_00" unique_id=934205573]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_10_00" unique_id=1717971281]
 cast_shadow = 0
 mesh = ExtResource("23_h4mq6")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_10_00" unique_id=505547802]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_10_00" unique_id=2038326864]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("24_18xq6")
 
-[node name="Chunk_11_00" type="StaticBody3D" parent="." unique_id=290171896]
+[node name="Chunk_11_00" type="StaticBody3D" parent="." unique_id=1659997293]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 512, 0, -1664)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_11_00" unique_id=504833676]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_11_00" unique_id=1501469288]
 cast_shadow = 0
 mesh = ExtResource("25_hmdab")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_11_00" unique_id=265568253]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_11_00" unique_id=676360575]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("26_w5hsm")
 
-[node name="Chunk_12_00" type="StaticBody3D" parent="." unique_id=706151663]
+[node name="Chunk_12_00" type="StaticBody3D" parent="." unique_id=233501282]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 768, 0, -1664)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_12_00" unique_id=2135336047]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_12_00" unique_id=1874135955]
 cast_shadow = 0
 mesh = ExtResource("27_h7cmg")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_12_00" unique_id=417076305]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_12_00" unique_id=239651772]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("28_j3lyg")
 
-[node name="Chunk_13_00" type="StaticBody3D" parent="." unique_id=76252980]
+[node name="Chunk_13_00" type="StaticBody3D" parent="." unique_id=1792645790]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1024, 0, -1664)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_13_00" unique_id=346919013]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_13_00" unique_id=840811722]
 cast_shadow = 0
 mesh = ExtResource("29_8d7sh")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_13_00" unique_id=1661013530]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_13_00" unique_id=1591125109]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("30_e15u1")
 
-[node name="Chunk_14_00" type="StaticBody3D" parent="." unique_id=1613673125]
+[node name="Chunk_14_00" type="StaticBody3D" parent="." unique_id=1873335911]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1280, 0, -1664)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_14_00" unique_id=1118393956]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_14_00" unique_id=237605004]
 cast_shadow = 0
 mesh = ExtResource("31_wh4lc")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_14_00" unique_id=1659457907]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_14_00" unique_id=1224954998]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("32_bfp5j")
 
-[node name="Roof" type="MeshInstance3D" parent="Chunk_14_00" unique_id=1531819531]
+[node name="Roof" type="MeshInstance3D" parent="Chunk_14_00" unique_id=1813380309]
 cast_shadow = 0
 mesh = ExtResource("33_dqons")
 
-[node name="RoofShape" type="CollisionShape3D" parent="Chunk_14_00" unique_id=1624591450]
+[node name="RoofShape" type="CollisionShape3D" parent="Chunk_14_00" unique_id=1300302864]
 shape = ExtResource("34_hhm3n")
 
-[node name="Chunk_15_00" type="StaticBody3D" parent="." unique_id=192784750]
+[node name="Chunk_15_00" type="StaticBody3D" parent="." unique_id=248252252]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1536, 0, -1664)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_15_00" unique_id=1216922373]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_15_00" unique_id=1920926921]
 cast_shadow = 0
 mesh = ExtResource("35_1xav1")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_15_00" unique_id=1813250344]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_15_00" unique_id=1584628773]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("36_8iu0m")
 
-[node name="Chunk_16_00" type="StaticBody3D" parent="." unique_id=758622452]
+[node name="Chunk_16_00" type="StaticBody3D" parent="." unique_id=523256725]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1792, 0, -1664)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_16_00" unique_id=164783231]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_16_00" unique_id=897622643]
 cast_shadow = 0
 mesh = ExtResource("37_c4eo0")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_16_00" unique_id=192886452]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_16_00" unique_id=1978543674]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("38_qn10y")
 
-[node name="Chunk_17_00" type="StaticBody3D" parent="." unique_id=392643114]
+[node name="Chunk_17_00" type="StaticBody3D" parent="." unique_id=893149526]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2048, 0, -1664)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_17_00" unique_id=920429343]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_17_00" unique_id=949287947]
 cast_shadow = 0
 mesh = ExtResource("39_t7rpl")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_17_00" unique_id=1359325700]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_17_00" unique_id=683757490]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("40_8bvgv")
 
-[node name="Chunk_18_00" type="StaticBody3D" parent="." unique_id=1089989214]
+[node name="Chunk_18_00" type="StaticBody3D" parent="." unique_id=153751639]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2304, 0, -1664)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_18_00" unique_id=507696102]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_18_00" unique_id=986315517]
 cast_shadow = 0
 mesh = ExtResource("41_bbd2t")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_18_00" unique_id=1629161384]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_18_00" unique_id=2120189110]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("42_lpfgj")
 
-[node name="Chunk_00_01" type="StaticBody3D" parent="." unique_id=1545922135]
+[node name="Chunk_00_01" type="StaticBody3D" parent="." unique_id=848224209]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2304, 0, -1408)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_00_01" unique_id=368019133]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_00_01" unique_id=1262665437]
 cast_shadow = 0
 mesh = ExtResource("43_vuhcc")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_00_01" unique_id=1234550747]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_00_01" unique_id=1138732841]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("44_ld64u")
 
-[node name="Chunk_01_01" type="StaticBody3D" parent="." unique_id=228603194]
+[node name="Chunk_01_01" type="StaticBody3D" parent="." unique_id=992043901]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2048, 0, -1408)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_01_01" unique_id=2141748288]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_01_01" unique_id=1110341372]
 cast_shadow = 0
 mesh = ExtResource("45_77dnj")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_01_01" unique_id=1764919830]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_01_01" unique_id=1224522302]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("46_yh0df")
 
-[node name="Chunk_02_01" type="StaticBody3D" parent="." unique_id=273021738]
+[node name="Chunk_02_01" type="StaticBody3D" parent="." unique_id=1328220950]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1792, 0, -1408)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_02_01" unique_id=1761393773]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_02_01" unique_id=1886464435]
 cast_shadow = 0
 mesh = ExtResource("47_ocwkc")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_02_01" unique_id=1809873402]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_02_01" unique_id=546662616]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("48_7238b")
 
-[node name="Chunk_03_01" type="StaticBody3D" parent="." unique_id=1399676449]
+[node name="Chunk_03_01" type="StaticBody3D" parent="." unique_id=2048252513]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1536, 0, -1408)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_03_01" unique_id=598294737]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_03_01" unique_id=1808269118]
 cast_shadow = 0
 mesh = ExtResource("49_aasa5")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_03_01" unique_id=33056750]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_03_01" unique_id=1138460388]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("50_x8o2b")
 
-[node name="Chunk_04_01" type="StaticBody3D" parent="." unique_id=1269863286]
+[node name="Chunk_04_01" type="StaticBody3D" parent="." unique_id=725424141]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1280, 0, -1408)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_04_01" unique_id=148860255]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_04_01" unique_id=1908110421]
 cast_shadow = 0
 mesh = ExtResource("51_jpnkj")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_04_01" unique_id=1075991102]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_04_01" unique_id=217705190]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("52_yaf06")
 
-[node name="Chunk_05_01" type="StaticBody3D" parent="." unique_id=618323903]
+[node name="Chunk_05_01" type="StaticBody3D" parent="." unique_id=1241091136]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1024, 0, -1408)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_05_01" unique_id=429855860]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_05_01" unique_id=1291847671]
 cast_shadow = 0
 mesh = ExtResource("53_gf2of")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_05_01" unique_id=1468773369]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_05_01" unique_id=592605730]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("54_56683")
 
-[node name="Chunk_06_01" type="StaticBody3D" parent="." unique_id=306687695]
+[node name="Chunk_06_01" type="StaticBody3D" parent="." unique_id=934515485]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -768, 0, -1408)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_06_01" unique_id=1124292640]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_06_01" unique_id=977691856]
 cast_shadow = 0
 mesh = ExtResource("55_81o0u")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_06_01" unique_id=823933294]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_06_01" unique_id=1224274560]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("56_k8m5n")
 
-[node name="Roof" type="MeshInstance3D" parent="Chunk_06_01" unique_id=417007509]
+[node name="Roof" type="MeshInstance3D" parent="Chunk_06_01" unique_id=1097547674]
 cast_shadow = 0
 mesh = ExtResource("57_qbmt8")
 
-[node name="RoofShape" type="CollisionShape3D" parent="Chunk_06_01" unique_id=270169656]
+[node name="RoofShape" type="CollisionShape3D" parent="Chunk_06_01" unique_id=1300066609]
 shape = ExtResource("58_t1nis")
 
-[node name="Chunk_07_01" type="StaticBody3D" parent="." unique_id=752378483]
+[node name="Chunk_07_01" type="StaticBody3D" parent="." unique_id=1532456350]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -512, 0, -1408)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_07_01" unique_id=1038153894]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_07_01" unique_id=2049321873]
 cast_shadow = 0
 mesh = ExtResource("59_rf7wi")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_07_01" unique_id=1816837966]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_07_01" unique_id=84090291]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("60_opwyi")
 
-[node name="Chunk_08_01" type="StaticBody3D" parent="." unique_id=655752802]
+[node name="Chunk_08_01" type="StaticBody3D" parent="." unique_id=1462793520]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -256, 0, -1408)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_08_01" unique_id=1561084768]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_08_01" unique_id=2026495792]
 cast_shadow = 0
 mesh = ExtResource("61_0b6pj")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_08_01" unique_id=925909066]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_08_01" unique_id=1729414899]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("62_0xtru")
 
-[node name="Chunk_09_01" type="StaticBody3D" parent="." unique_id=1170562707]
+[node name="Chunk_09_01" type="StaticBody3D" parent="." unique_id=619620963]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -1408)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_09_01" unique_id=1152592479]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_09_01" unique_id=879315675]
 cast_shadow = 0
 mesh = ExtResource("63_ub1ea")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_09_01" unique_id=2091312209]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_09_01" unique_id=211965598]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("64_4b1mo")
 
-[node name="Chunk_10_01" type="StaticBody3D" parent="." unique_id=880306237]
+[node name="Chunk_10_01" type="StaticBody3D" parent="." unique_id=1226825829]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 256, 0, -1408)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_10_01" unique_id=348022577]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_10_01" unique_id=784554219]
 cast_shadow = 0
 mesh = ExtResource("65_ygpyv")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_10_01" unique_id=1153891455]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_10_01" unique_id=776705377]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("66_bounl")
 
-[node name="Chunk_11_01" type="StaticBody3D" parent="." unique_id=439422852]
+[node name="Chunk_11_01" type="StaticBody3D" parent="." unique_id=1351693659]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 512, 0, -1408)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_11_01" unique_id=1681240526]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_11_01" unique_id=1813593496]
 cast_shadow = 0
 mesh = ExtResource("67_lpeaj")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_11_01" unique_id=760088825]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_11_01" unique_id=1084201086]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("68_s7fs5")
 
-[node name="Chunk_12_01" type="StaticBody3D" parent="." unique_id=1554988409]
+[node name="Chunk_12_01" type="StaticBody3D" parent="." unique_id=1933834083]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 768, 0, -1408)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_12_01" unique_id=194436714]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_12_01" unique_id=630614722]
 cast_shadow = 0
 mesh = ExtResource("69_mbic2")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_12_01" unique_id=1408935231]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_12_01" unique_id=1217891117]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("70_8nhgy")
 
-[node name="Chunk_13_01" type="StaticBody3D" parent="." unique_id=2094151489]
+[node name="Chunk_13_01" type="StaticBody3D" parent="." unique_id=1210211290]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1024, 0, -1408)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_13_01" unique_id=1344947555]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_13_01" unique_id=429071207]
 cast_shadow = 0
 mesh = ExtResource("71_xu2ty")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_13_01" unique_id=320277951]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_13_01" unique_id=1849278340]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("72_jdx2g")
 
-[node name="Chunk_14_01" type="StaticBody3D" parent="." unique_id=130668868]
+[node name="Chunk_14_01" type="StaticBody3D" parent="." unique_id=828568610]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1280, 0, -1408)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_14_01" unique_id=969858291]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_14_01" unique_id=501001323]
 cast_shadow = 0
 mesh = ExtResource("73_hdmmg")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_14_01" unique_id=1256526557]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_14_01" unique_id=699893330]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("74_w6agw")
 
-[node name="Chunk_15_01" type="StaticBody3D" parent="." unique_id=781897364]
+[node name="Chunk_15_01" type="StaticBody3D" parent="." unique_id=1030910314]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1536, 0, -1408)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_15_01" unique_id=1112176172]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_15_01" unique_id=794992671]
 cast_shadow = 0
 mesh = ExtResource("75_a2xx1")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_15_01" unique_id=1181316982]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_15_01" unique_id=1745779328]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("76_6npi7")
 
-[node name="Chunk_16_01" type="StaticBody3D" parent="." unique_id=1026935367]
+[node name="Chunk_16_01" type="StaticBody3D" parent="." unique_id=1720965264]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1792, 0, -1408)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_16_01" unique_id=160578338]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_16_01" unique_id=346986758]
 cast_shadow = 0
 mesh = ExtResource("77_b44a6")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_16_01" unique_id=1390509828]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_16_01" unique_id=1727618976]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("78_6ja3s")
 
-[node name="Chunk_17_01" type="StaticBody3D" parent="." unique_id=1714676720]
+[node name="Chunk_17_01" type="StaticBody3D" parent="." unique_id=2049357177]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2048, 0, -1408)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_17_01" unique_id=1090544168]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_17_01" unique_id=843598176]
 cast_shadow = 0
 mesh = ExtResource("79_sa1hw")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_17_01" unique_id=1946474579]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_17_01" unique_id=1460745772]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("80_qjopg")
 
-[node name="Chunk_18_01" type="StaticBody3D" parent="." unique_id=915390884]
+[node name="Chunk_18_01" type="StaticBody3D" parent="." unique_id=1509835112]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2304, 0, -1408)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_18_01" unique_id=1089982828]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_18_01" unique_id=1335286412]
 cast_shadow = 0
 mesh = ExtResource("81_wueua")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_18_01" unique_id=1171061588]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_18_01" unique_id=9364516]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("82_613ih")
 
-[node name="Chunk_00_02" type="StaticBody3D" parent="." unique_id=1099075183]
+[node name="Chunk_00_02" type="StaticBody3D" parent="." unique_id=1659321757]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2304, 0, -1152)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_00_02" unique_id=958149054]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_00_02" unique_id=1618759997]
 cast_shadow = 0
 mesh = ExtResource("83_t70ru")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_00_02" unique_id=1909830975]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_00_02" unique_id=1810425465]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("84_bblo7")
 
-[node name="Chunk_01_02" type="StaticBody3D" parent="." unique_id=670588527]
+[node name="Chunk_01_02" type="StaticBody3D" parent="." unique_id=952661067]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2048, 0, -1152)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_01_02" unique_id=1056758192]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_01_02" unique_id=1968560857]
 cast_shadow = 0
 mesh = ExtResource("85_g1ruh")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_01_02" unique_id=758025590]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_01_02" unique_id=1588993097]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("86_411up")
 
-[node name="Chunk_02_02" type="StaticBody3D" parent="." unique_id=1921529448]
+[node name="Chunk_02_02" type="StaticBody3D" parent="." unique_id=1194043128]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1792, 0, -1152)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_02_02" unique_id=1319046619]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_02_02" unique_id=1274601641]
 cast_shadow = 0
 mesh = ExtResource("87_luyjc")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_02_02" unique_id=376293328]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_02_02" unique_id=284755666]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("88_c73ql")
 
-[node name="Chunk_03_02" type="StaticBody3D" parent="." unique_id=225627415]
+[node name="Chunk_03_02" type="StaticBody3D" parent="." unique_id=57105128]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1536, 0, -1152)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_03_02" unique_id=1102434920]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_03_02" unique_id=927970500]
 cast_shadow = 0
 mesh = ExtResource("89_3vkdx")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_03_02" unique_id=1731623704]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_03_02" unique_id=628428808]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("90_bke2q")
 
-[node name="Chunk_04_02" type="StaticBody3D" parent="." unique_id=1721790772]
+[node name="Chunk_04_02" type="StaticBody3D" parent="." unique_id=1262813078]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1280, 0, -1152)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_04_02" unique_id=72568297]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_04_02" unique_id=903978289]
 cast_shadow = 0
 mesh = ExtResource("91_lb3s3")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_04_02" unique_id=380202]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_04_02" unique_id=1190056849]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("92_eq3br")
 
-[node name="Chunk_05_02" type="StaticBody3D" parent="." unique_id=41828875]
+[node name="Chunk_05_02" type="StaticBody3D" parent="." unique_id=314018324]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1024, 0, -1152)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_05_02" unique_id=1002483222]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_05_02" unique_id=2137675349]
 cast_shadow = 0
 mesh = ExtResource("93_jfxhv")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_05_02" unique_id=1409718248]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_05_02" unique_id=560301703]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("94_e4h8p")
 
-[node name="Chunk_06_02" type="StaticBody3D" parent="." unique_id=1960380643]
+[node name="Chunk_06_02" type="StaticBody3D" parent="." unique_id=46840421]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -768, 0, -1152)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_06_02" unique_id=995781748]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_06_02" unique_id=1441584617]
 cast_shadow = 0
 mesh = ExtResource("95_i861r")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_06_02" unique_id=980304821]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_06_02" unique_id=944424128]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("96_78m13")
 
-[node name="Chunk_07_02" type="StaticBody3D" parent="." unique_id=1613489615]
+[node name="Chunk_07_02" type="StaticBody3D" parent="." unique_id=1697705296]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -512, 0, -1152)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_07_02" unique_id=1074831068]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_07_02" unique_id=1875038964]
 cast_shadow = 0
 mesh = ExtResource("97_hf10s")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_07_02" unique_id=2118667190]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_07_02" unique_id=1168761158]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("98_gefdh")
 
-[node name="Chunk_08_02" type="StaticBody3D" parent="." unique_id=1239636572]
+[node name="Chunk_08_02" type="StaticBody3D" parent="." unique_id=778169821]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -256, 0, -1152)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_08_02" unique_id=1451014836]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_08_02" unique_id=2122285653]
 cast_shadow = 0
 mesh = ExtResource("99_61pbf")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_08_02" unique_id=904112907]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_08_02" unique_id=244617609]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("100_ppq7c")
 
-[node name="Chunk_09_02" type="StaticBody3D" parent="." unique_id=1884489063]
+[node name="Chunk_09_02" type="StaticBody3D" parent="." unique_id=430502505]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -1152)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_09_02" unique_id=17057025]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_09_02" unique_id=1865865274]
 cast_shadow = 0
 mesh = ExtResource("101_g86gg")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_09_02" unique_id=1398173639]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_09_02" unique_id=1017635413]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("102_m43hh")
 
-[node name="Chunk_10_02" type="StaticBody3D" parent="." unique_id=300081190]
+[node name="Chunk_10_02" type="StaticBody3D" parent="." unique_id=518397378]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 256, 0, -1152)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_10_02" unique_id=1718901218]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_10_02" unique_id=1994549673]
 cast_shadow = 0
 mesh = ExtResource("103_miwhp")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_10_02" unique_id=898514482]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_10_02" unique_id=43492340]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("104_enmx1")
 
-[node name="Chunk_11_02" type="StaticBody3D" parent="." unique_id=328515786]
+[node name="Chunk_11_02" type="StaticBody3D" parent="." unique_id=1604589267]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 512, 0, -1152)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_11_02" unique_id=1648152982]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_11_02" unique_id=1404939917]
 cast_shadow = 0
 mesh = ExtResource("105_vn0gb")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_11_02" unique_id=1887086386]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_11_02" unique_id=891036327]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("106_gky3d")
 
-[node name="Chunk_12_02" type="StaticBody3D" parent="." unique_id=853173268]
+[node name="Chunk_12_02" type="StaticBody3D" parent="." unique_id=1384934840]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 768, 0, -1152)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_12_02" unique_id=1245147256]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_12_02" unique_id=461301229]
 cast_shadow = 0
 mesh = ExtResource("107_gjc0n")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_12_02" unique_id=92587650]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_12_02" unique_id=1848880005]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("108_xfh4u")
 
-[node name="Chunk_13_02" type="StaticBody3D" parent="." unique_id=1223856885]
+[node name="Chunk_13_02" type="StaticBody3D" parent="." unique_id=670635325]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1024, 0, -1152)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_13_02" unique_id=986119405]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_13_02" unique_id=1315046733]
 cast_shadow = 0
 mesh = ExtResource("109_ma0c4")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_13_02" unique_id=1099283325]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_13_02" unique_id=761021808]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("110_3o8bx")
 
-[node name="Chunk_14_02" type="StaticBody3D" parent="." unique_id=886639165]
+[node name="Chunk_14_02" type="StaticBody3D" parent="." unique_id=529610092]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1280, 0, -1152)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_14_02" unique_id=478556769]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_14_02" unique_id=523201399]
 cast_shadow = 0
 mesh = ExtResource("111_4b4qx")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_14_02" unique_id=1385058599]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_14_02" unique_id=134984723]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("112_f8xdg")
 
-[node name="Chunk_15_02" type="StaticBody3D" parent="." unique_id=492263353]
+[node name="Chunk_15_02" type="StaticBody3D" parent="." unique_id=715898599]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1536, 0, -1152)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_15_02" unique_id=2129218950]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_15_02" unique_id=1883504526]
 cast_shadow = 0
 mesh = ExtResource("113_gl22l")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_15_02" unique_id=1262494945]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_15_02" unique_id=29282576]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("114_0stc7")
 
-[node name="Chunk_16_02" type="StaticBody3D" parent="." unique_id=2139591138]
+[node name="Chunk_16_02" type="StaticBody3D" parent="." unique_id=505812281]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1792, 0, -1152)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_16_02" unique_id=759143249]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_16_02" unique_id=74415022]
 cast_shadow = 0
 mesh = ExtResource("115_iupbq")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_16_02" unique_id=1679766397]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_16_02" unique_id=1791946618]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("116_nqmw8")
 
-[node name="Chunk_17_02" type="StaticBody3D" parent="." unique_id=1483966803]
+[node name="Chunk_17_02" type="StaticBody3D" parent="." unique_id=1575948706]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2048, 0, -1152)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_17_02" unique_id=1536117053]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_17_02" unique_id=240346364]
 cast_shadow = 0
 mesh = ExtResource("117_vkhss")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_17_02" unique_id=1130104842]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_17_02" unique_id=2057042466]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("118_5007t")
 
-[node name="Chunk_18_02" type="StaticBody3D" parent="." unique_id=828941990]
+[node name="Chunk_18_02" type="StaticBody3D" parent="." unique_id=1193650699]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2304, 0, -1152)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_18_02" unique_id=966738046]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_18_02" unique_id=959225037]
 cast_shadow = 0
 mesh = ExtResource("119_5xxbq")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_18_02" unique_id=940362259]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_18_02" unique_id=2060037807]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("120_boj3t")
 
-[node name="Chunk_00_03" type="StaticBody3D" parent="." unique_id=1556323723]
+[node name="Chunk_00_03" type="StaticBody3D" parent="." unique_id=1554802068]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2304, 0, -896)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_00_03" unique_id=2101922028]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_00_03" unique_id=1848354313]
 cast_shadow = 0
 mesh = ExtResource("121_l1dl4")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_00_03" unique_id=36276079]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_00_03" unique_id=18083145]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("122_uw63m")
 
-[node name="Chunk_01_03" type="StaticBody3D" parent="." unique_id=1491465589]
+[node name="Chunk_01_03" type="StaticBody3D" parent="." unique_id=2031652983]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2048, 0, -896)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_01_03" unique_id=919713103]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_01_03" unique_id=510222940]
 cast_shadow = 0
 mesh = ExtResource("123_yv3n4")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_01_03" unique_id=454366110]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_01_03" unique_id=347493344]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("124_74be5")
 
-[node name="Chunk_02_03" type="StaticBody3D" parent="." unique_id=431044550]
+[node name="Chunk_02_03" type="StaticBody3D" parent="." unique_id=1570603470]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1792, 0, -896)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_02_03" unique_id=1016005205]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_02_03" unique_id=833123899]
 cast_shadow = 0
 mesh = ExtResource("125_xia6m")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_02_03" unique_id=519970045]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_02_03" unique_id=1864639131]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("126_4ptw6")
 
-[node name="Chunk_03_03" type="StaticBody3D" parent="." unique_id=537321108]
+[node name="Chunk_03_03" type="StaticBody3D" parent="." unique_id=2060157123]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1536, 0, -896)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_03_03" unique_id=1254972881]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_03_03" unique_id=1425649700]
 cast_shadow = 0
 mesh = ExtResource("127_28cxt")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_03_03" unique_id=1258116424]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_03_03" unique_id=1904072159]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("128_bkquh")
 
-[node name="Chunk_04_03" type="StaticBody3D" parent="." unique_id=684793662]
+[node name="Chunk_04_03" type="StaticBody3D" parent="." unique_id=1936984500]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1280, 0, -896)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_04_03" unique_id=1426694301]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_04_03" unique_id=662671506]
 cast_shadow = 0
 mesh = ExtResource("129_qaime")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_04_03" unique_id=272745937]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_04_03" unique_id=1893505978]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("130_waenl")
 
-[node name="Chunk_05_03" type="StaticBody3D" parent="." unique_id=920038755]
+[node name="Chunk_05_03" type="StaticBody3D" parent="." unique_id=102840371]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1024, 0, -896)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_05_03" unique_id=1860641957]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_05_03" unique_id=164348438]
 cast_shadow = 0
 mesh = ExtResource("131_48js3")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_05_03" unique_id=413788766]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_05_03" unique_id=1243960421]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("132_gjppf")
 
-[node name="Chunk_06_03" type="StaticBody3D" parent="." unique_id=1309259962]
+[node name="Chunk_06_03" type="StaticBody3D" parent="." unique_id=1225178611]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -768, 0, -896)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_06_03" unique_id=489188785]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_06_03" unique_id=69060905]
 cast_shadow = 0
 mesh = ExtResource("133_y25fl")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_06_03" unique_id=2030432942]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_06_03" unique_id=1620569737]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("134_2ir7l")
 
-[node name="Chunk_07_03" type="StaticBody3D" parent="." unique_id=2059004748]
+[node name="Chunk_07_03" type="StaticBody3D" parent="." unique_id=588395839]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -512, 0, -896)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_07_03" unique_id=842578583]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_07_03" unique_id=59204404]
 cast_shadow = 0
 mesh = ExtResource("135_ot4b8")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_07_03" unique_id=2042309880]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_07_03" unique_id=1223054807]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("136_gynma")
 
-[node name="Chunk_08_03" type="StaticBody3D" parent="." unique_id=714289069]
+[node name="Chunk_08_03" type="StaticBody3D" parent="." unique_id=95362147]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -256, 0, -896)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_08_03" unique_id=1694754258]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_08_03" unique_id=1930162552]
 cast_shadow = 0
 mesh = ExtResource("137_as2ut")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_08_03" unique_id=1818705630]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_08_03" unique_id=276707031]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("138_be10f")
 
-[node name="Chunk_09_03" type="StaticBody3D" parent="." unique_id=480136020]
+[node name="Chunk_09_03" type="StaticBody3D" parent="." unique_id=283347094]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -896)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_09_03" unique_id=930897031]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_09_03" unique_id=857851152]
 cast_shadow = 0
 mesh = ExtResource("139_mgb8g")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_09_03" unique_id=1693471734]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_09_03" unique_id=1882529155]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("140_hm13s")
 
-[node name="Chunk_10_03" type="StaticBody3D" parent="." unique_id=281151969]
+[node name="Chunk_10_03" type="StaticBody3D" parent="." unique_id=1138204212]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 256, 0, -896)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_10_03" unique_id=646539512]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_10_03" unique_id=668336698]
 cast_shadow = 0
 mesh = ExtResource("141_40kx5")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_10_03" unique_id=690493051]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_10_03" unique_id=481637907]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("142_m1vg1")
 
-[node name="Chunk_11_03" type="StaticBody3D" parent="." unique_id=106019204]
+[node name="Chunk_11_03" type="StaticBody3D" parent="." unique_id=2054101154]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 512, 0, -896)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_11_03" unique_id=1041498032]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_11_03" unique_id=1333608160]
 cast_shadow = 0
 mesh = ExtResource("143_8qyfn")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_11_03" unique_id=1845811219]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_11_03" unique_id=1922366343]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("144_bfavl")
 
-[node name="Chunk_12_03" type="StaticBody3D" parent="." unique_id=302484556]
+[node name="Chunk_12_03" type="StaticBody3D" parent="." unique_id=118545642]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 768, 0, -896)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_12_03" unique_id=1092165675]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_12_03" unique_id=715581011]
 cast_shadow = 0
 mesh = ExtResource("145_voy70")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_12_03" unique_id=1025843302]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_12_03" unique_id=1852782689]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("146_c7so4")
 
-[node name="Chunk_13_03" type="StaticBody3D" parent="." unique_id=20250509]
+[node name="Chunk_13_03" type="StaticBody3D" parent="." unique_id=587673773]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1024, 0, -896)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_13_03" unique_id=1898063598]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_13_03" unique_id=2006690013]
 cast_shadow = 0
 mesh = ExtResource("147_fx7il")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_13_03" unique_id=1705561172]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_13_03" unique_id=1704456532]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("148_xlvgp")
 
-[node name="Chunk_14_03" type="StaticBody3D" parent="." unique_id=1194024498]
+[node name="Chunk_14_03" type="StaticBody3D" parent="." unique_id=827306057]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1280, 0, -896)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_14_03" unique_id=1749745976]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_14_03" unique_id=1152521944]
 cast_shadow = 0
 mesh = ExtResource("149_5kbtc")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_14_03" unique_id=1116084672]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_14_03" unique_id=403527854]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("150_smdes")
 
-[node name="Chunk_15_03" type="StaticBody3D" parent="." unique_id=1505086369]
+[node name="Chunk_15_03" type="StaticBody3D" parent="." unique_id=964918535]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1536, 0, -896)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_15_03" unique_id=1521645369]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_15_03" unique_id=2050825653]
 cast_shadow = 0
 mesh = ExtResource("151_tdd08")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_15_03" unique_id=782088970]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_15_03" unique_id=251523082]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("152_gcwlt")
 
-[node name="Chunk_16_03" type="StaticBody3D" parent="." unique_id=1375142531]
+[node name="Chunk_16_03" type="StaticBody3D" parent="." unique_id=1380349880]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1792, 0, -896)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_16_03" unique_id=644191479]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_16_03" unique_id=420208684]
 cast_shadow = 0
 mesh = ExtResource("153_gkv7h")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_16_03" unique_id=1593334210]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_16_03" unique_id=451183287]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("154_jbss8")
 
-[node name="Chunk_17_03" type="StaticBody3D" parent="." unique_id=621185573]
+[node name="Chunk_17_03" type="StaticBody3D" parent="." unique_id=1687891409]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2048, 0, -896)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_17_03" unique_id=1863428785]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_17_03" unique_id=503421744]
 cast_shadow = 0
 mesh = ExtResource("155_y4s00")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_17_03" unique_id=1146394372]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_17_03" unique_id=283327109]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("156_trqoa")
 
-[node name="Chunk_18_03" type="StaticBody3D" parent="." unique_id=1367818739]
+[node name="Chunk_18_03" type="StaticBody3D" parent="." unique_id=678712654]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2304, 0, -896)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_18_03" unique_id=684737175]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_18_03" unique_id=1071834636]
 cast_shadow = 0
 mesh = ExtResource("157_vdls7")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_18_03" unique_id=1525497911]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_18_03" unique_id=1147907064]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("158_ha2pu")
 
-[node name="Chunk_00_04" type="StaticBody3D" parent="." unique_id=398224114]
+[node name="Chunk_00_04" type="StaticBody3D" parent="." unique_id=15620690]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2304, 0, -640)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_00_04" unique_id=1574060641]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_00_04" unique_id=954737604]
 cast_shadow = 0
 mesh = ExtResource("159_dbr8q")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_00_04" unique_id=1687025948]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_00_04" unique_id=773759475]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("160_31ode")
 
-[node name="Roof" type="MeshInstance3D" parent="Chunk_00_04" unique_id=1071641858]
+[node name="Roof" type="MeshInstance3D" parent="Chunk_00_04" unique_id=1895900542]
 cast_shadow = 0
 mesh = ExtResource("161_yx7lf")
 
-[node name="RoofShape" type="CollisionShape3D" parent="Chunk_00_04" unique_id=1429404604]
+[node name="RoofShape" type="CollisionShape3D" parent="Chunk_00_04" unique_id=1338434558]
 shape = ExtResource("162_3sc2q")
 
-[node name="Chunk_01_04" type="StaticBody3D" parent="." unique_id=1145959819]
+[node name="Chunk_01_04" type="StaticBody3D" parent="." unique_id=2008468052]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2048, 0, -640)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_01_04" unique_id=1122953211]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_01_04" unique_id=1545475837]
 cast_shadow = 0
 mesh = ExtResource("163_pnfh8")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_01_04" unique_id=1042294678]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_01_04" unique_id=429605176]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("164_jwvch")
 
-[node name="Chunk_02_04" type="StaticBody3D" parent="." unique_id=1461974612]
+[node name="Chunk_02_04" type="StaticBody3D" parent="." unique_id=1376234972]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1792, 0, -640)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_02_04" unique_id=863860050]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_02_04" unique_id=293650147]
 cast_shadow = 0
 mesh = ExtResource("165_h6wsu")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_02_04" unique_id=1800288475]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_02_04" unique_id=71657903]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("166_jqcxn")
 
-[node name="Chunk_03_04" type="StaticBody3D" parent="." unique_id=2088549594]
+[node name="Chunk_03_04" type="StaticBody3D" parent="." unique_id=1559240064]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1536, 0, -640)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_03_04" unique_id=1988632563]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_03_04" unique_id=523925043]
 cast_shadow = 0
 mesh = ExtResource("167_0b2ul")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_03_04" unique_id=214320879]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_03_04" unique_id=1081241789]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("168_nt4vo")
 
-[node name="Chunk_04_04" type="StaticBody3D" parent="." unique_id=1301023304]
+[node name="Chunk_04_04" type="StaticBody3D" parent="." unique_id=795537457]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1280, 0, -640)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_04_04" unique_id=376244400]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_04_04" unique_id=1511826593]
 cast_shadow = 0
 mesh = ExtResource("169_ex23v")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_04_04" unique_id=266759241]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_04_04" unique_id=1305251693]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("170_1wnt4")
 
-[node name="Chunk_05_04" type="StaticBody3D" parent="." unique_id=1728619941]
+[node name="Chunk_05_04" type="StaticBody3D" parent="." unique_id=378131562]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1024, 0, -640)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_05_04" unique_id=645212613]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_05_04" unique_id=1644152213]
 cast_shadow = 0
 mesh = ExtResource("171_3bs1c")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_05_04" unique_id=1186129267]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_05_04" unique_id=1175919392]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("172_qnpou")
 
-[node name="Chunk_06_04" type="StaticBody3D" parent="." unique_id=429945751]
+[node name="Chunk_06_04" type="StaticBody3D" parent="." unique_id=1558365399]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -768, 0, -640)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_06_04" unique_id=1306984467]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_06_04" unique_id=517455135]
 cast_shadow = 0
 mesh = ExtResource("173_k5mhl")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_06_04" unique_id=2085453313]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_06_04" unique_id=1847087603]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("174_7ft56")
 
-[node name="Chunk_07_04" type="StaticBody3D" parent="." unique_id=2058412085]
+[node name="Chunk_07_04" type="StaticBody3D" parent="." unique_id=619371464]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -512, 0, -640)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_07_04" unique_id=1536210306]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_07_04" unique_id=1429840782]
 cast_shadow = 0
 mesh = ExtResource("175_fsq0k")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_07_04" unique_id=1321027158]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_07_04" unique_id=1556377212]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("176_m8qlw")
 
-[node name="Chunk_08_04" type="StaticBody3D" parent="." unique_id=908740464]
+[node name="Chunk_08_04" type="StaticBody3D" parent="." unique_id=328780952]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -256, 0, -640)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_08_04" unique_id=1102139386]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_08_04" unique_id=185256832]
 cast_shadow = 0
 mesh = ExtResource("177_xqwum")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_08_04" unique_id=446757547]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_08_04" unique_id=1105594369]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("178_j8o28")
 
-[node name="Chunk_09_04" type="StaticBody3D" parent="." unique_id=1587891538]
+[node name="Chunk_09_04" type="StaticBody3D" parent="." unique_id=1799949322]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -640)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_09_04" unique_id=1007778898]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_09_04" unique_id=523753601]
 cast_shadow = 0
 mesh = ExtResource("179_nixya")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_09_04" unique_id=258210649]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_09_04" unique_id=145275763]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("180_bap55")
 
-[node name="Chunk_10_04" type="StaticBody3D" parent="." unique_id=156466776]
+[node name="Chunk_10_04" type="StaticBody3D" parent="." unique_id=172938260]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 256, 0, -640)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_10_04" unique_id=369367963]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_10_04" unique_id=1545149053]
 cast_shadow = 0
 mesh = ExtResource("181_5gf75")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_10_04" unique_id=327715562]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_10_04" unique_id=954565254]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("182_rh1aq")
 
-[node name="Chunk_11_04" type="StaticBody3D" parent="." unique_id=1887125809]
+[node name="Chunk_11_04" type="StaticBody3D" parent="." unique_id=293939919]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 512, 0, -640)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_11_04" unique_id=550739704]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_11_04" unique_id=169298801]
 cast_shadow = 0
 mesh = ExtResource("183_syog2")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_11_04" unique_id=423097406]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_11_04" unique_id=1616096445]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("184_u7pei")
 
-[node name="Chunk_12_04" type="StaticBody3D" parent="." unique_id=773535307]
+[node name="Chunk_12_04" type="StaticBody3D" parent="." unique_id=1672711022]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 768, 0, -640)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_12_04" unique_id=944157331]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_12_04" unique_id=137073797]
 cast_shadow = 0
 mesh = ExtResource("185_mttlj")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_12_04" unique_id=1133693841]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_12_04" unique_id=236019845]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("186_6uqqf")
 
-[node name="Chunk_13_04" type="StaticBody3D" parent="." unique_id=1548719691]
+[node name="Chunk_13_04" type="StaticBody3D" parent="." unique_id=746654384]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1024, 0, -640)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_13_04" unique_id=1274080094]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_13_04" unique_id=1021529268]
 cast_shadow = 0
 mesh = ExtResource("187_5nl8y")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_13_04" unique_id=270195047]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_13_04" unique_id=1760797228]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("188_c3mo5")
 
-[node name="Chunk_14_04" type="StaticBody3D" parent="." unique_id=1588421274]
+[node name="Chunk_14_04" type="StaticBody3D" parent="." unique_id=904605160]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1280, 0, -640)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_14_04" unique_id=1066370158]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_14_04" unique_id=1376617834]
 cast_shadow = 0
 mesh = ExtResource("189_06hgv")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_14_04" unique_id=1436374637]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_14_04" unique_id=1955170910]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("190_10o05")
 
-[node name="Chunk_15_04" type="StaticBody3D" parent="." unique_id=1082869959]
+[node name="Chunk_15_04" type="StaticBody3D" parent="." unique_id=34369801]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1536, 0, -640)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_15_04" unique_id=1979371679]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_15_04" unique_id=2126443499]
 cast_shadow = 0
 mesh = ExtResource("191_ym2yr")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_15_04" unique_id=418427031]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_15_04" unique_id=71883430]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("192_gc7en")
 
-[node name="Chunk_16_04" type="StaticBody3D" parent="." unique_id=448644632]
+[node name="Chunk_16_04" type="StaticBody3D" parent="." unique_id=1159547261]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1792, 0, -640)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_16_04" unique_id=1038284731]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_16_04" unique_id=1514998095]
 cast_shadow = 0
 mesh = ExtResource("193_apogm")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_16_04" unique_id=1525445916]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_16_04" unique_id=893478038]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("194_2n2fx")
 
-[node name="Chunk_17_04" type="StaticBody3D" parent="." unique_id=1976223065]
+[node name="Chunk_17_04" type="StaticBody3D" parent="." unique_id=2081552950]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2048, 0, -640)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_17_04" unique_id=1086482190]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_17_04" unique_id=1066613630]
 cast_shadow = 0
 mesh = ExtResource("195_lwv7q")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_17_04" unique_id=535044230]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_17_04" unique_id=1086091217]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("196_koeap")
 
-[node name="Chunk_18_04" type="StaticBody3D" parent="." unique_id=615446926]
+[node name="Chunk_18_04" type="StaticBody3D" parent="." unique_id=217170263]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2304, 0, -640)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_18_04" unique_id=215343071]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_18_04" unique_id=1878706087]
 cast_shadow = 0
 mesh = ExtResource("197_ncpjc")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_18_04" unique_id=1024812023]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_18_04" unique_id=370246976]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("198_vdmst")
 
-[node name="Roof" type="MeshInstance3D" parent="Chunk_18_04" unique_id=76385933]
+[node name="Roof" type="MeshInstance3D" parent="Chunk_18_04" unique_id=1078785018]
 cast_shadow = 0
 mesh = ExtResource("199_06ma2")
 
-[node name="RoofShape" type="CollisionShape3D" parent="Chunk_18_04" unique_id=1942454666]
+[node name="RoofShape" type="CollisionShape3D" parent="Chunk_18_04" unique_id=158074304]
 shape = ExtResource("200_wxsbc")
 
-[node name="Chunk_00_05" type="StaticBody3D" parent="." unique_id=791434137]
+[node name="Chunk_00_05" type="StaticBody3D" parent="." unique_id=2106787720]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2304, 0, -384)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_00_05" unique_id=138876348]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_00_05" unique_id=273959152]
 cast_shadow = 0
 mesh = ExtResource("201_r412w")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_00_05" unique_id=1665012280]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_00_05" unique_id=1221519881]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("202_13p6q")
 
-[node name="Roof" type="MeshInstance3D" parent="Chunk_00_05" unique_id=11726612]
+[node name="Roof" type="MeshInstance3D" parent="Chunk_00_05" unique_id=1290285553]
 cast_shadow = 0
 mesh = ExtResource("203_5q8gn")
 
-[node name="RoofShape" type="CollisionShape3D" parent="Chunk_00_05" unique_id=1171442542]
+[node name="RoofShape" type="CollisionShape3D" parent="Chunk_00_05" unique_id=738605040]
 shape = ExtResource("204_pcqsi")
 
-[node name="Chunk_01_05" type="StaticBody3D" parent="." unique_id=1905122020]
+[node name="Chunk_01_05" type="StaticBody3D" parent="." unique_id=1839711155]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2048, 0, -384)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_01_05" unique_id=1013877685]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_01_05" unique_id=754544596]
 cast_shadow = 0
 mesh = ExtResource("205_r53kj")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_01_05" unique_id=1920577673]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_01_05" unique_id=1885892714]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("206_13kyc")
 
-[node name="Chunk_02_05" type="StaticBody3D" parent="." unique_id=1176722301]
+[node name="Chunk_02_05" type="StaticBody3D" parent="." unique_id=1112048278]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1792, 0, -384)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_02_05" unique_id=675966220]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_02_05" unique_id=352950054]
 cast_shadow = 0
 mesh = ExtResource("207_simbr")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_02_05" unique_id=1143095436]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_02_05" unique_id=446976488]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("208_w1vuh")
 
-[node name="Chunk_03_05" type="StaticBody3D" parent="." unique_id=172332693]
+[node name="Chunk_03_05" type="StaticBody3D" parent="." unique_id=1659920995]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1536, 0, -384)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_03_05" unique_id=86783195]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_03_05" unique_id=250929940]
 cast_shadow = 0
 mesh = ExtResource("209_57v4d")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_03_05" unique_id=827296536]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_03_05" unique_id=1705058092]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("210_eyd54")
 
-[node name="Chunk_04_05" type="StaticBody3D" parent="." unique_id=115951104]
+[node name="Chunk_04_05" type="StaticBody3D" parent="." unique_id=1146409204]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1280, 0, -384)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_04_05" unique_id=1499623921]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_04_05" unique_id=1803399275]
 cast_shadow = 0
 mesh = ExtResource("211_tt07s")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_04_05" unique_id=102022250]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_04_05" unique_id=174466140]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("212_0llhq")
 
-[node name="Chunk_05_05" type="StaticBody3D" parent="." unique_id=1511844361]
+[node name="Chunk_05_05" type="StaticBody3D" parent="." unique_id=870162403]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1024, 0, -384)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_05_05" unique_id=590883441]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_05_05" unique_id=429135324]
 cast_shadow = 0
 mesh = ExtResource("213_s3gtx")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_05_05" unique_id=1071304549]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_05_05" unique_id=1122186721]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("214_ckqai")
 
-[node name="Chunk_06_05" type="StaticBody3D" parent="." unique_id=147126285]
+[node name="Chunk_06_05" type="StaticBody3D" parent="." unique_id=1356716918]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -768, 0, -384)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_06_05" unique_id=745687509]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_06_05" unique_id=1463475216]
 cast_shadow = 0
 mesh = ExtResource("215_4ui4a")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_06_05" unique_id=973029653]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_06_05" unique_id=999467712]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("216_ahcb6")
 
-[node name="Chunk_07_05" type="StaticBody3D" parent="." unique_id=1308548816]
+[node name="Chunk_07_05" type="StaticBody3D" parent="." unique_id=866041755]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -512, 0, -384)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_07_05" unique_id=568374519]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_07_05" unique_id=1957863360]
 cast_shadow = 0
 mesh = ExtResource("217_pp6ox")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_07_05" unique_id=595348439]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_07_05" unique_id=605435756]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("218_if1lb")
 
-[node name="Chunk_09_05" type="StaticBody3D" parent="." unique_id=739652997]
+[node name="Chunk_09_05" type="StaticBody3D" parent="." unique_id=1651693071]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -384)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_09_05" unique_id=654143554]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_09_05" unique_id=2076233210]
 cast_shadow = 0
 mesh = ExtResource("219_xfedk")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_09_05" unique_id=195432547]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_09_05" unique_id=1551428906]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("220_wno8e")
 
-[node name="Chunk_10_05" type="StaticBody3D" parent="." unique_id=705254454]
+[node name="Chunk_10_05" type="StaticBody3D" parent="." unique_id=455541721]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 256, 0, -384)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_10_05" unique_id=1410988553]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_10_05" unique_id=996300497]
 cast_shadow = 0
 mesh = ExtResource("221_1uoje")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_10_05" unique_id=1262112381]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_10_05" unique_id=1267237352]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("222_sc655")
 
-[node name="Chunk_11_05" type="StaticBody3D" parent="." unique_id=1354403091]
+[node name="Chunk_11_05" type="StaticBody3D" parent="." unique_id=451972514]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 512, 0, -384)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_11_05" unique_id=1886660242]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_11_05" unique_id=476136949]
 cast_shadow = 0
 mesh = ExtResource("223_f6ey7")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_11_05" unique_id=1272502035]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_11_05" unique_id=331941186]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("224_wqa6g")
 
-[node name="Chunk_12_05" type="StaticBody3D" parent="." unique_id=1355536627]
+[node name="Chunk_12_05" type="StaticBody3D" parent="." unique_id=1336246310]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 768, 0, -384)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_12_05" unique_id=1059996867]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_12_05" unique_id=439927647]
 cast_shadow = 0
 mesh = ExtResource("225_4tiaa")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_12_05" unique_id=268177646]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_12_05" unique_id=1896141183]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("226_6kywv")
 
-[node name="Chunk_13_05" type="StaticBody3D" parent="." unique_id=389798055]
+[node name="Chunk_13_05" type="StaticBody3D" parent="." unique_id=1039882417]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1024, 0, -384)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_13_05" unique_id=1444141084]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_13_05" unique_id=759480959]
 cast_shadow = 0
 mesh = ExtResource("227_qiitj")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_13_05" unique_id=662339709]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_13_05" unique_id=316776026]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("228_0b7db")
 
-[node name="Chunk_14_05" type="StaticBody3D" parent="." unique_id=771304864]
+[node name="Chunk_14_05" type="StaticBody3D" parent="." unique_id=262691620]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1280, 0, -384)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_14_05" unique_id=147605642]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_14_05" unique_id=739108792]
 cast_shadow = 0
 mesh = ExtResource("229_psvne")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_14_05" unique_id=1118527548]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_14_05" unique_id=217929894]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("230_m4esc")
 
-[node name="Chunk_15_05" type="StaticBody3D" parent="." unique_id=1107859718]
+[node name="Chunk_15_05" type="StaticBody3D" parent="." unique_id=479901210]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1536, 0, -384)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_15_05" unique_id=1620408771]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_15_05" unique_id=783670511]
 cast_shadow = 0
 mesh = ExtResource("231_wl471")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_15_05" unique_id=1170202188]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_15_05" unique_id=485722867]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("232_41kg6")
 
-[node name="Chunk_16_05" type="StaticBody3D" parent="." unique_id=431185447]
+[node name="Chunk_16_05" type="StaticBody3D" parent="." unique_id=232381670]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1792, 0, -384)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_16_05" unique_id=1301659884]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_16_05" unique_id=1632325670]
 cast_shadow = 0
 mesh = ExtResource("233_2oune")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_16_05" unique_id=1766891022]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_16_05" unique_id=916839806]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("234_pwcqb")
 
-[node name="Chunk_17_05" type="StaticBody3D" parent="." unique_id=527522732]
+[node name="Chunk_17_05" type="StaticBody3D" parent="." unique_id=1115174165]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2048, 0, -384)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_17_05" unique_id=720927768]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_17_05" unique_id=592633682]
 cast_shadow = 0
 mesh = ExtResource("235_ph2e4")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_17_05" unique_id=1667039201]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_17_05" unique_id=1554196061]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("236_f5t26")
 
-[node name="Chunk_18_05" type="StaticBody3D" parent="." unique_id=172866023]
+[node name="Chunk_18_05" type="StaticBody3D" parent="." unique_id=655962449]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2304, 0, -384)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_18_05" unique_id=144570124]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_18_05" unique_id=379851912]
 cast_shadow = 0
 mesh = ExtResource("237_ne8us")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_18_05" unique_id=50819253]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_18_05" unique_id=183911885]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("238_d6ysu")
 
-[node name="Chunk_00_06" type="StaticBody3D" parent="." unique_id=68463926]
+[node name="Chunk_00_06" type="StaticBody3D" parent="." unique_id=143904074]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2304, 0, -128)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_00_06" unique_id=222617852]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_00_06" unique_id=1079733212]
 cast_shadow = 0
 mesh = ExtResource("239_mlqwe")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_00_06" unique_id=919575662]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_00_06" unique_id=1424899767]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("240_0xk25")
 
-[node name="Chunk_01_06" type="StaticBody3D" parent="." unique_id=1950091912]
+[node name="Chunk_01_06" type="StaticBody3D" parent="." unique_id=1289194068]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2048, 0, -128)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_01_06" unique_id=2091201452]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_01_06" unique_id=1380322789]
 cast_shadow = 0
 mesh = ExtResource("241_fttph")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_01_06" unique_id=1761374650]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_01_06" unique_id=1842584517]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("242_t0vve")
 
-[node name="Chunk_02_06" type="StaticBody3D" parent="." unique_id=1066285888]
+[node name="Chunk_02_06" type="StaticBody3D" parent="." unique_id=1760334014]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1792, 0, -128)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_02_06" unique_id=404379287]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_02_06" unique_id=1792213534]
 cast_shadow = 0
 mesh = ExtResource("243_y1p1k")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_02_06" unique_id=972823759]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_02_06" unique_id=2131407706]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("244_awae4")
 
-[node name="Chunk_03_06" type="StaticBody3D" parent="." unique_id=2073305736]
+[node name="Chunk_03_06" type="StaticBody3D" parent="." unique_id=1295410921]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1536, 0, -128)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_03_06" unique_id=837862522]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_03_06" unique_id=345003822]
 cast_shadow = 0
 mesh = ExtResource("245_cxdim")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_03_06" unique_id=1530475937]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_03_06" unique_id=1348221187]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("246_g1hoc")
 
-[node name="Chunk_04_06" type="StaticBody3D" parent="." unique_id=1460738135]
+[node name="Chunk_04_06" type="StaticBody3D" parent="." unique_id=1413631634]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1280, 0, -128)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_04_06" unique_id=1928246739]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_04_06" unique_id=767823173]
 cast_shadow = 0
 mesh = ExtResource("247_c0ooa")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_04_06" unique_id=220365755]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_04_06" unique_id=58658645]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("248_p3t2s")
 
-[node name="Chunk_05_06" type="StaticBody3D" parent="." unique_id=1221014428]
+[node name="Chunk_05_06" type="StaticBody3D" parent="." unique_id=1338312356]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1024, 0, -128)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_05_06" unique_id=1953668838]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_05_06" unique_id=1258371698]
 cast_shadow = 0
 mesh = ExtResource("249_hg2fs")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_05_06" unique_id=398027522]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_05_06" unique_id=53825676]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("250_j8qhl")
 
-[node name="Chunk_09_06" type="StaticBody3D" parent="." unique_id=947294366]
+[node name="Chunk_09_06" type="StaticBody3D" parent="." unique_id=343919834]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -128)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_09_06" unique_id=291660277]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_09_06" unique_id=1402367262]
 cast_shadow = 0
 mesh = ExtResource("251_1fle0")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_09_06" unique_id=1234344921]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_09_06" unique_id=1439883131]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("252_bvn31")
 
-[node name="Chunk_10_06" type="StaticBody3D" parent="." unique_id=1046244072]
+[node name="Chunk_10_06" type="StaticBody3D" parent="." unique_id=1889520009]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 256, 0, -128)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_10_06" unique_id=1080190845]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_10_06" unique_id=801052870]
 cast_shadow = 0
 mesh = ExtResource("253_w6i4e")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_10_06" unique_id=1997991085]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_10_06" unique_id=1353889506]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("254_liymu")
 
-[node name="Chunk_11_06" type="StaticBody3D" parent="." unique_id=1044447797]
+[node name="Chunk_11_06" type="StaticBody3D" parent="." unique_id=2129756992]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 512, 0, -128)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_11_06" unique_id=1053655257]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_11_06" unique_id=972995955]
 cast_shadow = 0
 mesh = ExtResource("255_dupq0")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_11_06" unique_id=2029247351]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_11_06" unique_id=747427092]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("256_rdu8n")
 
-[node name="Chunk_12_06" type="StaticBody3D" parent="." unique_id=800261646]
+[node name="Chunk_12_06" type="StaticBody3D" parent="." unique_id=1619782333]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 768, 0, -128)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_12_06" unique_id=1809749440]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_12_06" unique_id=531753348]
 cast_shadow = 0
 mesh = ExtResource("257_7wbjr")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_12_06" unique_id=743074003]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_12_06" unique_id=1792898253]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("258_1s26m")
 
-[node name="Chunk_13_06" type="StaticBody3D" parent="." unique_id=1476044678]
+[node name="Chunk_13_06" type="StaticBody3D" parent="." unique_id=759002385]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1024, 0, -128)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_13_06" unique_id=1375899411]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_13_06" unique_id=2105589717]
 cast_shadow = 0
 mesh = ExtResource("259_ml4so")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_13_06" unique_id=451730987]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_13_06" unique_id=243288724]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("260_jg6mn")
 
-[node name="Chunk_14_06" type="StaticBody3D" parent="." unique_id=880055878]
+[node name="Chunk_14_06" type="StaticBody3D" parent="." unique_id=1311516084]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1280, 0, -128)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_14_06" unique_id=1105373725]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_14_06" unique_id=488717173]
 cast_shadow = 0
 mesh = ExtResource("261_yi0dh")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_14_06" unique_id=290484071]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_14_06" unique_id=653478450]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("262_7mqmr")
 
-[node name="Chunk_15_06" type="StaticBody3D" parent="." unique_id=735002408]
+[node name="Chunk_15_06" type="StaticBody3D" parent="." unique_id=192073305]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1536, 0, -128)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_15_06" unique_id=67736169]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_15_06" unique_id=141525982]
 cast_shadow = 0
 mesh = ExtResource("263_4cwjy")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_15_06" unique_id=1754062337]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_15_06" unique_id=1271788223]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("264_fftg6")
 
-[node name="Chunk_16_06" type="StaticBody3D" parent="." unique_id=727624335]
+[node name="Chunk_16_06" type="StaticBody3D" parent="." unique_id=707985098]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1792, 0, -128)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_16_06" unique_id=1109776803]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_16_06" unique_id=1139621171]
 cast_shadow = 0
 mesh = ExtResource("265_a2r10")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_16_06" unique_id=1139729155]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_16_06" unique_id=1576135745]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("266_4jdki")
 
-[node name="Chunk_17_06" type="StaticBody3D" parent="." unique_id=1440303959]
+[node name="Chunk_17_06" type="StaticBody3D" parent="." unique_id=1338180926]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2048, 0, -128)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_17_06" unique_id=1457135229]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_17_06" unique_id=1743483247]
 cast_shadow = 0
 mesh = ExtResource("267_chuqf")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_17_06" unique_id=1632565927]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_17_06" unique_id=1444068321]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("268_6x3s8")
 
-[node name="Chunk_18_06" type="StaticBody3D" parent="." unique_id=256825615]
+[node name="Chunk_18_06" type="StaticBody3D" parent="." unique_id=1902268540]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2304, 0, -128)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_18_06" unique_id=2142668294]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_18_06" unique_id=1233796429]
 cast_shadow = 0
 mesh = ExtResource("269_3t82p")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_18_06" unique_id=1259393590]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_18_06" unique_id=860437319]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("270_7jjbg")
 
-[node name="Roof" type="MeshInstance3D" parent="Chunk_18_06" unique_id=1583270077]
+[node name="Roof" type="MeshInstance3D" parent="Chunk_18_06" unique_id=453653867]
 cast_shadow = 0
 mesh = ExtResource("271_r4pm5")
 
-[node name="RoofShape" type="CollisionShape3D" parent="Chunk_18_06" unique_id=27955563]
+[node name="RoofShape" type="CollisionShape3D" parent="Chunk_18_06" unique_id=484926477]
 shape = ExtResource("272_qubs3")
 
-[node name="Chunk_00_07" type="StaticBody3D" parent="." unique_id=525481310]
+[node name="Chunk_00_07" type="StaticBody3D" parent="." unique_id=401055847]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2304, 0, 128)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_00_07" unique_id=1195074709]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_00_07" unique_id=1410738419]
 cast_shadow = 0
 mesh = ExtResource("273_niiva")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_00_07" unique_id=557680409]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_00_07" unique_id=1573968432]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("274_dkfyx")
 
-[node name="Chunk_01_07" type="StaticBody3D" parent="." unique_id=556267786]
+[node name="Chunk_01_07" type="StaticBody3D" parent="." unique_id=1054057657]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2048, 0, 128)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_01_07" unique_id=577976425]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_01_07" unique_id=851688654]
 cast_shadow = 0
 mesh = ExtResource("275_ailc6")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_01_07" unique_id=2122795433]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_01_07" unique_id=865095540]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("276_xmr6f")
 
-[node name="Chunk_02_07" type="StaticBody3D" parent="." unique_id=272076681]
+[node name="Chunk_02_07" type="StaticBody3D" parent="." unique_id=376445356]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1792, 0, 128)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_02_07" unique_id=1298757594]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_02_07" unique_id=966819274]
 cast_shadow = 0
 mesh = ExtResource("277_q1vcf")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_02_07" unique_id=497361619]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_02_07" unique_id=2091350351]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("278_x3j54")
 
-[node name="Chunk_03_07" type="StaticBody3D" parent="." unique_id=1009851520]
+[node name="Chunk_03_07" type="StaticBody3D" parent="." unique_id=5693101]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1536, 0, 128)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_03_07" unique_id=198414598]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_03_07" unique_id=2102670708]
 cast_shadow = 0
 mesh = ExtResource("279_jm8s6")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_03_07" unique_id=484718517]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_03_07" unique_id=2091144545]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("280_f3m72")
 
-[node name="Chunk_04_07" type="StaticBody3D" parent="." unique_id=2070414146]
+[node name="Chunk_04_07" type="StaticBody3D" parent="." unique_id=802462718]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1280, 0, 128)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_04_07" unique_id=160178295]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_04_07" unique_id=679112957]
 cast_shadow = 0
 mesh = ExtResource("281_jxmsd")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_04_07" unique_id=1383482650]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_04_07" unique_id=1851245355]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("282_qy2li")
 
-[node name="Chunk_05_07" type="StaticBody3D" parent="." unique_id=2106331496]
+[node name="Chunk_05_07" type="StaticBody3D" parent="." unique_id=1473566738]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1024, 0, 128)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_05_07" unique_id=47416175]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_05_07" unique_id=1763070788]
 cast_shadow = 0
 mesh = ExtResource("283_un7dw")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_05_07" unique_id=620603859]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_05_07" unique_id=369506757]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("284_obf2m")
 
-[node name="Chunk_06_07" type="StaticBody3D" parent="." unique_id=1727520315]
+[node name="Chunk_06_07" type="StaticBody3D" parent="." unique_id=1133945539]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -768, 0, 128)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_06_07" unique_id=98808686]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_06_07" unique_id=1233403217]
 cast_shadow = 0
 mesh = ExtResource("285_8joxv")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_06_07" unique_id=1155921660]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_06_07" unique_id=318328774]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("286_0ne01")
 
-[node name="Chunk_07_07" type="StaticBody3D" parent="." unique_id=2087935983]
+[node name="Chunk_07_07" type="StaticBody3D" parent="." unique_id=765789942]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -512, 0, 128)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_07_07" unique_id=1204122280]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_07_07" unique_id=348792850]
 cast_shadow = 0
 mesh = ExtResource("287_a3tfm")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_07_07" unique_id=1754841668]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_07_07" unique_id=543918502]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("288_vvbcs")
 
-[node name="Chunk_08_07" type="StaticBody3D" parent="." unique_id=1999203329]
+[node name="Chunk_08_07" type="StaticBody3D" parent="." unique_id=313023233]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -256, 0, 128)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_08_07" unique_id=1122791900]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_08_07" unique_id=1359177360]
 cast_shadow = 0
 mesh = ExtResource("289_b6lxw")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_08_07" unique_id=744835023]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_08_07" unique_id=1061761076]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("290_8dwik")
 
-[node name="Chunk_09_07" type="StaticBody3D" parent="." unique_id=651153481]
+[node name="Chunk_09_07" type="StaticBody3D" parent="." unique_id=608875680]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 128)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_09_07" unique_id=1249365777]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_09_07" unique_id=1360782538]
 cast_shadow = 0
 mesh = ExtResource("291_a4amt")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_09_07" unique_id=389619803]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_09_07" unique_id=945151613]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("292_keca7")
 
-[node name="Chunk_10_07" type="StaticBody3D" parent="." unique_id=637794860]
+[node name="Chunk_10_07" type="StaticBody3D" parent="." unique_id=1051400161]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 256, 0, 128)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_10_07" unique_id=1599494784]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_10_07" unique_id=757217042]
 cast_shadow = 0
 mesh = ExtResource("293_sf44q")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_10_07" unique_id=1645970385]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_10_07" unique_id=158258729]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("294_x4mtm")
 
-[node name="Chunk_11_07" type="StaticBody3D" parent="." unique_id=49108897]
+[node name="Chunk_11_07" type="StaticBody3D" parent="." unique_id=1453517722]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 512, 0, 128)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_11_07" unique_id=907075507]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_11_07" unique_id=1329828238]
 cast_shadow = 0
 mesh = ExtResource("295_nksko")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_11_07" unique_id=753290351]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_11_07" unique_id=122864187]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("296_ie87w")
 
-[node name="Chunk_12_07" type="StaticBody3D" parent="." unique_id=1766207765]
+[node name="Chunk_12_07" type="StaticBody3D" parent="." unique_id=1520587937]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 768, 0, 128)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_12_07" unique_id=1538411725]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_12_07" unique_id=314555986]
 cast_shadow = 0
 mesh = ExtResource("297_nqguc")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_12_07" unique_id=345554201]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_12_07" unique_id=1241147966]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("298_u6c75")
 
-[node name="Chunk_13_07" type="StaticBody3D" parent="." unique_id=1388228115]
+[node name="Chunk_13_07" type="StaticBody3D" parent="." unique_id=1297927935]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1024, 0, 128)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_13_07" unique_id=1059077971]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_13_07" unique_id=896999891]
 cast_shadow = 0
 mesh = ExtResource("299_1vdtf")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_13_07" unique_id=325341176]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_13_07" unique_id=1806177026]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("300_hrqed")
 
-[node name="Chunk_14_07" type="StaticBody3D" parent="." unique_id=670906813]
+[node name="Chunk_14_07" type="StaticBody3D" parent="." unique_id=962617850]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1280, 0, 128)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_14_07" unique_id=101868530]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_14_07" unique_id=431044001]
 cast_shadow = 0
 mesh = ExtResource("301_ui85x")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_14_07" unique_id=1171933645]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_14_07" unique_id=2135783355]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("302_im7v3")
 
-[node name="Chunk_15_07" type="StaticBody3D" parent="." unique_id=1281821739]
+[node name="Chunk_15_07" type="StaticBody3D" parent="." unique_id=1732730437]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1536, 0, 128)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_15_07" unique_id=1197283390]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_15_07" unique_id=1011685616]
 cast_shadow = 0
 mesh = ExtResource("303_milwp")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_15_07" unique_id=704231492]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_15_07" unique_id=1711721030]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("304_hm8b5")
 
-[node name="Chunk_16_07" type="StaticBody3D" parent="." unique_id=29862713]
+[node name="Chunk_16_07" type="StaticBody3D" parent="." unique_id=2127322644]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1792, 0, 128)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_16_07" unique_id=800702964]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_16_07" unique_id=712028952]
 cast_shadow = 0
 mesh = ExtResource("305_brcwy")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_16_07" unique_id=668132617]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_16_07" unique_id=1470487502]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("306_xq6ju")
 
-[node name="Chunk_17_07" type="StaticBody3D" parent="." unique_id=827303813]
+[node name="Chunk_17_07" type="StaticBody3D" parent="." unique_id=531537869]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2048, 0, 128)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_17_07" unique_id=1249185260]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_17_07" unique_id=1749384300]
 cast_shadow = 0
 mesh = ExtResource("307_qupo0")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_17_07" unique_id=284932810]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_17_07" unique_id=912631857]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("308_wsjvf")
 
-[node name="Chunk_18_07" type="StaticBody3D" parent="." unique_id=601194901]
+[node name="Chunk_18_07" type="StaticBody3D" parent="." unique_id=418141134]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2304, 0, 128)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_18_07" unique_id=1955095766]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_18_07" unique_id=1332224407]
 cast_shadow = 0
 mesh = ExtResource("309_p3n0b")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_18_07" unique_id=1423771416]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_18_07" unique_id=90481867]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("310_y5yn6")
 
-[node name="Chunk_00_08" type="StaticBody3D" parent="." unique_id=165621437]
+[node name="Chunk_00_08" type="StaticBody3D" parent="." unique_id=1972286106]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2304, 0, 384)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_00_08" unique_id=363757405]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_00_08" unique_id=2105943689]
 cast_shadow = 0
 mesh = ExtResource("311_qxpwx")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_00_08" unique_id=1916726455]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_00_08" unique_id=1602123665]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("312_i8b8v")
 
-[node name="Chunk_01_08" type="StaticBody3D" parent="." unique_id=502575837]
+[node name="Chunk_01_08" type="StaticBody3D" parent="." unique_id=1964005172]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2048, 0, 384)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_01_08" unique_id=228420989]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_01_08" unique_id=1796016109]
 cast_shadow = 0
 mesh = ExtResource("313_366f5")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_01_08" unique_id=1366503689]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_01_08" unique_id=533956974]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("314_qrmgq")
 
-[node name="Chunk_02_08" type="StaticBody3D" parent="." unique_id=1610901427]
+[node name="Chunk_02_08" type="StaticBody3D" parent="." unique_id=758746744]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1792, 0, 384)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_02_08" unique_id=1977764657]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_02_08" unique_id=1729341617]
 cast_shadow = 0
 mesh = ExtResource("315_goe0n")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_02_08" unique_id=2001326345]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_02_08" unique_id=1566566666]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("316_6epjc")
 
-[node name="Chunk_03_08" type="StaticBody3D" parent="." unique_id=1201694355]
+[node name="Chunk_03_08" type="StaticBody3D" parent="." unique_id=1842530011]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1536, 0, 384)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_03_08" unique_id=1995832945]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_03_08" unique_id=629614329]
 cast_shadow = 0
 mesh = ExtResource("317_sklho")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_03_08" unique_id=559852804]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_03_08" unique_id=1305388785]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("318_i65n2")
 
-[node name="Chunk_04_08" type="StaticBody3D" parent="." unique_id=989085601]
+[node name="Chunk_04_08" type="StaticBody3D" parent="." unique_id=2051090187]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1280, 0, 384)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_04_08" unique_id=413964463]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_04_08" unique_id=1302772271]
 cast_shadow = 0
 mesh = ExtResource("319_uv0ho")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_04_08" unique_id=1709393186]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_04_08" unique_id=252043112]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("320_fbm58")
 
-[node name="Chunk_05_08" type="StaticBody3D" parent="." unique_id=182173671]
+[node name="Chunk_05_08" type="StaticBody3D" parent="." unique_id=1602804422]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1024, 0, 384)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_05_08" unique_id=643937049]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_05_08" unique_id=395601257]
 cast_shadow = 0
 mesh = ExtResource("321_kqbit")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_05_08" unique_id=443839372]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_05_08" unique_id=1271288280]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("322_c5jqy")
 
-[node name="Chunk_06_08" type="StaticBody3D" parent="." unique_id=300504740]
+[node name="Chunk_06_08" type="StaticBody3D" parent="." unique_id=1666012669]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -768, 0, 384)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_06_08" unique_id=1165113168]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_06_08" unique_id=1130449032]
 cast_shadow = 0
 mesh = ExtResource("323_1gnxd")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_06_08" unique_id=1177278685]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_06_08" unique_id=561493471]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("324_wws86")
 
-[node name="Chunk_07_08" type="StaticBody3D" parent="." unique_id=1963600563]
+[node name="Chunk_07_08" type="StaticBody3D" parent="." unique_id=112180316]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -512, 0, 384)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_07_08" unique_id=1004793918]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_07_08" unique_id=1322567694]
 cast_shadow = 0
 mesh = ExtResource("325_p07r2")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_07_08" unique_id=820835845]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_07_08" unique_id=1095438157]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("326_jxsm7")
 
-[node name="Chunk_08_08" type="StaticBody3D" parent="." unique_id=1689220753]
+[node name="Chunk_08_08" type="StaticBody3D" parent="." unique_id=2123506310]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -256, 0, 384)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_08_08" unique_id=1505792063]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_08_08" unique_id=397192524]
 cast_shadow = 0
 mesh = ExtResource("327_ygy05")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_08_08" unique_id=1390961384]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_08_08" unique_id=420435491]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("328_et6gk")
 
-[node name="Chunk_09_08" type="StaticBody3D" parent="." unique_id=1386360337]
+[node name="Chunk_09_08" type="StaticBody3D" parent="." unique_id=598873697]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 384)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_09_08" unique_id=444954559]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_09_08" unique_id=194062335]
 cast_shadow = 0
 mesh = ExtResource("329_bkgof")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_09_08" unique_id=497112155]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_09_08" unique_id=992729364]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("330_xw6nd")
 
-[node name="Chunk_10_08" type="StaticBody3D" parent="." unique_id=889659937]
+[node name="Chunk_10_08" type="StaticBody3D" parent="." unique_id=696164073]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 256, 0, 384)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_10_08" unique_id=1335833700]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_10_08" unique_id=1514793736]
 cast_shadow = 0
 mesh = ExtResource("331_mlvtx")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_10_08" unique_id=1971974033]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_10_08" unique_id=1403143641]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("332_gcm6e")
 
-[node name="Chunk_11_08" type="StaticBody3D" parent="." unique_id=1554980568]
+[node name="Chunk_11_08" type="StaticBody3D" parent="." unique_id=558199987]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 512, 0, 384)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_11_08" unique_id=1029220831]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_11_08" unique_id=821177873]
 cast_shadow = 0
 mesh = ExtResource("333_a5chp")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_11_08" unique_id=569321541]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_11_08" unique_id=1855607256]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("334_8qeks")
 
-[node name="Chunk_12_08" type="StaticBody3D" parent="." unique_id=1958388752]
+[node name="Chunk_12_08" type="StaticBody3D" parent="." unique_id=817688869]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 768, 0, 384)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_12_08" unique_id=1499336463]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_12_08" unique_id=1530827127]
 cast_shadow = 0
 mesh = ExtResource("335_r3wv7")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_12_08" unique_id=1729841944]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_12_08" unique_id=1417006247]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("336_vgw54")
 
-[node name="Chunk_13_08" type="StaticBody3D" parent="." unique_id=171453780]
+[node name="Chunk_13_08" type="StaticBody3D" parent="." unique_id=957337886]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1024, 0, 384)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_13_08" unique_id=811818466]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_13_08" unique_id=531683486]
 cast_shadow = 0
 mesh = ExtResource("337_pn1or")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_13_08" unique_id=114782994]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_13_08" unique_id=1386611748]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("338_l5ysl")
 
-[node name="Chunk_14_08" type="StaticBody3D" parent="." unique_id=1166429186]
+[node name="Chunk_14_08" type="StaticBody3D" parent="." unique_id=1896793842]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1280, 0, 384)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_14_08" unique_id=705623480]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_14_08" unique_id=1955981556]
 cast_shadow = 0
 mesh = ExtResource("339_nlr2x")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_14_08" unique_id=587809849]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_14_08" unique_id=1129189522]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("340_p80ro")
 
-[node name="Chunk_15_08" type="StaticBody3D" parent="." unique_id=1907978014]
+[node name="Chunk_15_08" type="StaticBody3D" parent="." unique_id=1518592031]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1536, 0, 384)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_15_08" unique_id=480183334]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_15_08" unique_id=1712014883]
 cast_shadow = 0
 mesh = ExtResource("341_ifb7i")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_15_08" unique_id=1100773170]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_15_08" unique_id=1100391691]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("342_n8tqo")
 
-[node name="Chunk_16_08" type="StaticBody3D" parent="." unique_id=539642463]
+[node name="Chunk_16_08" type="StaticBody3D" parent="." unique_id=112098856]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1792, 0, 384)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_16_08" unique_id=1672564545]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_16_08" unique_id=447850351]
 cast_shadow = 0
 mesh = ExtResource("343_b0rrx")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_16_08" unique_id=1567074590]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_16_08" unique_id=928422312]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("344_66xiw")
 
-[node name="Chunk_17_08" type="StaticBody3D" parent="." unique_id=1172429507]
+[node name="Chunk_17_08" type="StaticBody3D" parent="." unique_id=1094712928]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2048, 0, 384)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_17_08" unique_id=503902681]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_17_08" unique_id=1372126136]
 cast_shadow = 0
 mesh = ExtResource("345_5mi6m")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_17_08" unique_id=288081114]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_17_08" unique_id=1852840389]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("346_ote1w")
 
-[node name="Chunk_18_08" type="StaticBody3D" parent="." unique_id=589533090]
+[node name="Chunk_18_08" type="StaticBody3D" parent="." unique_id=401205897]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2304, 0, 384)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_18_08" unique_id=1157418717]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_18_08" unique_id=1474656567]
 cast_shadow = 0
 mesh = ExtResource("347_vdjrk")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_18_08" unique_id=893376494]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_18_08" unique_id=812130407]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("348_5tihq")
 
-[node name="Roof" type="MeshInstance3D" parent="Chunk_18_08" unique_id=788195021]
+[node name="Roof" type="MeshInstance3D" parent="Chunk_18_08" unique_id=61128241]
 cast_shadow = 0
 mesh = ExtResource("349_k7a0c")
 
-[node name="RoofShape" type="CollisionShape3D" parent="Chunk_18_08" unique_id=76458845]
+[node name="RoofShape" type="CollisionShape3D" parent="Chunk_18_08" unique_id=994765174]
 shape = ExtResource("350_1iygn")
 
-[node name="Chunk_00_09" type="StaticBody3D" parent="." unique_id=379847095]
+[node name="Chunk_00_09" type="StaticBody3D" parent="." unique_id=196775477]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2304, 0, 640)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_00_09" unique_id=57551074]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_00_09" unique_id=351294492]
 cast_shadow = 0
 mesh = ExtResource("351_fvmxp")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_00_09" unique_id=1491986429]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_00_09" unique_id=1863560795]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("352_a51qx")
 
-[node name="Roof" type="MeshInstance3D" parent="Chunk_00_09" unique_id=949689725]
+[node name="Roof" type="MeshInstance3D" parent="Chunk_00_09" unique_id=517415326]
 cast_shadow = 0
 mesh = ExtResource("353_dqovf")
 
-[node name="RoofShape" type="CollisionShape3D" parent="Chunk_00_09" unique_id=788039953]
+[node name="RoofShape" type="CollisionShape3D" parent="Chunk_00_09" unique_id=328016129]
 shape = ExtResource("354_og2xv")
 
-[node name="Chunk_01_09" type="StaticBody3D" parent="." unique_id=1757023060]
+[node name="Chunk_01_09" type="StaticBody3D" parent="." unique_id=2078356630]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2048, 0, 640)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_01_09" unique_id=1569152014]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_01_09" unique_id=733357140]
 cast_shadow = 0
 mesh = ExtResource("355_dnn0o")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_01_09" unique_id=574040287]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_01_09" unique_id=1334053755]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("356_cfgkr")
 
-[node name="Chunk_02_09" type="StaticBody3D" parent="." unique_id=263234864]
+[node name="Chunk_02_09" type="StaticBody3D" parent="." unique_id=965676985]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1792, 0, 640)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_02_09" unique_id=1375744355]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_02_09" unique_id=888629879]
 cast_shadow = 0
 mesh = ExtResource("357_cs47v")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_02_09" unique_id=1322712994]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_02_09" unique_id=1966173561]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("358_yg4fr")
 
-[node name="Chunk_03_09" type="StaticBody3D" parent="." unique_id=703387239]
+[node name="Chunk_03_09" type="StaticBody3D" parent="." unique_id=1971648067]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1536, 0, 640)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_03_09" unique_id=1942120066]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_03_09" unique_id=1957534534]
 cast_shadow = 0
 mesh = ExtResource("359_v5b7o")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_03_09" unique_id=450901022]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_03_09" unique_id=760825514]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("360_8yckp")
 
-[node name="Chunk_04_09" type="StaticBody3D" parent="." unique_id=1281374414]
+[node name="Chunk_04_09" type="StaticBody3D" parent="." unique_id=168136336]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1280, 0, 640)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_04_09" unique_id=428509171]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_04_09" unique_id=1321348037]
 cast_shadow = 0
 mesh = ExtResource("361_e57nc")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_04_09" unique_id=21390890]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_04_09" unique_id=279302081]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("362_tiekn")
 
-[node name="Chunk_05_09" type="StaticBody3D" parent="." unique_id=1367909925]
+[node name="Chunk_05_09" type="StaticBody3D" parent="." unique_id=1838547103]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1024, 0, 640)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_05_09" unique_id=1566211909]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_05_09" unique_id=1628263818]
 cast_shadow = 0
 mesh = ExtResource("363_1ovrs")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_05_09" unique_id=378293143]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_05_09" unique_id=975242401]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("364_5jouv")
 
-[node name="Chunk_06_09" type="StaticBody3D" parent="." unique_id=1536009877]
+[node name="Chunk_06_09" type="StaticBody3D" parent="." unique_id=634459471]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -768, 0, 640)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_06_09" unique_id=2142756977]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_06_09" unique_id=23339493]
 cast_shadow = 0
 mesh = ExtResource("365_r1222")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_06_09" unique_id=20784904]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_06_09" unique_id=332235747]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("366_l4t56")
 
-[node name="Chunk_07_09" type="StaticBody3D" parent="." unique_id=2059860383]
+[node name="Chunk_07_09" type="StaticBody3D" parent="." unique_id=1729723518]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -512, 0, 640)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_07_09" unique_id=587304490]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_07_09" unique_id=1758817053]
 cast_shadow = 0
 mesh = ExtResource("367_tgko5")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_07_09" unique_id=1032848637]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_07_09" unique_id=399464456]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("368_as3iq")
 
-[node name="Chunk_08_09" type="StaticBody3D" parent="." unique_id=686317594]
+[node name="Chunk_08_09" type="StaticBody3D" parent="." unique_id=2133328245]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -256, 0, 640)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_08_09" unique_id=1213360952]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_08_09" unique_id=1347089615]
 cast_shadow = 0
 mesh = ExtResource("369_2foou")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_08_09" unique_id=242132686]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_08_09" unique_id=1129657168]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("370_g5biy")
 
-[node name="Chunk_09_09" type="StaticBody3D" parent="." unique_id=903489241]
+[node name="Chunk_09_09" type="StaticBody3D" parent="." unique_id=308376416]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 640)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_09_09" unique_id=224199445]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_09_09" unique_id=727570815]
 cast_shadow = 0
 mesh = ExtResource("371_3rn4f")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_09_09" unique_id=1566336842]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_09_09" unique_id=1973773931]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("372_h4geo")
 
-[node name="Chunk_10_09" type="StaticBody3D" parent="." unique_id=855856980]
+[node name="Chunk_10_09" type="StaticBody3D" parent="." unique_id=1539728695]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 256, 0, 640)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_10_09" unique_id=791268954]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_10_09" unique_id=497476096]
 cast_shadow = 0
 mesh = ExtResource("373_1ps0k")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_10_09" unique_id=1532193886]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_10_09" unique_id=1914995888]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("374_c06wu")
 
-[node name="Chunk_11_09" type="StaticBody3D" parent="." unique_id=1042249519]
+[node name="Chunk_11_09" type="StaticBody3D" parent="." unique_id=1455397645]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 512, 0, 640)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_11_09" unique_id=590540767]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_11_09" unique_id=327321086]
 cast_shadow = 0
 mesh = ExtResource("375_r8ydx")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_11_09" unique_id=1322357955]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_11_09" unique_id=1740006754]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("376_02syi")
 
-[node name="Chunk_12_09" type="StaticBody3D" parent="." unique_id=1916768663]
+[node name="Chunk_12_09" type="StaticBody3D" parent="." unique_id=1187006248]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 768, 0, 640)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_12_09" unique_id=70875491]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_12_09" unique_id=448093366]
 cast_shadow = 0
 mesh = ExtResource("377_17ewx")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_12_09" unique_id=1533916023]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_12_09" unique_id=764813920]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("378_ycd7y")
 
-[node name="Chunk_13_09" type="StaticBody3D" parent="." unique_id=2009293207]
+[node name="Chunk_13_09" type="StaticBody3D" parent="." unique_id=1470833558]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1024, 0, 640)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_13_09" unique_id=24561977]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_13_09" unique_id=938566575]
 cast_shadow = 0
 mesh = ExtResource("379_5l60q")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_13_09" unique_id=1897848500]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_13_09" unique_id=1155352412]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("380_vevp7")
 
-[node name="Chunk_14_09" type="StaticBody3D" parent="." unique_id=2044375561]
+[node name="Chunk_14_09" type="StaticBody3D" parent="." unique_id=1832113427]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1280, 0, 640)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_14_09" unique_id=533869843]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_14_09" unique_id=609796564]
 cast_shadow = 0
 mesh = ExtResource("381_sxcu3")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_14_09" unique_id=554476232]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_14_09" unique_id=1850184859]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("382_n1lso")
 
-[node name="Chunk_15_09" type="StaticBody3D" parent="." unique_id=1160033380]
+[node name="Chunk_15_09" type="StaticBody3D" parent="." unique_id=239263723]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1536, 0, 640)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_15_09" unique_id=1198270105]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_15_09" unique_id=1169826009]
 cast_shadow = 0
 mesh = ExtResource("383_iq0u4")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_15_09" unique_id=609773846]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_15_09" unique_id=150932465]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("384_81d0s")
 
-[node name="Chunk_16_09" type="StaticBody3D" parent="." unique_id=1507837211]
+[node name="Chunk_16_09" type="StaticBody3D" parent="." unique_id=178031810]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1792, 0, 640)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_16_09" unique_id=1205847929]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_16_09" unique_id=452456675]
 cast_shadow = 0
 mesh = ExtResource("385_u8fy7")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_16_09" unique_id=939161694]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_16_09" unique_id=1879260279]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("386_62b86")
 
-[node name="Chunk_17_09" type="StaticBody3D" parent="." unique_id=1096826666]
+[node name="Chunk_17_09" type="StaticBody3D" parent="." unique_id=1495978986]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2048, 0, 640)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_17_09" unique_id=1195358411]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_17_09" unique_id=1625345610]
 cast_shadow = 0
 mesh = ExtResource("387_8s12r")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_17_09" unique_id=1602101718]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_17_09" unique_id=1102385759]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("388_eqfj6")
 
-[node name="Chunk_18_09" type="StaticBody3D" parent="." unique_id=536911730]
+[node name="Chunk_18_09" type="StaticBody3D" parent="." unique_id=1706453756]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2304, 0, 640)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_18_09" unique_id=1132188811]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_18_09" unique_id=1196635714]
 cast_shadow = 0
 mesh = ExtResource("389_baliu")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_18_09" unique_id=2049554398]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_18_09" unique_id=1498825244]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("390_saiw6")
 
-[node name="Chunk_00_10" type="StaticBody3D" parent="." unique_id=459056350]
+[node name="Chunk_00_10" type="StaticBody3D" parent="." unique_id=1608820188]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2304, 0, 896)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_00_10" unique_id=1050351182]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_00_10" unique_id=505516762]
 cast_shadow = 0
 mesh = ExtResource("391_7pgxa")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_00_10" unique_id=995663789]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_00_10" unique_id=2138835665]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("392_t5fu2")
 
-[node name="Chunk_01_10" type="StaticBody3D" parent="." unique_id=232280376]
+[node name="Chunk_01_10" type="StaticBody3D" parent="." unique_id=1350111348]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2048, 0, 896)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_01_10" unique_id=1064766596]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_01_10" unique_id=1264482590]
 cast_shadow = 0
 mesh = ExtResource("393_nu10p")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_01_10" unique_id=386312371]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_01_10" unique_id=439711296]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("394_al6fk")
 
-[node name="Chunk_02_10" type="StaticBody3D" parent="." unique_id=731321447]
+[node name="Chunk_02_10" type="StaticBody3D" parent="." unique_id=1772707192]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1792, 0, 896)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_02_10" unique_id=1883581486]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_02_10" unique_id=2077820608]
 cast_shadow = 0
 mesh = ExtResource("395_xpucn")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_02_10" unique_id=1473647087]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_02_10" unique_id=1594162981]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("396_ey5n4")
 
-[node name="Chunk_03_10" type="StaticBody3D" parent="." unique_id=398892412]
+[node name="Chunk_03_10" type="StaticBody3D" parent="." unique_id=1166997000]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1536, 0, 896)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_03_10" unique_id=24869324]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_03_10" unique_id=816113116]
 cast_shadow = 0
 mesh = ExtResource("397_wbw4p")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_03_10" unique_id=493674526]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_03_10" unique_id=217640712]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("398_sboiw")
 
-[node name="Chunk_04_10" type="StaticBody3D" parent="." unique_id=262895947]
+[node name="Chunk_04_10" type="StaticBody3D" parent="." unique_id=926602627]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1280, 0, 896)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_04_10" unique_id=70769350]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_04_10" unique_id=2082369540]
 cast_shadow = 0
 mesh = ExtResource("399_qyyt8")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_04_10" unique_id=1040720028]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_04_10" unique_id=1952020449]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("400_xby05")
 
-[node name="Chunk_05_10" type="StaticBody3D" parent="." unique_id=1667651861]
+[node name="Chunk_05_10" type="StaticBody3D" parent="." unique_id=77852863]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1024, 0, 896)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_05_10" unique_id=982592252]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_05_10" unique_id=1943711803]
 cast_shadow = 0
 mesh = ExtResource("401_wyorb")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_05_10" unique_id=238161793]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_05_10" unique_id=781235850]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("402_of2f1")
 
-[node name="Roof" type="MeshInstance3D" parent="Chunk_05_10" unique_id=1681274577]
+[node name="Roof" type="MeshInstance3D" parent="Chunk_05_10" unique_id=1563723210]
 cast_shadow = 0
 mesh = ExtResource("403_un5qq")
 
-[node name="RoofShape" type="CollisionShape3D" parent="Chunk_05_10" unique_id=107709314]
+[node name="RoofShape" type="CollisionShape3D" parent="Chunk_05_10" unique_id=608134363]
 shape = ExtResource("404_1q2ds")
 
-[node name="Chunk_06_10" type="StaticBody3D" parent="." unique_id=1592867682]
+[node name="Chunk_06_10" type="StaticBody3D" parent="." unique_id=619472085]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -768, 0, 896)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_06_10" unique_id=1992376469]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_06_10" unique_id=695016513]
 cast_shadow = 0
 mesh = ExtResource("405_j73qh")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_06_10" unique_id=758974154]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_06_10" unique_id=257008059]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("406_vn0s4")
 
-[node name="Chunk_07_10" type="StaticBody3D" parent="." unique_id=1174695288]
+[node name="Chunk_07_10" type="StaticBody3D" parent="." unique_id=1175403137]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -512, 0, 896)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_07_10" unique_id=1582321317]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_07_10" unique_id=1485033]
 cast_shadow = 0
 mesh = ExtResource("407_i17sb")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_07_10" unique_id=144229101]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_07_10" unique_id=698301061]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("408_11ltk")
 
-[node name="Chunk_08_10" type="StaticBody3D" parent="." unique_id=1167214669]
+[node name="Chunk_08_10" type="StaticBody3D" parent="." unique_id=2030651897]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -256, 0, 896)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_08_10" unique_id=834781497]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_08_10" unique_id=913083548]
 cast_shadow = 0
 mesh = ExtResource("409_74a8n")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_08_10" unique_id=1014950835]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_08_10" unique_id=534175767]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("410_kq7eq")
 
-[node name="Roof" type="MeshInstance3D" parent="Chunk_08_10" unique_id=739846884]
+[node name="Roof" type="MeshInstance3D" parent="Chunk_08_10" unique_id=775317921]
 cast_shadow = 0
 mesh = ExtResource("411_qxled")
 
-[node name="RoofShape" type="CollisionShape3D" parent="Chunk_08_10" unique_id=1846291857]
+[node name="RoofShape" type="CollisionShape3D" parent="Chunk_08_10" unique_id=1065236721]
 shape = ExtResource("412_hsirj")
 
-[node name="Chunk_09_10" type="StaticBody3D" parent="." unique_id=834080298]
+[node name="Chunk_09_10" type="StaticBody3D" parent="." unique_id=940214676]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 896)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_09_10" unique_id=789218560]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_09_10" unique_id=1637502019]
 cast_shadow = 0
 mesh = ExtResource("413_k8fex")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_09_10" unique_id=1734335584]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_09_10" unique_id=1698082916]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("414_x2k1c")
 
-[node name="Chunk_10_10" type="StaticBody3D" parent="." unique_id=85075035]
+[node name="Chunk_10_10" type="StaticBody3D" parent="." unique_id=95653625]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 256, 0, 896)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_10_10" unique_id=182918957]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_10_10" unique_id=52331492]
 cast_shadow = 0
 mesh = ExtResource("415_nbmnv")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_10_10" unique_id=1481164568]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_10_10" unique_id=1564254172]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("416_785lp")
 
-[node name="Chunk_11_10" type="StaticBody3D" parent="." unique_id=2134450598]
+[node name="Chunk_11_10" type="StaticBody3D" parent="." unique_id=1456581885]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 512, 0, 896)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_11_10" unique_id=243007365]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_11_10" unique_id=610077249]
 cast_shadow = 0
 mesh = ExtResource("417_wwbf0")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_11_10" unique_id=1090538999]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_11_10" unique_id=1075080094]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("418_rfn4k")
 
-[node name="Chunk_12_10" type="StaticBody3D" parent="." unique_id=368951422]
+[node name="Chunk_12_10" type="StaticBody3D" parent="." unique_id=985747301]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 768, 0, 896)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_12_10" unique_id=205776986]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_12_10" unique_id=1101136287]
 cast_shadow = 0
 mesh = ExtResource("419_18x06")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_12_10" unique_id=1372845206]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_12_10" unique_id=267336430]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("420_we84n")
 
-[node name="Chunk_13_10" type="StaticBody3D" parent="." unique_id=498628009]
+[node name="Chunk_13_10" type="StaticBody3D" parent="." unique_id=830432296]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1024, 0, 896)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_13_10" unique_id=541612206]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_13_10" unique_id=2031904335]
 cast_shadow = 0
 mesh = ExtResource("421_v0874")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_13_10" unique_id=1490329678]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_13_10" unique_id=824402680]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("422_dlawp")
 
-[node name="Chunk_14_10" type="StaticBody3D" parent="." unique_id=1020188665]
+[node name="Chunk_14_10" type="StaticBody3D" parent="." unique_id=238281912]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1280, 0, 896)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_14_10" unique_id=974049981]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_14_10" unique_id=1545283742]
 cast_shadow = 0
 mesh = ExtResource("423_d0rlf")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_14_10" unique_id=388822119]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_14_10" unique_id=1264094402]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("424_gj5oj")
 
-[node name="Chunk_15_10" type="StaticBody3D" parent="." unique_id=628650825]
+[node name="Chunk_15_10" type="StaticBody3D" parent="." unique_id=1613143290]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1536, 0, 896)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_15_10" unique_id=1873284903]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_15_10" unique_id=1864616490]
 cast_shadow = 0
 mesh = ExtResource("425_fpw3e")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_15_10" unique_id=1793345503]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_15_10" unique_id=2124689299]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("426_fmn1d")
 
-[node name="Roof" type="MeshInstance3D" parent="Chunk_15_10" unique_id=1371592739]
+[node name="Roof" type="MeshInstance3D" parent="Chunk_15_10" unique_id=1356369656]
 cast_shadow = 0
 mesh = ExtResource("427_olmht")
 
-[node name="RoofShape" type="CollisionShape3D" parent="Chunk_15_10" unique_id=1546266589]
+[node name="RoofShape" type="CollisionShape3D" parent="Chunk_15_10" unique_id=2104196494]
 shape = ExtResource("428_nmqmx")
 
-[node name="Chunk_16_10" type="StaticBody3D" parent="." unique_id=1977870676]
+[node name="Chunk_16_10" type="StaticBody3D" parent="." unique_id=1751719611]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1792, 0, 896)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_16_10" unique_id=1701096919]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_16_10" unique_id=1357899385]
 cast_shadow = 0
 mesh = ExtResource("429_kunmg")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_16_10" unique_id=20431700]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_16_10" unique_id=320498450]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("430_il5au")
 
-[node name="Chunk_17_10" type="StaticBody3D" parent="." unique_id=1637491406]
+[node name="Chunk_17_10" type="StaticBody3D" parent="." unique_id=684081403]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2048, 0, 896)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_17_10" unique_id=1062246556]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_17_10" unique_id=484605449]
 cast_shadow = 0
 mesh = ExtResource("431_sgyp6")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_17_10" unique_id=314343907]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_17_10" unique_id=1322050593]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("432_nsuu0")
 
-[node name="Chunk_18_10" type="StaticBody3D" parent="." unique_id=478592058]
+[node name="Chunk_18_10" type="StaticBody3D" parent="." unique_id=1263627285]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2304, 0, 896)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_18_10" unique_id=1577011884]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_18_10" unique_id=876844424]
 cast_shadow = 0
 mesh = ExtResource("433_5xo24")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_18_10" unique_id=1473427120]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_18_10" unique_id=1052025759]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("434_xstkb")
 
-[node name="Chunk_00_11" type="StaticBody3D" parent="." unique_id=1021599165]
+[node name="Chunk_00_11" type="StaticBody3D" parent="." unique_id=635864078]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2304, 0, 1152)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_00_11" unique_id=2100755540]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_00_11" unique_id=1873690346]
 cast_shadow = 0
 mesh = ExtResource("435_3ykbd")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_00_11" unique_id=715744206]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_00_11" unique_id=414925102]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("436_hiama")
 
-[node name="Chunk_01_11" type="StaticBody3D" parent="." unique_id=837182429]
+[node name="Chunk_01_11" type="StaticBody3D" parent="." unique_id=97470991]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2048, 0, 1152)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_01_11" unique_id=79823807]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_01_11" unique_id=1734208346]
 cast_shadow = 0
 mesh = ExtResource("437_fob31")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_01_11" unique_id=1894224586]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_01_11" unique_id=754436278]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("438_37xrn")
 
-[node name="Chunk_02_11" type="StaticBody3D" parent="." unique_id=1015108188]
+[node name="Chunk_02_11" type="StaticBody3D" parent="." unique_id=987122551]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1792, 0, 1152)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_02_11" unique_id=63370939]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_02_11" unique_id=121636248]
 cast_shadow = 0
 mesh = ExtResource("439_q5f3x")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_02_11" unique_id=292737924]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_02_11" unique_id=2046192383]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("440_km6j5")
 
-[node name="Chunk_03_11" type="StaticBody3D" parent="." unique_id=881566967]
+[node name="Chunk_03_11" type="StaticBody3D" parent="." unique_id=2066940403]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1536, 0, 1152)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_03_11" unique_id=113661296]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_03_11" unique_id=629355220]
 cast_shadow = 0
 mesh = ExtResource("441_52n2d")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_03_11" unique_id=26553825]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_03_11" unique_id=2111429752]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("442_pgrn0")
 
-[node name="Chunk_04_11" type="StaticBody3D" parent="." unique_id=477877524]
+[node name="Chunk_04_11" type="StaticBody3D" parent="." unique_id=321863896]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1280, 0, 1152)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_04_11" unique_id=886601000]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_04_11" unique_id=1486143143]
 cast_shadow = 0
 mesh = ExtResource("443_0ebk8")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_04_11" unique_id=371429242]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_04_11" unique_id=1718437479]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("444_t5u2m")
 
-[node name="Chunk_05_11" type="StaticBody3D" parent="." unique_id=663310606]
+[node name="Chunk_05_11" type="StaticBody3D" parent="." unique_id=5809577]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1024, 0, 1152)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_05_11" unique_id=1029470476]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_05_11" unique_id=1332581569]
 cast_shadow = 0
 mesh = ExtResource("445_qdb2g")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_05_11" unique_id=357476196]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_05_11" unique_id=614744435]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("446_ere56")
 
-[node name="Roof" type="MeshInstance3D" parent="Chunk_05_11" unique_id=1553112516]
+[node name="Roof" type="MeshInstance3D" parent="Chunk_05_11" unique_id=963420319]
 cast_shadow = 0
 mesh = ExtResource("447_pvns5")
 
-[node name="RoofShape" type="CollisionShape3D" parent="Chunk_05_11" unique_id=119084230]
+[node name="RoofShape" type="CollisionShape3D" parent="Chunk_05_11" unique_id=283421029]
 shape = ExtResource("448_behof")
 
-[node name="Chunk_06_11" type="StaticBody3D" parent="." unique_id=351599554]
+[node name="Chunk_06_11" type="StaticBody3D" parent="." unique_id=55123673]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -768, 0, 1152)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_06_11" unique_id=853427815]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_06_11" unique_id=1353477312]
 cast_shadow = 0
 mesh = ExtResource("449_7tm5r")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_06_11" unique_id=48399212]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_06_11" unique_id=1871746311]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("450_8rq00")
 
-[node name="Chunk_07_11" type="StaticBody3D" parent="." unique_id=65508565]
+[node name="Chunk_07_11" type="StaticBody3D" parent="." unique_id=206324384]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -512, 0, 1152)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_07_11" unique_id=1705919304]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_07_11" unique_id=20664134]
 cast_shadow = 0
 mesh = ExtResource("451_vcs64")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_07_11" unique_id=1601828825]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_07_11" unique_id=1106728507]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("452_j410s")
 
-[node name="Chunk_08_11" type="StaticBody3D" parent="." unique_id=1089691688]
+[node name="Chunk_08_11" type="StaticBody3D" parent="." unique_id=1918361700]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -256, 0, 1152)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_08_11" unique_id=75054196]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_08_11" unique_id=2085910835]
 cast_shadow = 0
 mesh = ExtResource("453_l28e4")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_08_11" unique_id=422288885]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_08_11" unique_id=1225551959]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("454_d0soy")
 
-[node name="Roof" type="MeshInstance3D" parent="Chunk_08_11" unique_id=1924823731]
+[node name="Roof" type="MeshInstance3D" parent="Chunk_08_11" unique_id=356742924]
 cast_shadow = 0
 mesh = ExtResource("455_6mud0")
 
-[node name="RoofShape" type="CollisionShape3D" parent="Chunk_08_11" unique_id=157850095]
+[node name="RoofShape" type="CollisionShape3D" parent="Chunk_08_11" unique_id=1387946884]
 shape = ExtResource("456_hcftt")
 
-[node name="Chunk_09_11" type="StaticBody3D" parent="." unique_id=1856606823]
+[node name="Chunk_09_11" type="StaticBody3D" parent="." unique_id=2018162602]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1152)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_09_11" unique_id=194796388]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_09_11" unique_id=1638640789]
 cast_shadow = 0
 mesh = ExtResource("457_nswe5")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_09_11" unique_id=677007022]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_09_11" unique_id=1897854500]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("458_qpewj")
 
-[node name="Chunk_10_11" type="StaticBody3D" parent="." unique_id=1386589179]
+[node name="Chunk_10_11" type="StaticBody3D" parent="." unique_id=542802467]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 256, 0, 1152)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_10_11" unique_id=1701855821]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_10_11" unique_id=2139749402]
 cast_shadow = 0
 mesh = ExtResource("459_h4i2n")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_10_11" unique_id=1344032281]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_10_11" unique_id=1533958872]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("460_85mer")
 
-[node name="Chunk_11_11" type="StaticBody3D" parent="." unique_id=11268982]
+[node name="Chunk_11_11" type="StaticBody3D" parent="." unique_id=726099878]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 512, 0, 1152)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_11_11" unique_id=166150808]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_11_11" unique_id=895634568]
 cast_shadow = 0
 mesh = ExtResource("461_fpcq5")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_11_11" unique_id=473002258]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_11_11" unique_id=1410763973]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("462_g153r")
 
-[node name="Chunk_12_11" type="StaticBody3D" parent="." unique_id=794577370]
+[node name="Chunk_12_11" type="StaticBody3D" parent="." unique_id=1626242938]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 768, 0, 1152)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_12_11" unique_id=873772800]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_12_11" unique_id=2140142678]
 cast_shadow = 0
 mesh = ExtResource("463_yw2vt")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_12_11" unique_id=362212771]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_12_11" unique_id=2082199940]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("464_k6sqk")
 
-[node name="Chunk_13_11" type="StaticBody3D" parent="." unique_id=1592462902]
+[node name="Chunk_13_11" type="StaticBody3D" parent="." unique_id=1560901996]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1024, 0, 1152)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_13_11" unique_id=2142653958]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_13_11" unique_id=869276227]
 cast_shadow = 0
 mesh = ExtResource("465_ildsb")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_13_11" unique_id=1318975197]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_13_11" unique_id=768636948]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("466_bnc47")
 
-[node name="Chunk_14_11" type="StaticBody3D" parent="." unique_id=504864211]
+[node name="Chunk_14_11" type="StaticBody3D" parent="." unique_id=1930751238]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1280, 0, 1152)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_14_11" unique_id=404258847]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_14_11" unique_id=1813981438]
 cast_shadow = 0
 mesh = ExtResource("467_lbcua")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_14_11" unique_id=1141535141]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_14_11" unique_id=1523661568]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("468_0m7rj")
 
-[node name="Chunk_15_11" type="StaticBody3D" parent="." unique_id=1571481928]
+[node name="Chunk_15_11" type="StaticBody3D" parent="." unique_id=299521437]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1536, 0, 1152)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_15_11" unique_id=1095677270]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_15_11" unique_id=2068707611]
 cast_shadow = 0
 mesh = ExtResource("469_wwddl")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_15_11" unique_id=1469904714]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_15_11" unique_id=1307531575]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("470_48ma2")
 
-[node name="Roof" type="MeshInstance3D" parent="Chunk_15_11" unique_id=44500661]
+[node name="Roof" type="MeshInstance3D" parent="Chunk_15_11" unique_id=1476928234]
 cast_shadow = 0
 mesh = ExtResource("471_wtolk")
 
-[node name="RoofShape" type="CollisionShape3D" parent="Chunk_15_11" unique_id=1552937875]
+[node name="RoofShape" type="CollisionShape3D" parent="Chunk_15_11" unique_id=1246805063]
 shape = ExtResource("472_8xhum")
 
-[node name="Chunk_16_11" type="StaticBody3D" parent="." unique_id=692493422]
+[node name="Chunk_16_11" type="StaticBody3D" parent="." unique_id=1284729070]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1792, 0, 1152)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_16_11" unique_id=1635452439]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_16_11" unique_id=979187150]
 cast_shadow = 0
 mesh = ExtResource("473_4w4qq")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_16_11" unique_id=1784672279]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_16_11" unique_id=930180383]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("474_qtxsk")
 
-[node name="Chunk_17_11" type="StaticBody3D" parent="." unique_id=33079401]
+[node name="Chunk_17_11" type="StaticBody3D" parent="." unique_id=253032667]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2048, 0, 1152)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_17_11" unique_id=1599643682]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_17_11" unique_id=1282679141]
 cast_shadow = 0
 mesh = ExtResource("475_6slvg")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_17_11" unique_id=542583668]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_17_11" unique_id=256629769]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("476_cw27y")
 
-[node name="Chunk_18_11" type="StaticBody3D" parent="." unique_id=1564923543]
+[node name="Chunk_18_11" type="StaticBody3D" parent="." unique_id=207417951]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2304, 0, 1152)
 
-[node name="Mesh" type="MeshInstance3D" parent="Chunk_18_11" unique_id=1817240706]
+[node name="Mesh" type="MeshInstance3D" parent="Chunk_18_11" unique_id=911073937]
 cast_shadow = 0
 mesh = ExtResource("477_otji5")
 
-[node name="Shape" type="CollisionShape3D" parent="Chunk_18_11" unique_id=1453433924]
+[node name="Shape" type="CollisionShape3D" parent="Chunk_18_11" unique_id=963478372]
 transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
 shape = ExtResource("478_177x5")
 
-[node name="HarborWalls" type="Node3D" parent="." unique_id=1220479630]
+[node name="HarborWalls" type="Node3D" parent="." unique_id=940337799]
 
-[node name="MurOuest" type="StaticBody3D" parent="HarborWalls" unique_id=632650879]
+[node name="MurOuest" type="StaticBody3D" parent="HarborWalls" unique_id=517628987]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -500.6, -4.75, -572)
 
-[node name="Mesh" type="MeshInstance3D" parent="HarborWalls/MurOuest" unique_id=1351660951]
+[node name="Mesh" type="MeshInstance3D" parent="HarborWalls/MurOuest" unique_id=864857354]
 material_override = ExtResource("479_xcvbu")
 mesh = SubResource("BoxMesh_gu0am")
 
-[node name="Shape" type="CollisionShape3D" parent="HarborWalls/MurOuest" unique_id=852069885]
+[node name="Shape" type="CollisionShape3D" parent="HarborWalls/MurOuest" unique_id=17745344]
 shape = SubResource("BoxShape3D_55v76")
 
-[node name="MurEst" type="StaticBody3D" parent="HarborWalls" unique_id=1501745892]
+[node name="MurEst" type="StaticBody3D" parent="HarborWalls" unique_id=765131353]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.6, -4.75, -572)
 
-[node name="Mesh" type="MeshInstance3D" parent="HarborWalls/MurEst" unique_id=815603258]
+[node name="Mesh" type="MeshInstance3D" parent="HarborWalls/MurEst" unique_id=1988573327]
 material_override = ExtResource("479_xcvbu")
 mesh = SubResource("BoxMesh_n24ye")
 
-[node name="Shape" type="CollisionShape3D" parent="HarborWalls/MurEst" unique_id=1593985141]
+[node name="Shape" type="CollisionShape3D" parent="HarborWalls/MurEst" unique_id=1575010023]
 shape = SubResource("BoxShape3D_n0my6")
 
-[node name="MurNord" type="StaticBody3D" parent="HarborWalls" unique_id=1497222641]
+[node name="MurNord" type="StaticBody3D" parent="HarborWalls" unique_id=150295187]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -250, -4.75, -650.6)
 
-[node name="Mesh" type="MeshInstance3D" parent="HarborWalls/MurNord" unique_id=1983817083]
+[node name="Mesh" type="MeshInstance3D" parent="HarborWalls/MurNord" unique_id=1113617278]
 material_override = ExtResource("479_xcvbu")
 mesh = SubResource("BoxMesh_fhs4f")
 
-[node name="Shape" type="CollisionShape3D" parent="HarborWalls/MurNord" unique_id=1563389186]
+[node name="Shape" type="CollisionShape3D" parent="HarborWalls/MurNord" unique_id=1275552738]
 shape = SubResource("BoxShape3D_sorq7")

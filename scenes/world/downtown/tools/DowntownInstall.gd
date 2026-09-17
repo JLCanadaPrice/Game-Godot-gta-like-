@@ -6,7 +6,7 @@ extends SceneTree
 #    leur contenu (intérieur, comptoir, repères, place de livraison) et abaissées de SHOP_DROP m : leur sol (0,41 m,
 #    calé sur les anciens trottoirs) arrive au niveau des nouveaux trottoirs (0,20 m) ; puis les 4 districts et leurs
 #    carrefours de couture (tuiles de route, trottoirs, 1049 bâtiments du kit, sols) sont retirés ;
-#  - à chaque passage : scène des rues (generated/Streets.tscn) instanciée dans Downtown si absente, données du Circuit
+#  - à chaque passage : scènes générées (rues : Streets.tscn, bâtiments : Buildings.tscn) instanciées dans Downtown si absentes, données du Circuit
 #    (nœuds, arêtes et voies, distances d'arrêt aux passages piétons) et du PedGraph remplacées par celles du plan
 #    (DowntownTraffic : mêmes indices que les feux de Streets.tscn), points d'apparition des spawners.
 # Sauvegarde, puis renumérotation des unique_id en double éventuels.
@@ -16,6 +16,7 @@ extends SceneTree
 const Traffic := preload("res://scenes/world/downtown/DowntownTraffic.gd")
 const WORLD_PATH := "res://scenes/world/World.tscn"
 const STREETS := "res://scenes/world/downtown/generated/Streets.tscn"
+const BUILDINGS := "res://scenes/world/downtown/generated/Buildings.tscn"
 const OLD := ["District", "District_W", "District_N", "District_NW", "DistrictSeams"]
 const SHOPS := ["Dealership_Building", "Agency_Building"]
 const SHOP_DROP := 0.21
@@ -65,12 +66,13 @@ func _initialize() -> void:
 					root.remove_child(node)
 					node.free()
 			_report["noeuds_retires"] = removed
-	if not downtown.has_node("Streets"):
-		var streets := (load(STREETS) as PackedScene).instantiate()
-		streets.name = "Streets"
-		downtown.add_child(streets)
-		streets.owner = root
-		downtown.move_child(streets, 0)
+	for pair: Array in [["Streets", STREETS, 0], ["Buildings", BUILDINGS, 1]]:
+		if not downtown.has_node(String(pair[0])) and ResourceLoader.exists(pair[1]):
+			var generated := (load(pair[1]) as PackedScene).instantiate()
+			generated.name = pair[0]
+			downtown.add_child(generated)
+			generated.owner = root
+			downtown.move_child(generated, int(pair[2]))
 	var traffic := Traffic.new()
 	var circuit := root.get_node("Circuit") as CircuitPath
 	circuit.nodes = traffic.nodes

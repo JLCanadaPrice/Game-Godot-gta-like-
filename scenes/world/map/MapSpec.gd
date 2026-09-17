@@ -214,7 +214,7 @@ const ZONES := [
 
 # --- lieux (noms validés) ---------------------------------------------------------------------------------------
 const POIS := [
-	{"id": "casino", "name": "Scarlet Jack Cabaret & Casino", "kind": "casino", "pos": Vector2(-568, -352), "size": Vector2(56, 56), "yaw": 0.0, "access": "grid"},
+	{"id": "casino", "name": "Scarlet Jack Cabaret & Casino", "kind": "casino", "pos": Vector2(-570, -338.7), "size": Vector2(48.4, 23.3), "yaw": 0.0, "access": "grid"},
 	{"id": "hotel", "name": "Ashford Grand Hotel", "kind": "hotel", "pos": Vector2(-922, -424), "size": Vector2(44, 70), "yaw": -90.0, "access": "grid"},
 	{"id": "echo_circle", "name": "Echo Circle", "kind": "plaza", "pos": Vector2(110, -316), "size": Vector2(52, 52), "yaw": 0.0, "access": "r_echo"},
 	{"id": "greenfield", "name": "Greenfield Botanicals", "kind": "complex", "pos": Vector2(-480, -960), "size": Vector2(120, 90), "yaw": 0.0, "access": "n_green"},

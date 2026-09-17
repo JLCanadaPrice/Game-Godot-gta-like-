@@ -10,6 +10,7 @@
 [ext_resource type="PackedScene" path="res://scenes/world/downtown/generated/Streets.tscn" id="15_lplgh"]
 [ext_resource type="Script" path="res://scenes/world/CircuitPath.gd" id="16"]
 [ext_resource type="PackedScene" path="res://scenes/ui/InventoryPanel.tscn" id="16_ajmhc"]
+[ext_resource type="PackedScene" path="res://scenes/world/downtown/generated/Buildings.tscn" id="16_d6tky"]
 [ext_resource type="PackedScene" path="res://scenes/vehicles/Car.tscn" id="20"]
 [ext_resource type="PackedScene" path="res://scenes/ui/PhonePanel.tscn" id="20_7vsg4"]
 [ext_resource type="PackedScene" path="res://scenes/ui/CarDealershipPanel.tscn" id="20_hp5di"]
@@ -2318,7 +2319,9 @@ grow_vertical = 2
 
 [node name="Downtown" type="Node3D" parent="." unique_id=789856476]
 
-[node name="Streets" type="Node3D" parent="Downtown" unique_id=1017323788 instance=ExtResource("15_lplgh")]
+[node name="Streets" parent="Downtown" unique_id=1017323788 instance=ExtResource("15_lplgh")]
+
+[node name="Buildings" type="Node3D" parent="Downtown" unique_id=1040207261 instance=ExtResource("16_d6tky")]
 
 [node name="Quay" type="Node3D" parent="Downtown" unique_id=1945273478]
 
