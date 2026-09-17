@@ -522,6 +522,10 @@ func _pad(pad: Dictionary) -> void:
 	if kind == "junction" or kind == "terminal":
 		_pad_corners(pad)
 		_pad_markings(pad)
+	elif kind == "roundabout":
+		_pad_corners(pad)
+		_pad_markings(pad, true)
+		_roundabout_markings(pad)
 	var center: Vector3 = pad["center"]
 	var island: float = pad["island"]
 	if island > 0.0:
@@ -647,7 +651,7 @@ func _pad_corners(pad: Dictionary) -> void:
 
 # Marquage du plateau, posé sur la chaussée juste en dehors : ligne d'arrêt sur la moitié qui arrive, puis passage
 # piéton sur les bras à trottoir. La pente du bras est suivie pour que le marquage colle à la chaussée.
-func _pad_markings(pad: Dictionary) -> void:
+func _pad_markings(pad: Dictionary, give_way := false) -> void:
 	var station: Dictionary = net.stations[pad["id"]]
 	for end: Dictionary in station["ends"]:
 		if String(end.get("kind", "")) == "ramp":
@@ -658,13 +662,79 @@ func _pad_markings(pad: Dictionary) -> void:
 		var slope: float = end.get("slope", 0.0)
 		var d2: Vector2 = end["dir"]          # direction du bras vers le plateau, en 2D (repère du réseau)
 		var out := Vector3(-d2.x, 0.0, -d2.y).normalized()
-		var stop_atlas: Vector2 = ATLAS["stop"]
-		_mark(tip, right, out, slope, PAD_STOP_FROM, PAD_STOP_DEPTH, stop_atlas.x, stop_atlas.y)
+		if give_way:
+			# entrée d'anneau : cédez-le-passage (triangles puis pointillés) sur la moitié qui arrive
+			_mark_tiled(tip, right, out, slope, PAD_STOP_FROM, "yield")
+		else:
+			var stop_atlas: Vector2 = ATLAS["stop"]
+			_mark(tip, right, out, slope, PAD_STOP_FROM, PAD_STOP_DEPTH, stop_atlas.x, stop_atlas.y)
 		if not bool(end.get("sidewalk", false)):
 			continue
 		var walk_atlas: Vector2 = ATLAS["crosswalk"]
 		var ur := lerpf(walk_atlas.x, walk_atlas.y, clampf(left.distance_to(right) / float(ATLAS_METERS["crosswalk"]), 0.0, 1.0))
 		_mark(left, right, out, slope, PAD_WALK_FROM, PAD_WALK_DEPTH, walk_atlas.x, ur)
+
+
+# Marquage de l'anneau d'un rond-point (chantier des routes, étape 8) : ligne continue au bord intérieur de la voie,
+# ligne pointillée au bord extérieur (l'anneau n'a qu'une voie dans le graphe de circulation : pas de ligne de
+# séparation entre voies), et bordure plate au sommet de l'îlot central.
+func _roundabout_markings(pad: Dictionary) -> void:
+	var center: Vector3 = pad["center"]
+	var lane: float = Network.MINI_RING["ring"]
+	var half: float = float(Network.MINI_RING["width"]) * 0.5
+	_ring_band(pad, lane - half, 0.15, ATLAS["stop"])
+	_ring_band(pad, lane + half, 1.0, ATLAS["dashed"])
+	var island: float = pad["island"]
+	if island <= 0.0:
+		return
+	var top := center.y + ISLAND_RISE
+	var segments := 48
+	for k in segments:
+		var a0 := TAU * k / segments
+		var a1 := TAU * (k + 1) / segments
+		var p0 := Vector3(center.x + cos(a0) * island, top, center.z + sin(a0) * island)
+		var p1 := Vector3(center.x + cos(a1) * island, top, center.z + sin(a1) * island)
+		var q1 := Vector3(center.x + cos(a1) * (island - 0.45), top, center.z + sin(a1) * (island - 0.45))
+		var q0 := Vector3(center.x + cos(a0) * (island - 0.45), top, center.z + sin(a0) * (island - 0.45))
+		_quad("concrete", p0, p1, q1, q0, Vector3.UP)
+
+
+# Bande circulaire de marquage posée sur le plateau, suivant sa surface.
+func _ring_band(pad: Dictionary, radius: float, width: float, atlas: Vector2) -> void:
+	var center: Vector3 = pad["center"]
+	var segments := 96
+	var arc := 0.0
+	for k in segments:
+		var a0 := TAU * k / segments
+		var a1 := TAU * (k + 1) / segments
+		var p0 := _ring_point(pad, center, a0, radius - width * 0.5)
+		var p1 := _ring_point(pad, center, a1, radius - width * 0.5)
+		var p2 := _ring_point(pad, center, a1, radius + width * 0.5)
+		var p3 := _ring_point(pad, center, a0, radius + width * 0.5)
+		var v0 := arc / TEX_LENGTH
+		arc += p0.distance_to(p1)
+		var v1 := arc / TEX_LENGTH
+		_quad("asphalt", p0, p1, p2, p3, Vector3.UP,
+				[Vector2(atlas.x, v0), Vector2(atlas.x, v1), Vector2(atlas.y, v1), Vector2(atlas.y, v0)], Color.BLACK, false)
+
+
+func _ring_point(pad: Dictionary, center: Vector3, angle: float, radius: float) -> Vector3:
+	var q := Vector2(center.x + cos(angle) * radius, center.z + sin(angle) * radius)
+	return _pad_point(pad, q) + Vector3(0, PAD_MARK_RISE, 0)
+
+
+# Marquage répété à l'échelle 1:1 en travers (cédez-le-passage) : la bande est découpée en morceaux de la largeur de
+# la colonne, chacun recevant la colonne entière, pour que les triangles gardent leur taille réelle.
+func _mark_tiled(a: Vector3, b: Vector3, out: Vector3, slope: float, from: float, column: String) -> void:
+	var atlas: Vector2 = ATLAS[column]
+	var w: float = ATLAS_METERS[column]
+	var span := a.distance_to(b)
+	var pieces := maxi(1, ceili(span / w))
+	for k in pieces:
+		var t0 := float(k) * w / span
+		var t1 := minf(float(k + 1) * w / span, 1.0)
+		var u1 := lerpf(atlas.x, atlas.y, (t1 - t0) * span / w)
+		_mark(a.lerp(b, t0), a.lerp(b, t1), out, slope, from, w, atlas.x, u1)
 
 
 # Bande de marquage entre deux points du bord du plateau, de `from` à `from + depth` m vers la route.
