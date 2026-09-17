@@ -52,6 +52,7 @@ const JOIN_TRIM := 120.0
 const TUNNEL_DEPTH := 36.0
 const PORTAL_COVER := 8.0           # terrain au-dessus de la chaussée à l'entrée d'un tunnel
 const BLEND := 40.0                 # m pour passer de l'axe d'une chaussée à celui d'une bretelle
+const TAPER := 70.0                 # m de biseau au bout d'une bretelle accolée à sa chaussée (étape 6)
 const LEVEL_WITH_CARRIAGEWAY := 26.0  # m de bretelle accolée à niveau de sa chaussée (le trajet franchit le joint vers 23 m)
 const GRADE := {"highway": 0.045, "ramp": 0.08}
 const GRADE_LIMIT := {"carriageway": 0.052, "median": 0.052, "ramp": 0.092, "ring": 0.01, "arterial": 0.082, "sidewalk": 0.082, "rail": 0.034}
@@ -111,6 +112,8 @@ class Ribbon:
 	var lanes := PackedFloat32Array()
 	var graph := true
 	var closed := false
+	var taper := 0.0                        # m de biseau d'insertion / de sortie au bout accolé à la chaussée
+	var taper_at_end := false               # le biseau est au dernier échantillon plutôt qu'au premier
 	var splits := {}                        # index d'échantillon -> noeud de graphe obligatoire
 	var yield_end := false                  # la dernière arête cède le passage (insertion)
 
@@ -699,6 +702,11 @@ func _branch_ramp(id: String, chain: Dictionary, s: int, j_a: int, j_f: int, t_a
 	if not inbound:
 		rb.points.reverse()
 		rb.path.reverse()
+	# bretelle accolée à une chaussée : son bout côté chaussée s'ouvre en biseau (voie d'accélération ou de
+	# décélération) au lieu d'apparaître d'un coup sur toute sa largeur (chantier des routes, étape 6)
+	if t_a > CW_OFFSET:
+		rb.taper = TAPER
+		rb.taper_at_end = not inbound
 	ribbons.append(rb)
 	return rb
 

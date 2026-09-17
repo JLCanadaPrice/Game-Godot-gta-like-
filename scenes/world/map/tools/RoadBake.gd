@@ -138,6 +138,7 @@ func _initialize() -> void:
 	ResourceSaver.save(Image.create_from_data(model.width, model.depth, false, Image.FORMAT_RF, heights.to_byte_array()), GEN + "/terrain/heights_roads.res")
 	for rb in modes:
 		_ribbon(rb, modes[rb])
+		_ramp_markings(rb)
 	for pad: Dictionary in net.pads:
 		_pad(pad)
 	_grid_stop_lines()
@@ -376,15 +377,30 @@ func _ribbon(rb, mode: PackedByteArray) -> void:
 		arc.append(total)
 	var segs := n if closed else n - 1
 	var open := _open_edges(rb)
+	# demi-largeur dessinée : constante, sauf au biseau d'une bretelle accolée, où le bord côté chaussée (gauche) ne
+	# bouge pas et l'autre s'ouvre progressivement (chantier des routes, étape 6)
+	var hws := PackedFloat32Array()
+	for k in n:
+		var factor := 1.0
+		if float(rb.taper) > 0.0:
+			var d: float = (total - arc[k]) if bool(rb.taper_at_end) else arc[k]
+			factor = clampf(d / float(rb.taper), 0.06, 1.0)
+		hws.append(hw * factor)
+	var ring := _ring_of(rb)
 	# surface
 	for k in segs:
 		var k2 := (k + 1) % n
 		var v1 := arc[k] / TEX_LENGTH
 		var v2 := (arc[k2] if k2 > k else total + Vector2(pts[k2].x - pts[k].x, pts[k2].z - pts[k].z).length()) / TEX_LENGTH
 		var l1 := pts[k] - sides[k] * hw
-		var r1 := pts[k] + sides[k] * hw
+		var r1 := pts[k] + sides[k] * (2.0 * hws[k] - hw)
 		var l2 := pts[k2] - sides[k2] * hw
-		var r2 := pts[k2] + sides[k2] * hw
+		var r2 := pts[k2] + sides[k2] * (2.0 * hws[k2] - hw)
+		# bretelle qui traverse l'anneau d'un échangeur : l'anneau dessine déjà cette surface (étape 6). Le segment
+		# n'est retiré que s'il est entièrement dans la bande de l'anneau, sinon il resterait un trou de chaussée au
+		# bord de la bande.
+		if not ring.is_empty() and _inside_ring(ring, pts[k]) and _inside_ring(ring, pts[k2]):
+			continue
 		# derniers mètres à l'entrée du centre-ville : enrobé nu, pas de ligne d'axe qui rentre dans le carrefour
 		var seg_atlas := ATLAS["junction"] if kind == "arterial" and _at_grid_mouth((pts[k] + pts[k2]) * 0.5) else atlas
 		_quad("asphalt", l1, l2, r2, r1, Vector3.UP, [Vector2(seg_atlas.x, v1), Vector2(seg_atlas.x, v2), Vector2(seg_atlas.y, v2), Vector2(seg_atlas.y, v1)])
@@ -405,7 +421,7 @@ func _ribbon(rb, mode: PackedByteArray) -> void:
 		for k in n:
 			var p := pts[k]
 			var out := sides[k] * side_sign
-			var edge := p + out * hw
+			var edge := (p - sides[k] * hw) if side_sign < 0.0 else (p + sides[k] * (2.0 * hws[k] - hw))
 			var d := LIP
 			var r := 0.0
 			var guard := 0
@@ -442,8 +458,8 @@ func _ribbon(rb, mode: PackedByteArray) -> void:
 			var k2 := (k + 1) % n
 			var o1 := sides[k] * side_sign
 			var o2 := sides[k2] * side_sign
-			var e1 := pts[k] + o1 * hw
-			var e2 := pts[k2] + o2 * hw
+			var e1 := (pts[k] - sides[k] * hw) if side_sign < 0.0 else (pts[k] + sides[k] * (2.0 * hws[k] - hw))
+			var e2 := (pts[k2] - sides[k2] * hw) if side_sign < 0.0 else (pts[k2] + sides[k2] * (2.0 * hws[k2] - hw))
 			var seg_len := Vector2(e2.x - e1.x, e2.z - e1.z).length()
 			if kind == "rail" and mode[k] == 0 and mode[k2] == 0 and depth[k] <= LIP + 0.01 and depth[k2] <= LIP + 0.01:
 				# plateforme posée : talus de ballast au lieu du rebord en béton
@@ -474,9 +490,9 @@ func _ribbon(rb, mode: PackedByteArray) -> void:
 	for k in segs:
 		var k2 := (k + 1) % n
 		var l1 := pts[k] - sides[k] * hw - Vector3(0, Network.DECK, 0)
-		var r1 := pts[k] + sides[k] * hw - Vector3(0, Network.DECK, 0)
+		var r1 := pts[k] + sides[k] * (2.0 * hws[k] - hw) - Vector3(0, Network.DECK, 0)
 		var l2 := pts[k2] - sides[k2] * hw - Vector3(0, Network.DECK, 0)
-		var r2 := pts[k2] + sides[k2] * hw - Vector3(0, Network.DECK, 0)
+		var r2 := pts[k2] + sides[k2] * (2.0 * hws[k2] - hw) - Vector3(0, Network.DECK, 0)
 		if mode[k] == 1 and mode[k2] == 1:
 			_quad("concrete", l1, l2, r2, r1, Vector3.DOWN)
 			stats["tablier_m"] += Vector2(pts[k2].x - pts[k].x, pts[k2].z - pts[k].z).length()
@@ -495,6 +511,61 @@ func _ribbon(rb, mode: PackedByteArray) -> void:
 			if pts[k].y - Network.DECK - ground > PIER_MIN_HEIGHT and not _road_under(pts[k], rb):
 				_pier(pts[k], sides[k], 1.2 if kind == "ramp" else 1.8, ground - 0.5, pts[k].y - Network.DECK)
 				since_pier = 0.0
+
+
+# Anneau d'échangeur traversé par une bretelle (chantier des routes, étape 6) : centre et rayons de la bande de
+# l'anneau dont l'id de la bretelle porte le nom du noeud ("x_no:sortie" -> noeud "x_no").
+func _ring_of(rb) -> Dictionary:
+	if String(rb.kind) != "ramp":
+		return {}
+	var node: String = String(rb.id).get_slice(":", 0)
+	if not Spec.NODES.has(node) or Network.shape(node) != "ring":
+		return {}
+	var c := Spec.node_pos(node)
+	return {"center": c, "r0": Network.RING_RADIUS - Network.RING_WIDTH * 0.5 + 1.0, "r1": Network.RING_RADIUS + Network.RING_WIDTH * 0.5 - 1.0}
+
+
+func _inside_ring(ring: Dictionary, p: Vector3) -> bool:
+	var d := (ring["center"] as Vector2).distance_to(Vector2(p.x, p.z))
+	return d >= float(ring["r0"]) and d <= float(ring["r1"])
+
+
+# Marquage des bretelles accolées (chantier des routes, étape 6) : ligne pointillée entre la chaussée et la bretelle
+# sur la zone accolée, et chevrons de museau sur les premiers mètres du biseau.
+func _ramp_markings(rb) -> void:
+	if float(rb.taper) <= 0.0:
+		return
+	var pts: PackedVector3Array = rb.points
+	var n := pts.size()
+	var hw: float = rb.width * 0.5
+	var at_end: bool = rb.taper_at_end
+	var rise := Vector3(0, PAD_MARK_RISE, 0)
+	var dashed: Vector2 = ATLAS["dashed"]
+	var chevron: Vector2 = ATLAS["chevron"]
+	var walked := 0.0
+	for k in n - 1:
+		var a: Vector3 = pts[k if not at_end else n - 1 - k]
+		var b: Vector3 = pts[(k + 1) if not at_end else n - 2 - k]
+		var dir := Vector3(b.x - a.x, 0.0, b.z - a.z)
+		var step := dir.length()
+		if step < 0.01:
+			continue
+		var side := Vector3(-dir.z, 0.0, dir.x).normalized() * (1.0 if not at_end else -1.0)
+		var d0 := walked
+		walked += step
+		if walked > float(rb.taper) + Network.BLEND:
+			break
+		# ligne pointillée sur le bord accolé, chevrons dans le coin du biseau
+		var la := a - side * hw + rise
+		var lb := b - side * hw + rise
+		_quad("asphalt", la, lb, lb + side * 0.5, la + side * 0.5, Vector3.UP,
+				[Vector2(dashed.x, d0 / TEX_LENGTH), Vector2(dashed.x, walked / TEX_LENGTH), Vector2(dashed.y, walked / TEX_LENGTH), Vector2(dashed.y, d0 / TEX_LENGTH)], Color.BLACK, false)
+		if walked <= float(rb.taper) * 0.45:
+			var w0 := hw * 2.0 * clampf(d0 / float(rb.taper), 0.06, 1.0) - 0.6
+			var w1 := hw * 2.0 * clampf(walked / float(rb.taper), 0.06, 1.0) - 0.6
+			if w0 > 0.4 and w1 > 0.4:
+				_quad("asphalt", la + side * 0.6, lb + side * 0.6, lb + side * w1, la + side * w0, Vector3.UP,
+						[Vector2(chevron.x, d0 / TEX_LENGTH), Vector2(chevron.x, walked / TEX_LENGTH), Vector2(chevron.y, walked / TEX_LENGTH), Vector2(chevron.y, d0 / TEX_LENGTH)], Color.BLACK, false)
 
 
 # Raccords au centre-ville (chantier des routes, étape 4) : la grille du centre-ville dessine sa propre chaussée
