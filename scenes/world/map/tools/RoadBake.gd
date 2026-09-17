@@ -414,6 +414,14 @@ func _ribbon(rb, mode: PackedByteArray) -> void:
 			elif mode[k] == 1:
 				d = Network.DECK
 				guard = 1
+				# abords d'ouvrage : le tablier passe à moins de 2,5 m du sol, trop bas pour une pile. Sans rien
+				# dessous, la dalle avait l'air posée en l'air au-dessus de l'herbe (chantier des routes, étape 5) :
+				# son flanc descend donc jusqu'au terrain, comme un mur de soutènement.
+				var near_ground := INF
+				for reach: float in [0.6, 1.5, 2.5]:
+					near_ground = minf(near_ground, _sample(heights, Vector2(edge.x + out.x * reach, edge.z + out.z * reach)))
+				if p.y - near_ground < Network.DECK + 2.5:
+					d = maxf(Network.DECK, p.y - near_ground + 0.3)
 			elif mode[k] == 0:
 				# terrain juste au-delà du bord : plusieurs relevés, pour un mur continu malgré la grille de 4 m
 				var lowest := INF
@@ -665,15 +673,26 @@ func _pad_point(pad: Dictionary, q: Vector2) -> Vector3:
 	return Vector3(q.x, sum / weight, q.y)
 
 
-# Rebord vertical sous le pourtour.
+# Rebord vertical sous le pourtour. Il descend jusqu'au terrain quand celui-ci est plus bas que le rebord : sur un
+# remblai (extrémités de losange, culs-de-sac en pente), le plateau avait l'air d'une dalle posée en l'air au-dessus
+# de l'herbe, avec l'épaisseur du maillage visible (chantier des routes, étape 5).
 func _pad_rim(pad: Dictionary) -> void:
 	var rim: PackedVector3Array = pad["rim"]
 	var center: Vector3 = pad["center"]
-	for k in rim.size():
+	var n := rim.size()
+	var depth := PackedFloat32Array()
+	for k in n:
 		var a: Vector3 = rim[k]
-		var b: Vector3 = rim[(k + 1) % rim.size()]
+		var out := Vector3(a.x - center.x, 0.0, a.z - center.z).normalized()
+		var ground := INF
+		for reach: float in [0.5, 1.5, 3.0]:
+			ground = minf(ground, _sample(heights, Vector2(a.x + out.x * reach, a.z + out.z * reach)))
+		depth.append(clampf(a.y - ground + 0.3, LIP, 12.0))
+	for k in n:
+		var a: Vector3 = rim[k]
+		var b: Vector3 = rim[(k + 1) % n]
 		var out := Vector3((a + b).x * 0.5 - center.x, 0.0, (a + b).z * 0.5 - center.z).normalized()
-		_quad("concrete", a, b, b - Vector3(0, LIP, 0), a - Vector3(0, LIP, 0), out)
+		_quad("concrete", a, b, b - Vector3(0, depth[(k + 1) % n], 0), a - Vector3(0, depth[k], 0), out)
 
 
 # Angles de trottoir arrondis : entre deux bras qui ont des trottoirs, une bande large comme eux suit le pourtour du
