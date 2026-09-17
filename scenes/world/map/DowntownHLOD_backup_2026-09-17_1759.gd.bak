@@ -1,8 +1,7 @@
 extends Node3D
 
 # Étape 7 : silhouettes lointaines du centre-ville (HLOD), sans toucher à ses scènes. Au lancement, les bâtiments du
-# centre-ville (World/Downtown/Buildings et les boutiques de World/Downtown/Shops ; à défaut ceux des anciens districts,
-# World/District*/Buildings) sont regroupés
+# centre-ville (World/Downtown/Buildings ; à défaut ceux des anciens districts, World/District*/Buildings) sont regroupés
 # par blocs de `chunk_size` m ; chaque bloc reçoit une silhouette fusionnée (une boîte par bâtiment, de sa couleur
 # "hlod_color" relevée à la génération, sinon brique ou béton, toit plus sombre) visible au-delà de `hlod_distance` m
 # du centre du bloc. Les maillages des
@@ -31,10 +30,9 @@ func _ready() -> void:
 
 func _holders(world: Node) -> Array[Node]:
 	var out: Array[Node] = []
-	# bâtiments générés et boutiques visitables (leurs nombreux matériaux coûtaient ~40 appels de dessin à toute distance)
-	for path in ["Downtown/Buildings", "Downtown/Shops"]:
-		if world.get_node_or_null(path) != null:
-			out.append(world.get_node(path))
+	var downtown := world.get_node_or_null("Downtown/Buildings")
+	if downtown != null:
+		out.append(downtown)
 	for district in world.get_children():
 		if String(district.name).begins_with("District") and district.get_node_or_null("Buildings") != null:
 			out.append(district.get_node("Buildings"))

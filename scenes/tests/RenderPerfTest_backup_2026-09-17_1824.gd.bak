@@ -1,8 +1,8 @@
 extends Node
 
-# Banc de RENDU fenêtré (pas headless : le GPU compte) dans le vrai monde (carte 3D et centre-ville), joueur et caméra
-# réels. Situation signalée par le joueur : caméra au coin du centre-ville tournée vers son cœur, donc toute la ville
-# dans le champ (far 4000 m, FOV horizontal ~107° en 16:9).
+# Banc de RENDU fenêtré (pas headless : le GPU compte) dans la vraie carte à 4 districts, joueur et caméra réels.
+# Situation signalée par le joueur : caméra au coin de la carte tournée vers le croisement des 4 districts, donc
+# toute la ville dans le champ (far 4000 m, FOV horizontal ~107° en 16:9).
 # Par phase : FPS réel (vsync coupée, pas de plafond), 1 % low, temps CPU du rendu (setup + culling + listes, mesuré
 # par le RenderingServer), temps GPU, appels de dessin / objets (surfaces) / primitives de la passe visible et des
 # passes d'ombre, temps process / physique, compilations de pipelines pendant la mesure.
@@ -13,8 +13,7 @@ extends Node
 #                        40 m de haut, puis trafic plein (252 voitures / 315 PNJ) au coin SE.
 #  --breakdown         : ville statique, coin SE ; référence puis chaque famille masquée tour à tour et ombres du
 #                        soleil coupées -> part réelle de chaque famille dans le coût de rendu.
-#  --verify-occlusion  : vues fixes (coins au sol et en hauteur ; dans le centre-ville : rues, toits, devant les façades
-#                        et les vitrines des boutiques) et trajets en mouvement dans le centre-ville rendus sans
+#  --verify-occlusion  : vues fixes (sol, hauteur, rues, toits, devant les vitrines) et trajets en mouvement rendus sans
 #                        puis avec occlusion culling, comparés pixel à pixel, y compris les frames qui suivent une
 #                        coupe de caméra -> l'occlusion ne doit rien faire disparaître de visible au-delà de liserés
 #                        lointains de quelques pixels, propres au tampon de Godot (SLIVER_MAX_PX, cf. _verify_occlusion).
@@ -41,7 +40,6 @@ const VIEWS := {
 	"coin_NW": Vector3(-899.5, 2.0, 123.5),
 }
 const HIGH_VIEW := Vector3(-20.5, 40.0, -467.5)
-const DOWNTOWN := Rect2(-900.0, -470.0, 880.0, 595.0)   # emprise du centre-ville (DowntownSpec), vues de vérification
 const CATS := ["trottoirs", "routes", "batiments", "decals", "spots", "lampadaires", "feux", "autres"]
 const BREAKDOWN := [
 	["référence", ""], ["sans trottoirs", "trottoirs"], ["sans routes", "routes"], ["sans bâtiments", "batiments"],
@@ -501,11 +499,8 @@ func _verify_paths() -> Array:
 	var circuit: CircuitPath = _world.get_node("Circuit")
 	var long_edges := []
 	for e in circuit.edges.size():
-		var a: Vector3 = circuit.nodes[circuit.edges[e]["a"]]
-		var b: Vector3 = circuit.nodes[circuit.edges[e]["b"]]
-		if circuit.edges[e]["length"] >= 20.0 and DOWNTOWN.has_point(Vector2(a.x, a.z)) and DOWNTOWN.has_point(Vector2(b.x, b.z)):
+		if circuit.edges[e]["length"] >= 20.0:
 			long_edges.append(e)
-	_free_cam.make_current()
 	var paths := []
 	for p in 8:
 		var e: int = long_edges[rng.randi() % long_edges.size()]
@@ -539,11 +534,7 @@ func _verify_views() -> Array:
 	for corner: String in VIEWS:
 		views.append([corner + "_sol", VIEWS[corner] + Vector3(0.0, 0.6, 0.0), CITY_CENTER])
 		views.append([corner + "_40m", VIEWS[corner] + Vector3(0.0, 38.0, 0.0), CITY_CENTER])
-	# rues et toits : nœuds du Circuit dans le centre-ville (seul quartier à boîtes d'occultation)
-	var circuit: Array = []
-	for n: Vector3 in _world.get_node("Circuit").nodes:
-		if DOWNTOWN.has_point(Vector2(n.x, n.z)):
-			circuit.append(n)
+	var circuit: Array = _world.get_node("Circuit").nodes
 	for i in 14:
 		var p: Vector3 = circuit[rng.randi() % circuit.size()] + Vector3(rng.randf_range(-6.0, 6.0), 1.7, rng.randf_range(-6.0, 6.0))
 		var yaw := rng.randf() * TAU
@@ -552,18 +543,13 @@ func _verify_views() -> Array:
 		var p: Vector3 = circuit[rng.randi() % circuit.size()] + Vector3(rng.randf_range(-30.0, 30.0), rng.randf_range(31.0, 38.0), rng.randf_range(-30.0, 30.0))
 		var yaw := rng.randf() * TAU
 		views.append(["toits", p, p + Vector3(sin(yaw), rng.randf_range(-0.6, -0.1), cos(yaw)) * 60.0])
-	# Devant la façade d'un bâtiment du centre-ville (côté +Z local, celui de la rue ; rez-de-chaussée à 5 m), en face
-	# puis en biais ; et devant les vitrines des boutiques visitables.
-	var buildings := _world.get_node("Downtown/Buildings").get_children()
-	for i in 8:
-		var mi := buildings[rng.randi() % buildings.size()].get_node("Mesh") as MeshInstance3D
-		var box := mi.mesh.get_aabb()
-		var c := box.get_center()
+	# Devant la façade avant d'un modèle du kit (vitrine du rez-de-chaussée, côté +Z local), en face puis en biais.
+	var kits := _world.find_children("KitModel", "", true, false)
+	for i in 10:
+		var mi := kits[rng.randi() % kits.size()].get_node("Mesh") as MeshInstance3D
+		var c := mi.mesh.get_aabb().get_center()
 		var side := rng.randf_range(-6.0, 6.0)
-		views.append(["facade", mi.global_transform * Vector3(c.x + side, 1.7, box.end.z + 5.0), mi.global_transform * Vector3(c.x - side, 1.5, box.end.z - 8.0)])
-	for shop: Node3D in _world.get_node("Downtown/Shops").get_children():
-		var front := shop.global_transform * Vector3(0.0, 1.7, 14.0)
-		views.append(["vitrine", front, shop.global_position + Vector3(0.0, 1.5, 0.0)])
+		views.append(["vitrine", mi.global_transform * Vector3(c.x + side, 1.7, 5.0), mi.global_transform * Vector3(c.x - side, 1.5, -8.0)])
 	return views
 
 

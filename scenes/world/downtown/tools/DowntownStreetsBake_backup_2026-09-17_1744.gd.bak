@@ -40,10 +40,7 @@ const STOP_WIDTH := 0.4
 const MEDIAN_NOSE := 1.0             # enrobé nu entre la ligne d'arrêt et le nez du terre-plein
 const PAVING_TILE := 3.0
 const LAWN_TILE := 8.0
-const FAR_GROUND := 700.0            # m du centre d'un quadrant : au-delà, sol lointain (un quad texturé) au lieu des blocs
-const FAR_GROUND_Y := -0.06          # sous toutes les surfaces du centre-ville et des lieux (sol lointain seul affiché)
-const FAR_CELL := 2.0                # m par case du sol lointain
-const FAR_COLORS := {"road": Color(0.47, 0.47, 0.48), "median": Color(0.37, 0.47, 0.26), "paving": Color(0.66, 0.66, 0.64), "lawn": Color(0.37, 0.47, 0.25)}
+const FAR_RANGE := 1400.0
 const CIRCUIT_FROM_LIGHT := "../../../../Circuit"   # World/Downtown/Streets/TrafficLights/<feu>
 const LANE_COLUMNS := ["avenue", "street", "one_way"]
 const TINT := {"sidewalk": Color(1, 1, 1), "interior": Color(0.93, 0.92, 0.9), "margin": Color(0.8, 0.78, 0.74), "curb": Color(0.86, 0.86, 0.85)}
@@ -55,7 +52,6 @@ var tex_length := 12.0
 var _batches := {}                   # "asphalt|i|j" / "paving|i|j" -> Batch
 var _boxes := {}                     # Vector2i -> [[Rect2, bas, haut]]
 var _tops: Array[Rect2] = []         # surfaces du dessus (contrôle de couverture)
-var _far: Array = []                 # [Rect2, couleur] : image du sol lointain
 var _gaps: Array[Rect2] = []         # trottoir extérieur interrompu à l'arrivée d'une route de la carte
 var _stats := {"pieces_enrobe": 0, "pieces_dallage": 0, "boites": 0}
 
@@ -453,15 +449,6 @@ func _batch(material: String, center: Vector2) -> Batch:
 func _flat(material: String, r: Rect2, y: float, uv: Array, color: Color) -> void:
 	var c := [Vector3(r.position.x, y, r.position.y), Vector3(r.end.x, y, r.position.y), Vector3(r.end.x, y, r.end.y), Vector3(r.position.x, y, r.end.y)]
 	_quad(_batch(material, r.get_center()), c, uv, Vector3.UP, color)
-	var far: Color
-	match material:
-		"asphalt":
-			far = FAR_COLORS["median"] if y > ROAD_Y + 0.01 else FAR_COLORS["road"]
-		"lawn":
-			far = FAR_COLORS["lawn"]
-		_:
-			far = FAR_COLORS["paving"] * color
-	_far.append([r, far])
 
 
 # Bordures verticales d'une surface surélevée (cachées sous les surfaces voisines de même hauteur).
@@ -612,7 +599,6 @@ func _write_scene() -> Dictionary:
 	var root := Node3D.new()
 	root.name = "Streets"
 	var surfaces := _child(root, "Surfaces", root)
-	var far_nodes := _far_ground(surfaces, root)
 	var triangles := 0
 	var keys := _batches.keys()
 	keys.sort()
@@ -634,13 +620,9 @@ func _write_scene() -> Dictionary:
 		mi.name = "%s_%s_%s" % [{"asphalt": "Enrobe", "paving": "Dallage", "lawn": "Pelouse"}[parts[0]], parts[1], parts[2]]
 		mi.mesh = load(mesh_path)
 		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		mi.visibility_range_end = FAR_RANGE
 		surfaces.add_child(mi)
 		mi.owner = root
-		# bloc affiché tant que le sol lointain de son quadrant ne l'est pas (même mécanisme que DowntownHLOD)
-		var center := mesh.get_aabb().get_center()
-		var down := MapSpec.DOWNTOWN
-		var quadrant := (1 if center.x > down.get_center().x else 0) + (2 if center.z > down.get_center().y else 0)
-		mi.visibility_parent = mi.get_path_to(far_nodes[quadrant])
 		triangles += batch.v.size() / 3
 	var collision := _child(root, "Collision", root)
 	var shapes := {}
@@ -689,70 +671,6 @@ func _write_scene() -> Dictionary:
 		err = ResourceSaver.save(packed, OUT.path_join("Streets.tscn"))
 	root.free()
 	return {"scene": error_string(err), "blocs_maillage": _batches.size(), "triangles": triangles, "formes_partagees": shapes.size(), "feux": traffic.lights.size()}
-
-
-# Sol lointain : vue de dessus du sol en cases de FAR_CELL m (couleur moyenne de la surface au centre de la case),
-# cases voisines de même couleur fusionnées en bandes par rangée ; couleurs de sommet, sans texture ; quatre maillages
-# (quadrants du rectangle du centre-ville) visibles au-delà de FAR_GROUND m.
-func _far_ground(parent: Node, root: Node) -> Array[MeshInstance3D]:
-	var down := MapSpec.DOWNTOWN
-	var img := Image.create(int(ceil(down.size.x / FAR_CELL)), int(ceil(down.size.y / FAR_CELL)), false, Image.FORMAT_RGB8)
-	img.fill(FAR_COLORS["lawn"])
-	for entry: Array in _far:
-		var r: Rect2 = entry[0]
-		var a := (r.position - down.position) / FAR_CELL
-		var b := (r.end - down.position) / FAR_CELL
-		# cases dont le centre est dans la surface (au moins une case pour une surface étroite)
-		var pixels := Rect2i(Vector2i(roundi(a.x), roundi(a.y)), Vector2i(maxi(1, roundi(b.x) - roundi(a.x)), maxi(1, roundi(b.y) - roundi(a.y))))
-		pixels = pixels.intersection(Rect2i(Vector2i.ZERO, img.get_size()))
-		if pixels.size.x > 0 and pixels.size.y > 0:
-			img.fill_rect(pixels, entry[1])
-	var material := StandardMaterial3D.new()
-	material.resource_name = "CentreVilleSolLointain"
-	material.vertex_color_use_as_albedo = true
-	material.vertex_color_is_srgb = true
-	material.roughness = 1.0
-	ResourceSaver.save(material, MESHES.path_join("ground_far_material.tres"))
-	material = load(MESHES.path_join("ground_far_material.tres"))
-	var out: Array[MeshInstance3D] = []
-	var cols := img.get_width()
-	var rows := img.get_height()
-	for q in 4:
-		var batch := Batch.new()
-		for j in range(rows / 2 * (q / 2), rows if q / 2 == 1 else rows / 2):
-			var i := cols / 2 * (q % 2)
-			var i_end := cols if q % 2 == 1 else cols / 2
-			while i < i_end:
-				var color := img.get_pixel(i, j)
-				var run := i + 1
-				while run < i_end and img.get_pixel(run, j).is_equal_approx(color):
-					run += 1
-				var x0 := down.position.x + i * FAR_CELL
-				var x1 := minf(down.end.x, down.position.x + run * FAR_CELL)
-				var z0 := down.position.y + j * FAR_CELL
-				var z1 := minf(down.end.y, down.position.y + (j + 1) * FAR_CELL)
-				_quad(batch, [Vector3(x0, FAR_GROUND_Y, z0), Vector3(x1, FAR_GROUND_Y, z0), Vector3(x1, FAR_GROUND_Y, z1), Vector3(x0, FAR_GROUND_Y, z1)],
-						[Vector2.ZERO, Vector2.ZERO, Vector2.ZERO, Vector2.ZERO], Vector3.UP, color)
-				i = run
-		var arrays := []
-		arrays.resize(Mesh.ARRAY_MAX)
-		arrays[Mesh.ARRAY_VERTEX] = batch.v
-		arrays[Mesh.ARRAY_NORMAL] = batch.n
-		arrays[Mesh.ARRAY_COLOR] = batch.c
-		var mesh := ArrayMesh.new()
-		mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
-		mesh.surface_set_material(0, material)
-		var path := MESHES.path_join("ground_far_%d.res" % q)
-		ResourceSaver.save(mesh, path)
-		var mi := MeshInstance3D.new()
-		mi.name = "SolLointain_%d" % q
-		mi.mesh = load(path)
-		mi.visibility_range_begin = FAR_GROUND
-		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		parent.add_child(mi)
-		mi.owner = root
-		out.append(mi)
-	return out
 
 
 func _child(parent: Node, child_name: String, root: Node) -> Node3D:

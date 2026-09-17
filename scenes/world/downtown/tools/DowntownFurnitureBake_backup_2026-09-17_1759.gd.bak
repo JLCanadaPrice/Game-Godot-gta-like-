@@ -13,10 +13,10 @@ extends SceneTree
 #    des marges ;
 #  - ruelles : poubelles, échelles contre les façades arrière, cônes et barrières de chantier dans deux ruelles ;
 #  - marges engazonnées : bosquets d'arbres hors des lieux et des routes d'accès.
-# Rien sur les chemins du réseau piéton (mobilier près de la bordure ou contre les façades). Objets fusionnés par bloc de
-# CHUNK m et par famille (objets du pack urbain sur une palette partagée, objets à ombre portée, affiches, arbres) en
-# maillages statiques : quelques appels de dessin par bloc ; portée de visibilité par famille ; collisions (cylindres,
-# boîtes) pour les mâts, troncs, fontaines, abribus et panneaux.
+# Rien sur les chemins du réseau piéton (mobilier près de la bordure ou contre les façades). Instances regroupées par
+# modèle et par bloc de CHUNK m (MultiMesh construits au lancement par BuildingField : un MultiMesh cuit sans serveur de
+# rendu perd ses positions), portée de visibilité par famille, ombres portées pour les lampadaires et
+# les arbres seulement ; collisions (cylindres, boîtes) pour les mâts, troncs, fontaines, abribus et panneaux.
 # Pas de lumières : le jeu n'a pas de nuit. Tirages déterministes.
 #
 # Lancer (après DowntownBuildingsBake) :
@@ -43,7 +43,7 @@ const LAMP_SPACING := 30.0
 const KINDS := {
 	"lamp_single": [PACK + "lighting/lamp_single.glb", 350.0, true],
 	"lamp_double": [PACK + "lighting/lamp_double.glb", 350.0, true],
-	"tree_slim": ["res://assets/modular_roads/Tree4.glb", 420.0, true],   # même modèle affiné (TREE_SCALE) : un seul matériau
+	"tree_slim": ["res://assets/modular_roads/Tree3.glb", 420.0, true],
 	"tree_tall": ["res://assets/modular_roads/Tree4.glb", 420.0, true],
 	"bench": [PACK + "street_furniture/bench.glb", 160.0, false],
 	"bin": [PACK + "street_furniture/bin.glb", 140.0, false],
@@ -102,16 +102,12 @@ func _initialize() -> void:
 	_alleys()
 	_margins()
 	var scene := _write_scene()
-	print("DOWNTOWN_FURNITURE " + JSON.stringify({"instances": _total(), "par_modele": _counts, "groupes": _instances.size(),
-			"collisions": _collision_count(), "scene": scene}))
-	quit(0 if scene == "OK" else 1)
-
-
-func _total() -> int:
 	var total := 0
 	for k in _counts:
 		total += int(_counts[k])
-	return total
+	print("DOWNTOWN_FURNITURE " + JSON.stringify({"instances": total, "par_modele": _counts, "multimesh": _instances.size(),
+			"collisions": _collision_count(), "scene": scene}))
+	quit(0 if scene == "OK" else 1)
 
 
 # Couloirs des routes de la carte qui traversent les marges depuis les 8 raccords (pas d'arbre ni de panneau dessus).
@@ -462,14 +458,7 @@ func _margins() -> void:
 
 # --- instances et collisions ----------------------------------------------------------------------------------------------
 
-const TREE_SCALE := {"tree_slim": Vector3(0.72, 0.8, 0.72), "tree_tall": Vector3(1.0, 1.0, 1.0)}
-
-
 func _add(kind: String, t: Transform3D) -> void:
-	if TREE_SCALE.has(kind):
-		# variantes d'un même arbre : échelle intégrée au maillage fusionné, légère variation de hauteur
-		var s: Vector3 = TREE_SCALE[kind] * rng.randf_range(0.9, 1.1)
-		t = Transform3D(Basis.from_scale(s) * t.basis, t.origin)
 	var down := MapSpec.DOWNTOWN
 	var key := "%s|%d|%d" % [kind, floori((t.origin.x - down.position.x) / CHUNK), floori((t.origin.z - down.position.y) / CHUNK)]
 	if not _instances.has(key):
@@ -549,31 +538,12 @@ func _collect(node: Node, parent: Transform3D, surfaces: Dictionary) -> void:
 		_collect(child, xform, surfaces)
 
 
-# Familles de fusion : même matériau (palette partagée du pack urbain, ou matériaux des arbres), même portée, même ombre.
-# Lampadaires sans ombre portée (mâts fins : ombre à peine visible, mais chaque maillage qui projette une ombre est
-# redessiné dans chaque cascade de l'ombre du soleil) ; fontaines, abribus et arbres gardent la leur.
-const FAMILIES := {
-	"objets": {"range": 380.0, "shadow": false, "palette": true},
-	"objets_ombres": {"range": 320.0, "shadow": true, "palette": true},
-	"affiches": {"range": 900.0, "shadow": false, "palette": true},
-	"arbres": {"range": 420.0, "shadow": true, "palette": false},
-}
-const FAMILY_OF := {"fountain": "objets_ombres", "bus_stop": "objets_ombres", "billboard_roof": "affiches", "billboard_pole": "affiches",
-		"tree_slim": "arbres", "tree_tall": "arbres"}
-const PALETTE_MATERIAL := OUT + "/buildings/lowpoly_material.tres"
-
-
-# Mobilier fusionné par bloc et par famille en maillages statiques (un appel de dessin par matériau) : plusieurs dizaines de
-# petits MultiMesh par bloc coûtaient chacun leur appel ; les objets sont petits, leurs triangles comptent peu.
 func _write_scene() -> String:
 	var root := Node3D.new()
 	root.name = "Furniture"
-	# nombre d'objets posés, relu par les tests : les maillages fusionnés ne le gardent pas
-	root.set_meta(&"instances", _total())
-	root.set_meta(&"par_modele", _counts.duplicate())
 	var meshes := {}
-	var palette: Material = load(PALETTE_MATERIAL)
-	var merged := {}   # "famille|i|j" -> {matériau: SurfaceTool}
+	# un BuildingField par bloc et par réglage d'ombre : un modèle = un MultiMesh construit au lancement
+	var fields := {}   # "i|j|ombre" -> {"kinds": [], "data": []}
 	var keys := _instances.keys()
 	keys.sort()
 	for key: String in keys:
@@ -581,38 +551,36 @@ func _write_scene() -> String:
 		var kind := parts[0]
 		if not meshes.has(kind):
 			meshes[kind] = _mesh(kind)
-		var family: String = FAMILY_OF.get(kind, "objets")
-		var mkey := "%s|%s|%s" % [family, parts[1], parts[2]]
-		if not merged.has(mkey):
-			merged[mkey] = {}
-		var mesh: Mesh = meshes[kind]
+		var fkey := "%s|%s|%d" % [parts[1], parts[2], 1 if KINDS[kind][2] else 0]
+		if not fields.has(fkey):
+			fields[fkey] = {"kinds": [], "data": []}
+		var data := PackedFloat32Array()
 		for t: Transform3D in _instances[key]:
-			for s in mesh.get_surface_count():
-				var mat: Material = palette if FAMILIES[family]["palette"] else mesh.surface_get_material(s)
-				if not merged[mkey].has(mat):
-					var st := SurfaceTool.new()
-					st.begin(Mesh.PRIMITIVE_TRIANGLES)
-					merged[mkey][mat] = st
-				(merged[mkey][mat] as SurfaceTool).append_from(mesh, s, t)
-	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(MODELS.path_join("chunks")))
-	var mkeys := merged.keys()
-	mkeys.sort()
-	for mkey: String in mkeys:
-		var parts := mkey.split("|")
-		var out := ArrayMesh.new()
-		for mat in merged[mkey]:
-			var st: SurfaceTool = merged[mkey][mat]
-			st.set_material(mat)
-			st.commit(out)
-		var path := MODELS.path_join("chunks/%s_%s_%s.res" % [parts[0], parts[1], parts[2]])
-		ResourceSaver.save(out, path)
-		var mi := MeshInstance3D.new()
-		mi.name = "%s_%s_%s" % [parts[0], parts[1], parts[2]]
-		mi.mesh = load(path)
-		mi.visibility_range_end = float(FAMILIES[parts[0]]["range"])
-		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON if FAMILIES[parts[0]]["shadow"] else GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		root.add_child(mi)
-		mi.owner = root
+			data.append_array(PackedFloat32Array([t.basis.x.x, t.basis.x.y, t.basis.x.z, t.basis.y.x, t.basis.y.y, t.basis.y.z,
+					t.basis.z.x, t.basis.z.y, t.basis.z.z, t.origin.x, t.origin.y, t.origin.z, 1.0, 1.0, 1.0, 1.0]))
+		fields[fkey]["kinds"].append(kind)
+		fields[fkey]["data"].append(data)
+	var fkeys := fields.keys()
+	fkeys.sort()
+	for fkey: String in fkeys:
+		var parts := fkey.split("|")
+		var field := Node3D.new()
+		field.set_script(Field)
+		field.name = "Mobilier_%s_%s%s" % [parts[0], parts[1], "_ombres" if parts[2] == "1" else ""]
+		var field_meshes: Array[Mesh] = []
+		var field_data: Array[PackedFloat32Array] = []
+		var ranges := PackedFloat32Array()
+		for k in (fields[fkey]["kinds"] as Array).size():
+			var kind: String = fields[fkey]["kinds"][k]
+			field_meshes.append(meshes[kind])
+			field_data.append(fields[fkey]["data"][k])
+			ranges.append(float(KINDS[kind][1]))
+		field.set("meshes", field_meshes)
+		field.set("instance_data", field_data)
+		field.set("ranges", ranges)
+		field.set("shadows", parts[2] == "1")
+		root.add_child(field)
+		field.owner = root
 	var collision := Node3D.new()
 	collision.name = "Collision"
 	root.add_child(collision)

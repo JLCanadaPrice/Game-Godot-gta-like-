@@ -66,22 +66,20 @@ func _check_structure(world: Node) -> void:
 		if String(n.name).begins_with("District"):
 			old.append(n.name)
 	var surfaces := world.get_node_or_null("Downtown/Streets/Surfaces")
-	# mobilier : objets posés (compte relevé à la génération) fusionnés en maillages statiques non vides par bloc et famille
-	var furniture := world.get_node_or_null("Downtown/Furniture")
-	var furniture_instances: int = furniture.get_meta(&"instances", 0) if furniture != null else 0
+	# mobilier : MultiMesh construits au lancement par les BuildingField de Downtown/Furniture, avec des instances
+	var furniture_instances := 0
 	var furniture_meshes := 0
-	var empty_meshes := 0
+	var furniture := world.get_node_or_null("Downtown/Furniture")
 	if furniture != null:
-		for mi: MeshInstance3D in furniture.find_children("*", "MeshInstance3D", true, false):
-			if mi.mesh != null and mi.mesh.get_surface_count() > 0:
+		for mmi: MultiMeshInstance3D in furniture.find_children("*", "MultiMeshInstance3D", true, false):
+			if mmi.multimesh != null and mmi.multimesh.mesh != null:
 				furniture_meshes += 1
-			else:
-				empty_meshes += 1
-	print("DOWNTOWN_STREETS_STRUCTURE %d maillages de rue, %d corps de collision, %d feux, mobilier %d objets fusionnés en %d maillages (%d vides) | manquants %s | anciens districts %s"
+				furniture_instances += mmi.multimesh.instance_count
+	print("DOWNTOWN_STREETS_STRUCTURE %d maillages de rue, %d corps de collision, %d feux, mobilier %d instances en %d MultiMesh | manquants %s | anciens districts %s"
 			% [surfaces.get_child_count() if surfaces != null else 0, world.get_node("Downtown/Streets/Collision").get_child_count() if world.has_node("Downtown/Streets/Collision") else 0,
-			_lights(world).size(), furniture_instances, furniture_meshes, empty_meshes, missing, old])
-	if not missing.is_empty() or not old.is_empty() or furniture_instances < 1000 or furniture_meshes == 0 or empty_meshes > 0:
-		_errors.append("structure : manquants %s, anciens districts %s, mobilier %d objets en %d maillages (%d vides)" % [missing, old, furniture_instances, furniture_meshes, empty_meshes])
+			_lights(world).size(), furniture_instances, furniture_meshes, missing, old])
+	if not missing.is_empty() or not old.is_empty() or furniture_instances < 1000:
+		_errors.append("structure : manquants %s, anciens districts %s, mobilier %d instances" % [missing, old, furniture_instances])
 
 
 func _check_graphs(circuit: CircuitPath, ped: PathGraph, traffic: Traffic) -> void:

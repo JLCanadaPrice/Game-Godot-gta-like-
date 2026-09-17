@@ -11,8 +11,8 @@ extends SceneTree
 #    boutiques et une marge laissées libres ; îlot du casino : emprise du lieu (MapSpec.POIS, bâti par PlacesBake) libre.
 # Un seul matériau par famille de modèles (couleurs de sommet EverythingLibrary partagées avec la carte, palette du
 # pack urbain, façades des gratte-ciels), maillages à niveaux de détail ; collision en boîte ; boîte d'occultation
-# rentrée dans le volume plein du bâtiment, descendue au plus près du sol, vérifiée par rayons sur le maillage du modèle
-# (cf. _checked_occluders).
+# rentrée dans le volume plein du bâtiment quand sa forme le permet (gratte-ciels : hauteurs relevées à la main sous
+# les retraits et jardins suspendus ; pack urbain : pavés ; EverythingLibrary : emprise projetée pleine à 95 %).
 # Tirages déterministes (graine fixe).
 #
 # Lancer : Godot --headless --path <projet> --script res://scenes/world/downtown/tools/DowntownBuildingsBake.gd
@@ -32,9 +32,9 @@ const CORE_CENTER := Vector2(-532, -172)
 const LOT_DEPTH_MAX := 26.0
 const GAP_MAX := 1.5
 const SHOP_MARGIN := 3.0
-# gratte-ciels : haut de la boîte d'occultation le plus haut essayé, en fraction de la hauteur (sous les retraits, flèches
-# et jardins, relevé à la main ; vérifié par rayons comme les autres, cf. _checked_occluders)
-const SKY_OCCLUDER := {"Mk1": 0.42, "Mk2": 0.55, "Mk3": 0.9, "Mk4": 0.9, "Mk5": 0.78, "Mk6": 0.88, "Scraper001": 0.95}
+# gratte-ciels : [bas, haut] de la boîte d'occultation en fraction de la hauteur (sous les retraits, flèches et jardins)
+const SKY_OCCLUDER := {"Mk1": [0.03, 0.42], "Mk2": [0.03, 0.55], "Mk3": [0.03, 0.9], "Mk4": [0.03, 0.9], "Mk5": [0.03, 0.78],
+		"Mk6": [0.03, 0.88], "Scraper001": [0.02, 0.95]}
 const SKY_ORDER := ["Mk1", "Mk2", "Mk6", "Scraper001", "Mk4", "Mk5"]
 # paniers par zone : [modèle, poids] ; "el:" EverythingLibrary, "pack:" low_Poly_City_Pack (xN : étages empilés)
 const POOLS := {
@@ -66,7 +66,7 @@ const POOLS := {
 var layout: Layout
 var el: ELModels
 var rng := RandomNumberGenerator.new()
-var models := {}                     # clé -> {"mesh", "aabb", "height", "front_fixed", "occluders": Array[AABB], "triangles"}
+var models := {}                     # clé -> {"mesh", "aabb", "height", "front_fixed", "occluder": AABB, "triangles"}
 var placements: Array[Dictionary] = []
 var _sky_json := {}
 var _pack_json := {}
@@ -74,7 +74,7 @@ var _pack_material: StandardMaterial3D
 var _sky_material: StandardMaterial3D
 var _shapes := {}
 var _occluders := {}
-var _stats := {"par_zone": {}, "par_famille": {}, "occulteurs": 0, "occulteurs_au_sol": 0, "boites_occultation": 0, "sans_place": 0}
+var _stats := {"par_zone": {}, "par_famille": {}, "occulteurs": 0, "sans_place": 0}
 
 
 func _initialize() -> void:
@@ -131,14 +131,6 @@ func _initialize() -> void:
 	_stats["triangles"] = tris
 	_stats["modeles_distincts"] = _distinct()
 	print("DOWNTOWN_BUILDINGS " + JSON.stringify(_stats))
-	var boxes := {}
-	for key: String in models:
-		var a: AABB = models[key]["aabb"]
-		var parts := []
-		for b: AABB in models[key]["occluders"]:
-			parts.append("base %.1f, haut %.0f/%.0f m, emprise %.0f%%" % [b.position.y, b.end.y, a.end.y, 100.0 * b.size.x * b.size.z / (a.size.x * a.size.z)])
-		boxes[key] = " + ".join(parts) if not parts.is_empty() else "aucune"
-	print("DOWNTOWN_BUILDINGS_OCCLUDERS " + JSON.stringify(boxes))
 	if not problems.is_empty():
 		print("DOWNTOWN_BUILDINGS_ERROR " + " | ".join(problems))
 	quit(0 if problems.is_empty() and scene == "OK" else 1)
@@ -184,13 +176,15 @@ func model(key: String) -> Dictionary:
 		match family:
 			"el":
 				var info := el.get_model(name)
-				# matériau EverythingLibrary sans élimination des faces arrière
 				models[key] = {"mesh": info["mesh"], "aabb": info["aabb"], "front_fixed": true, "triangles": info["triangles"],
-						"occluders": _checked_occluders(info["mesh"], info["aabb"], [0.9, 0.66, 0.45], true)}
+						"occluder": _el_occluder(info["mesh"], info["aabb"])}
 			"sky":
 				models[key] = _glb_model(key, [String(_sky_json[name]["path"])], _sky_material, true)
-				var top: float = SKY_OCCLUDER[name]
-				models[key]["occluders"] = _checked_occluders(models[key]["mesh"], models[key]["aabb"], [top, top * 0.75, top * 0.5, 0.25], false)
+				var aabb: AABB = models[key]["aabb"]
+				var frac: Array = SKY_OCCLUDER[name]
+				var box := AABB(Vector3(aabb.position.x + 2.0, maxf(3.5, aabb.size.y * float(frac[0])), aabb.position.z + 2.0),
+						Vector3(aabb.size.x - 4.0, aabb.size.y * (float(frac[1]) - float(frac[0])), aabb.size.z - 4.0))
+				models[key]["occluder"] = box
 				models[key]["front_fixed"] = false
 			"pack":
 				var parts := name.split("x")   # building_01x3 : building_01 et deux étages building_01_top par-dessus
@@ -200,7 +194,9 @@ func model(key: String) -> Dictionary:
 				for k in levels - 1:
 					paths.append(String(_pack_json[base + "_top"]["path"]))
 				models[key] = _glb_model(key, paths, _pack_material, false)
-				models[key]["occluders"] = _checked_occluders(models[key]["mesh"], models[key]["aabb"], [0.9, 0.66, 0.45], false)
+				var aabb: AABB = models[key]["aabb"]
+				models[key]["occluder"] = AABB(Vector3(aabb.position.x + 0.8, 2.5, aabb.position.z + 0.8),
+						Vector3(aabb.size.x - 1.6, aabb.size.y * 0.9 - 2.5, aabb.size.z - 1.6)) if aabb.size.y > 6.0 else AABB()
 				models[key]["front_fixed"] = false
 		models[key]["height"] = (models[key]["aabb"] as AABB).end.y
 		models[key]["hlod_color"] = _mean_color(models[key]["mesh"], family)
@@ -310,176 +306,39 @@ func _collect(node: Node, parent: Transform3D, m: Mesher, flat_colors: bool) -> 
 		_collect(child, xform, m, flat_colors)
 
 
-# --- boîtes d'occultation -----------------------------------------------------------------------------------------------
-#
-# Une boîte ne doit jamais dépasser du volume plein du bâtiment (elle masquerait ce qu'on voit à travers une arcade, une
-# cour, un rez-de-chaussée ouvert). Elle est donc vérifiée par rayons sur le maillage du modèle : chaque point
-# échantillonné sur ses côtés (de face, de biais, d'en haut en plongée) et sur son dessus (à la verticale et de biais)
-# doit être caché derrière une face opaque vue de l'extérieur (faces arrière ignorées si le matériau les élimine).
-# Candidats, pour chaque base (OCC_BOTTOMS) : boîte du modèle rentrée de 0,8 / 1,6 / 3 m à la plus grande hauteur
-# valable (`tops`, fractions de la hauteur), et deux ajustements progressifs (partie rentrée de 0,5 m, chaque face
-# atteinte par un rayon, le dessus compris, recule de 5 % jusqu'à ce que plus aucun ne l'atteigne ; dessus reculé en
-# premier, ou côtés en premier) qui écartent dalle du terrain, perron, auvent, angles coupés, enseigne, étages en retrait.
-# Retenues : la boîte « rue » qui couvre le mieux les 4 premiers mètres parmi celles qui descendent près du sol (vu de la
-# rue, un PNJ ou une voiture derrière le bâtiment n'est masqué que si la boîte descend près du sol ; une base à 2,5 m
-# laissait voir le bas de tout ce qui est derrière), et la boîte « silhouette » de plus grande façade si elle n'est pas
-# déjà presque contenue dans la première (tour sur socle, rez-de-chaussée ouvert).
-const OCC_BOTTOMS := [0.1, 0.8, 2.0, 3.5]    # m au-dessus de l'origine du modèle (niveau du sol)
-const OCC_INSETS := [0.8, 1.6, 3.0]
-const OCC_MIN_SIZE := 3.0                    # m : côté minimal de la boîte ; hauteur minimale 2,5 m
-const OCC_SIDES := [["+X", Vector3.RIGHT, Vector3.BACK], ["-X", Vector3.LEFT, Vector3.BACK], ["+Z", Vector3.BACK, Vector3.RIGHT], ["-Z", Vector3.FORWARD, Vector3.RIGHT]]
-
-
-func _checked_occluders(mesh: Mesh, aabb: AABB, tops: Array, double_sided: bool) -> Array[AABB]:
-	var tm := mesh.generate_triangle_mesh()
-	var candidates: Array[AABB] = []
-	for bottom: float in OCC_BOTTOMS:
-		for inset: float in OCC_INSETS:
-			for top: float in tops:
-				var box := AABB(Vector3(aabb.position.x + inset, bottom, aabb.position.z + inset),
-						Vector3(aabb.size.x - 2.0 * inset, aabb.end.y * top - bottom, aabb.size.z - 2.0 * inset))
-				if box.size.x < OCC_MIN_SIZE or box.size.z < OCC_MIN_SIZE or box.size.y < OCC_MIN_SIZE - 0.5:
-					continue
-				if _failures(tm, box, aabb, double_sided, false, true).is_empty() and _failures(tm, box, aabb, double_sided, true, true).is_empty():
-					candidates.append(box)
-					break
-		for sides_first: bool in [false, true]:
-			var fitted := _fit_box(tm, aabb, bottom, tops[0], double_sided, sides_first)
-			if fitted.has_volume():
-				candidates.append(fitted)
-	var street := AABB()
-	var street_score := 0.0
-	var skyline := AABB()
-	var skyline_score := 0.0
-	for b in candidates:
-		var s := (b.size.x + b.size.z) * (minf(b.end.y, 4.0) - b.position.y)
-		if b.position.y <= 0.8 and (s > street_score + 0.01 or (s > street_score - 0.01 and _volume(b) > _volume(street))):
-			street = b
-			street_score = s
-		var f := (b.size.x + b.size.z) * b.size.y
-		if f > skyline_score:
-			skyline = b
-			skyline_score = f
-	var boxes: Array[AABB] = []
-	if street.has_volume():
-		boxes.append(street)
-	if skyline.has_volume() and (boxes.is_empty() or _overlap(street, skyline) < 0.8):
-		boxes.append(skyline)
-	return boxes
-
-
-func _volume(b: AABB) -> float:
-	return b.size.x * b.size.y * b.size.z
-
-
-# Part du volume de la plus petite des deux boîtes contenue dans l'autre.
-func _overlap(a: AABB, b: AABB) -> float:
-	var inter := a.intersection(b)
-	return _volume(inter) / minf(_volume(a), _volume(b)) if inter.has_volume() else 0.0
-
-
-func _fit_box(tm: TriangleMesh, aabb: AABB, bottom: float, top_max: float, double_sided: bool, sides_first: bool) -> AABB:
-	var box := AABB(Vector3(aabb.position.x + 0.5, bottom, aabb.position.z + 0.5), Vector3(aabb.size.x - 1.0, aabb.end.y * top_max - bottom, aabb.size.z - 1.0))
-	var fine := false
-	for iter in 120:
-		if box.size.x < OCC_MIN_SIZE or box.size.z < OCC_MIN_SIZE or box.size.y < OCC_MIN_SIZE - 0.5:
-			return AABB()
-		var fails := _failures(tm, box, aabb, double_sided, fine, false)
-		if fails.is_empty():
-			if fine:
-				return box
-			fine = true
-			continue
-		var side_fail := fails.size() > (1 if fails.has("top") else 0)
-		if fails.has("top") and not (sides_first and side_fail):
-			box.size.y -= maxf(0.5, box.size.y * 0.05)
-			if not sides_first:
-				continue
-		var sx := maxf(0.4, box.size.x * 0.05)
-		var sz := maxf(0.4, box.size.z * 0.05)
-		if fails.has("+X"):
-			box.size.x -= sx
-		if fails.has("-X"):
-			box.position.x += sx
-			box.size.x -= sx
-		if fails.has("+Z"):
-			box.size.z -= sz
-		if fails.has("-Z"):
-			box.position.z += sz
-			box.size.z -= sz
-	return AABB()
-
-
-# Faces de la boîte ("+X", "-X", "+Z", "-Z", "top") atteintes par au moins un rayon venu de l'extérieur (`stop` : dès
-# la première).
-func _failures(tm: TriangleMesh, box: AABB, aabb: AABB, double_sided: bool, fine: bool, stop: bool) -> Dictionary:
-	var out := {}
-	var reach := aabb.size.length() + 4.0
-	var c := box.get_center()
-	var div := 16.0 if fine else 6.0
-	var heights := _steps(box.position.y + 0.02, box.end.y - 0.02, clampf(box.size.y / div, 1.0, 16.0))
-	for side: Array in OCC_SIDES:
-		var n: Vector3 = side[1]
-		var t: Vector3 = side[2]
-		var half := absf(t.dot(box.size)) * 0.5 - 0.02
-		var dirs := [n, (n + t * 0.84).normalized(), (n - t * 0.84).normalized(), (n + Vector3.UP).normalized(), (n + Vector3.UP * 1.73).normalized()]
-		var along := _steps(-half, half, clampf(half / (div * 0.6), 0.75, 4.0))
-		for h: float in heights:
-			var face := Vector3(c.x + n.x * box.size.x * 0.5, h, c.z + n.z * box.size.z * 0.5)
-			for s: float in along:
-				var p := face + t * s
-				for d: Vector3 in dirs:
-					if not _blocked(tm, p + d * reach, p, double_sided):
-						out[side[0]] = true
-						break
-				if out.has(side[0]):
-					break
-			if out.has(side[0]):
-				break
-		if stop and not out.is_empty():
-			return out
-	var step := clampf(maxf(box.size.x, box.size.z) / (div * 1.25), 0.75, 4.0)
-	for x: float in _steps(box.position.x + 0.02, box.end.x - 0.02, step):
-		for z: float in _steps(box.position.z + 0.02, box.end.z - 0.02, step):
-			var p := Vector3(x, box.end.y, z)
-			for d: Vector3 in [Vector3.UP, Vector3(1, 1, 0).normalized(), Vector3(-1, 1, 0).normalized(), Vector3(0, 1, 1).normalized(), Vector3(0, 1, -1).normalized()]:
-				if not _blocked(tm, p + d * reach, p, double_sided):
-					out["top"] = true
-					return out
-	return out
-
-
-# Le segment de `from` (dehors) à `to` (sur la boîte) traverse-t-il une face dessinée tournée vers `from` ? Un segment
-# qui passe pile sur une arête du maillage peut la manquer (arrondi du test) : il n'est compté ouvert que si deux
-# voisins décalés de 1 à 2 cm passent aussi.
-func _blocked(tm: TriangleMesh, from: Vector3, to: Vector3, double_sided: bool) -> bool:
-	if _blocked_once(tm, from, to, double_sided):
-		return true
-	return _blocked_once(tm, from, to + Vector3(0.013, 0.007, 0.011), double_sided) and _blocked_once(tm, from, to + Vector3(-0.009, -0.012, -0.006), double_sided)
-
-
-func _blocked_once(tm: TriangleMesh, from: Vector3, to: Vector3, double_sided: bool) -> bool:
-	var dir := (to - from).normalized()
-	var start := from
-	for k in 16:
-		var hit := tm.intersect_segment(start, to)
-		if hit.is_empty():
-			return false
-		if double_sided or (hit["normal"] as Vector3).dot(dir) < 0.0:
-			return true
-		start = (hit["position"] as Vector3) + dir * 0.01
-	return false
-
-
-func _steps(a: float, b: float, step: float) -> PackedFloat32Array:
-	var out := PackedFloat32Array()
-	if b <= a:
-		out.append((a + b) * 0.5)
-		return out
-	var n := int(ceil((b - a) / step))
-	for k in n + 1:
-		out.append(lerpf(a, b, float(k) / n))
-	return out
+# Boîte d'occultation d'un modèle EverythingLibrary : seulement si son emprise projetée couvre au moins 95 % de sa boîte
+# (pas de forme en L ni de cour) ; rentrée de 1 m, de 2,5 m au-dessus du sol aux deux tiers de la hauteur.
+func _el_occluder(mesh: Mesh, aabb: AABB) -> AABB:
+	if aabb.size.y < 7.0 or aabb.size.x < 6.0 or aabb.size.z < 6.0:
+		return AABB()
+	var cell := 1.0
+	var nx := int(ceil(aabb.size.x / cell))
+	var nz := int(ceil(aabb.size.z / cell))
+	var covered := PackedByteArray()
+	covered.resize(nx * nz)
+	for s in mesh.get_surface_count():
+		var arrays := mesh.surface_get_arrays(s)
+		var verts: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+		var idx: PackedInt32Array = arrays[Mesh.ARRAY_INDEX]
+		for t in range(0, idx.size() - 2, 3):
+			var a := Vector2(verts[idx[t]].x, verts[idx[t]].z)
+			var b := Vector2(verts[idx[t + 1]].x, verts[idx[t + 1]].z)
+			var c := Vector2(verts[idx[t + 2]].x, verts[idx[t + 2]].z)
+			var lo := Vector2(minf(a.x, minf(b.x, c.x)), minf(a.y, minf(b.y, c.y)))
+			var hi := Vector2(maxf(a.x, maxf(b.x, c.x)), maxf(a.y, maxf(b.y, c.y)))
+			for gz in range(maxi(0, floori((lo.y - aabb.position.z) / cell)), mini(nz, ceili((hi.y - aabb.position.z) / cell))):
+				for gx in range(maxi(0, floori((lo.x - aabb.position.x) / cell)), mini(nx, ceili((hi.x - aabb.position.x) / cell))):
+					if covered[gz * nx + gx] == 1:
+						continue
+					var q := Vector2(aabb.position.x + (gx + 0.5) * cell, aabb.position.z + (gz + 0.5) * cell)
+					if Geometry2D.point_is_inside_triangle(q, a, b, c):
+						covered[gz * nx + gx] = 1
+	var count := 0
+	for k in covered.size():
+		count += covered[k]
+	if float(count) / covered.size() < 0.95:
+		return AABB()
+	return AABB(Vector3(aabb.position.x + 1.0, 2.5, aabb.position.z + 1.0), Vector3(aabb.size.x - 2.0, aabb.size.y * 0.66 - 2.5, aabb.size.z - 2.0))
 
 
 # --- îlots --------------------------------------------------------------------------------------------------------------
@@ -682,26 +541,19 @@ func _write_scene() -> String:
 		cs.position = Vector3(aabb.get_center().x, aabb.end.y * 0.5, aabb.get_center().z)
 		body.add_child(cs)
 		cs.owner = root
-		var boxes: Array[AABB] = mdl["occluders"]
-		var low := false
-		for i in boxes.size():
-			var occ_key := "%s|%d" % [shape_key, i]
-			if not _occluders.has(occ_key):
+		var occ_box: AABB = mdl["occluder"]
+		if occ_box.has_volume():
+			if not _occluders.has(shape_key):
 				var occ_shape := BoxOccluder3D.new()
-				occ_shape.size = boxes[i].size
-				_occluders[occ_key] = occ_shape
+				occ_shape.size = occ_box.size
+				_occluders[shape_key] = occ_shape
 			var occ := OccluderInstance3D.new()
-			occ.name = "Occluder" if i == 0 else "Occluder%d" % (i + 1)
-			occ.occluder = _occluders[occ_key]
-			occ.position = boxes[i].get_center()
+			occ.name = "Occluder"
+			occ.occluder = _occluders[shape_key]
+			occ.position = occ_box.get_center()
 			node.add_child(occ)
 			occ.owner = root
-			_stats["boites_occultation"] += 1
-			low = low or boxes[i].position.y <= 1.0
-		if not boxes.is_empty():
 			_stats["occulteurs"] += 1
-			if low:
-				_stats["occulteurs_au_sol"] += 1
 	var packed := PackedScene.new()
 	var err := packed.pack(root)
 	if err == OK:
