@@ -57,9 +57,8 @@ func _ready() -> void:
 
 func _check_structure(world: Node) -> void:
 	var missing := []
-	# Downtown/Quay2 retiré volontairement de la scène le 2026-09-17 (sauvegarde de l'éditeur) : plus attendu ici.
 	for path in ["Downtown/Streets/Surfaces", "Downtown/Streets/Collision", "Downtown/Streets/TrafficLights", "Downtown/Quay/QuayPavement",
-			"Downtown/Shops/Dealership_Building", "Downtown/Shops/Agency_Building", "Downtown/Furniture/Collision"]:
+			"Downtown/Quay2", "Downtown/Shops/Dealership_Building", "Downtown/Shops/Agency_Building", "Downtown/Furniture/Collision"]:
 		if world.get_node_or_null(path) == null:
 			missing.append(path)
 	var old := []

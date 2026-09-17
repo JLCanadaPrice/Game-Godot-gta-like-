@@ -71,7 +71,6 @@ func _initialize() -> void:
 	layout = Layout.new()
 	traffic = Traffic.new(layout)
 	_connection_gaps()
-	_connection_aprons()
 	var problems := _check_extents()
 	for i in layout.segments.size():
 		_segment(i)
@@ -414,20 +413,6 @@ func _connection_gaps() -> void:
 			var r := Rect2(a, Vector2.ZERO).expand(b)
 			r = r.grow_individual(half if out.x == 0.0 else 0.0, half if out.y == 0.0 else 0.0, half if out.x == 0.0 else 0.0, half if out.y == 0.0 else 0.0)
 			_gaps.append(r)
-
-
-# La route de la carte arrive rarement pile dans l'axe : sa chaussée ne recouvre pas toute la brèche du trottoir, et le
-# bord laissait voir la pelouse (jusqu'ici masquée par le quai 2, retiré de la scène). Toute la brèche est donc pavée en
-# enrobé nu, 1 cm sous la chaussée : la route de la carte passe par-dessus, le reste fait la gueule du raccord.
-func _connection_aprons() -> void:
-	var col: Dictionary = columns["plain"]
-	for r: Rect2 in _gaps:
-		var ub := _u(col, r.size.x)
-		var v0 := r.position.y / tex_length
-		var v1 := r.end.y / tex_length
-		_flat("asphalt", r, ROAD_Y - 0.01, [Vector2(float(col["u0"]), v0), Vector2(ub, v0), Vector2(ub, v1), Vector2(float(col["u0"]), v1)], Color.WHITE)
-		_tops.append(r)
-		_collide(r, ROAD_Y - 0.01)
 
 
 # --- surfaces -----------------------------------------------------------------------------------------------------------
