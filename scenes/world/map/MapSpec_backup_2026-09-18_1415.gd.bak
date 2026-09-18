@@ -225,9 +225,6 @@ const POIS := [
 	{"id": "motel", "name": "Starlite Motor Inn", "kind": "motel", "pos": Vector2(-470, 585), "size": Vector2(70, 40), "yaw": 90.0, "access": "n_motel"},
 	{"id": "hospital", "name": "St. Anselm Medical Center", "kind": "hospital", "pos": Vector2(-280, 162), "size": Vector2(80, 64), "yaw": 180.0, "access": "grid"},
 	{"id": "precinct", "name": "Central Precinct", "kind": "police", "pos": Vector2(-713, 162), "size": Vector2(60, 46), "yaw": 180.0, "access": "grid"},
-	# dernière parcelle libre de Midtown Nord, le long de l'artère art_a4_n : emprise relevée libre de tout bâtiment et
-	# de tout ruban (rue à 53,7 m du centre, soit 14 m du portail ; station-service à 60 m, bureaux à 112 m)
-	{"id": "chantier", "name": "Northgate Rise Construction Site", "kind": "construction", "pos": Vector2(-240, -1310), "size": Vector2(80, 80), "yaw": 0.0, "access": "n_air"},
 ]
 
 # --- garde-fou --------------------------------------------------------------------------------------------------

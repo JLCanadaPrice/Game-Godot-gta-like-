@@ -92,7 +92,6 @@ func _initialize() -> void:
 	_ranch()
 	_safehouse()
 	_greenfield()
-	_chantier()
 	_echo_circle()
 	_hotel()
 	_hospital()
@@ -250,41 +249,6 @@ func _greenfield() -> void:
 	_fence(PackedVector2Array([Vector2(-540, -940), Vector2(-540, -1005), Vector2(-420, -1005), Vector2(-420, -940), Vector2(-540, -940)]), 2.2, STEEL, "chain", INF, [Vector2(-447, -940)])
 	_sign_board("GREENFIELD BOTANICALS", Vector2(-462, -911), 0.0, 5.0)
 	_end("Greenfield Botanicals", "complex")
-
-
-# Chantier de Northgate Rise : immeuble en cours de construction, grue, baraques de chantier, camions et matériaux du
-# pack LowPoly-House-Construction-Site, à leur échelle d'origine (mesurée : camion 7,2 m, conteneur 8,4 m, grue 54 m de
-# haut). Dernière parcelle libre de Midtown Nord, relevée sans aucun ruban ni bâtiment dans l'emprise : la rue passe à
-# 53,7 m du centre, soit 14 m du portail, donc ni chaussée ni trottoir sous le chantier, et aucune voiture ni PNJ n'a
-# de trajet qui le traverse. Grillage tout autour avec une seule ouverture, côté rue.
-const CHANTIER := Vector2(-240, -1310)
-const CHANTIER_TOP := 9.2                # plateforme : entre les 7,5 m du coin ouest et les 10,3 m du coin est
-const CHANTIER_PACK := "res://assets/LowPoly-House-Construction-Site-By-Majadroid/fbx files/"
-
-
-func _chantier() -> void:
-	var gate := Vector2(CHANTIER.x - 40.0, CHANTIER.y + 10.0)
-	_begin("chantier", Vector3(gate.x - 4.0, CHANTIER_TOP, gate.y))
-	_flatten_rect(CHANTIER, Vector2(1, 0), Vector2(0, 1), Vector2(41, 41), CHANTIER_TOP - LIP)
-	_paved(CHANTIER, Vector2(80, 80), CHANTIER_TOP - 0.02, "dirt")
-	# piste d'accès jusqu'à la rue, arrêtée à 6 m de la chaussée pour ne rien poser dessus
-	_paved(Vector2(gate.x - 7.0, gate.y), Vector2(14, 7), CHANTIER_TOP - 0.02, "dirt", Color(), false, 0.0)
-	var shell := _fbx_model(CHANTIER_PACK + "Building.fbx", CHANTIER + Vector2(2, 0), 0.0, CHANTIER_TOP)
-	footprints.append(_rect_footprint("building", CHANTIER + Vector2(2, 0), Vector2(shell.size.x, shell.size.z)))
-	_fbx_model(CHANTIER_PACK + "Crane-On-Ground.fbx", CHANTIER + Vector2(-24, 26), -PI * 0.25, CHANTIER_TOP, "embase", Vector2(2.5, 2.5))
-	_fbx_model(CHANTIER_PACK + "Containers-Office.fbx", CHANTIER + Vector2(-33, 4), PI * 0.5, CHANTIER_TOP)
-	_fbx_model(CHANTIER_PACK + "Containers.fbx", CHANTIER + Vector2(-33, -14), 0.0, CHANTIER_TOP)
-	_fbx_model(CHANTIER_PACK + "Containers-Cargo.fbx", CHANTIER + Vector2(-33, -24), 0.0, CHANTIER_TOP)
-	_fbx_model(CHANTIER_PACK + "Construction-Materials.fbx", CHANTIER + Vector2(14, -32), 0.0, CHANTIER_TOP)
-	_fbx_model(CHANTIER_PACK + "Construction-Materials.fbx", CHANTIER + Vector2(22, -32), 0.0, CHANTIER_TOP)
-	_fbx_model(CHANTIER_PACK + "Trucks.fbx", CHANTIER + Vector2(-30, 20), PI * 0.5, CHANTIER_TOP)
-	_fbx_model(CHANTIER_PACK + "Trucks.fbx", CHANTIER + Vector2(10, 33), PI, CHANTIER_TOP)
-	_fbx_model(CHANTIER_PACK + "Ramp.fbx", CHANTIER + Vector2(30, 26), -PI * 0.5, CHANTIER_TOP, "aucune")
-	var f := 40.0
-	_fence(PackedVector2Array([CHANTIER + Vector2(-f, -f), CHANTIER + Vector2(f, -f), CHANTIER + Vector2(f, f),
-			CHANTIER + Vector2(-f, f), CHANTIER + Vector2(-f, -f)]), 2.4, STEEL, "chain", CHANTIER_TOP, [gate])
-	_sign_board("NORTHGATE RISE", Vector2(gate.x + 3.0, gate.y - 9.0), PI * 0.5, 4.5, CHANTIER_TOP)
-	_end("Northgate Rise Construction Site", "construction")
 
 
 func _echo_circle() -> void:
@@ -678,45 +642,6 @@ func _model(name: String, center: Vector2, yaw: float, base_y: float, scale := 1
 	_flatten_rect(center, Vector2(cos(yaw), -sin(yaw)), Vector2(sin(yaw), cos(yaw)), Vector2(aabb.size.x, aabb.size.z) * scale * 0.5 + Vector2(1, 1), base_y - 0.05)
 	stats["modèles"] += 1
 	stats["triangles"] += int(info["triangles"])
-
-
-# Modèle d'un pack FBX hors catalogue EverythingLibrary (le catalogue ne couvre que ce pack-là) : la scène importée est
-# instanciée telle quelle, sa boîte est MESURÉE sur ses maillages, elle est posée base au sol et centrée sur `center`.
-# `collide` : "boite" pour un volume plein (un bâtiment arrête un rayon, cf. MapPlacesTest), "embase" pour une grue
-# dont seule la base est un obstacle (sinon son bras poserait un mur invisible de 40 m), "aucune" pour un décor plat.
-func _fbx_model(path: String, center: Vector2, yaw: float, base_y: float, collide := "boite", base_half := Vector2(2.0, 2.0)) -> AABB:
-	var packed := load(path) as PackedScene
-	if packed == null:
-		push_warning("PlacesBake : %s non importé" % path)
-		return AABB()
-	var inst := packed.instantiate() as Node3D
-	var aabb := AABB()
-	var first := true
-	var tris := 0
-	for mi: MeshInstance3D in inst.find_children("*", "MeshInstance3D", true, false):
-		var box: AABB = mi.transform * mi.mesh.get_aabb()
-		aabb = box if first else aabb.merge(box)
-		first = false
-		tris += mi.mesh.get_faces().size() / 3
-		mi.visibility_range_end = 1800.0 if aabb.size.y > 25.0 else 900.0
-	var basis := Basis(Vector3.UP, yaw)
-	inst.name = "%s_%d" % [path.get_file().get_basename(), place.get_child_count()]
-	inst.transform = Transform3D(basis, Vector3(center.x, base_y - aabb.position.y, center.y) - basis * Vector3(aabb.get_center().x, 0.0, aabb.get_center().z))
-	place.add_child(inst)
-	var half := Vector2(aabb.size.x, aabb.size.z) * 0.5 if collide == "boite" else base_half
-	if collide != "aucune":
-		var cs := CollisionShape3D.new()
-		cs.name = "Chantier_%d" % body.get_child_count()
-		var shape := BoxShape3D.new()
-		var height: float = aabb.size.y if collide == "boite" else minf(aabb.size.y, 8.0)
-		shape.size = Vector3(half.x * 2.0, height, half.y * 2.0)
-		cs.shape = shape
-		cs.transform = Transform3D(basis, Vector3(center.x, base_y + height * 0.5, center.y))
-		body.add_child(cs)
-	_flatten_rect(center, Vector2(cos(yaw), -sin(yaw)), Vector2(sin(yaw), cos(yaw)), Vector2(aabb.size.x, aabb.size.z) * 0.5 + Vector2(1, 1), base_y - 0.05)
-	stats["modèles"] += 1
-	stats["triangles"] += tris
-	return aabb
 
 
 func _prop(path: String, pos: Vector3, yaw: float) -> void:
