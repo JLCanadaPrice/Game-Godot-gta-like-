@@ -11,15 +11,9 @@ extends Node3D
 #    set_simulation_active (il se rabat sur set_process). Les blocs ne sont donc comptés ni comme voitures ni comme
 #    paires qui se chevauchent, et ils ne sont dans le groupe que pendant la fermeture.
 #
-#  - BARRIÈRES : un mât et une lisse de chaque côté, la lisse pivotant de la verticale à l'horizontale. Un seul
-#    matériau pour les quatre mâts et les quatre lisses de la carte. Le mât est solide en permanence ; la lisse
-#    n'est solide qu'une fois COMPLÈTEMENT baissée, sa collision étant fille du pivot donc solidaire de la
-#    rotation. Ce sont les blocs ci-dessus qui arrêtent l'IA — cette collision-ci est là pour le joueur, à pied
-#    comme au volant.
-#    Mesuré (deux passages, corps poussés contre la lisse pendant 2,5 s) : lisse baissée, un piéton lancé à 3 m/s
-#    avance 3,57 m au lieu de 7,50 et une voiture lancée à 8 m/s avance 2,87 m au lieu de 20,00 ; lisse levée, les
-#    deux parcourent toute la distance. Le centre de la boîte de lisse passe de sol+1,25 m à sol+3,85 m entre les
-#    deux états, ce qui prouve qu'elle suit bien le pivot.
+#  - BARRIÈRES EN DÉCOR : un mât et une lisse de chaque côté, la lisse pivotant de la verticale à l'horizontale.
+#    Purement visuelles, sans collision : ce sont les blocs qui arrêtent le trafic. Un seul matériau pour les quatre
+#    mâts et les quatre lisses de la carte.
 
 const STOP_CLEAR := 3.0        # m entre le bord de la coupure de plateforme et le bloc d'arrêt
 const BOOM_LENGTH := 5.2
@@ -33,7 +27,6 @@ var road_name := ""
 
 var _blocks: Array[Node3D] = []
 var _booms: Array[Node3D] = []
-var _boom_shapes: Array[CollisionShape3D] = []
 var _t := 0.0                  # 0 = lisse levée, 1 = lisse baissée
 
 
@@ -71,16 +64,6 @@ func setup(crossing: Dictionary, material: Material) -> void:
 		post.material_override = material
 		post.position = Vector3(0, POST_HEIGHT * 0.5, 0)
 		mast.add_child(post)
-		# le mât est solide en permanence : il est planté au bord de la chaussée et ne bouge jamais
-		var post_body := StaticBody3D.new()
-		post_body.name = "MatSolide"
-		mast.add_child(post_body)
-		var post_cs := CollisionShape3D.new()
-		var post_box := BoxShape3D.new()
-		post_box.size = pm.size
-		post_cs.shape = post_box
-		post_cs.position = Vector3(0, POST_HEIGHT * 0.5, 0)
-		post_body.add_child(post_cs)
 		var pivot := Node3D.new()
 		pivot.name = "Lisse"
 		pivot.position = Vector3(0, POST_HEIGHT, 0)
@@ -93,22 +76,6 @@ func setup(crossing: Dictionary, material: Material) -> void:
 		boom.material_override = material
 		boom.position = Vector3(0, 0, -BOOM_LENGTH * 0.5)
 		pivot.add_child(boom)
-		# La lisse est solide UNIQUEMENT une fois complètement baissée. Sa collision est fille du pivot, donc elle
-		# suit la rotation ; mais elle reste désactivée pendant le mouvement, si bien qu'aucun corps statique n'est
-		# déplacé en cours de route — une barrière qui descend ne doit pas pousser une voiture, elle doit
-		# l'empêcher de passer une fois fermée. Ce sont les blocs invisibles du groupe "vehicle" qui arrêtent l'IA ;
-		# cette collision-ci est là pour le joueur.
-		var boom_body := StaticBody3D.new()
-		boom_body.name = "LisseSolide"
-		pivot.add_child(boom_body)
-		var boom_cs := CollisionShape3D.new()
-		var boom_box := BoxShape3D.new()
-		boom_box.size = bm.size
-		boom_cs.shape = boom_box
-		boom_cs.position = Vector3(0, 0, -BOOM_LENGTH * 0.5)
-		boom_cs.disabled = true
-		boom_body.add_child(boom_cs)
-		_boom_shapes.append(boom_cs)
 	_apply(0.0)
 
 
@@ -136,11 +103,6 @@ func _physics_process(delta: float) -> void:
 func _apply(t: float) -> void:
 	for pivot: Node3D in _booms:
 		pivot.rotation = Vector3(deg_to_rad(lerpf(90.0, 0.0, t)), 0.0, 0.0)
-	# solide seulement à l'arrêt, barrière complètement baissée (set_deferred : on peut être dans un rappel physique)
-	var solid := t >= 0.999
-	for cs: CollisionShape3D in _boom_shapes:
-		if cs.disabled == solid:
-			cs.set_deferred("disabled", not solid)
 
 
 func report() -> Dictionary:

@@ -20,7 +20,7 @@ const Catalog := preload("res://scripts/data/VehicleCatalog.gd")
 
 const COLS := 8                  # colonnes de la grille civile
 const GAP_X := 6.5               # m libres entre deux véhicules côte à côte : assez pour que deux étiquettes
-                                 # voisines ne se recouvrent pas
+								 # voisines ne se recouvrent pas
 const GAP_Z := 7.0               # m libres entre deux rangées
 const ROLE_GAP := 18.0           # m entre le bloc civil et une rangée d'un autre rôle
 const LABEL_RISE := 1.2          # m au-dessus du toit du véhicule

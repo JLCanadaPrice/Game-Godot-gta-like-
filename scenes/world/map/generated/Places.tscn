@@ -1,8 +1,8 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://3e5dc4lh8txv"]
 
 [ext_resource type="Shape3D" path="res://scenes/world/map/generated/places/airport_shape.res" id="1_subvc"]
 [ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/buildings/models/Industrial_Warehouse_alt02.res" id="2_v2das"]
-[ext_resource type="PackedScene" path="res://assets/Fbx/Fbx/Air Plane_1.fbx" id="3_tmwhe"]
+[ext_resource type="PackedScene" uid="uid://dl8aitpys7brx" path="res://assets/Fbx/Fbx/Air Plane_1.fbx" id="3_tmwhe"]
 [ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/places/airport_asphalt.res" id="4_ckvow"]
 [ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/places/airport_concrete.res" id="5_mbnav"]
 [ext_resource type="ArrayMesh" path="res://scenes/world/map/generated/places/airport_paint.res" id="6_mj14t"]
@@ -500,10 +500,10 @@ transform = Transform3D(-1.6, 0, -1.3987645e-07, 0, 1.6, 0, 1.3987645e-07, 0, -1
 visibility_range_end = 2500.0
 mesh = ExtResource("2_v2das")
 
-[node name="Prop_11" type="Node3D" parent="Place_airport" unique_id=1404593814 instance=ExtResource("3_tmwhe")]
+[node name="Prop_11" parent="Place_airport" unique_id=1404593814 instance=ExtResource("3_tmwhe")]
 transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 612, 5.3, -1277)
 
-[node name="Prop_12" type="Node3D" parent="Place_airport" unique_id=1207188189 instance=ExtResource("3_tmwhe")]
+[node name="Prop_12" parent="Place_airport" unique_id=1207188189 instance=ExtResource("3_tmwhe")]
 transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 630, 5.3, -1256)
 
 [node name="Label_13" type="Label3D" parent="Place_airport" unique_id=79093013]
@@ -1288,6 +1288,216 @@ cast_shadow = 0
 visibility_range_end = 2500.0
 mesh = ExtResource("53_w7sw6")
 
+[node name="Concrete" type="MeshInstance3D" parent="Place_hospital/Concrete" unique_id=1208410541]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.01828, 0, 0)
+cast_shadow = 0
+visibility_range_end = 2500.0
+mesh = ExtResource("53_w7sw6")
+
+[node name="Concrete" type="MeshInstance3D" parent="Place_hospital/Concrete/Concrete" unique_id=1485650470]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 13.470352)
+cast_shadow = 0
+visibility_range_end = 2500.0
+mesh = ExtResource("53_w7sw6")
+
+[node name="Concrete" type="MeshInstance3D" parent="Place_hospital/Concrete/Concrete/Concrete" unique_id=1013025504]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 13.566116)
+cast_shadow = 0
+visibility_range_end = 2500.0
+mesh = ExtResource("53_w7sw6")
+
+[node name="Concrete" type="MeshInstance3D" parent="Place_hospital/Concrete/Concrete/Concrete/Concrete" unique_id=829808751]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 12.940575)
+cast_shadow = 0
+visibility_range_end = 2500.0
+mesh = ExtResource("53_w7sw6")
+
+[node name="Concrete" type="MeshInstance3D" parent="Place_hospital/Concrete/Concrete/Concrete/Concrete/Concrete" unique_id=1636287082]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 13.464951)
+cast_shadow = 0
+visibility_range_end = 2500.0
+mesh = ExtResource("53_w7sw6")
+
+[node name="Concrete" type="MeshInstance3D" parent="Place_hospital/Concrete/Concrete/Concrete/Concrete/Concrete/Concrete" unique_id=2136715301]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -66.82506)
+cast_shadow = 0
+visibility_range_end = 2500.0
+mesh = ExtResource("53_w7sw6")
+
+[node name="Concrete2" type="MeshInstance3D" parent="Place_hospital/Concrete/Concrete/Concrete" unique_id=2111068398]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 13.470352)
+cast_shadow = 0
+visibility_range_end = 2500.0
+mesh = ExtResource("53_w7sw6")
+
+[node name="Concrete" type="MeshInstance3D" parent="Place_hospital/Concrete/Concrete/Concrete/Concrete2" unique_id=1865517943]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 13.566116)
+cast_shadow = 0
+visibility_range_end = 2500.0
+mesh = ExtResource("53_w7sw6")
+
+[node name="Concrete" type="MeshInstance3D" parent="Place_hospital/Concrete/Concrete/Concrete/Concrete2/Concrete" unique_id=1684713178]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 12.940575)
+cast_shadow = 0
+visibility_range_end = 2500.0
+mesh = ExtResource("53_w7sw6")
+
+[node name="Concrete" type="MeshInstance3D" parent="Place_hospital/Concrete/Concrete/Concrete/Concrete2/Concrete/Concrete" unique_id=1469152562]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 13.464951)
+cast_shadow = 0
+visibility_range_end = 2500.0
+mesh = ExtResource("53_w7sw6")
+
+[node name="Concrete3" type="MeshInstance3D" parent="Place_hospital/Concrete/Concrete/Concrete" unique_id=791140789]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.2661133, 0, 0.39109802)
+cast_shadow = 0
+visibility_range_end = 2500.0
+mesh = ExtResource("53_w7sw6")
+
+[node name="Concrete" type="MeshInstance3D" parent="Place_hospital/Concrete/Concrete/Concrete/Concrete3" unique_id=889399419]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 13.566116)
+cast_shadow = 0
+visibility_range_end = 2500.0
+mesh = ExtResource("53_w7sw6")
+
+[node name="Concrete" type="MeshInstance3D" parent="Place_hospital/Concrete/Concrete/Concrete/Concrete3/Concrete" unique_id=1786225191]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 12.940575)
+cast_shadow = 0
+visibility_range_end = 2500.0
+mesh = ExtResource("53_w7sw6")
+
+[node name="Concrete" type="MeshInstance3D" parent="Place_hospital/Concrete/Concrete/Concrete/Concrete3/Concrete/Concrete" unique_id=926207095]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 13.464951)
+cast_shadow = 0
+visibility_range_end = 2500.0
+mesh = ExtResource("53_w7sw6")
+
+[node name="Concrete2" type="MeshInstance3D" parent="Place_hospital/Concrete/Concrete/Concrete/Concrete3" unique_id=1939499791]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 13.470352)
+cast_shadow = 0
+visibility_range_end = 2500.0
+mesh = ExtResource("53_w7sw6")
+
+[node name="Concrete" type="MeshInstance3D" parent="Place_hospital/Concrete/Concrete/Concrete/Concrete3/Concrete2" unique_id=1787119615]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 13.566116)
+cast_shadow = 0
+visibility_range_end = 2500.0
+mesh = ExtResource("53_w7sw6")
+
+[node name="Concrete" type="MeshInstance3D" parent="Place_hospital/Concrete/Concrete/Concrete/Concrete3/Concrete2/Concrete" unique_id=1695853454]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 12.940575)
+cast_shadow = 0
+visibility_range_end = 2500.0
+mesh = ExtResource("53_w7sw6")
+
+[node name="Concrete" type="MeshInstance3D" parent="Place_hospital/Concrete/Concrete/Concrete/Concrete3/Concrete2/Concrete/Concrete" unique_id=1422536463]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 13.464951)
+cast_shadow = 0
+visibility_range_end = 2500.0
+mesh = ExtResource("53_w7sw6")
+
+[node name="Concrete2" type="MeshInstance3D" parent="Place_hospital/Concrete/Concrete" unique_id=1949497703]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.01828, 0, 0)
+cast_shadow = 0
+visibility_range_end = 2500.0
+mesh = ExtResource("53_w7sw6")
+
+[node name="Concrete" type="MeshInstance3D" parent="Place_hospital/Concrete/Concrete/Concrete2" unique_id=2039297715]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 13.470352)
+cast_shadow = 0
+visibility_range_end = 2500.0
+mesh = ExtResource("53_w7sw6")
+
+[node name="Concrete" type="MeshInstance3D" parent="Place_hospital/Concrete/Concrete/Concrete2/Concrete" unique_id=841308580]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 13.566116)
+cast_shadow = 0
+visibility_range_end = 2500.0
+mesh = ExtResource("53_w7sw6")
+
+[node name="Concrete" type="MeshInstance3D" parent="Place_hospital/Concrete/Concrete/Concrete2/Concrete/Concrete" unique_id=216888608]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 12.940575)
+cast_shadow = 0
+visibility_range_end = 2500.0
+mesh = ExtResource("53_w7sw6")
+
+[node name="Concrete" type="MeshInstance3D" parent="Place_hospital/Concrete/Concrete/Concrete2/Concrete/Concrete/Concrete" unique_id=41689468]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 13.464951)
+cast_shadow = 0
+visibility_range_end = 2500.0
+mesh = ExtResource("53_w7sw6")
+
+[node name="Concrete2" type="MeshInstance3D" parent="Place_hospital/Concrete/Concrete/Concrete2/Concrete" unique_id=1366438530]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 13.470352)
+cast_shadow = 0
+visibility_range_end = 2500.0
+mesh = ExtResource("53_w7sw6")
+
+[node name="Concrete" type="MeshInstance3D" parent="Place_hospital/Concrete/Concrete/Concrete2/Concrete/Concrete2" unique_id=1438298422]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 13.566116)
+cast_shadow = 0
+visibility_range_end = 2500.0
+mesh = ExtResource("53_w7sw6")
+
+[node name="Concrete" type="MeshInstance3D" parent="Place_hospital/Concrete/Concrete/Concrete2/Concrete/Concrete2/Concrete" unique_id=746146803]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 12.940575)
+cast_shadow = 0
+visibility_range_end = 2500.0
+mesh = ExtResource("53_w7sw6")
+
+[node name="Concrete" type="MeshInstance3D" parent="Place_hospital/Concrete/Concrete/Concrete2/Concrete/Concrete2/Concrete/Concrete" unique_id=177608384]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 13.464951)
+cast_shadow = 0
+visibility_range_end = 2500.0
+mesh = ExtResource("53_w7sw6")
+
+[node name="Concrete3" type="MeshInstance3D" parent="Place_hospital/Concrete/Concrete/Concrete2/Concrete" unique_id=1920631908]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.2661133, 0, 0.39109802)
+cast_shadow = 0
+visibility_range_end = 2500.0
+mesh = ExtResource("53_w7sw6")
+
+[node name="Concrete" type="MeshInstance3D" parent="Place_hospital/Concrete/Concrete/Concrete2/Concrete/Concrete3" unique_id=691955422]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 13.566116)
+cast_shadow = 0
+visibility_range_end = 2500.0
+mesh = ExtResource("53_w7sw6")
+
+[node name="Concrete" type="MeshInstance3D" parent="Place_hospital/Concrete/Concrete/Concrete2/Concrete/Concrete3/Concrete" unique_id=1814043772]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 12.940575)
+cast_shadow = 0
+visibility_range_end = 2500.0
+mesh = ExtResource("53_w7sw6")
+
+[node name="Concrete" type="MeshInstance3D" parent="Place_hospital/Concrete/Concrete/Concrete2/Concrete/Concrete3/Concrete/Concrete" unique_id=749987625]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 13.464951)
+cast_shadow = 0
+visibility_range_end = 2500.0
+mesh = ExtResource("53_w7sw6")
+
+[node name="Concrete2" type="MeshInstance3D" parent="Place_hospital/Concrete/Concrete/Concrete2/Concrete/Concrete3" unique_id=1338030085]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 13.470352)
+cast_shadow = 0
+visibility_range_end = 2500.0
+mesh = ExtResource("53_w7sw6")
+
+[node name="Concrete" type="MeshInstance3D" parent="Place_hospital/Concrete/Concrete/Concrete2/Concrete/Concrete3/Concrete2" unique_id=332025053]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 13.566116)
+cast_shadow = 0
+visibility_range_end = 2500.0
+mesh = ExtResource("53_w7sw6")
+
+[node name="Concrete" type="MeshInstance3D" parent="Place_hospital/Concrete/Concrete/Concrete2/Concrete/Concrete3/Concrete2/Concrete" unique_id=360634806]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 12.940575)
+cast_shadow = 0
+visibility_range_end = 2500.0
+mesh = ExtResource("53_w7sw6")
+
+[node name="Concrete" type="MeshInstance3D" parent="Place_hospital/Concrete/Concrete/Concrete2/Concrete/Concrete3/Concrete2/Concrete/Concrete" unique_id=1211166277]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 13.464951)
+cast_shadow = 0
+visibility_range_end = 2500.0
+mesh = ExtResource("53_w7sw6")
+
 [node name="Asphalt" type="MeshInstance3D" parent="Place_hospital" unique_id=298971887]
 cast_shadow = 0
 visibility_range_end = 2500.0
@@ -1328,15 +1538,15 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -726, 5.47, 141)
 shape = SubResource("BoxShape3D_pyy2r")
 
 [node name="Chantier_5" type="CollisionShape3D" parent="Place_precinct/Collision" unique_id=332614560]
-transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -690.5, 0.82311076, 153)
+transform = Transform3D(0.03360768, 0, -0.99943525, 0, 1, 0, 0.99943525, 0, 0.03360768, -693.7282, 0.82311076, 155.68692)
 shape = SubResource("BoxShape3D_gbtjq")
 
 [node name="Chantier_6" type="CollisionShape3D" parent="Place_precinct/Collision" unique_id=2104183357]
-transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -690.5, 0.82311076, 160)
+transform = Transform3D(0.012448549, 0, -0.9999225, 0, 1, 0, 0.9999225, 0, 0.012448549, -694.0473, 0.82311076, 161.10353)
 shape = SubResource("BoxShape3D_wacol")
 
 [node name="Chantier_7" type="CollisionShape3D" parent="Place_precinct/Collision" unique_id=1838715060]
-transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -690.5, 0.9602757, 167)
+transform = Transform3D(-0.006207057, 0, -0.99998075, 0, 1, 0, 0.99998075, 0, -0.006207057, -694.4107, 0.96027595, 166.73405)
 shape = SubResource("BoxShape3D_psybl")
 
 [node name="Surfaces" type="CollisionShape3D" parent="Place_precinct/Collision" unique_id=1388701079]
@@ -1370,21 +1580,45 @@ font_size = 64
 outline_size = 8
 
 [node name="Veh_Police_Sedan_5" type="MeshInstance3D" parent="Place_precinct" unique_id=1429833913]
-transform = Transform3D(-1.65, 0, -1.4424758e-07, 0, 1.65, 0, 1.4424758e-07, 0, -1.65, -690.5, 0.017341368, 153.00359)
+transform = Transform3D(0.0328206, 0, -1.6496736, 0, 1.65, 0, 1.6496736, 0, 0.0328206, -693.6864, 0.010864727, 155.58708)
 visibility_range_end = 250.0
 mesh = ExtResource("58_ohto7")
 
 [node name="Veh_Police_Sedan_6" type="MeshInstance3D" parent="Place_precinct" unique_id=2023104548]
-transform = Transform3D(-1.65, 0, -1.4424758e-07, 0, 1.65, 0, 1.4424758e-07, 0, -1.65, -690.5, 0.017341368, 160.00359)
+transform = Transform3D(-0.012074999, 0, -1.6499559, 0, 1.65, 0, 1.6499559, 0, -0.012074999, -693.9763, 0.017341368, 161.10793)
 visibility_range_end = 250.0
 mesh = ExtResource("58_ohto7")
 
 [node name="Veh_Police_SUV_7" type="MeshInstance3D" parent="Place_precinct" unique_id=163566497]
-transform = Transform3D(-1.65, 0, -1.4424758e-07, 0, 1.65, 0, 1.4424758e-07, 0, -1.65, -690.5, 0.018522302, 167.00104)
+transform = Transform3D(-0.037718724, 0, -1.6495688, 0, 1.65, 0, 1.6495688, 0, -0.037718724, -694.3656, 0.018522302, 166.68402)
 visibility_range_end = 250.0
 mesh = ExtResource("59_fltb4")
 
 [node name="Concrete" type="MeshInstance3D" parent="Place_precinct" unique_id=1862644104]
+cast_shadow = 0
+visibility_range_end = 2500.0
+mesh = ExtResource("60_jtbph")
+
+[node name="Concrete" type="MeshInstance3D" parent="Place_precinct/Concrete" unique_id=440721165]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.9868774, 0, 37.373085)
+cast_shadow = 0
+visibility_range_end = 2500.0
+mesh = ExtResource("60_jtbph")
+
+[node name="Concrete" type="MeshInstance3D" parent="Place_precinct/Concrete/Concrete" unique_id=297355868]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -17.70752)
+cast_shadow = 0
+visibility_range_end = 2500.0
+mesh = ExtResource("60_jtbph")
+
+[node name="Concrete" type="MeshInstance3D" parent="Place_precinct/Concrete/Concrete/Concrete" unique_id=11605454]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -11.184006)
+cast_shadow = 0
+visibility_range_end = 2500.0
+mesh = ExtResource("60_jtbph")
+
+[node name="Concrete" type="MeshInstance3D" parent="Place_precinct/Concrete/Concrete/Concrete/Concrete" unique_id=780031177]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.8945923, 0, -13.589859)
 cast_shadow = 0
 visibility_range_end = 2500.0
 mesh = ExtResource("60_jtbph")
