@@ -5,25 +5,9 @@ extends Node3D
 # une liste de caisses : chaque caisse calcule son propre repère depuis la voie, donc la rame suit les courbes et les
 # pentes sans aucune physique.
 #
-# Chaque caisse est un AnimatableBody3D — un corps CINÉMATIQUE — portant le maillage cuit par TrainsBake (une
-# surface, un matériau partagé, pas d'émission) et UNE boîte de collision, prise sur l'AABB du maillage cuit et pas
-# sur une cote écrite à la main. Cinématique et non statique parce qu'un corps statique déplacé de 0,4 m par frame ne
-# pousse personne : il faut que le moteur traite le déplacement comme un mouvement.
-#
-#  - `collision_mask = 0` : la caisse ne cherche rien devant elle. Rien ne doit pouvoir arrêter un train, et une
-#    caisse qui balaie 0,4 m de décor par frame coûterait cher pour un résultat qu'on ne veut pas.
-#  - Les caisses ne sont dans AUCUN groupe. Surtout pas "vehicle" : la voie longe les routes sur des kilomètres, et
-#    l'IA freinerait devant un train qui roule à 40 m de sa chaussée. Le trafic est arrêté aux passages à niveau par
-#    les blocs dédiés de RailCrossing (étape 4), pas par le train.
-#  - Une voiture arrêtée sur la voie n'arrête pas le train : elle est repoussée par la caisse qui arrive. C'est le
-#    comportement voulu — pas de traversée, pas de physique de choc.
-#
-# Mesuré (voiture 4,21 x 2,11 x 1,66 m et piéton posés sur l'axe au passage art_a8:0, rame grande vitesse à
-# 90 km/h) : enfoncement maximal du centre dans une caisse 0,000 m, voiture chassée sur 66 m et piéton sur 110 m.
-# Le même essai avec sync_to_physics désactivé pousse aussi bien (0,000 m, 61 m et 110 m) ; sur un banc isolé, la
-# voie seule avec 4 rames et 40 caisses, les boîtes coûtent +0,05 ms par frame sans et +0,15 ms avec. On garde
-# sync_to_physics : 0,1 ms sur 16,7 ms de budget ne se voit pas, et c'est le mode prévu pour un corps qui bouge
-# vite. Si l'étape 5 (MultiMesh) rend ce choix coûteux, il se change en une ligne.
+# Les caisses sont des MeshInstance3D sur les maillages cuits par TrainsBake (une surface, un matériau partagé, pas
+# d'émission). Elles n'ont PAS de collision : rien ne doit pouvoir pousser un train, et le trafic routier est arrêté
+# aux passages à niveau par des blocs dédiés (étape 4), pas par le train lui-même.
 #
 # La rame ne décide de rien : RailPath lui pose une vitesse maximale (`limit`) à chaque frame, d'après les cantons et
 # le terminus. La rame ne fait qu'accélérer et freiner vers cette limite.
@@ -45,7 +29,7 @@ var rake_length := 0.0
 var kind := ""               # "grande vitesse" ou "fret", pour les relevés
 
 var _rail: Node3D
-var _cars: Array[AnimatableBody3D] = []
+var _cars: Array[MeshInstance3D] = []
 var _half: PackedFloat32Array = PackedFloat32Array()    # demi-longueur de chaque caisse
 var _offset: PackedFloat32Array = PackedFloat32Array()  # distance du nez de la rame au CENTRE de chaque caisse
 
@@ -73,27 +57,11 @@ func _ready() -> void:
 			push_error("caisse inconnue : %s" % name)
 			continue
 		var half := float(specs[name]["longueur"]) * 0.5
-		var caisse := AnimatableBody3D.new()
-		caisse.name = "%02d_%s" % [_cars.size(), name]
-		caisse.sync_to_physics = true      # sans ça le corps est téléporté et ne pousse rien
-		caisse.collision_mask = 0          # une caisse ne cherche rien : rien n'arrête un train
-		add_child(caisse)
-		var mesh: Mesh = load(path)
 		var mi := MeshInstance3D.new()
-		mi.mesh = mesh
-		mi.name = "Maillage"
-		caisse.add_child(mi)
-		# Boîte relevée sur les sommets du maillage cuit. Les caisses de tête ne sont PAS symétriques autour de leur
-		# origine (HighSpeed_Front : nez à -11,07 m, arrière à +9,41 m) : une boîte centrée sur l'origine laisserait
-		# 0,83 m de nez sans collision. D'où le centre pris sur l'AABB.
-		var aabb := mesh.get_aabb()
-		var cs := CollisionShape3D.new()
-		var box := BoxShape3D.new()
-		box.size = aabb.size
-		cs.shape = box
-		cs.position = aabb.get_center()
-		caisse.add_child(cs)
-		_cars.append(caisse)
+		mi.mesh = load(path)
+		mi.name = "%02d_%s" % [_cars.size(), name]
+		add_child(mi)
+		_cars.append(mi)
 		_half.append(half)
 		_offset.append(walked + half)
 		walked += half * 2.0 + COUPLING

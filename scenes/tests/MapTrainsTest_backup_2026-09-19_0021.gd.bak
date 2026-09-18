@@ -10,10 +10,7 @@ extends Node
 #  - jamais deux rames dans le même canton, et jamais de chevauchement (queue de la précédente / nez de la suivante) ;
 #  - aucune rame hors de la voie, ni au-delà du heurtoir ;
 #  - les compositions et les longueurs de rame sont celles attendues ;
-#  - les deux sens sont bien exploités (la vague suivante repart de l'autre bout) ;
-#  - la COLLISION de chaque caisse (étape « trains solides ») : une boîte et une seule, à la taille de l'AABB du
-#    maillage cuit, masque nul, hors de tout groupe — surtout pas "vehicle", sinon l'IA freinerait sur des
-#    kilomètres le long de la voie — et surtout : la boîte ne décolle jamais du maillage qu'elle représente.
+#  - les deux sens sont bien exploités (la vague suivante repart de l'autre bout).
 #
 # Lancer : Godot --headless --fixed-fps 60 --quit-after 120000 res://scenes/tests/MapTrainsTest.tscn
 
@@ -36,11 +33,6 @@ var _warnings: Array[float] = []   # s de préavis constatés à chaque passage 
 var _passed := {}              # "rame|route" -> true
 var _reopen := {}              # route -> frames de réouverture après le dégagement
 var _group_ok := true
-var _boxes := 0                # boîtes de caisse contrôlées structurellement
-var _box_gap := 0.0            # m : plus grand écart vu entre une boîte et le maillage de sa caisse
-var _box_travel := 0.0         # m parcourus par la boîte suivie, pour prouver qu'elle bouge vraiment
-var _box_last := Vector3.ZERO
-var _box_seen := false
 
 
 func _ready() -> void:
@@ -82,10 +74,6 @@ func _physics_process(_delta: float) -> void:
 		_fail("deux sens en meme temps sur la voie unique : %s" % str(dirs.keys()))
 	_check_spacing(live)
 	_check_crossings(live)
-	# toutes les 30 frames : 40 caisses x 50 000 frames de contrôle allongeraient le test pour rien, la boîte ne
-	# peut décoller du maillage que par une modification de code, pas par hasard entre deux frames
-	if _frames % 30 == 0:
-		_check_boxes()
 	if _waves >= 2 and _frames > 600:
 		_done = true
 		_finish()
@@ -152,62 +140,6 @@ func _check_crossings(live: Array) -> void:
 				_warnings.append((_frames - int(_closed_since.get(road, _frames))) / hz)
 
 
-# Collision des caisses. Le contrôle qui compte est le dernier : la boîte doit rester collée au maillage qu'elle
-# représente. Un top_level oublié, un MultiMesh à l'étape 5, un décalage d'origine, et le train devient solide
-# ailleurs que là où on le voit — ce qui ne se remarque qu'en jouant.
-func _check_boxes() -> void:
-	for t: Node3D in (_rail.trains as Array):
-		for caisse: Node in t.get_children():
-			var body := caisse as AnimatableBody3D
-			if body == null:
-				_fail("%s : caisse %s n'est pas un AnimatableBody3D" % [t.name, caisse.name])
-				continue
-			var mesh_node: MeshInstance3D = null
-			var shape: CollisionShape3D = null
-			var shapes := 0
-			for ch: Node in body.get_children():
-				if ch is MeshInstance3D:
-					mesh_node = ch
-				elif ch is CollisionShape3D:
-					shapes += 1
-					shape = ch
-			if shapes != 1 or shape == null or mesh_node == null:
-				_fail("%s/%s : %d forme(s) de collision et %s maillage" % [t.name, caisse.name, shapes,
-						"aucun" if mesh_node == null else "un"])
-				continue
-			var box := shape.shape as BoxShape3D
-			if box == null:
-				_fail("%s/%s : la collision n'est pas une boite" % [t.name, caisse.name])
-				continue
-			if not _box_seen:
-				_box_seen = true
-				_box_last = shape.global_transform.origin
-			if int(body.collision_mask) != 0:
-				_fail("%s/%s : masque de collision %d au lieu de 0" % [t.name, caisse.name, body.collision_mask])
-			for g: String in body.get_groups():
-				_fail("%s/%s : caisse dans le groupe %s" % [t.name, caisse.name, g])
-			var aabb := (mesh_node.mesh as Mesh).get_aabb()
-			if not box.size.is_equal_approx(aabb.size):
-				_fail("%s/%s : boite %s au lieu de l'AABB cuit %s" % [t.name, caisse.name, box.size, aabb.size])
-			# la boîte est-elle encore là où est le maillage ?
-			var vu := mesh_node.global_transform * aabb.get_center()
-			_box_gap = maxf(_box_gap, vu.distance_to(shape.global_transform.origin))
-			_boxes += 1
-	# une seule boîte suivie d'une frame à l'autre suffit à prouver que les boîtes se déplacent
-	if _box_seen and not (_rail.trains as Array).is_empty():
-		var first: Node3D = (_rail.trains as Array)[0]
-		for ch: Node in (first.get_child(0) as Node).get_children():
-			var sh := ch as CollisionShape3D
-			if sh == null:
-				continue
-			var o := sh.global_transform.origin
-			var d := o.distance_to(_box_last)
-			if d < 200.0:      # au-delà, c'est une rame retirée et une autre posée au terminus, pas un déplacement
-				_box_travel += d
-			_box_last = o
-			break
-
-
 func _same_block(a_lo: float, a_hi: float, b_lo: float, b_hi: float) -> bool:
 	var block: float = float(_rail.block_length)
 	for k in range(floori(a_lo / block), floori(a_hi / block) + 1):
@@ -239,14 +171,6 @@ func _finish() -> void:
 	print("MAP_TRAINS_PASSAGES %d passage(s) a niveau, %d traversees de rame, preavis de fermeture : mini %.1f s, moyen %.1f s | blocs d'arret coherents avec la fermeture : %s"
 			% [(_rail.crossings_report() as Array).size(), _warnings.size(),
 			0.0 if lo == INF else lo, 0.0 if _warnings.is_empty() else sum / _warnings.size(), _group_ok])
-	print("MAP_TRAINS_COLLISION %d controles de boite, ecart maxi boite/maillage %.4f m, boite suivie sur %.0f m"
-			% [_boxes, _box_gap, _box_travel])
-	if _boxes == 0:
-		_fail("aucune boite de collision de caisse controlee")
-	elif _box_gap > 0.01:
-		_fail("une boite de caisse a decolle de son maillage de %.3f m" % _box_gap)
-	elif _box_travel < 100.0:
-		_fail("la boite suivie n'a parcouru que %.1f m : la collision ne suit pas la rame" % _box_travel)
 	if _warnings.is_empty():
 		_fail("aucune traversee de passage a niveau observee")
 	elif lo < 6.0:
