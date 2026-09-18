@@ -59,21 +59,7 @@ const TAPER := BLEND + 8.0          # m de biseau au bout d'une bretelle accolé
                                     # (relevé sur le maillage cuit, RampAudit du 2026-09-18), le parapet tombait sur
                                     # la ligne de conduite et les voitures ne passaient pas. Le museau ne bouge pas
                                     # (0,42 m), seule la vitesse d'ouverture change ; aucun point de trajet ne bouge.
-const LEVEL_WITH_CARRIAGEWAY := TAPER  # m de bretelle accolée à niveau de sa chaussée : toute la zone accolée, pas
-                                    # 26 m. Le trajet passe de la chaussée à la bretelle sur BLEND m et le biseau se
-                                    # referme à TAPER m : lâcher le niveau avant, c'est mettre la face de béton du
-                                    # flanc sous la ligne de conduite (mesuré : bordure à 6 m du museau et 0,06 m
-                                    # d'enrobé sous le trajet quand le calage s'arrêtait à 30 m).
-const LEVEL_RELEASE := 40.0         # m de sortie progressive du calage : à 26 m le calage lâchait d'un coup et la
-                                    # bretelle plongeait (genou de 0,11 m/m sur la zone accolée, relevé RampAudit)
-const LEVEL_FALLBACK := 26.0        # m : calage des bretelles trop courtes pour tenir le niveau puis rejoindre
-                                    # l'anneau (les deux de 117 m descendent déjà à pleine pente) ; ancienne valeur,
-                                    # qui passait la cuisson, plutôt qu'un calage encore plus court
-const LEVEL_BAND := 4.0             # m : tolérance de la contrainte à la fin de la sortie. Elle s'ouvre en smoothstep
-                                    # depuis 0,01 m ; épingler le profil sur la cible elle-même le forçait à suivre le
-                                    # saut de hauteur au départ de l'évasement (pente de 26 % refusée à la cuisson).
-const ATTACH_DROP := 0.10           # m d'écart de hauteur au-delà duquel la bretelle reprend bordure et glissière
-                                    # plutôt que de rester dalle à dalle avec sa chaussée
+const LEVEL_WITH_CARRIAGEWAY := 26.0  # m de bretelle accolée à niveau de sa chaussée (le trajet franchit le joint vers 23 m)
 const GRADE := {"highway": 0.045, "ramp": 0.08}
 const GRADE_LIMIT := {"carriageway": 0.052, "median": 0.052, "ramp": 0.092, "ring": 0.01, "arterial": 0.082, "sidewalk": 0.082, "rail": 0.034}
 const SMOOTH := {"highway": 220.0, "ramp": 12.0}
@@ -578,17 +564,12 @@ func _build_ring(node_id: String) -> void:
 			outgoing.splits[out_i] = true
 			ramp_in = _ring_ramp(node_id + ":sortie", chain, center, s, j_a, j_flare, RAMP_OFFSET, entry_pos, h0, true)
 			ramp_out = _ring_ramp(node_id + ":insertion", chain, center, s, j_a, j_flare, RAMP_OFFSET, exit_pos, h0, false)
-			# divergent et convergent : chaussée et bretelle accolées tant qu'elles sont à la même hauteur, et au
-			# minimum le temps que le trajet passe de l'une à l'autre (BLEND m : jamais de bordure sous les roues)
-			var max_span := ceili((BLEND + 8.0) / STEP)
-			var min_span := ceili(BLEND / STEP)
-			var span_in := maxi(attached_span(incoming, in_i, 1, ramp_in, 0, 1, max_span), min_span)
-			attachments.append({"ribbon": incoming, "from": in_i, "to": in_i + span_in, "side": 1})
-			attachments.append({"ribbon": ramp_in, "from": 0, "to": span_in, "side": -1})
-			var last_out := ramp_out.points.size() - 1
-			var span_out := maxi(attached_span(outgoing, out_i, -1, ramp_out, last_out, -1, max_span), min_span)
-			attachments.append({"ribbon": outgoing, "from": out_i - span_out, "to": out_i, "side": 1})
-			attachments.append({"ribbon": ramp_out, "from": last_out - span_out, "to": last_out, "side": -1})
+			# divergent et convergent : chaussée et bretelle accolées sur BLEND m, ouvertes l'une sur l'autre
+			var span := ceili((BLEND + 8.0) / STEP)
+			attachments.append({"ribbon": incoming, "from": in_i, "to": in_i + span, "side": 1})
+			attachments.append({"ribbon": ramp_in, "from": 0, "to": span, "side": -1})
+			attachments.append({"ribbon": outgoing, "from": out_i - span, "to": out_i, "side": 1})
+			attachments.append({"ribbon": ramp_out, "from": ramp_out.points.size() - 1 - span, "to": ramp_out.points.size() - 1, "side": -1})
 		else:
 			var j_a: int = chain["last"] if s < 0 else chain["first"]
 			incoming.splits[incoming.points.size() - 1] = true
@@ -705,29 +686,12 @@ func _branch_ramp(id: String, chain: Dictionary, s: int, j_a: int, j_f: int, t_a
 	# régulièrement vers l'anneau ; tablier au-dessus de l'eau
 	var natural := PackedFloat32Array()
 	var constraints: Array = []
-	# Calage et sortie ne peuvent pas manger la longueur dont la bretelle a besoin pour rejoindre l'anneau à la pente
-	# visée : les plus courtes (117 m pour 6,5 m de dénivelé) descendent déjà à pleine pente sur toute leur longueur,
-	# et tenir 30 m de plus au niveau de la chaussée laissait une marche au dernier échantillon (cuisson refusée).
-	var top := line_h[0]
-	for k in line.size():
-		if arc[k] > LEVEL_WITH_CARRIAGEWAY + LEVEL_RELEASE:
-			break
-		top = maxf(top, line_h[k])
-	# bretelle trop courte pour tenir le niveau puis rejoindre l'anneau : le calage et sa sortie sont réduits d'autant
-	# (les deux bretelles de 117 m descendent déjà à pleine pente sur toute leur longueur)
-	var needed: float = absf(top - h_ring) / (GRADE["ramp"] * 0.85) + STEP
-	var hold := clampf(total - needed - LEVEL_RELEASE, LEVEL_FALLBACK, LEVEL_WITH_CARRIAGEWAY)
-	var release := maxf(minf(LEVEL_RELEASE, total - needed - hold), STEP)
 	for k in line.size():
 		var direct := lerpf(line_h[0], h_ring, smoothstep(0.0, total, arc[k]))
-		# sortie du calage : la cible quitte la chaussée en smoothstep (pente nulle aux deux bouts) et la contrainte
-		# s'ouvre à la même allure, au lieu de disparaître d'un coup à la fin de la zone accolée (genou)
-		var free := smoothstep(hold, hold + release, arc[k])
-		natural.append(lerpf(line_h[k], direct, free))
-		if free < 1.0 and t_a > CW_OFFSET:
-			var band: float = 0.01 + free * LEVEL_BAND
-			constraints.append({"i0": k, "i1": k, "h": line_h[k] + band, "type": "max"})
-			constraints.append({"i0": k, "i1": k, "h": line_h[k] - band, "type": "min"})
+		natural.append(lerpf(line_h[k], direct, smoothstep(LEVEL_WITH_CARRIAGEWAY, LEVEL_WITH_CARRIAGEWAY + 30.0, arc[k])))
+		if arc[k] <= LEVEL_WITH_CARRIAGEWAY and t_a > CW_OFFSET:
+			constraints.append({"i0": k, "i1": k, "h": line_h[k] + 0.01, "type": "max"})
+			constraints.append({"i0": k, "i1": k, "h": line_h[k] - 0.01, "type": "min"})
 		if is_water(line[k]) or terrain.river_info(line[k]).x < 10.0:
 			constraints.append({"i0": k - 2, "i1": k + 2, "h": WATER_DECK, "type": "min"})
 	# pente visée un peu sous la limite : l'écart entre échantillons descend à ~3,3 m à l'intérieur des courbes
@@ -751,24 +715,6 @@ func _branch_ramp(id: String, chain: Dictionary, s: int, j_a: int, j_f: int, t_a
 		rb.taper_at_end = not inbound
 	ribbons.append(rb)
 	return rb
-
-
-# Nombre d'échantillons pendant lesquels une bretelle et sa chaussée restent dalle à dalle (ni bordure ni glissière
-# entre elles) : tant que leur écart de hauteur tient sous ATTACH_DROP, au plus `max_span`. Avant, la zone était fixe
-# (BLEND + 8 m) quelle que soit la hauteur : on roulait à côté d'une autoroute jusqu'à 2,80 m plus bas, séparée par une
-# face de béton nue au milieu de l'enrobé. On avance des deux côtés au même pas : `cw_dir` et `rb_dir` valent +1 ou -1
-# selon le bout accolé.
-static func attached_span(cw: Ribbon, cw_i: int, cw_dir: int, rb: Ribbon, rb_i: int, rb_dir: int, max_span: int) -> int:
-	var span := 0
-	for t in range(1, max_span + 1):
-		var a := cw_i + cw_dir * t
-		var b := rb_i + rb_dir * t
-		if a < 0 or a >= cw.points.size() or b < 0 or b >= rb.points.size():
-			break
-		if absf(rb.points[b].y - cw.points[a].y) > ATTACH_DROP:
-			break
-		span = t
-	return span
 
 
 # --- jonctions et tunnels -----------------------------------------------------------------------------------------
@@ -1206,19 +1152,15 @@ func _diamond_ramps(node_id: String) -> void:
 		var cw_index := _ribbon_index(chain, side == "d", j_a)
 		carriageway.splits[cw_index] = true
 		var rb := _branch_ramp("%s:%s" % [node_id, code], chain, s, j_a, j_f, RAMP_OFFSET, end_point, end_dir, 0.4, 60.0, off)
-		var max_span := ceili((BLEND + 8.0) / STEP)
-		var min_span := ceili(BLEND / STEP)     # le trajet passe d'une chaussée à l'autre : jamais de bordure dessous
-		var last := rb.points.size() - 1
+		var span := ceili((BLEND + 8.0) / STEP)
 		if off:
-			var span := maxi(attached_span(carriageway, cw_index, 1, rb, 0, 1, max_span), min_span)
 			attachments.append({"ribbon": carriageway, "from": cw_index, "to": cw_index + span, "side": 1})
 			attachments.append({"ribbon": rb, "from": 0, "to": span, "side": -1})
 			attachments.append({"ribbon": rb, "from": rb.points.size() - 3, "to": rb.points.size() - 1, "side": 0})
 			connectors.append({"points": PackedVector3Array([rb.path[rb.path.size() - 1], Vector3(t_pos.x, t_pos.y - ROAD_TOP, t_pos.z)]), "one_way": true, "lanes": PackedFloat32Array([0.0]), "station": terminal["id"]})
 		else:
-			var span := maxi(attached_span(carriageway, cw_index, -1, rb, last, -1, max_span), min_span)
 			attachments.append({"ribbon": carriageway, "from": cw_index - span, "to": cw_index, "side": 1})
-			attachments.append({"ribbon": rb, "from": last - span, "to": last, "side": -1})
+			attachments.append({"ribbon": rb, "from": rb.points.size() - 1 - span, "to": rb.points.size() - 1, "side": -1})
 			attachments.append({"ribbon": rb, "from": 0, "to": 2, "side": 0})
 			connectors.append({"points": PackedVector3Array([Vector3(t_pos.x, t_pos.y - ROAD_TOP, t_pos.z), rb.path[0]]), "one_way": true, "lanes": PackedFloat32Array([0.0]), "station": terminal["id"]})
 		var tip: Vector3 = rb.points[rb.points.size() - 1] if off else rb.points[0]
