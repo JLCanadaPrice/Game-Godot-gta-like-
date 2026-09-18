@@ -70,11 +70,6 @@ const DRIVE_REVERSE_MAX := 8.0
 const DRIVE_FRICTION := 9.0
 const DRIVE_BRAKE := 26.0
 const TURN_RATE := 2.4
-# Franchissement de bordure, JOUEUR SEULEMENT (cf. _try_step_up). 0,22 m : les bordures de la carte font
-# 0,150 m mesurés sur la collision cuite, la marge couvre les raccords de tuiles sans rendre franchissable un
-# muret. 0,32 m d'avance testée : un peu plus que ce que la voiture parcourt en une frame à pleine vitesse.
-const STEP_UP_MAX := 0.22
-const STEP_UP_AHEAD := 0.32
 const ABANDON_DESPAWN := 25.0
 const GRAVITY := 18.0
 const WHEEL_RADIUS := 0.34
@@ -826,12 +821,9 @@ func _drive_physics(delta: float) -> void:
 	if absf(_drive_speed) > 0.3:
 		rotate_y(_steer_input * TURN_RATE * delta * clampf(_drive_speed / DRIVE_MAX_SPEED, -1.0, 1.0))
 
-	# Montée de trottoir : voir _try_step_up, appelée après move_and_slide.
-	# (L'ancien commentaire renvoyait à CurbRamp.gd, qui construisait des rampes de collision le long des
-	# trottoirs. Ce script ne reconnaît que des StaticBody3D nommés *Walk* portant une seule BoxShape3D —
-	# la disposition du monde d'essai d'origine — et il n'est attaché à aucun nœud de World.tscn : il ne
-	# tournait plus du tout. Les trottoirs de la carte cuite sont des trimesh de RoadCell et des piles de
-	# boîtes sous Sol_*.)
+	# Montée de trottoir : gérée nativement par move_and_slide grâce aux rampes
+	# de collision en pente ajoutées le long des bordures (voir CurbRamp.gd).
+	# Plus aucun raycast/nudge scripté ici.
 
 	# recul de choc (décroît vite)
 	_recoil_vel = _recoil_vel.lerp(Vector3.ZERO, clampf(delta * 6.0, 0.0, 1.0))
@@ -844,46 +836,7 @@ func _drive_physics(delta: float) -> void:
 	velocity.x = fwd.x * _drive_speed + _recoil_vel.x
 	velocity.z = fwd.z * _drive_speed + _recoil_vel.z
 	move_and_slide()
-	_try_step_up(fwd)
 	_resolve_drive_collisions(fwd)
-
-# Franchissement de bordure. move_and_slide() ne monte AUCUNE marche verticale, si basse soit-elle : mesuré, la
-# voiture arcade s'arrête net devant les bordures de 0,150 m, à 3, 6, 10 et 15 m/s, aussi bien sur le trimesh
-# d'une artère que sur les boîtes du centre-ville. On relève donc la caisse à la main quand elle bute sur une
-# face verticale basse ayant du sol juste derrière.
-#
-# Réservé au joueur : `driven_by_player` est faux pour les 252 voitures de la circulation, qui gardent donc
-# exactement le comportement d'avant et restent arrêtées par les bordures. Les PNJ ne passent pas par ici.
-func _try_step_up(fwd: Vector3) -> void:
-	if not driven_by_player or not is_on_floor() or absf(_drive_speed) < 0.5:
-		return
-	# sens de MARCHE, pas d'orientation : en marche arrière la bordure est derrière la voiture
-	var dir := fwd * signf(_drive_speed)
-	var bute := false
-	for i in get_slide_collision_count():
-		var n := get_slide_collision(i).get_normal()
-		# face quasi verticale, prise de face : une pente reste gérée par move_and_slide
-		if absf(n.y) <= 0.35 and dir.dot(-n) > 0.3:
-			bute = true
-			break
-	if not bute:
-		return
-	var lift := Vector3.UP * STEP_UP_MAX
-	if test_move(global_transform, lift):
-		return                                   # pas la place de se relever : tunnel, pont, autre voiture
-	var releve := global_transform.translated(lift)
-	var devant := dir * STEP_UP_AHEAD
-	if test_move(releve, devant):
-		return                                   # vrai mur : la caisse ne passe pas non plus au-dessus
-	var contact := KinematicCollision3D.new()
-	if not test_move(releve.translated(devant), Vector3.DOWN * (STEP_UP_MAX + 0.05), contact):
-		return                                   # rien sur quoi se reposer : un trou, pas une marche
-	# On pose la caisse exactement là où l'essai vient de la faire atterrir : relevée, avancée, puis redescendue
-	# jusqu'au contact. Se contenter de la relever sur place ne suffit pas — mesuré : à 3 m/s la voiture se
-	# relevait 14 fois de suite et retombait à chaque fois sur la chaussée, parce qu'avec 0,05 m parcourus par
-	# frame sa caisse restait presque entièrement au-dessus de la route et que l'accrochage au sol
-	# (floor_snap_length) la ramenait aussitôt contre la face de la bordure.
-	global_position += lift + devant + contact.get_travel()
 
 func _resolve_drive_collisions(fwd: Vector3) -> void:
 	for i in get_slide_collision_count():

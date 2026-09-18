@@ -97,7 +97,7 @@ ligne `<NOM>_RESULT OK` ou `FAIL`.
 ```bash
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/MapRoadsTest.tscn          # rubans, croisements, pentes
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/MapRailTest.tscn           # tracé de la voie, gabarit, trottoirs
-"$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/MapTrainsTest.tscn  # cantons, vagues, passages à niveau
+"$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/MapTrainsTest.tscn  # cantons, vagues, passages à niveau, collision des caisses
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/MapDistrictsTest.tscn      # parcelles nivelées, emprises
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/MapPlacesTest.tscn         # entrées à moins de 15 m d'une route, rien sur la chaussée
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/MapTerrainTest.tscn        # tuiles, rivière, trous
@@ -110,10 +110,11 @@ ligne `<NOM>_RESULT OK` ou `FAIL`.
 "$GODOT" --headless --path "$PROJET" --fixed-fps 60 --quit-after 300 res://scenes/tests/VehicleCatalogTest.tscn  # catalogue des véhicules, 20 000 tirages
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/CarDrivingTest.tscn
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/CarDropTest.tscn
+"$GODOT" --headless --path "$PROJET" res://scenes/tests/CarKerbTest.tscn          # bordures : le joueur monte, l'IA non
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/DowntownStreetsTest.tscn
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/DowntownBuildingsTest.tscn
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/ShopBuildingsTest.tscn     # échec ANTÉRIEUR connu
-"$GODOT" --headless --path "$PROJET" --script res://scenes/world/map/tools/ProjectLoadCheck.gd   # attendu : 583 fichiers, 0 échec
+"$GODOT" --headless --path "$PROJET" --script res://scenes/world/map/tools/ProjectLoadCheck.gd   # attendu : 585 fichiers, 0 échec
 ```
 
 Outil d'inspection, hors batterie : `res://scenes/tests/VehicleSortTest.tscn` aligne les véhicules du catalogue
@@ -165,6 +166,26 @@ Captures et compteurs de rendu (fenêtré, pas headless : le rendu compte) :
   relever la hauteur du sol et écrire des altitudes absolues.
 - Les `.tscn` cuits changent textuellement à chaque cuisson (identifiants de sous-ressources tirés
   au hasard) : un `git status` « modifié » ne prouve pas un changement de contenu.
+- **Il y a DEUX voitures dans ce jeu, et elles ne réagissent pas pareil au décor.** `Car.gd` est un
+  `CharacterBody3D` arcade : c'est le modèle des 252 voitures de la circulation ET ce que le joueur
+  conduit quand il prend une voiture dans la rue. `PlayerCarPhysics` (`PlayerCarController.gd` sur le
+  cœur `assets/car_physics`) est un `RigidBody3D` dont les quatre roues sont des **RayCast3D** : il n'y
+  a aucun collisionneur de roue, et sa coque flotte **2,23 m au-dessus du sol**, son origine reposant à
+  **sol + 2,566 m** (mesuré). Posée plus bas, la suspension part en butée et catapulte la voiture à 5 m :
+  toute sonde qui instancie cette voiture doit la lâcher à sol + 2,57 m, jamais « juste au-dessus du sol ».
+- **`move_and_slide()` ne monte AUCUNE marche verticale**, si basse soit-elle. Les bordures de trottoir
+  de la carte font **0,150 m** mesurés sur la collision cuite, en marche franche (la montée tient entre
+  deux relevés distants de 2 cm), sur trimesh pour les artères et sur piles de boîtes au centre-ville.
+  D'où `Car._try_step_up`, réservé au joueur. `scenes/world/CurbRamp.gd` était la réponse précédente :
+  il ne reconnaît que des `StaticBody3D` nommés `*Walk*` portant une seule `BoxShape3D` — la disposition
+  du monde d'essai d'origine — et **il n'est attaché à aucun nœud de `World.tscn`**, donc il ne tournait
+  plus du tout. Ne pas s'y fier.
+- **Les autoloads ne sont pas enregistrés en mode `--script`** : une sonde qui instancie
+  `PlayerCarPhysics` échoue sur « Identifier not found: VitaVehicleSimulation ». La lancer comme
+  **scène**, pas comme script.
+- **Un `CharacterBody3D` inerte n'est jamais repoussé** : c'est lui qui résout ses pénétrations dans
+  `move_and_slide()`. Une sonde qui pose un corps sans l'animer et regarde si un train le pousse mesure
+  zéro, quelle que soit la collision d'en face.
 
 ## 7. État d'avancement
 
