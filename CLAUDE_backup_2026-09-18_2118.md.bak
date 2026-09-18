@@ -1,4 +1,4 @@
-# Repères pour Claude Code
+﻿# Repères pour Claude Code
 
 Fiche écrite pour être lue au début de chaque session : le contexte du projet, la méthode de
 travail imposée, les commandes exactes, les pièges déjà payés et l'état d'avancement.
@@ -112,12 +112,8 @@ ligne `<NOM>_RESULT OK` ou `FAIL`.
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/DowntownStreetsTest.tscn
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/DowntownBuildingsTest.tscn
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/ShopBuildingsTest.tscn     # échec ANTÉRIEUR connu
-"$GODOT" --headless --path "$PROJET" --script res://scenes/world/map/tools/ProjectLoadCheck.gd   # attendu : 573 fichiers, 0 échec
+"$GODOT" --headless --path "$PROJET" --script res://scenes/world/map/tools/ProjectLoadCheck.gd   # attendu : 570 fichiers, 0 échec
 ```
-
-Outil d'inspection, hors batterie : `res://scenes/tests/VehicleSortTest.tscn` aligne les 63 véhicules du catalogue
-sur une grille plate, nom de fichier affiché au-dessus, caméra libre (ZQSD, souris, Espace/Ctrl, Maj). Sert à
-trier le parc. **Jetable : référencée nulle part, ni dans `World.tscn` ni sur la carte.**
 
 Captures et compteurs de rendu (fenêtré, pas headless : le rendu compte) :
 
