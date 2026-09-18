@@ -18,7 +18,6 @@ extends SceneTree
 #
 # Lancer : Godot --headless --path <projet> --script res://scenes/world/map/tools/TrainsBake.gd
 
-const Network := preload("res://scenes/world/map/tools/RoadNetwork.gd")
 const SRC := "res://assets/Modular Train Pack-zip/"
 const OUT := "res://scenes/world/map/generated/trains"
 const MODELS := {
@@ -77,26 +76,21 @@ func _initialize() -> void:
 			problems.append("%s : aucun triangle" % name)
 			continue
 		var mesh := st.commit()
-		# ÉCHELLE : le pack modélise des caisses réalistes (2,03 à 2,25 m de large) mais des roues bien trop
-		# rapprochées. L'écartement des roues est MESURÉ sur les sommets du bas de caisse, et la caisse est mise à
-		# l'échelle qui le fait coïncider avec l'écartement de la voie (RoadNetwork.RAIL_GAUGE, 1,435 m, relevé sur
-		# les rails cuits : champignons centrés à ±0,7175 m). Les roues tombent alors pile sur les rails.
-		var wheel := _wheel_gauge(mesh)
-		var scale := 1.0 if wheel <= 0.01 else Network.RAIL_GAUGE / wheel
 		# De quel côté est le nez ? Mesuré, pas supposé : on compare la section moyenne (demi-largeur x hauteur) du
 		# premier et du dernier sixième de la caisse. Le nez est l'extrémité la plus fine. Si elle est sur +Z, la
 		# caisse est retournée pour que TOUTES les caisses cuites aient leur avant sur -Z, comme un Node3D de Godot.
 		var nose_plus_z := _nose_at_plus_z(mesh)
-		var basis := Basis(Vector3.UP, PI if nose_plus_z else 0.0).scaled(Vector3(scale, scale, scale))
 		if nose_plus_z:
+			var flip := SurfaceTool.new()
+			flip.begin(Mesh.PRIMITIVE_TRIANGLES)
+			flip.append_from(mesh, 0, Transform3D(Basis(Vector3.UP, PI), Vector3.ZERO))
+			mesh = flip.commit()
 			var swap := lo.z
 			lo.z = -hi.z
 			hi.z = -swap
-		lo *= scale
-		hi *= scale
 		st = SurfaceTool.new()
 		st.begin(Mesh.PRIMITIVE_TRIANGLES)
-		st.append_from(mesh, 0, Transform3D(basis, Vector3.ZERO))
+		st.append_from(mesh, 0, Transform3D.IDENTITY)
 		st.index()
 		mesh = st.commit()
 		mesh.surface_set_material(0, _material())
@@ -110,10 +104,9 @@ func _initialize() -> void:
 		var size := hi - lo
 		summary[name] = {"longueur": snappedf(size.z, 0.001), "largeur": snappedf(size.x, 0.001), "hauteur": snappedf(size.y, 0.001),
 				"avant": snappedf(lo.z, 0.001), "arriere": snappedf(hi.z, 0.001), "bas": snappedf(lo.y, 0.001),
-				"triangles": tris, "retournee": nose_plus_z, "roues_brutes": snappedf(wheel, 0.0001),
-				"echelle": snappedf(scale, 0.0001)}
-		print("TRAINS_BAKE %-26s %5d tri | roues du pack %.4f m -> echelle %.4f | longueur %.3f m, largeur %.3f m, hauteur %.3f m, bas y %.3f | nez remis sur -Z : %s"
-				% [name, tris, wheel, scale, size.z, size.x, size.y, lo.y, "oui" if nose_plus_z else "non (déjà)"])
+				"triangles": tris, "retournee": nose_plus_z}
+		print("TRAINS_BAKE %-26s %5d tri, %d surfaces fusionnées en 1 | longueur %.3f m, largeur %.3f m, hauteur %.3f m, bas y %.3f | nez remis sur -Z : %s"
+				% [name, tris, surfaces, size.z, size.x, size.y, lo.y, "oui" if nose_plus_z else "non (déjà)"])
 	var f := FileAccess.open(OUT.path_join("trains.json"), FileAccess.WRITE)
 	f.store_string(JSON.stringify(summary, "  "))
 	f.close()
@@ -127,38 +120,6 @@ func _initialize() -> void:
 	if not problems.is_empty():
 		print("TRAINS_BAKE_ERROR " + " | ".join(problems))
 	quit(0 if problems.is_empty() else 1)
-
-
-# Écartement des roues, mesuré : position latérale MOYENNE des sommets situés dans les 3,5 % inférieurs de la
-# hauteur de la caisse, séparés en deux files de part et d'autre de l'axe. C'est le plan médian de chaque file de
-# roues, celui qui doit coïncider avec le champignon du rail.
-# La bande est PROPORTIONNELLE à la caisse : une bande en centimètres fixes ne retiendrait pas les mêmes sommets
-# avant et après mise à l'échelle, et la mesure ne convergerait pas. La moyenne (et non les faces extrêmes) rend la
-# mesure stable d'un modèle à l'autre d'une même famille : 0,3 % d'écart entre motrice et remorque.
-func _wheel_gauge(mesh: ArrayMesh) -> float:
-	var verts: PackedVector3Array = mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX]
-	var low := INF
-	var high := -INF
-	for v in verts:
-		low = minf(low, v.y)
-		high = maxf(high, v.y)
-	var band := low + (high - low) * 0.035
-	var left := 0.0
-	var right := 0.0
-	var nl := 0
-	var nr := 0
-	for v in verts:
-		if v.y > band:
-			continue
-		if v.x < 0.0:
-			left += v.x
-			nl += 1
-		else:
-			right += v.x
-			nr += 1
-	if nl == 0 or nr == 0:
-		return 0.0
-	return right / nr - left / nl
 
 
 # Section moyenne (demi-largeur x hauteur) du premier et du dernier sixième de la caisse : le nez est l'extrémité la

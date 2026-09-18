@@ -23,10 +23,8 @@ const RADIUS_MIN := 150.0          # rayon minimal acceptable pour une rame (mes
 const GRADE_MAX := 0.031           # RoadNetwork.RAIL_GRADE vaut 0,03 ; 0,1 point de marge pour le lissage
 const GABARIT := 5.5               # m au-dessus du champignon du rail : rien ne doit s'y trouver
 const DROP := 1.6                  # m sous l'axe : la plateforme doit être là
-# Gabarit d'une caisse mise à l'échelle de la voie (TrainsBake, 2026-09-18) : la plus large fait 3,738 m et la plus
-# haute 4,523 m. On exige 2,00 m de libre de chaque côté de l'axe, soit 13 cm de jeu au-delà de la demi-largeur.
-const HALF_WIDTH := 2.00
-const BODY_HEIGHTS := [0.9, 2.4, 4.2]   # m au-dessus du rail : hauteurs auxquelles on tâte de chaque côté
+const HALF_WIDTH := 1.30           # m : demi-largeur du gabarit latéral (caisse la plus large 2,25 m + 0,17 de jeu)
+const BODY_HEIGHTS := [0.9, 2.4]   # m au-dessus du rail : hauteurs auxquelles on tâte de chaque côté
 const END_SKIP := 24.0             # m ignorés à chaque bout : le heurtoir est sur l'axe, c'est normal
 const ENDS := [Vector2(2168.0, 195.0), Vector2(-2170.0, 800.0)]
 const CROSSINGS := [Vector2(-389.4, 252.2), Vector2(-113.3, 274.5)]

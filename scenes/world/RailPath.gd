@@ -28,7 +28,10 @@ const FREIGHT := ["CargoTrain_Front",
 	"CargoTrain_CoalContainer", "CargoTrain_Container"]
 
 @export var run_trains := true
-@export var block_length := 280.0        # m : longueur d'un canton
+# Canton : 280 m au plan, quand un fret faisait 155 m. Les caisses ayant été mises à l'échelle de la voie
+# (TrainsBake, 2026-09-18), un fret fait 250 m : un canton de 280 m ne laissait plus que 30 m entre deux rames.
+# La longueur suit donc la même échelle (280 x 1,67 ~ 450 m), ce qui redonne environ 10 cantons sur la ligne.
+@export var block_length := 450.0
 @export var wave_size := 3               # trains par vague
 @export var max_trains := 4              # plafond absolu
 @export var headway := 16.0              # s entre deux départs d'une même vague
