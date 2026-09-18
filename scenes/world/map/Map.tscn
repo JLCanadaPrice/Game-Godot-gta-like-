@@ -8,6 +8,7 @@
 [ext_resource type="PackedScene" path="res://scenes/world/map/generated/Places.tscn" id="6_places"]
 [ext_resource type="PackedScene" path="res://scenes/world/map/generated/Vegetation.tscn" id="7_vegetation"]
 [ext_resource type="Script" path="res://scenes/world/map/DowntownHLOD.gd" id="8_hlod"]
+[ext_resource type="Script" path="res://scenes/world/RailPath.gd" id="9_rail"]
 
 [node name="Map" type="Node3D" unique_id=99550813]
 
@@ -27,3 +28,6 @@
 
 [node name="DowntownHLOD" type="Node3D" parent="." unique_id=1648203957]
 script = ExtResource("8_hlod")
+
+[node name="Rail" type="Node3D" parent="." unique_id=1648203958]
+script = ExtResource("9_rail")
