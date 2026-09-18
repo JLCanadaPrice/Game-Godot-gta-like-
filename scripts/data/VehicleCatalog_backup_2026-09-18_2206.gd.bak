@@ -25,20 +25,13 @@ static func find_by_path(path: String) -> ModelData:
 	return _by_path.get(path) as ModelData
 
 
-# Rôles qui roulent dans la circulation de fond. Une ambulance ou une voiture de police croisée en ville reste une
-# ambulance ou une voiture de police : leur `role` dit ce qu'elles SONT, et c'est sur ce rôle que le futur système
-# de police ira les chercher. Leur présence dans le trafic se règle donc par leur poids, pas en les déguisant en
-# civiles. Le SWAT est volontairement absent : il est réservé aux missions.
-const AMBIENT_ROLES := ["civil", "police", "emergency"]
-
-
-# Tirage pondéré (traffic_weight) parmi les modèles des rôles demandés, puis variante de couleur au hasard.
+# Tirage pondéré (traffic_weight) parmi les modèles du rôle demandé, puis variante de couleur au hasard.
 # Renvoie "" si aucun modèle n'est éligible : l'appelant garde alors son propre repli.
-static func pick_traffic_path(roles: Array = AMBIENT_ROLES) -> String:
+static func pick_traffic_path(role: String = "civil") -> String:
 	var eligible: Array[ModelData] = []
 	var total := 0.0
 	for m in models():
-		if m.role in roles and m.traffic_weight > 0.0 and not m.model_paths.is_empty():
+		if m.role == role and m.traffic_weight > 0.0 and not m.model_paths.is_empty():
 			eligible.append(m)
 			total += m.traffic_weight
 	if eligible.is_empty():

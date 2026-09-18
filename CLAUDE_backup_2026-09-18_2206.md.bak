@@ -1,4 +1,4 @@
-# Repères pour Claude Code
+﻿# Repères pour Claude Code
 
 Fiche écrite pour être lue au début de chaque session : le contexte du projet, la méthode de
 travail imposée, les commandes exactes, les pièges déjà payés et l'état d'avancement.
@@ -113,7 +113,7 @@ ligne `<NOM>_RESULT OK` ou `FAIL`.
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/DowntownStreetsTest.tscn
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/DowntownBuildingsTest.tscn
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/ShopBuildingsTest.tscn     # échec ANTÉRIEUR connu
-"$GODOT" --headless --path "$PROJET" --script res://scenes/world/map/tools/ProjectLoadCheck.gd   # attendu : 583 fichiers, 0 échec
+"$GODOT" --headless --path "$PROJET" --script res://scenes/world/map/tools/ProjectLoadCheck.gd   # attendu : 573 fichiers, 0 échec
 ```
 
 Outil d'inspection, hors batterie : `res://scenes/tests/VehicleSortTest.tscn` aligne les véhicules du catalogue
@@ -180,36 +180,6 @@ débogage sur `V`.
   bâtiments de la carte) ;
 - **concessionnaire enrichi** ;
 - **bug : 0 voiture exposée** chez le concessionnaire.
-
-### Parc de véhicules
-
-Le catalogue est `resources/vehicle_models/*.tres` (un `VehicleModelData` par modèle), lu par
-`VehicleCatalog` et appliqué par `Car._setup_model()`. **72 modèles, 214 variantes de couleur** :
-61 civils, 5 police, 3 urgence, 3 SWAT. Toute la famille `city_*` est à l'échelle **1,65**, mesurée
-et non supposée : à cette échelle une berline du pack fait 2,02 m de large contre 2,111 m pour une
-voiture du jeu.
-
-`VehicleCatalog.AMBIENT_ROLES` (`civil`, `police`, `emergency`) est ce que tire la circulation de
-fond. Le `role` dit ce que le véhicule EST — c'est par lui que le futur système de police ira
-chercher ses voitures — et sa présence dans le trafic se règle par son **poids**, pas en le
-déguisant en civil. Poids des véhicules rares : police sedan et SUV 0,10, police van 0,05, police
-truck 0,03, ambulance 0,08, fourgon d'urgence 0,05, camion de pompiers 0,04, soit **1,4 % du
-trafic**.
-
-**SWAT** : rôle `swat`, poids 0, jamais tiré par la circulation. `VehicleCatalogTest` échoue si un
-SWAT reçoit un poids. Ils sont prêts pour les missions et le futur système police.
-
-**Hélicoptères** (`Veh_Air_Ambulance_Helicopter`, `Veh_Police_Helicopter`, `Veh_SWAT_Helicopter`) :
-**hors catalogue pour l'instant**, et c'est volontaire. Ils sont utilisables plus tard — 10,62 ×
-1,69 × 3,38 m à l'échelle 1,65, 726 à 876 triangles, un seul matériau, et surtout `Rotor_Main` et
-`Rotor_Tail` sont des **nœuds séparés donc animables** (celui de la police a en plus un
-`Search_Light`). Mais ils n'ont **aucune roue** : `Car.gd` est un véhicule terrestre et
-`VehicleCatalogTest` exige au moins 3 roues dont exactement 2 avant. Les mettre au catalogue
-casserait le test. Il faudra **un contrôleur de vol distinct**, et exempter le rôle `aircraft`
-(déjà en réserve dans l'enum de `VehicleModelData`) des contrôles de roues.
-
-Retirer un véhicule de la circulation, de façon réversible : voir la note de la §5 sur
-`traffic_weight` et `resources/vehicle_models/retires/`.
 
 ## 8. Chantier en cours : trains en mouvement
 

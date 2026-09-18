@@ -5,9 +5,7 @@ extends Node3D
 #  - une Car créée sur chaque modèle (1re variante) reçoit les réglages du catalogue, trouve ses roues (pivot
 #    au centre de la roue, exactement 2 roues avant) et une boîte de collision de gabarit plausible ;
 #  - les 6 voitures d'origine gardent échelle 1, orientation 180°, décalage -0.45 ;
-#  - 20 000 tirages de circulation : uniquement des rôles de fond (VehicleCatalog.AMBIENT_ROLES, soit civil,
-#    police et emergency), chaque modèle de ces rôles à poids non nul sort au moins une fois, et aucun SWAT
-#    n'a de poids.
+#  - 20 000 tirages de circulation : uniquement du rôle civil, chaque modèle civil sort au moins une fois.
 #
 # Lancer : Godot --headless --fixed-fps 60 --quit-after 300 res://scenes/tests/VehicleCatalogTest.tscn
 
@@ -59,17 +57,15 @@ func _ready() -> void:
 	for i in PICKS:
 		var path := VehicleCatalog.pick_traffic_path()
 		var d := VehicleCatalog.find_by_path(path)
-		if d == null or not (d.role in VehicleCatalog.AMBIENT_ROLES):
-			errors.append("tirage de circulation hors des rôles de fond %s : %s" % [VehicleCatalog.AMBIENT_ROLES, path])
+		if d == null or d.role != "civil":
+			errors.append("tirage de circulation hors rôle civil : " + path)
 			break
 		counts[d.id] = int(counts.get(d.id, 0)) + 1
 		if path in LEGACY:
 			legacy_hits += 1
 	for m in models:
-		if m.role in VehicleCatalog.AMBIENT_ROLES and m.traffic_weight > 0.0 and not counts.has(m.id):
+		if m.role == "civil" and m.traffic_weight > 0.0 and not counts.has(m.id):
 			errors.append("%s jamais tiré en %d tirages" % [m.id, PICKS])
-		if m.role == "swat" and m.traffic_weight > 0.0:
-			errors.append("%s : le SWAT ne doit jamais rouler en circulation (poids %.2f)" % [m.id, m.traffic_weight])
 	print("VEHICLE_CATALOG_PICKS %d tirages, %d modèles tirés, voitures d'origine %.1f %%" % [PICKS, counts.size(), 100.0 * legacy_hits / PICKS])
 
 	for e in errors.slice(0, 40):
