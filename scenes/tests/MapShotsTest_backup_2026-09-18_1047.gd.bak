@@ -71,15 +71,6 @@ const VIEWS := [
 	["cv_quai_vers_ville", Vector3(-250, 1.7, -490), Vector3(-300, 20, -100)],
 	["cv_coeur_40m", Vector3(-460, 40, -100), Vector3(-600, 0, -300)],
 	["cv_survol_sud_est", Vector3(-100, 90, 300), Vector3(-500, 0, -150)],
-	# chantier des routes, bouts de bretelles (2026-09-18) : caméras À HAUTEUR DE CONDUITE sur le trajet lui-même,
-	# tournées vers la partie étroite du biseau. Coordonnées relevées sur le trajet des rubans (RampPoints).
-	["bretelle_insertion_no_sol", Vector3(-903.3, 8.4, -715.7), Vector3(-938.3, 8.6, -711.3)],
-	["bretelle_sortie_no_sol", Vector3(-943.3, 9.4, -690.2), Vector3(-913.3, 8.1, -684.3)],
-	["bretelle_losange_n9_sol", Vector3(198.3, 1.9, -682.0), Vector3(233.4, 0.8, -685.7)],
-	["bretelle_coupe_n9_d20", Vector3(233.4, 5.0, -706.0), Vector3(233.4, 0.2, -678.0)],
-	["bretelle_coupe_n9_d40", Vector3(213.3, 5.0, -706.0), Vector3(213.3, 0.2, -678.0)],
-	["bretelle_coupe_n9_d55", Vector3(198.3, 5.5, -706.0), Vector3(198.3, 0.4, -676.0)],
-	["bretelle_survol_n9", Vector3(268.0, 26.0, -655.0), Vector3(200.0, 0.0, -684.0)],
 ]
 const SETTLE_FRAMES := 40
 
