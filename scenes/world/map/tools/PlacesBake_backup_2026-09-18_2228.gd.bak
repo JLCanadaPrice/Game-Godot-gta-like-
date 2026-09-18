@@ -330,14 +330,6 @@ func _hospital() -> void:
 	for x: float in [-312.5, -247.5]:
 		_parking(Vector2(x, 169), Vector2(13, 46), y + 0.05, false, 0.0)
 	_sign_board("ST. ANSELM MEDICAL CENTER", Vector2(-310, 133), 0.0, 5.0, y)
-	# Ambulances rangées sur le parvis, nez vers la rue, prêtes à sortir. Le parvis fait 50 x 14 m et la caisse
-	# 6,16 x 2,48 m : elles tiennent dans la profondeur et sont espacées de 7 m. Relevé d'emprise : 1 870 cases
-	# posables, sol plat à 0,02 m, à plus de 5 m de tout segment de CircuitPath et 2,5 m de tout segment de PedGraph.
-	# Décalées vers l'est : le point de contrôle du garde-fou « parvis du St. Anselm Medical Center » est en
-	# (-290, 137) et MapGateTest y fait marcher le joueur sur 10 m. Une ambulance à x -287 le bloquait au bout de
-	# 1,4 m. Même règle que la végétation : rien à moins de 12 m d'un point de contrôle.
-	for x: float in [-278.0, -271.0, -264.0]:
-		_parked_vehicle(VEH + "Emergency/Veh_Ambulance.glb", Vector2(x, 137), PI, y + 0.05)
 	footprints.append(_rect_footprint("building", Vector2(-280, 168), Vector2(48, 47)))
 	_end("St. Anselm Medical Center", "hospital")
 
@@ -354,13 +346,6 @@ func _precinct() -> void:
 	_quad("paint", pole + Vector3(0.1, 9.2, 0), pole + Vector3(2.5, 9.2, 0), pole + Vector3(2.5, 10.7, 0), pole + Vector3(0.1, 10.7, 0), Vector3(0, 0, -1), [], Color(0.12, 0.2, 0.5), false)
 	_label("CENTRAL PRECINCT", Vector3(-713, y + 12.2, 145.4), PI, 0.02, Color(0.92, 0.92, 0.9), 500.0)
 	_label("POLICE", Vector3(-713, y + 10.6, 145.4), PI, 0.016, Color(0.3, 0.45, 0.95), 500.0)
-	# Voitures de patrouille dans la COUR CLÔTURÉE du commissariat (x -697 à -684, z 147 à 183), pas sur le parvis :
-	# le parvis porte le point de contrôle « allée du Central Precinct » en (-713, 132) et il est trop petit
-	# (18 x 18,5 m) pour garder les 12 m de dégagement exigés. La cour est de toute façon l'endroit où vivent des
-	# voitures de police. Nez vers la sortie, au sud.
-	for z: float in [153.0, 160.0, 167.0]:
-		var model := "Police/Veh_Police_SUV.glb" if z > 166.0 else "Police/Veh_Police_Sedan.glb"
-		_parked_vehicle(VEH + model, Vector2(-690.5, z), PI, y + 0.05)
 	footprints.append(_rect_footprint("building", Vector2(-713, 158), Vector2(26, 25)))
 	_end("Central Precinct", "police")
 
@@ -706,7 +691,7 @@ func _model(name: String, center: Vector2, yaw: float, base_y: float, scale := 1
 # est posé base au sol et centré sur `center`.
 # `collide` : "boite" pour un volume plein (un bâtiment arrête un rayon, cf. MapPlacesTest), "embase" pour une grue
 # dont seule la base est un obstacle (sinon son bras poserait un mur invisible de 40 m), "aucune" pour un décor plat.
-func _fbx_model(path: String, center: Vector2, yaw: float, base_y: float, collide := "boite", base_half := Vector2(2.0, 2.0), scale := 1.0) -> AABB:
+func _fbx_model(path: String, center: Vector2, yaw: float, base_y: float, collide := "boite", base_half := Vector2(2.0, 2.0)) -> AABB:
 	if not fbx_cache.has(path):
 		var packed := load(path) as PackedScene
 		if packed == null:
@@ -717,18 +702,9 @@ func _fbx_model(path: String, center: Vector2, yaw: float, base_y: float, collid
 		st.begin(Mesh.PRIMITIVE_TRIANGLES)
 		var mat: Material = null
 		var tris := 0
-		var sources: Array[MeshInstance3D] = []
-		if inst is MeshInstance3D and (inst as MeshInstance3D).mesh != null:
-			sources.append(inst as MeshInstance3D)
-		sources.append_array(inst.find_children("*", "MeshInstance3D", true, false))
-		for mi: MeshInstance3D in sources:
-			if mi.mesh == null:
-				continue
-			# transform RELATIF À LA RACINE, pas le transform local : un .glb dont les maillages sont sous un noeud
-			# mis à l'échelle sortait fusionné à une taille délirante (une ambulance à 225 m de long).
-			var xf := _relative_to(mi, inst)
+		for mi: MeshInstance3D in inst.find_children("*", "MeshInstance3D", true, false):
 			for s in mi.mesh.get_surface_count():
-				st.append_from(mi.mesh, s, xf)
+				st.append_from(mi.mesh, s, mi.transform)
 				if mat == null:
 					mat = mi.get_active_material(s)
 			tris += mi.mesh.get_faces().size() / 3
@@ -740,63 +716,31 @@ func _fbx_model(path: String, center: Vector2, yaw: float, base_y: float, collid
 		inst.free()
 	var entry: Dictionary = fbx_cache[path]
 	var aabb: AABB = entry["aabb"]
-	var basis := Basis(Vector3.UP, yaw).scaled(Vector3(scale, scale, scale))
-	var sized := aabb.size * scale          # encombrement réel, échelle comprise
+	var basis := Basis(Vector3.UP, yaw)
 	var node := MeshInstance3D.new()
 	node.name = "%s_%d" % [path.get_file().get_basename(), place.get_child_count()]
 	node.mesh = entry["mesh"]
 	# Distance de disparition mesurée sur la hauteur du modèle : on le garde tant qu'il couvre plus de trois pixels
 	# (450 px pour 75° de champ, soit 0,0029 rad par pixel, donc hauteur x 115), borné à 1500 m. Une grue de 54 m reste
 	# un repère de loin, une palette de 1,2 m disparaît à 250 m.
-	node.visibility_range_end = clampf(sized.y * 115.0, 250.0, 1500.0)
-	node.transform = Transform3D(basis, Vector3(center.x, base_y - aabb.position.y * scale, center.y) - basis * Vector3(aabb.get_center().x, 0.0, aabb.get_center().z))
+	node.visibility_range_end = clampf(aabb.size.y * 115.0, 250.0, 1500.0)
+	node.transform = Transform3D(basis, Vector3(center.x, base_y - aabb.position.y, center.y) - basis * Vector3(aabb.get_center().x, 0.0, aabb.get_center().z))
 	place.add_child(node)
-	var half := Vector2(sized.x, sized.z) * 0.5 if collide == "boite" else base_half
+	var half := Vector2(aabb.size.x, aabb.size.z) * 0.5 if collide == "boite" else base_half
 	if collide != "aucune":
 		var cs := CollisionShape3D.new()
 		cs.name = "Chantier_%d" % body.get_child_count()
 		var shape := BoxShape3D.new()
-		var height: float = sized.y if collide == "boite" else minf(sized.y, 8.0)
+		var height: float = aabb.size.y if collide == "boite" else minf(aabb.size.y, 8.0)
 		shape.size = Vector3(half.x * 2.0, height, half.y * 2.0)
 		cs.shape = shape
-		# la boîte n'est pas mise à l'échelle par la base : sa taille l'est déjà
-		cs.transform = Transform3D(Basis(Vector3.UP, yaw), Vector3(center.x, base_y + height * 0.5, center.y))
+		cs.transform = Transform3D(basis, Vector3(center.x, base_y + height * 0.5, center.y))
 		body.add_child(cs)
-	_flatten_rect(center, Vector2(cos(yaw), -sin(yaw)), Vector2(sin(yaw), cos(yaw)), Vector2(sized.x, sized.z) * 0.5 + Vector2(1, 1), base_y - 0.05)
+	_flatten_rect(center, Vector2(cos(yaw), -sin(yaw)), Vector2(sin(yaw), cos(yaw)), Vector2(aabb.size.x, aabb.size.z) * 0.5 + Vector2(1, 1), base_y - 0.05)
 	stats["modèles"] += 1
 	stats["triangles"] += int(entry["triangles"])
 	return aabb
 	return aabb
-
-
-# Véhicule garé sur le parvis d'un lieu. Il passe par _fbx_model, et pas par _prop : _prop pose la scène importée
-# telle quelle, dont les enfants n'ont pas de propriétaire et perdent donc leur visibility_range_end (le piège du
-# §6 du CLAUDE.md, qui laissait des modèles visibles à 1,1 km). _fbx_model fusionne le modèle en un maillage
-# enregistré en .res, pose un MeshInstance3D et règle la portée dessus, à quoi s'ajoutent une boîte de collision et
-# l'aplanissement du sol.
-# L'ÉCHELLE du pack (1,65, la même que dans le catalogue des véhicules) est appliquée ici aussi : sans elle une
-# ambulance ferait 3,71 m de long au lieu de 6,12 m.
-const VEH := "res://assets/vehicle_models_extra/city_vehicles_UNVERIFIED_LICENSE/"
-const VEH_SCALE := 1.65
-
-
-# Transform d'un noeud dans le repère de `top`, en remontant la chaîne des parents.
-func _relative_to(n: Node3D, top: Node) -> Transform3D:
-	var xf := Transform3D.IDENTITY
-	var cur: Node = n
-	while cur != null and cur != top:
-		if cur is Node3D:
-			xf = (cur as Node3D).transform * xf
-		cur = cur.get_parent()
-	return xf
-
-
-func _parked_vehicle(path: String, center: Vector2, yaw: float, base_y: float) -> void:
-	var aabb := _fbx_model(path, center, yaw, base_y, "boite", Vector2.ZERO, VEH_SCALE)
-	stats["vehicules_gares"] = int(stats.get("vehicules_gares", 0)) + 1
-	if aabb.size.x > 0.0:
-		print("PLACES_VEHICLE %-26s en (%.1f, %.1f) cap %.0f deg : %.2f x %.2f x %.2f m"
-				% [path.get_file(), center.x, center.y, rad_to_deg(yaw), aabb.size.z * VEH_SCALE, aabb.size.x * VEH_SCALE, aabb.size.y * VEH_SCALE])
 
 
 func _prop(path: String, pos: Vector3, yaw: float) -> void:

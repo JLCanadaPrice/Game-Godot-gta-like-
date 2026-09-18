@@ -1,4 +1,4 @@
-# Repères pour Claude Code
+﻿# Repères pour Claude Code
 
 Fiche écrite pour être lue au début de chaque session : le contexte du projet, la méthode de
 travail imposée, les commandes exactes, les pièges déjà payés et l'état d'avancement.
@@ -150,14 +150,6 @@ Captures et compteurs de rendu (fenêtré, pas headless : le rendu compte) :
   Ne jamais capturer au-dessus de **800x450**, et si une vue tombe quand même, la reprendre seule
   en **640x360** : les compteurs restent comparables entre les deux résolutions, pas les images.
   Le premier lancement d'une session prend plusieurs minutes (compilation du cache de shaders).
-- **Un objet posé près d'un point de contrôle de `MapGateTest` casse le test** : le test y pose le joueur et le
-  fait marcher 10 m. Une ambulance garée à 3 m du point « parvis du St. Anselm Medical Center » (-290, 137) l'a
-  bloqué au bout de 1,4 m. Même règle que pour la végétation : **rien de solide à moins de 12 m d'un point de
-  contrôle**. Les 43 points sont listés dans `MapGateTest.gd`.
-- **`_fbx_model()` de `PlacesBake` fusionnait avec le transform LOCAL de chaque maillage**, pas avec son transform
-  relatif à la racine. Sans conséquence sur les FBX du chantier, dont la hiérarchie est plate, mais un `.glb` dont
-  les maillages sont sous un nœud mis à l'échelle sortait à une taille délirante — une ambulance de 225 m de long.
-  Corrigé le 2026-09-18 ; le nombre de triangles des modèles déjà posés n'a pas bougé.
 - **`ShopBuildingsTest` échoue depuis avant ces chantiers** : ne pas l'imputer à la modification du
   jour, ne pas le « réparer » au passage.
 - **Le mode `"sol"` de `MapShotsTest` élève aussi le point visé** : un point visé au-dessus d'un
