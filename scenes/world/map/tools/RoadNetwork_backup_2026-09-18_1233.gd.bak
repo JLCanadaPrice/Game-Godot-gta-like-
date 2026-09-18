@@ -52,13 +52,7 @@ const JOIN_TRIM := 120.0
 const TUNNEL_DEPTH := 36.0
 const PORTAL_COVER := 8.0           # terrain au-dessus de la chaussée à l'entrée d'un tunnel
 const BLEND := 40.0                 # m pour passer de l'axe d'une chaussée à celui d'une bretelle
-const TAPER := BLEND + 8.0          # m de biseau au bout d'une bretelle accolée à sa chaussée (étape 6) : le biseau
-                                    # se referme exactement là où la bretelle quitte la chaussée (zone accolée), pas
-                                    # 30 m plus loin. À 70 m, le trajet arrivait avant la pleine largeur : il ne
-                                    # restait que 0,34 m d'enrobé sous le flanc extérieur entre 31 et 44 m du museau
-                                    # (relevé sur le maillage cuit, RampAudit du 2026-09-18), le parapet tombait sur
-                                    # la ligne de conduite et les voitures ne passaient pas. Le museau ne bouge pas
-                                    # (0,42 m), seule la vitesse d'ouverture change ; aucun point de trajet ne bouge.
+const TAPER := 70.0                 # m de biseau au bout d'une bretelle accolée à sa chaussée (étape 6)
 const LEVEL_WITH_CARRIAGEWAY := 26.0  # m de bretelle accolée à niveau de sa chaussée (le trajet franchit le joint vers 23 m)
 const GRADE := {"highway": 0.045, "ramp": 0.08}
 const GRADE_LIMIT := {"carriageway": 0.052, "median": 0.052, "ramp": 0.092, "ring": 0.01, "arterial": 0.082, "sidewalk": 0.082, "rail": 0.034}
