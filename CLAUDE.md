@@ -1,0 +1,204 @@
+# Repères pour Claude Code
+
+Fiche écrite pour être lue au début de chaque session : le contexte du projet, la méthode de
+travail imposée, les commandes exactes, les pièges déjà payés et l'état d'avancement.
+
+## 1. Le projet
+
+- Jeu **open world mafia** façon *Tulsa King*, vue à la troisième personne, en **3D**.
+- Moteur **Godot 4.7.2** (Forward+, D3D12 sous Windows), tout le code en **GDScript**.
+- Dépôt GitHub `JLCanadaPrice/Game-Godot-gta-like-`, branche de travail **`carte-3d`**.
+- Tag de retour : `avant-chantier-routes`.
+- Le projet vit sur un **disque externe dont la lettre change selon le PC** (actuellement `D:`,
+  il a déjà été `E:`). Vérifier les chemins avant de relancer une commande d'une autre session.
+- Git refuse le dépôt pour cause de propriétaire douteux : préfixer **toutes** les commandes par
+  `git -c safe.directory=<chemin du dépôt>`.
+- Binaire Godot : `<disque>:/p-recree/Godot_v4.7.2-stable/Godot_v4.7.2-stable_win64_console.exe`
+  (la variante `_console` écrit sur la sortie standard, c'est celle qu'il faut pour les tests).
+- `README.md` décrit un état très ancien du projet (sol gris de test) : ne pas s'y fier.
+
+## 2. Méthode de travail (imposée, non négociable)
+
+- **Mesurer depuis les vertices du maillage cuit**, jamais depuis une valeur théorique, une
+  constante ou un nom de fichier. Les outils de `scenes/world/map/tools/` en lecture seule
+  (`RampAudit`, `RampPoints`, `RampSteps`, `RampDrive`, `PlacesRangeAudit`) sont faits pour ça et
+  doivent être rejoués après chaque correction.
+- **Sauvegarde `.bak` datée avant chaque modification** :
+  `<Nom>_backup_<AAAA-MM-JJ_HHMM>.<ext>.bak`. **Jamais de copie `.tscn` ou `.gd`** sous un nom que
+  Godot va scanner : ça duplique l'UID et Godot charge la mauvaise scène. Ces `.bak` sont suivis
+  par git.
+- **Chaîne de cuisson COMPLÈTE, dans l'ordre documenté, sans sauter une seule étape** (§4). Sauter
+  `DistrictsBake`/`PlacesBake` fait perdre le nivellement des parcelles et casse `MapDistrictsTest` ;
+  sauter `VegetationBake` laisse une carte qui n'est pas celle que la chaîne produit.
+- **Tests headless après chaque étape** (§5), **un commit séparé par étape**.
+- **Captures au niveau du sol**, à hauteur d'homme ou de conduite, jamais vues du ciel : c'est
+  comme ça que le jeu se joue. Les images restent hors du dépôt, seuls les chiffres vont dans le
+  message de commit.
+- **Si un test casse : corriger la cause, jamais contourner.** Si un échec est antérieur à la
+  modification, le prouver (rejouer le test sur `HEAD~1`) et le dire.
+- Ne jamais utiliser `git stash` sur `scenes/world/map/generated` : une cuisson non commitée y a
+  déjà été perdue. Copier le dossier ailleurs si besoin.
+
+## 3. Seuil de performance
+
+- **Machine de référence : Intel UHD 750** (PC d'école). Les FPS de la machine de travail ne
+  disent rien ; les compteurs de rendu de `MapShotsTest` (appels de dessin, objets, primitives)
+  sont la mesure comparable.
+- **+10 % d'appels de dessin au maximum** sur les **6 vues de référence** :
+  `echangeur_nord_ouest`, `carrefour_willow_lake`, `rond_point_echo`, `losange_aeroport`,
+  `quartier_bluffview_survol`, `lieu_echo_circle`.
+- Pour tout ce qui touche au ferroviaire, budget complémentaire de **+30 appels de dessin** sur les
+  **6 vues ferroviaires** : `voie_ferree_pont_riviere`, `voie_ferree_passage_niveau`,
+  `voie_ferree_viaduc_est`, `voie_ferree_sur_voie_express`, `voie_ferree_portail_est`,
+  `voie_ferree_heurtoir_ouest`. (Les trains n'apparaissent dans aucune des 6 vues de référence :
+  sans ce budget-là, le seuil serait respecté sans rien prouver.)
+- La mesure « avant » doit être refaite **sur la machine du jour**, code non modifié, avant la
+  modification — pas reprise d'une session ou d'un commentaire.
+
+Référence relevée le 2026-09-18 en 800x450 (après le chantier de Northgate Rise) :
+
+| vue de référence | appels | | vue ferroviaire | appels |
+|---|---|---|---|---|
+| echangeur_nord_ouest | 347 | | pont_riviere | 397 |
+| carrefour_willow_lake | 395 | | passage_niveau | 258 |
+| rond_point_echo | 661 | | viaduc_est | 385 |
+| losange_aeroport | 395 | | sur_voie_express | 407 |
+| quartier_bluffview_survol | 267 | | portail_est | 201 |
+| lieu_echo_circle | 596 | | heurtoir_ouest | 154 |
+
+## 4. Chaîne de cuisson (ordre exact)
+
+`GODOT` = le binaire console, `PROJET` = la racine du dépôt.
+
+```bash
+GODOT="D:/p-recree/Godot_v4.7.2-stable/Godot_v4.7.2-stable_win64_console.exe"; PROJET="D:/p-recree/test/test"
+"$GODOT" --headless --path "$PROJET" --script res://scenes/world/map/tools/RoadBake.gd
+"$GODOT" --headless --path "$PROJET" --script res://scenes/world/map/tools/DistrictsBake.gd
+"$GODOT" --headless --path "$PROJET" --script res://scenes/world/map/tools/PlacesBake.gd
+"$GODOT" --headless --path "$PROJET" --script res://scenes/world/map/tools/VegetationBake.gd
+"$GODOT" --headless --path "$PROJET" --script res://scenes/world/map/tools/MapBackgroundBake.gd
+"$GODOT" --headless --path "$PROJET" --script res://scenes/world/map/tools/TerrainBake.gd -- --from-heights
+"$GODOT" --headless --path "$PROJET" --import
+```
+
+La passe `--import` finale n'est pas facultative : `MapBackgroundBake` réécrit
+`map_background.png` et, sans réimport, le jeu affiche « Failed loading resource ».
+
+Autres cuissons, plus rares, hors de cette chaîne : `RoadTexturesBake`, `TerrainTexturesBake`,
+`BuildingCatalogBake`. Vérifications sans effet de bord : `MapSpecCheck`, `RoadNetworkPreview`,
+`ProjectLoadCheck`.
+
+## 5. Batterie de tests headless
+
+Les tests sont des **scènes** (sauf `ProjectLoadCheck`, qui est un script). Chacun imprime une
+ligne `<NOM>_RESULT OK` ou `FAIL`.
+
+```bash
+"$GODOT" --headless --path "$PROJET" res://scenes/tests/MapRoadsTest.tscn          # rubans, croisements, pentes
+"$GODOT" --headless --path "$PROJET" res://scenes/tests/MapDistrictsTest.tscn      # parcelles nivelées, emprises
+"$GODOT" --headless --path "$PROJET" res://scenes/tests/MapPlacesTest.tscn         # entrées à moins de 15 m d'une route, rien sur la chaussée
+"$GODOT" --headless --path "$PROJET" res://scenes/tests/MapTerrainTest.tscn        # tuiles, rivière, trous
+"$GODOT" --headless --path "$PROJET" res://scenes/tests/MapVegetationTest.tscn     # arbres, troncs, portées
+"$GODOT" --headless --path "$PROJET" res://scenes/tests/MapExplorationTest.tscn    # la carte reste parcourable
+"$GODOT" --headless --path "$PROJET" res://scenes/tests/MapGateTest.tscn           # portail et bosquet de Hollow Creek
+"$GODOT" --headless --path "$PROJET" res://scenes/tests/SimulationCullingTest.tscn # gel hors champ
+"$GODOT" --headless --path "$PROJET" res://scenes/tests/WorldTrafficSmokeTest.tscn # trafic (aléa connu, cf. §6)
+"$GODOT" --headless --path "$PROJET" res://scenes/tests/NoclipTest.tscn            # noclip, aléa connu aussi
+"$GODOT" --headless --path "$PROJET" res://scenes/tests/CarDrivingTest.tscn
+"$GODOT" --headless --path "$PROJET" res://scenes/tests/CarDropTest.tscn
+"$GODOT" --headless --path "$PROJET" res://scenes/tests/DowntownStreetsTest.tscn
+"$GODOT" --headless --path "$PROJET" res://scenes/tests/DowntownBuildingsTest.tscn
+"$GODOT" --headless --path "$PROJET" res://scenes/tests/ShopBuildingsTest.tscn     # échec ANTÉRIEUR connu
+"$GODOT" --headless --path "$PROJET" --script res://scenes/world/map/tools/ProjectLoadCheck.gd   # attendu : 559 fichiers, 0 échec
+```
+
+Captures et compteurs de rendu (fenêtré, pas headless : le rendu compte) :
+
+```bash
+"$GODOT" --path "$PROJET" --resolution 800x450 res://scenes/tests/MapShotsTest.tscn -- --out=<dossier> --views=vue1,vue2
+```
+
+## 6. Pièges connus (tous déjà payés)
+
+- **`_own()` ne descend pas dans une scène instanciée** (`PlacesBake.gd`, fin de fichier) : les
+  enfants d'un modèle FBX n'ont pas de propriétaire, ne sont donc pas enregistrés dans la scène
+  cuite, et **tout réglage posé dessus est perdu** — les `visibility_range_end` ressortaient à 0,
+  donc jamais coupés (47 maillages de chantier encore dessinés à 1,1 km). Faire descendre `_own()`
+  partout a été essayé et **rejeté par la mesure** : `Places.tscn` passait de 66 ko à 2,9 Mo et
+  chaque maillage était stocké en double. La bonne réponse : fusionner le modèle en un maillage,
+  l'enregistrer en `.res` dans `generated/places/`, poser un `MeshInstance3D` par exemplaire et
+  régler la portée dessus (cf. `_fbx_model`). `_prop()` a encore le même défaut.
+- **`WorldTrafficSmokeTest` et `NoclipTest` ont un aléa** : le premier signale parfois « 1 paires
+  avec véhicule long », le second a lâché une fois sur trois sur « voiture à portée » (la voiture
+  du trafic n'était pas encore arrivée). Avant d'accuser une modification, rejouer le test deux
+  fois, puis le rejouer sur `HEAD~1`.
+- **Le GPU décroche en capture** (`0x887A0005`, `DXGI_ERROR_DEVICE_REMOVED` pendant `get_image()`).
+  Ne jamais capturer au-dessus de **800x450**, et si une vue tombe quand même, la reprendre seule
+  en **640x360** : les compteurs restent comparables entre les deux résolutions, pas les images.
+  Le premier lancement d'une session prend plusieurs minutes (compilation du cache de shaders).
+- **`ShopBuildingsTest` échoue depuis avant ces chantiers** : ne pas l'imputer à la modification du
+  jour, ne pas le « réparer » au passage.
+- **Le mode `"sol"` de `MapShotsTest` élève aussi le point visé** : un point visé au-dessus d'un
+  bâtiment accroche son toit et retourne la caméra vers le ciel. Pour une caméra devant un immeuble,
+  relever la hauteur du sol et écrire des altitudes absolues.
+- Les `.tscn` cuits changent textuellement à chaque cuisson (identifiants de sous-ressources tirés
+  au hasard) : un `git status` « modifié » ne prouve pas un changement de contenu.
+
+## 7. État d'avancement
+
+**Fait** — la carte 3D est le gros du travail accompli : modèle de terrain et rivière, réseau
+routier complet (autoroutes, échangeurs, bretelles, artères, anneau et rond-point Echo Circle,
+113 carrefours du centre-ville, 114 culs-de-sac en bulbe, glissières, marquage, trottoirs),
+voie ferrée de 4,5 km avec ses ouvrages, quartiers et 1 196 bâtiments, 12 lieux (aéroport, motel,
+ranch, planque, hôtel, hôpital, commissariat, casino, concessionnaire Liberty Motors, Greenfield,
+Echo Circle, chantier de Northgate Rise), végétation (20 297 arbres), trafic routier sur
+`CircuitPath` avec feux, cédez-le-passage et suivi de véhicule, PNJ sur `PathGraph`, gel de
+simulation hors champ (`SimulationCuller`), centre-ville et intérieurs d'appartements, noclip de
+débogage sur `V`.
+
+**Reste à faire** (liste du joueur, par ordre d'importance qu'il donnera lui-même) :
+
+- **combat** ;
+- **gangs rivaux** ;
+- **labo de drogue** (les modèles sont dans `assets/drug_lab`) ;
+- **porte d'entrepôt** ;
+- **appartements reliés à la carte** (les intérieurs existent, ils ne sont pas raccordés aux
+  bâtiments de la carte) ;
+- **concessionnaire enrichi** ;
+- **bug : 0 voiture exposée** chez le concessionnaire.
+
+## 8. Chantier en cours : trains en mouvement
+
+Le plan chiffré est rendu et validé dans ses grandes lignes ; **rien n'est encore construit**.
+
+Modèles retenus, et eux seuls (pack `assets/Modular Train Pack-zip`, **pas encore commité**,
+3,0 Mo, sans fichier de licence, importé le 2026-09-18) : `HighSpeed_Front`, `HighSpeed_Wagon`,
+`CargoTrain_Front`, `CargoTrain_Wagon`, `CargoTrain_Container`, `CargoTrain_CoalContainer`. Les
+`Locomotive_*` ne sont pas utilisés. Aucun de ces matériaux n'a de texture (couleurs unies,
+toutes opaques, `emission` activée par l'import à neutraliser) : chaque caisse peut donc être
+cuite en une seule surface à couleurs de sommets, soit **un appel de dessin par caisse**, et les
+wagons d'un même type se dessinent en `MultiMeshInstance3D`.
+
+Voie mesurée : 1 124 points au pas de 4,00 m, **4 492 m**, rayon minimal **191,4 m**, pente
+maximale **3,00 %**, altitudes de 0,70 à 18,92 m, **voie unique avec deux culs-de-sac** à
+(2168, 15,40, 195) et (-2170, 0,70, 800), **3 ouvrages** où le train passe au-dessus d'une route
+en tranchée (dégagement 5,80 m), **rien au-dessus de la voie** nulle part, et **2 passages à
+niveau** seulement : `art_a7_n:0` en (-389,4 ; 252,2) et `art_a8:0` en (-113,3 ; 274,5), artères
+de 10,5 m, ligne d'arrêt à 8,9 m de l'axe.
+
+Les cinq étapes, une par commit :
+
+1. `rail_path.tres` cuit par `RoadBake` + `MapRailTest`. **à faire**
+2. Modèles fusionnés en `.res`, `RailPath.gd`, `Train.gd`, une rame grande vitesse. **à faire**
+3. Cantons (~280 m), plusieurs trains, sens unique par vague, terminus. **à faire**
+4. Passages à niveau : blocs d'arrêt invisibles du groupe `vehicle` (les voitures freinent déjà
+   toutes seules derrière, aucune modification de `Car.gd`) + barrières en décor. **à faire**
+5. `SimulationCuller`, `MultiMesh`, mesure de perf sur les 12 vues. **à faire**
+
+Deux points restés ouverts avec le joueur : **commiter le pack de trains** (prévu à l'étape 1,
+avec ses `.import`) et **la composition des rames** (proposition : 1 + 4 pour la grande vitesse,
+1 + 10 panachés pour le fret).
+
+Réserve à ne pas oublier à l'étape 5 : un gel strict au-delà de 50 m ferait qu'un train attendu à
+un passage à niveau, à 240 m et hors écran, **n'arriverait jamais**. Le gel doit laisser avancer
+l'abscisse du train et ne couper que l'écriture des transformations de wagons.
