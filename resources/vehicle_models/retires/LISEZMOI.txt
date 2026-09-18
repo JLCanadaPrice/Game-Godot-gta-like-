@@ -1,0 +1,25 @@
+Modèles de véhicules RETIRÉS du catalogue
+=========================================
+
+VehicleCatalog._load() balaie resources/vehicle_models/ avec DirAccess.get_files(), qui n'est PAS
+récursif : un .tres rangé dans ce sous-dossier n'est plus chargé, donc le modèle disparaît du
+catalogue, du tirage de circulation et de la scène de tri.
+
+Pour remettre un modèle en service : le déplacer d'un cran vers le haut.
+
+    git mv resources/vehicle_models/retires/<nom>.tres resources/vehicle_models/<nom>.tres
+
+Rien d'autre à faire : ses réglages (échelle, cap, décalage, rôle, poids) sont intacts dans le
+fichier.
+
+Retiré le 2026-09-18, sur décision du joueur après le tri au banc :
+
+  cop.tres  — Cop.fbx, rôle police, poids 0,00.
+              Il était déjà hors circulation (aucun poids), et Car.gd exclut déjà Cop.fbx de sa
+              liste de repli CAR_MODELS. Il est sorti du catalogue pour qu'il ne soit plus un
+              candidat du futur système de police : lowpoly_police est le seul retenu.
+
+Les trois autres modèles écartés au même moment — city_microcar, city_taxi, lowpoly_mobil — sont
+restés dans le catalogue avec traffic_weight = 0.0. Ils ne sortent plus en circulation mais gardent
+leurs réglages ; pour les remettre, il suffit de rendre à traffic_weight sa valeur d'avant :
+city_microcar 0.4, city_taxi 1.0, lowpoly_mobil 0.4.

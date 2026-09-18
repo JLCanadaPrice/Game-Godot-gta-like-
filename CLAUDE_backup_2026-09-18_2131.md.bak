@@ -1,4 +1,4 @@
-# Repères pour Claude Code
+﻿# Repères pour Claude Code
 
 Fiche écrite pour être lue au début de chaque session : le contexte du projet, la méthode de
 travail imposée, les commandes exactes, les pièges déjà payés et l'état d'avancement.
@@ -107,7 +107,6 @@ ligne `<NOM>_RESULT OK` ou `FAIL`.
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/SimulationCullingTest.tscn # gel hors champ
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/WorldTrafficSmokeTest.tscn # trafic (aléa connu, cf. §6)
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/NoclipTest.tscn            # noclip, aléa connu aussi
-"$GODOT" --headless --path "$PROJET" --fixed-fps 60 --quit-after 300 res://scenes/tests/VehicleCatalogTest.tscn  # catalogue des véhicules, 20 000 tirages
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/CarDrivingTest.tscn
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/CarDropTest.tscn
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/DowntownStreetsTest.tscn
@@ -116,15 +115,9 @@ ligne `<NOM>_RESULT OK` ou `FAIL`.
 "$GODOT" --headless --path "$PROJET" --script res://scenes/world/map/tools/ProjectLoadCheck.gd   # attendu : 573 fichiers, 0 échec
 ```
 
-Outil d'inspection, hors batterie : `res://scenes/tests/VehicleSortTest.tscn` aligne les véhicules du catalogue
+Outil d'inspection, hors batterie : `res://scenes/tests/VehicleSortTest.tscn` aligne les 63 véhicules du catalogue
 sur une grille plate, nom de fichier affiché au-dessus, caméra libre (ZQSD, souris, Espace/Ctrl, Maj). Sert à
-trier le parc ; un civil à poids nul y est écrit en rouge avec la mention « RETIRÉ DE LA CIRCULATION ».
-**Jetable : référencée nulle part, ni dans `World.tscn` ni sur la carte.**
-
-Retirer un véhicule de la circulation, de façon réversible : mettre son `traffic_weight` à 0 dans son
-`resources/vehicle_models/<id>.tres`. Pour le sortir carrément du catalogue (et donc du tirage, de la scène de tri
-et du futur système de police), le déplacer dans `resources/vehicle_models/retires/` — `VehicleCatalog._load()`
-balaie le dossier avec `DirAccess.get_files()`, qui n'est pas récursif. Voir le `LISEZMOI.txt` de ce sous-dossier.
+trier le parc. **Jetable : référencée nulle part, ni dans `World.tscn` ni sur la carte.**
 
 Captures et compteurs de rendu (fenêtré, pas headless : le rendu compte) :
 

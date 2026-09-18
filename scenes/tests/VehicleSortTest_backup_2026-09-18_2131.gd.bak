@@ -135,29 +135,26 @@ func _place(entry: Dictionary, pos: Vector3, lift := 0.0) -> void:
 	holder.position = pos
 	var size: Vector3 = entry["size"]
 	var top := size.y + LABEL_RISE + lift
-	# un civil à poids nul ne sort plus en circulation : marqué ici, sinon rien ne le distingue au banc
-	var retired: bool = String(entry["role"]) == "civil" and float(entry["poids"]) <= 0.0
 	var title := Label3D.new()
 	title.text = String(entry["nom"])
-	title.modulate = Color(1.0, 0.55, 0.45) if retired else Color(1, 1, 1)
 	title.font_size = 64
 	title.pixel_size = 0.006          # ~0,38 m de haut : lisible à 10 m sans déborder sur la case voisine
 	title.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	title.double_sided = true
 	title.outline_size = 12
 	title.outline_modulate = Color(0, 0, 0, 0.85)
+	title.modulate = Color(1, 1, 1)
 	title.position = Vector3(0.0, top, 0.0)
 	holder.add_child(title)
 	var sub := Label3D.new()
-	sub.text = "%s · %d variante(s) · poids %.2f%s" % [entry["id"], entry["variantes"], entry["poids"],
-			" · RETIRÉ DE LA CIRCULATION" if retired else ""]
+	sub.text = "%s · %d variante(s) · poids %.2f" % [entry["id"], entry["variantes"], entry["poids"]]
 	sub.font_size = 48
 	sub.pixel_size = 0.0045
 	sub.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	sub.double_sided = true
 	sub.outline_size = 10
 	sub.outline_modulate = Color(0, 0, 0, 0.8)
-	sub.modulate = Color(1.0, 0.6, 0.5) if retired else Color(0.85, 0.88, 0.95)
+	sub.modulate = Color(0.85, 0.88, 0.95)
 	sub.position = Vector3(0.0, top - 0.42, 0.0)
 	holder.add_child(sub)
 
