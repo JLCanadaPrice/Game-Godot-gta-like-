@@ -1,0 +1,31 @@
+Modular Train Pack — LICENCE NON VÉRIFIÉE
+=========================================
+
+Pack importé dans le projet le 2026-09-18, 3,0 Mo, 11 modèles FBX.
+Aucun fichier de licence n'accompagnait l'archive : ni LICENSE, ni README, ni
+mention d'auteur. L'origine et les conditions d'utilisation n'ont donc PAS été
+vérifiées.
+
+Même statut que assets/building_pack_extra_UNVERIFIED_LICENSE : le pack est
+gardé et utilisé pour le développement, mais il doit être remplacé ou sa licence
+confirmée avant toute diffusion publique du jeu.
+
+Modèles utilisés par le jeu (chantier des trains) :
+  High Speed Front/HighSpeed_Front.fbx
+  High Speed Wagon/HighSpeed_Wagon.fbx
+  Cargo Train Front/CargoTrain_Front.fbx
+  Cargo Train Wagon/CargoTrain_Wagon.fbx
+  Cargo Train Container/CargoTrain_Container.fbx
+  Cargo Train Coal Conta/CargoTrain_CoalContainer.fbx
+
+Modèles gardés mais NON utilisés :
+  Locomotive Front/Locomotive_Front.fbx
+  Locomotive Wagon/Locomotive_Wagon.fbx
+  Locomotive Passenger Carriage/Locomotive_PassengerWagon.fbx
+  Railway Track Curve/RailwayTrack_Curve.fbx
+  Railway Track Straight/RailwayTrack_Straight.fbx
+    (la voie est générée par RoadBake à partir du tracé de MapSpec.RAIL,
+     ces deux tuiles ne servent pas)
+
+Aucun matériau du pack ne porte de texture : les caisses sont en couleurs unies,
+cuites en un maillage par caisse dans scenes/world/map/generated/trains/.

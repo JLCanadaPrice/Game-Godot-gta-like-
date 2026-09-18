@@ -1,0 +1,160 @@
+extends Node
+
+# Test headless du tracé de la voie ferrée (chantier des trains, étape 1), carte seule (Map.tscn) :
+#  - la ressource generated/roads/rail_path.tres existe, se charge, et ses tableaux sont cohérents (points et arc de
+#    même taille, abscisse strictement croissante, pas entre 3,5 et 4,5 m) ;
+#  - géométrie MESURÉE : longueur, rayon de courbure minimal, pente maximale, dans les limites du matériel roulant ;
+#  - deux culs-de-sac et deux passages à niveau, aux endroits relevés, sur les artères attendues ;
+#  - la voie porte : un rayon vers le bas depuis l'axe touche la plateforme (ou la chaussée à un passage à niveau) ;
+#  - gabarit libre : rien au-dessus de l'axe jusqu'à GABARIT m, nulle part.
+#
+# Lancer : Godot --headless --fixed-fps 60 --quit-after 6000 res://scenes/tests/MapRailTest.tscn
+
+const MAP := preload("res://scenes/world/map/Map.tscn")
+const RailPathRes := preload("res://scenes/world/map/MapRailPath.gd")
+const PATH := "res://scenes/world/map/generated/roads/rail_path.tres"
+
+const STEP_MIN := 3.5
+const STEP_MAX := 4.5
+const LENGTH_MIN := 4000.0
+const RADIUS_MIN := 150.0          # rayon minimal acceptable pour une rame (mesuré 191,4 m sur le tracé cuit)
+const GRADE_MAX := 0.031           # RoadNetwork.RAIL_GRADE vaut 0,03 ; 0,1 point de marge pour le lissage
+const GABARIT := 5.5               # m au-dessus du champignon du rail : rien ne doit s'y trouver
+const DROP := 1.6                  # m sous l'axe : la plateforme doit être là
+const ENDS := [Vector2(2168.0, 195.0), Vector2(-2170.0, 800.0)]
+const CROSSINGS := [Vector2(-389.4, 252.2), Vector2(-113.3, 274.5)]
+const PLACE_TOL := 6.0
+
+var _errors: Array[String] = []
+
+
+func _ready() -> void:
+	print("MAP_RAIL_BEGIN")
+	if not ResourceLoader.exists(PATH):
+		_errors.append("rail_path.tres absent : relancer RoadBake")
+		_finish()
+		return
+	var rail: RailPathRes = load(PATH)
+	var n := rail.points.size()
+	if n < 2 or rail.arc.size() != n:
+		_errors.append("tracé incohérent : %d points, %d abscisses" % [n, rail.arc.size()])
+		_finish()
+		return
+	_geometry(rail, n)
+	_ends(rail)
+	_crossings(rail)
+	var map := MAP.instantiate()
+	add_child(map)
+	for k in 4:
+		await get_tree().physics_frame
+	await _support(rail)
+	_finish()
+
+
+func _geometry(rail: RailPathRes, n: int) -> void:
+	var lo := INF
+	var hi := 0.0
+	var breaks := 0
+	for i in range(1, n):
+		var d: float = rail.arc[i] - rail.arc[i - 1]
+		if d <= 0.0:
+			breaks += 1
+			continue
+		lo = minf(lo, d)
+		hi = maxf(hi, d)
+	if breaks > 0:
+		_errors.append("%d abscisses non croissantes" % breaks)
+	if lo < STEP_MIN or hi > STEP_MAX:
+		_errors.append("pas hors bornes : %.2f à %.2f m (attendu %.1f à %.1f)" % [lo, hi, STEP_MIN, STEP_MAX])
+	if rail.length < LENGTH_MIN:
+		_errors.append("voie trop courte : %.0f m" % rail.length)
+	if rail.min_radius < RADIUS_MIN:
+		_errors.append("rayon minimal %.1f m sous la limite %.1f m" % [rail.min_radius, RADIUS_MIN])
+	if rail.max_grade > GRADE_MAX:
+		_errors.append("pente maximale %.2f %% au-dessus de la limite %.2f %%" % [rail.max_grade * 100.0, GRADE_MAX * 100.0])
+	# cohérence de at() : le point rendu à l'abscisse d'un sommet est ce sommet
+	var worst := 0.0
+	for i in range(0, n, 17):
+		worst = maxf(worst, rail.at(rail.arc[i]).distance_to(rail.points[i]))
+	if worst > 0.05:
+		_errors.append("at() s'écarte de %.3f m des sommets" % worst)
+	print("MAP_RAIL_TRACE %d points, %.0f m, pas %.2f à %.2f m, rayon mini %.1f m, pente maxi %.2f %%, écart at() %.3f m"
+			% [n, rail.length, lo, hi, rail.min_radius, rail.max_grade * 100.0, worst])
+
+
+func _ends(rail: RailPathRes) -> void:
+	if rail.ends.size() != 2:
+		_errors.append("%d culs-de-sac au lieu de 2" % rail.ends.size())
+		return
+	var seen: Array[String] = []
+	for expected: Vector2 in ENDS:
+		var best := INF
+		var hit := {}
+		for e: Dictionary in rail.ends:
+			var p: Vector3 = e["pos"]
+			var d := expected.distance_to(Vector2(p.x, p.z))
+			if d < best:
+				best = d
+				hit = e
+		if best > PLACE_TOL:
+			_errors.append("aucun cul-de-sac près de %s (le plus proche à %.1f m)" % [expected, best])
+			continue
+		var p: Vector3 = hit["pos"]
+		seen.append("%s (s = %.0f m, y = %.2f m)" % [Vector2(p.x, p.z), float(hit["s"]), p.y])
+	print("MAP_RAIL_BOUTS %s" % " | ".join(seen))
+
+
+func _crossings(rail: RailPathRes) -> void:
+	if rail.crossings.size() != CROSSINGS.size():
+		_errors.append("%d passages à niveau au lieu de %d" % [rail.crossings.size(), CROSSINGS.size()])
+	var seen: Array[String] = []
+	for expected: Vector2 in CROSSINGS:
+		var best := INF
+		var hit := {}
+		for c: Dictionary in rail.crossings:
+			var p: Vector3 = c["pos"]
+			var d := expected.distance_to(Vector2(p.x, p.z))
+			if d < best:
+				best = d
+				hit = c
+		if best > PLACE_TOL:
+			_errors.append("aucun passage à niveau près de %s (le plus proche à %.1f m)" % [expected, best])
+			continue
+		seen.append("%s sur %s (%.1f m de large), coupure ±%.1f m, s = %.0f m"
+				% [expected, hit["road"], float(hit["road_width"]), float(hit["half_gap"]), float(hit["s"])])
+	print("MAP_RAIL_PASSAGES %s" % " | ".join(seen))
+
+
+# La voie porte-t-elle, et le gabarit est-il libre ? Relevé tous les 10 m sur toute la longueur.
+func _support(rail: RailPathRes) -> void:
+	var space := get_viewport().world_3d.direct_space_state
+	var unsupported: Array[String] = []
+	var blocked: Array[String] = []
+	var samples := 0
+	var s := 0.0
+	while s <= rail.length:
+		var p := rail.at(s)
+		samples += 1
+		var down := space.intersect_ray(PhysicsRayQueryParameters3D.create(p + Vector3.UP * 0.6, p - Vector3.UP * DROP, 1))
+		if down.is_empty() and unsupported.size() < 6:
+			unsupported.append("s = %.0f m en %s" % [s, p.snappedf(0.1)])
+		var up := space.intersect_ray(PhysicsRayQueryParameters3D.create(p + Vector3.UP * 0.9, p + Vector3.UP * GABARIT, 1))
+		if not up.is_empty() and blocked.size() < 6:
+			blocked.append("s = %.0f m : %s à %.2f m" % [s, (up["collider"] as Node).name, (up["position"] as Vector3).y - p.y])
+		s += 10.0
+		if samples % 60 == 0:
+			await get_tree().physics_frame
+	if not unsupported.is_empty():
+		_errors.append("voie sans support : %s" % " ; ".join(unsupported))
+	if not blocked.is_empty():
+		_errors.append("gabarit encombré : %s" % " ; ".join(blocked))
+	print("MAP_RAIL_PORTANCE %d relevés tous les 10 m : %d sans support, %d gabarits encombrés"
+			% [samples, unsupported.size(), blocked.size()])
+
+
+func _finish() -> void:
+	if _errors.is_empty():
+		print("MAP_RAIL_RESULT OK")
+	else:
+		print("MAP_RAIL_RESULT FAIL " + " | ".join(_errors))
+	get_tree().quit(0 if _errors.is_empty() else 1)

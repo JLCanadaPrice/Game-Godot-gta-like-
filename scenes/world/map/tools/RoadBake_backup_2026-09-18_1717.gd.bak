@@ -86,7 +86,6 @@ const LAMP_SPACING := {"sidewalk": 30.0, "median": 45.0, "ring": 36.0}
 const LAMP_NEAR_RING := 320.0
 const LAMP_RANGE := 650.0           # mesurée au centre de la cellule de 256 m : ~350 m pour le lampadaire le plus loin
 const TrafficGraph := preload("res://scenes/world/map/MapTrafficGraph.gd")
-const RailPathRes := preload("res://scenes/world/map/MapRailPath.gd")
 const TRAFFIC_SCRIPT := preload("res://scenes/world/map/MapTraffic.gd")
 const JERSEY := [Vector2(-0.3, 0.0), Vector2(-0.22, 0.28), Vector2(-0.1, 0.85), Vector2(0.1, 0.85), Vector2(0.22, 0.28), Vector2(0.3, 0.0)]
 
@@ -167,7 +166,6 @@ func _initialize() -> void:
 		_tunnel(t, roof)
 	ResourceSaver.save(Image.create_from_data(model.width, model.depth, false, Image.FORMAT_L8, roof), GEN + "/terrain/roof_mask.res")
 	_write_traffic_graph()
-	_write_rail_path()
 	_write_scene()
 	_write_boundary_gaps()
 	_ensure_in_map()
@@ -1077,57 +1075,6 @@ func _lamp(part: String, base: Vector3, arm: Vector3) -> void:
 		g[part] = []
 	(g[part] as Array).append(Transform3D(Basis(arm, Vector3.UP, arm.cross(Vector3.UP)), base))
 	stats["lampadaires"] = int(stats.get("lampadaires", 0)) + 1
-
-
-# Tracé de la voie ferrée pour les trains (chantier des trains, étape 1). L'axe est relevé sur la ligne cuite par
-# RoadNetwork, remonté de RAIL_TOP pour être à la hauteur du champignon du rail (là où porte une roue), et accompagné
-# de son abscisse curviligne, de ses deux culs-de-sac et de ses passages à niveau. Rayon minimal et pente maximale
-# sont MESURÉS ici, pas repris d'une constante.
-func _write_rail_path() -> void:
-	var line: PackedVector2Array = net.rail_line
-	var n := line.size()
-	if n < 2:
-		push_error("voie ferrée absente : rail_path.tres non écrit")
-		return
-	var res := RailPathRes.new()
-	res.step = Network.STEP
-	res.gauge = Network.RAIL_GAUGE
-	var total := 0.0
-	for i in n:
-		res.points.append(Vector3(line[i].x, net.rail_heights[i] + RAIL_TOP, line[i].y))
-		if i > 0:
-			total += line[i].distance_to(line[i - 1])
-		res.arc.append(total)
-	res.length = total
-	var radius := INF
-	var grade := 0.0
-	for i in range(1, n - 1):
-		var a: Vector2 = line[i - 1]
-		var b: Vector2 = line[i]
-		var c: Vector2 = line[i + 1]
-		# rayon du cercle circonscrit : aire = |(b-a) x (c-a)| / 2, R = abc / (4 aire)
-		var area := absf((b - a).cross(c - a)) * 0.5
-		if area > 0.0001:
-			radius = minf(radius, a.distance_to(b) * b.distance_to(c) * c.distance_to(a) / (4.0 * area))
-		var run := a.distance_to(b)
-		if run > 0.01:
-			grade = maxf(grade, absf(net.rail_heights[i] - net.rail_heights[i - 1]) / run)
-	res.min_radius = 0.0 if radius == INF else radius
-	res.max_grade = grade
-	for e: Dictionary in net.rail_ends:
-		var p: Vector3 = e["pos"]
-		var s := 0.0 if Vector2(p.x, p.z).distance_to(line[0]) < Vector2(p.x, p.z).distance_to(line[n - 1]) else total
-		res.ends.append({"pos": Vector3(p.x, p.y + RAIL_TOP, p.z), "dir": e["dir"], "s": s})
-	for lc: Dictionary in net.level_crossings:
-		var p: Vector3 = lc["pos"]
-		res.crossings.append({"pos": p, "s": float(lc["s"]), "half_gap": float(lc["half_gap"]),
-				"road": String(lc["road"].id), "road_width": float(lc["road"].width)})
-	var path := OUT.path_join("rail_path.tres")
-	var err := ResourceSaver.save(res, path)
-	if err != OK:
-		push_error("écriture de %s : erreur %d" % [path, err])
-	print("ROAD_BAKE_RAIL %d points au pas de %.2f m, %.0f m, rayon mini %.1f m, pente maxi %.2f %%, %d bouts, %d passages à niveau"
-			% [n, res.step, res.length, res.min_radius, res.max_grade * 100.0, res.ends.size(), res.crossings.size()])
 
 
 # Graphe de circulation de la carte pour MapTraffic : noeuds, arêtes (trajet, voies, sens unique), anneaux, noeuds sans
