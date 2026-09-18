@@ -62,8 +62,6 @@ var faces := PackedVector3Array()
 var body: StaticBody3D
 var places: Array[Dictionary] = []
 var footprints: Array = []
-# Maillages de pack FBX déjà fusionnés et enregistrés, rangés par chemin de fichier : deux camions partagent un .res
-var fbx_cache := {}
 var stats := {"lieux": 0, "modèles": 0, "étiquettes": 0, "triangles": 0, "sommets_aplanis": 0}
 
 
@@ -682,50 +680,29 @@ func _model(name: String, center: Vector2, yaw: float, base_y: float, scale := 1
 	stats["triangles"] += int(info["triangles"])
 
 
-# Modèle d'un pack FBX hors catalogue EverythingLibrary (le catalogue ne couvre que ce pack-là). Les maillages de la
-# scène importée sont FUSIONNÉS en un seul, enregistré en .res comme les surfaces des lieux, puis posés en un
-# MeshInstance3D par exemplaire. Deux raisons mesurées le 2026-09-18 : sur une scène instanciée, _own() ne descend pas
-# dans les enfants, donc tout réglage posé dessus est perdu à la cuisson (les distances de disparition ressortaient à 0,
-# soit 47 maillages de chantier encore dessinés à 1,1 km) ; et le pack n'a qu'un matériau par fichier, donc la fusion ne
-# coûte rien et un camion revient à un appel de dessin au lieu de six. La boîte est MESURÉE sur les maillages, le modèle
-# est posé base au sol et centré sur `center`.
+# Modèle d'un pack FBX hors catalogue EverythingLibrary (le catalogue ne couvre que ce pack-là) : la scène importée est
+# instanciée telle quelle, sa boîte est MESURÉE sur ses maillages, elle est posée base au sol et centrée sur `center`.
 # `collide` : "boite" pour un volume plein (un bâtiment arrête un rayon, cf. MapPlacesTest), "embase" pour une grue
 # dont seule la base est un obstacle (sinon son bras poserait un mur invisible de 40 m), "aucune" pour un décor plat.
 func _fbx_model(path: String, center: Vector2, yaw: float, base_y: float, collide := "boite", base_half := Vector2(2.0, 2.0)) -> AABB:
-	if not fbx_cache.has(path):
-		var packed := load(path) as PackedScene
-		if packed == null:
-			push_warning("PlacesBake : %s non importé" % path)
-			return AABB()
-		var inst := packed.instantiate() as Node3D
-		var st := SurfaceTool.new()
-		st.begin(Mesh.PRIMITIVE_TRIANGLES)
-		var mat: Material = null
-		var tris := 0
-		for mi: MeshInstance3D in inst.find_children("*", "MeshInstance3D", true, false):
-			for s in mi.mesh.get_surface_count():
-				st.append_from(mi.mesh, s, mi.transform)
-				if mat == null:
-					mat = mi.get_active_material(s)
-			tris += mi.mesh.get_faces().size() / 3
-		var merged := st.commit()
-		merged.surface_set_material(0, mat)
-		var mesh_path := OUT.path_join("pack_%s.res" % path.get_file().get_basename().to_lower().replace("-", "_"))
-		ResourceSaver.save(merged, mesh_path)
-		fbx_cache[path] = {"mesh": load(mesh_path), "aabb": merged.get_aabb(), "triangles": tris}
-		inst.free()
-	var entry: Dictionary = fbx_cache[path]
-	var aabb: AABB = entry["aabb"]
+	var packed := load(path) as PackedScene
+	if packed == null:
+		push_warning("PlacesBake : %s non importé" % path)
+		return AABB()
+	var inst := packed.instantiate() as Node3D
+	var aabb := AABB()
+	var first := true
+	var tris := 0
+	for mi: MeshInstance3D in inst.find_children("*", "MeshInstance3D", true, false):
+		var box: AABB = mi.transform * mi.mesh.get_aabb()
+		aabb = box if first else aabb.merge(box)
+		first = false
+		tris += mi.mesh.get_faces().size() / 3
+		mi.visibility_range_end = 1800.0 if aabb.size.y > 25.0 else 900.0
 	var basis := Basis(Vector3.UP, yaw)
-	var node := MeshInstance3D.new()
-	node.name = "%s_%d" % [path.get_file().get_basename(), place.get_child_count()]
-	node.mesh = entry["mesh"]
-	# Distance de disparition mesurée sur la hauteur du modèle : on le garde tant qu'il couvre plus de trois pixels
-	# (450 px pour 75° de champ, soit 0,0029 rad par pixel, donc hauteur x 115), borné à 1500 m. Une grue de 54 m reste
-	# un repère de loin, une palette de 1,2 m disparaît à 250 m.
-	node.visibility_range_end = clampf(aabb.size.y * 115.0, 250.0, 1500.0)
-	node.transform = Transform3D(basis, Vector3(center.x, base_y - aabb.position.y, center.y) - basis * Vector3(aabb.get_center().x, 0.0, aabb.get_center().z))
-	place.add_child(node)
+	inst.name = "%s_%d" % [path.get_file().get_basename(), place.get_child_count()]
+	inst.transform = Transform3D(basis, Vector3(center.x, base_y - aabb.position.y, center.y) - basis * Vector3(aabb.get_center().x, 0.0, aabb.get_center().z))
+	place.add_child(inst)
 	var half := Vector2(aabb.size.x, aabb.size.z) * 0.5 if collide == "boite" else base_half
 	if collide != "aucune":
 		var cs := CollisionShape3D.new()
@@ -738,8 +715,7 @@ func _fbx_model(path: String, center: Vector2, yaw: float, base_y: float, collid
 		body.add_child(cs)
 	_flatten_rect(center, Vector2(cos(yaw), -sin(yaw)), Vector2(sin(yaw), cos(yaw)), Vector2(aabb.size.x, aabb.size.z) * 0.5 + Vector2(1, 1), base_y - 0.05)
 	stats["modèles"] += 1
-	stats["triangles"] += int(entry["triangles"])
-	return aabb
+	stats["triangles"] += tris
 	return aabb
 
 
