@@ -21,7 +21,7 @@ extends Resource
 @export var min_radius := 0.0                  # rayon de courbure minimal mesuré sur trois points consécutifs
 @export var max_grade := 0.0                   # pente maximale mesurée (tangente, pas pourcentage)
 @export var ends: Array[Dictionary] = []       # {"pos": Vector3, "dir": Vector2 (vers l'extérieur), "s": float}
-@export var crossings: Array[Dictionary] = []  # {"pos", "s", "half_gap", "road", "road_width", "road_dir": Vector2, "rail_dir": Vector2}
+@export var crossings: Array[Dictionary] = []  # {"pos": Vector3, "s": float, "half_gap": float, "road": String, "road_width": float}
 
 
 # Point de la voie à l'abscisse `s` (mètres depuis ends[0]), extrapolé droit au-delà des bouts.

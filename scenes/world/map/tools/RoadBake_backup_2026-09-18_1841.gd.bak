@@ -1121,8 +1121,7 @@ func _write_rail_path() -> void:
 	for lc: Dictionary in net.level_crossings:
 		var p: Vector3 = lc["pos"]
 		res.crossings.append({"pos": p, "s": float(lc["s"]), "half_gap": float(lc["half_gap"]),
-				"road": String(lc["road"].id), "road_width": float(lc["road"].width),
-				"road_dir": lc["road_dir"], "rail_dir": lc["rail_dir"]})
+				"road": String(lc["road"].id), "road_width": float(lc["road"].width)})
 	var path := OUT.path_join("rail_path.tres")
 	var err := ResourceSaver.save(res, path)
 	if err != OK:

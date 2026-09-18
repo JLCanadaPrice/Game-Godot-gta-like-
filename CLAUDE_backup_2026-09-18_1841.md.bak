@@ -1,4 +1,4 @@
-# Repères pour Claude Code
+﻿# Repères pour Claude Code
 
 Fiche écrite pour être lue au début de chaque session : le contexte du projet, la méthode de
 travail imposée, les commandes exactes, les pièges déjà payés et l'état d'avancement.
@@ -85,9 +85,8 @@ La passe `--import` finale n'est pas facultative : `MapBackgroundBake` réécrit
 `map_background.png` et, sans réimport, le jeu affiche « Failed loading resource ».
 
 Autres cuissons, plus rares, hors de cette chaîne : `RoadTexturesBake`, `TerrainTexturesBake`,
-`BuildingCatalogBake`, `TrainsBake` (fusionne les caisses du pack de trains en un maillage chacune dans
-`generated/trains/`, à relancer seulement si le pack change). Vérifications sans effet de bord : `MapSpecCheck`,
-`RoadNetworkPreview`, `ProjectLoadCheck`.
+`BuildingCatalogBake`. Vérifications sans effet de bord : `MapSpecCheck`, `RoadNetworkPreview`,
+`ProjectLoadCheck`.
 
 ## 5. Batterie de tests headless
 
@@ -96,8 +95,6 @@ ligne `<NOM>_RESULT OK` ou `FAIL`.
 
 ```bash
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/MapRoadsTest.tscn          # rubans, croisements, pentes
-"$GODOT" --headless --path "$PROJET" res://scenes/tests/MapRailTest.tscn           # tracé de la voie, gabarit, trottoirs
-"$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/MapTrainsTest.tscn  # cantons, vagues, passages à niveau
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/MapDistrictsTest.tscn      # parcelles nivelées, emprises
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/MapPlacesTest.tscn         # entrées à moins de 15 m d'une route, rien sur la chaussée
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/MapTerrainTest.tscn        # tuiles, rivière, trous
@@ -112,7 +109,7 @@ ligne `<NOM>_RESULT OK` ou `FAIL`.
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/DowntownStreetsTest.tscn
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/DowntownBuildingsTest.tscn
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/ShopBuildingsTest.tscn     # échec ANTÉRIEUR connu
-"$GODOT" --headless --path "$PROJET" --script res://scenes/world/map/tools/ProjectLoadCheck.gd   # attendu : 570 fichiers, 0 échec
+"$GODOT" --headless --path "$PROJET" --script res://scenes/world/map/tools/ProjectLoadCheck.gd   # attendu : 559 fichiers, 0 échec
 ```
 
 Captures et compteurs de rendu (fenêtré, pas headless : le rendu compte) :
@@ -172,8 +169,7 @@ débogage sur `V`.
 
 ## 8. Chantier en cours : trains en mouvement
 
-Étapes 1 à 4 construites et commitées le 2026-09-18 ; **l'étape 5 (optimisation) reste à faire**, le
-joueur voulant d'abord essayer en jeu.
+Le plan chiffré est rendu et validé dans ses grandes lignes ; **rien n'est encore construit**.
 
 Modèles retenus, et eux seuls (pack `assets/Modular Train Pack-zip`, **pas encore commité**,
 3,0 Mo, sans fichier de licence, importé le 2026-09-18) : `HighSpeed_Front`, `HighSpeed_Wagon`,
@@ -192,31 +188,16 @@ de 10,5 m, ligne d'arrêt à 8,9 m de l'axe.
 
 Les cinq étapes, une par commit :
 
-1. `rail_path.tres` cuit par `RoadBake` + `MapRailTest`. **fait** (`bbf8938`)
-2. Modèles fusionnés en `.res`, `RailPath.gd`, `Train.gd`, une rame grande vitesse. **fait** (`cc05177`)
-3. Cantons (280 m), plusieurs trains, sens unique par vague, terminus. **fait** (`d3d9df6`)
-4. Passages à niveau : blocs d'arrêt invisibles du groupe `vehicle` + barrières en décor. **fait**
+1. `rail_path.tres` cuit par `RoadBake` + `MapRailTest`. **à faire**
+2. Modèles fusionnés en `.res`, `RailPath.gd`, `Train.gd`, une rame grande vitesse. **à faire**
+3. Cantons (~280 m), plusieurs trains, sens unique par vague, terminus. **à faire**
+4. Passages à niveau : blocs d'arrêt invisibles du groupe `vehicle` (les voitures freinent déjà
+   toutes seules derrière, aucune modification de `Car.gd`) + barrières en décor. **à faire**
 5. `SimulationCuller`, `MultiMesh`, mesure de perf sur les 12 vues. **à faire**
 
-Compositions arrêtées : **1 + 4** pour la grande vitesse (60,48 m, 90 km/h), **1 + 14 panachés**
-pour le fret (155,56 m, 55 km/h, 73 176 triangles). Repli prévu si l'UHD 750 souffre : 1 + 10.
-Pack de trains commité à l'étape 1 avec ses `.import` et un `LICENSE_ATTRIBUTION.txt` qui le classe
-en licence NON VÉRIFIÉE.
-
-Ce que l'étape 5 devra savoir :
-
-- **Un appel de dessin par caisse** pour l'instant : 5 pour une rame grande vitesse, 15 pour un fret.
-  C'est le `MultiMesh` de l'étape 5 qui doit ramener ça à un appel par type de caisse.
-- **Gel en deux temps** : un gel strict au-delà de 50 m ferait qu'un train attendu à un passage à
-  niveau, à 240 m et hors écran, n'arriverait jamais. Le gel doit laisser avancer l'abscisse du train
-  (`Train.head`) et ne couper que l'écriture des transformations de caisses (`Train._place`).
-- **Effet de bord connu des blocs d'arrêt** : `LoopSpawner._process_proximity` compte
-  `get_nodes_in_group("vehicle")` pour son plafond `max_active`. Pendant une fermeture, les 2 blocs du
-  passage gonflent ce compte, donc une ou deux voitures de moins apparaissent pendant ~20 s. Corrigeable
-  d'une ligne dans `LoopSpawner` si ça gêne ; laissé tel quel pour ne toucher à rien du trafic.
-- **Piétons aux passages à niveau** : les 4 traversées de trottoir de la carte sont toutes sur les
-  2 passages à niveau (mesuré par `MapRailTest`), aucune ailleurs. Les barrières n'arrêtent pas les
-  PNJ : il n'y a pas encore de version piétonne des blocs d'arrêt.
+Deux points restés ouverts avec le joueur : **commiter le pack de trains** (prévu à l'étape 1,
+avec ses `.import`) et **la composition des rames** (proposition : 1 + 4 pour la grande vitesse,
+1 + 10 panachés pour le fret).
 
 Réserve à ne pas oublier à l'étape 5 : un gel strict au-delà de 50 m ferait qu'un train attendu à
 un passage à niveau, à 240 m et hors écran, **n'arriverait jamais**. Le gel doit laisser avancer

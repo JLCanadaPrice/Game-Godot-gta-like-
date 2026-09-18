@@ -1,4 +1,4 @@
-extends Node
+﻿extends Node
 
 # Test headless de l'exploitation ferroviaire (chantier des trains, étape 3). Le test ne charge PAS la carte : il
 # instancie la voie seule (RailPath lit rail_path.tres et n'a besoin de rien d'autre), ce qui laisse tourner des
@@ -28,11 +28,6 @@ var _min_gap := INF
 var _seen := {}
 var _last_dir := 0
 var _done := false
-var _closed_since := {}        # route -> frame de fermeture
-var _warnings: Array[float] = []   # s de préavis constatés à chaque passage d'un nez
-var _passed := {}              # "rame|route" -> true
-var _reopen := {}              # route -> frames de réouverture après le dégagement
-var _group_ok := true
 
 
 func _ready() -> void:
@@ -73,7 +68,6 @@ func _physics_process(_delta: float) -> void:
 	if dirs.size() > 1:
 		_fail("deux sens en meme temps sur la voie unique : %s" % str(dirs.keys()))
 	_check_spacing(live)
-	_check_crossings(live)
 	if _waves >= 2 and _frames > 600:
 		_done = true
 		_finish()
@@ -101,45 +95,6 @@ func _check_spacing(live: Array) -> void:
 				_fail("%s et %s dans le meme canton (ecart %.1f m)" % [a["nom"], b["nom"], gap])
 
 
-# Passages à niveau (étape 4) : les blocs d'arrêt ne sont dans le groupe "vehicle" que pendant la fermeture, la
-# barrière est bien fermée quand un nez arrive, avec un préavis suffisant, et elle rouvre une fois la voie dégagée.
-func _check_crossings(live: Array) -> void:
-	var report: Array = _rail.crossings_report()
-	if report.is_empty():
-		_fail("aucun passage a niveau construit")
-		return
-	var hz: float = float(Engine.physics_ticks_per_second)
-	for c: Dictionary in report:
-		var road := String(c["route"])
-		var shut := bool(c["ferme"])
-		for b: Dictionary in (c["blocs"] as Array):
-			if bool(b["dans_groupe"]) != shut:
-				_group_ok = false
-				_fail("%s : bloc d'arret %s le groupe vehicle alors que le passage est %s"
-						% [road, "dans" if b["dans_groupe"] else "hors de", "ferme" if shut else "ouvert"])
-		if shut and not _closed_since.has(road):
-			_closed_since[road] = _frames
-		if not shut:
-			if _closed_since.has(road):
-				_closed_since.erase(road)
-			for t: Dictionary in live:
-				var d := float(t["sens"])
-				if (float(c["s"]) - float(t["tete"])) * d <= 0.0 and (float(c["s"]) - float(t["queue"])) * d >= 0.0:
-					_fail("%s ouvert alors que %s est dessus" % [road, t["nom"]])
-		for t: Dictionary in live:
-			var key := "%s|%s" % [t["nom"], road]
-			if _passed.has(key):
-				continue
-			var d := float(t["sens"])
-			if (float(c["s"]) - float(t["tete"])) * d > 0.0:
-				continue
-			_passed[key] = true
-			if not shut:
-				_fail("%s arrive sur %s alors qu'il est ouvert" % [t["nom"], road])
-			else:
-				_warnings.append((_frames - int(_closed_since.get(road, _frames))) / hz)
-
-
 func _same_block(a_lo: float, a_hi: float, b_lo: float, b_hi: float) -> bool:
 	var block: float = float(_rail.block_length)
 	for k in range(floori(a_lo / block), floori(a_hi / block) + 1):
@@ -163,18 +118,6 @@ func _finish() -> void:
 		if not kinds.has(k + "_len"):
 			kinds[k + "_len"] = snappedf(float((_seen[name] as Dictionary)["longueur"]), 0.01)
 	print("MAP_TRAINS_RAMES %s" % JSON.stringify(kinds))
-	var lo := INF
-	var sum := 0.0
-	for w: float in _warnings:
-		lo = minf(lo, w)
-		sum += w
-	print("MAP_TRAINS_PASSAGES %d passage(s) a niveau, %d traversees de rame, preavis de fermeture : mini %.1f s, moyen %.1f s | blocs d'arret coherents avec la fermeture : %s"
-			% [(_rail.crossings_report() as Array).size(), _warnings.size(),
-			0.0 if lo == INF else lo, 0.0 if _warnings.is_empty() else sum / _warnings.size(), _group_ok])
-	if _warnings.is_empty():
-		_fail("aucune traversee de passage a niveau observee")
-	elif lo < 6.0:
-		_fail("preavis de fermeture trop court : %.1f s" % lo)
 	if _dirs.size() < 2:
 		_fail("un seul sens exploite : %s" % str(_dirs.keys()))
 	if _errors.is_empty():

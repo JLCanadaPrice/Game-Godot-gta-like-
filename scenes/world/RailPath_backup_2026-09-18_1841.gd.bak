@@ -18,7 +18,6 @@ extends Node3D
 
 const RES := "res://scenes/world/map/generated/roads/rail_path.tres"
 const TRAIN_SCRIPT := preload("res://scenes/world/Train.gd")
-const CROSSING_SCRIPT := preload("res://scenes/world/RailCrossing.gd")
 
 const HIGH_SPEED := ["HighSpeed_Front", "HighSpeed_Wagon", "HighSpeed_Wagon", "HighSpeed_Wagon", "HighSpeed_Wagon"]
 const FREIGHT := ["CargoTrain_Front",
@@ -37,14 +36,10 @@ const FREIGHT := ["CargoTrain_Front",
 @export var block_margin := 6.0          # m gardés avant l'entrée d'un canton occupé
 @export var high_speed_kmh := 90.0
 @export var freight_kmh := 55.0
-@export var warning_seconds := 18.0      # anticipation de fermeture d'un passage à niveau
-@export var warning_min := 140.0         # m : fermeture au plus tard à cette distance, même train lent
-@export var crossing_clear := 14.0       # m derrière la queue avant réouverture
 
 var data: MapRailPath
 var length := 0.0
 var trains: Array = []
-var level_crossings: Array = []
 
 var _dir := -1                # sens de la vague en cours (-1 : du bout ouest vers l'est)
 var _left := 0                # trains restant à lancer dans la vague
@@ -59,26 +54,9 @@ func _ready() -> void:
 		return
 	data = load(RES)
 	length = data.length
-	_build_crossings()
 	if run_trains:
 		_left = wave_size
 		_timer = 1.0
-
-
-# Un passage à niveau par entrée du tracé cuit. Un seul matériau pour tous les mâts et toutes les lisses.
-func _build_crossings() -> void:
-	var red := StandardMaterial3D.new()
-	red.resource_name = "barriere_pn"
-	red.albedo_color = Color(0.72, 0.13, 0.11)
-	red.roughness = 0.7
-	for crossing: Dictionary in data.crossings:
-		if not crossing.has("road_dir"):
-			push_warning("rail_path.tres sans road_dir : relancer RoadBake pour les passages à niveau")
-			return
-		var c: Node3D = CROSSING_SCRIPT.new()
-		add_child(c)
-		c.setup(crossing, red)
-		level_crossings.append(c)
 
 
 func _physics_process(delta: float) -> void:
@@ -88,7 +66,6 @@ func _physics_process(delta: float) -> void:
 	_retire()
 	_mark_blocks()
 	_signal()
-	_update_crossings()
 	if _left > 0 and _timer <= 0.0 and trains.size() < max_trains and _departure_clear():
 		_launch()
 	elif _left == 0 and trains.is_empty() and _timer <= 0.0:
@@ -185,23 +162,6 @@ func _block_of(s: float) -> int:
 	return floori(s / block_length)
 
 
-# Un passage se ferme quand une rame l'occupe, vient de le quitter de moins de crossing_clear m, ou l'approche à
-# moins de warning_seconds de marche (jamais moins de warning_min m, pour qu'un fret lent ferme assez tôt).
-func _update_crossings() -> void:
-	for c: Node3D in level_crossings:
-		var cs: float = float(c.s)
-		var close := false
-		for t: Node3D in trains:
-			var d := float(t.direction)
-			var ahead: float = (cs - float(t.head)) * d
-			var behind: float = (cs - float(t.tail())) * d
-			if ahead <= 0.0:
-				close = close or behind > -crossing_clear
-			else:
-				close = close or ahead < maxf(warning_min, float(t.speed) * warning_seconds)
-		c.set_closed(close)
-
-
 # --- géométrie de la voie ---------------------------------------------------------------------------------------
 
 func at(s: float) -> Vector3:
@@ -246,13 +206,4 @@ func report() -> Array:
 		out.append({"nom": String(t.name), "type": String(t.kind), "sens": t.direction, "tete": t.head,
 				"queue": t.tail(), "longueur": t.rake_length, "vitesse": t.speed, "limite": t.limit,
 				"caisses": t.get_child_count()})
-	return out
-
-
-func crossings_report() -> Array:
-	var out: Array = []
-	for c: Node3D in level_crossings:
-		var r: Dictionary = c.report()
-		r["s"] = float(c.s)
-		out.append(r)
 	return out
