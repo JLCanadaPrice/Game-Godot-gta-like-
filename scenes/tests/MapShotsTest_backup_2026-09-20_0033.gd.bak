@@ -119,15 +119,6 @@ const VIEWS := [
 	["jour_skyline_collines_sol", Vector3(-1150.0, 1.7, -1150.0), Vector3(-550.0, 1.5, -230.0), "sol", 12.0],
 	# quartier de la carte : les 1 196 bâtiments, pour voir que ça vit aussi hors du centre-ville
 	["nuit_quartier_westbank_sol2", Vector3(-1255.2, 1.7, 165.9), Vector3(-1245.6, 1.5, 265.4), "sol", 1.0],
-	# feux tricolores (2026-09-20). Positions et ORIENTATIONS relevees sur Streets.tscn, pas
-	# devinees : tetes a y = 3,985 m, et la face du feu est du cote -Z de son repere local (verifie
-	# sur Feu_47_41, le seul deja lisible de face dans nuit_gratte_ciels_rue_sol). Camera a 8 m sur
-	# ce cote-la, a hauteur d'homme. Altitudes ABSOLUES : le sol du centre-ville est a +0,200 m.
-	# Deux carrefours differents, donc deux phases differentes. Pour l'orange, qui ne dure que le
-	# temps d'une transition, MapShotsTest sait figer tous les feux : --feux=rouge|orange|vert.
-	["nuit_feu_a_sol", Vector3(-523.7, 1.9, -86.6), Vector3(-523.7, 3.7, -94.6), "", 1.0],
-	["nuit_feu_b_sol", Vector3(-753.8, 1.9, -257.9), Vector3(-753.8, 3.7, -249.9), "", 1.0],
-	["jour_feu_a_sol", Vector3(-523.7, 1.9, -86.6), Vector3(-523.7, 3.7, -94.6), "", 12.0],
 	["aube_artere_sol", Vector3(-1606.0, 1.7, -8.0), Vector3(-1624.0, 1.5, -80.0), "sol", 6.2],
 ]
 const SETTLE_FRAMES := 40
@@ -136,7 +127,6 @@ var _out := ""
 var _hour := -1.0
 var _cycle: Node = null
 var _sans_image := false
-var _feux := -1                      # etat impose aux feux tricolores, -1 = les laisser vivre
 
 
 func _ready() -> void:
@@ -155,11 +145,6 @@ func _ready() -> void:
 			bassin = arg.substr(9).to_int()
 		elif arg == "--toutes-lampes":
 			toutes = true
-		elif arg.begins_with("--feux="):
-			# Fige TOUS les feux tricolores dans un etat, le temps de la capture. Sans ca l'orange
-			# ne dure que le temps d'une transition et ne se laisse pas photographier : il faudrait
-			# relancer la capture jusqu'a tomber dessus. N'a d'effet que dans cet outil.
-			_feux = {"rouge": 0, "orange": 1, "vert": 2}.get(arg.substr(7), -1)
 		elif arg == "--sans-image":
 			# Mesure seule, sans get_image(). C'est get_image() qui fait décrocher le GPU au-delà de
 			# 800x450 (DXGI_ERROR_DEVICE_REMOVED, cf. CLAUDE.md §6), pas le rendu : sans lui on peut
@@ -203,13 +188,6 @@ func _ready() -> void:
 	Engine.max_fps = 0
 	for k in 3:
 		await get_tree().physics_frame
-	if _feux >= 0:
-		var n := 0
-		for feu in _tous_les_feux(self):
-			feu.set_process(false)   # sinon le prochain sondage du Circuit reprend la main
-			feu.call("set_state", _feux)
-			n += 1
-		print("MAP_SHOT_FEUX %d feux figes sur l'etat %d" % [n, _feux])
 	for view: Array in VIEWS:
 		if not only.is_empty() and not only.has(view[0]):
 			continue
@@ -263,16 +241,6 @@ func _ready() -> void:
 				RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TOTAL_PRIMITIVES_IN_FRAME) / 1e6,
 				gpu, cpu])
 	get_tree().quit(0)
-
-
-# Tous les feux tricolores de la scene, pour --feux=.
-func _tous_les_feux(n: Node) -> Array[Node]:
-	var out: Array[Node] = []
-	if n is TrafficLight:
-		out.append(n)
-	for c in n.get_children():
-		out.append_array(_tous_les_feux(c))
-	return out
 
 
 func _ground(p: Vector3) -> float:

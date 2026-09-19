@@ -31,19 +31,6 @@ const TEX_RED := preload("res://assets/traffic_light/albedo_red_bright.png")
 const TEX_YELLOW := preload("res://assets/traffic_light/albedo_yellow_bright.png")
 const TEX_GREEN := preload("res://assets/traffic_light/albedo_green_bright.png")
 
-# Masques d'ÉMISSION de la lentille, livrés avec le pack et jusqu'ici inutilisés. Mesurés le
-# 2026-09-20 : 97,8 % de noir quasi pur, et la seule zone vive est la lentille (rouge 255/207/207,
-# vert 122/255/130, orange 255/216/117). Leur zone vive recouvre à 95-96 % la zone où l'albédo
-# « allumé » diffère du boîtier nu : ce sont bien les mêmes pixels, vérifié et pas supposé.
-#
-# C'est d'ailleurs ce que fait le script d'origine du pack (TrafficLight.cs, SetEmissionTexture) :
-# albédo pour le boîtier, émission pour la lentille. Le portage GDScript avait coupé l'émission et
-# tout fait porter à l'albédo — d'où une lentille ombrée, donc éteinte la nuit.
-const EMIT_RED := preload("res://assets/traffic_light/tl_texture_r.png")
-const EMIT_YELLOW := preload("res://assets/traffic_light/tl_texture_y.png")
-const EMIT_GREEN := preload("res://assets/traffic_light/tl_texture_g.png")
-const EMISSION_ENERGY := 1.0
-
 const POLL_INTERVAL := 0.25   # l'état ne change que toutes les quelques secondes, pas besoin de 60 Hz
 
 @export var circuit_path: NodePath      # vers le noeud "Circuit" (CircuitPath) du monde
@@ -78,28 +65,13 @@ func _ready() -> void:
 		return
 	if not _state_materials.has(base):
 		var mats := []
-		for etat in [[TEX_RED, EMIT_RED], [TEX_YELLOW, EMIT_YELLOW], [TEX_GREEN, EMIT_GREEN]]:
+		for tex in [TEX_RED, TEX_YELLOW, TEX_GREEN]:
 			var mat := base.duplicate() as StandardMaterial3D
-			mat.albedo_texture = etat[0]
-			# La LENTILLE seule s'allume, par le masque d'émission. L'émission s'ajoute APRÈS
-			# l'ombrage : elle ne dépend donc d'aucune lumière de la scène, et la lentille reste
-			# lisible la nuit, quand le soleil est sous l'horizon. C'est tout l'intérêt ici —
-			# l'albédo seul, lui, s'assombrissait avec la nuit et le feu devenait sourd.
-			#
-			# On NE passe PAS le matériau en SHADING_MODE_UNSHADED : boîtier et lentille partagent
-			# une seule image, et tout mettre en non éclairé aplatirait le boîtier. Le boîtier garde
-			# donc son ombrage normal, et seule la lentille émet. Aucun appel de dessin en plus :
-			# ce sont les trois mêmes matériaux partagés par les 348 feux de la ville.
-			mat.emission_enabled = true
-			mat.emission_texture = etat[1]
-			mat.emission = Color.WHITE
-			# PIÈGE : emission_operator vaut ADD par défaut, et en ADD la couleur plate `emission`
-			# est émise sur TOUTE la surface, la texture ne faisant que s'ajouter par-dessus. Avec
-			# emission = blanc, c'est le boîtier entier qui s'allumait, pas la lentille (essayé le
-			# 2026-09-20 : le feu devenait un bloc blanc). En MULTIPLY, l'émission vaut
-			# blanc x énergie x masque, donc exactement le masque : la lentille seule.
-			mat.emission_operator = BaseMaterial3D.EMISSION_OP_MULTIPLY
-			mat.emission_energy_multiplier = EMISSION_ENERGY
+			# Émission plus utilisée du tout : la couleur vient désormais directement
+			# de l'albedo_texture, qui contient déjà le boîtier ET la lentille
+			# allumée fusionnés dans une seule image par état.
+			mat.emission_enabled = false
+			mat.albedo_texture = tex
 			mats.append(mat)
 		_state_materials[base] = mats
 	_materials = _state_materials[base]
