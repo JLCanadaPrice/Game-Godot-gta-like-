@@ -16,6 +16,15 @@ travail imposée, les commandes exactes, les pièges déjà payés et l'état d'
 - Binaire Godot : `<disque>:/p-recree/Godot_v4.7.2-stable/Godot_v4.7.2-stable_win64_console.exe`
   (la variante `_console` écrit sur la sortie standard, c'est celle qu'il faut pour les tests).
 - `README.md` décrit un état très ancien du projet (sol gris de test) : ne pas s'y fier.
+- **L'historique a été réécrit le 2026-09-19** (`git filter-repo`) pour sortir 16 dossiers de
+  sources d'assets brutes — `.fbx`, `.obj`, `.blend`, planches de textures d'origine, tous déjà
+  ignorés par Godot via `.gdignore` et jamais chargés. Le dépôt est passé de **564 à 278 Mo**,
+  l'arbre de travail de **2,19 Go à 987 Mo**. Ces sources vivent maintenant dans un **dépôt privé
+  séparé** (`D:/p-recree/sources-brutes`, arborescence identique) : privé parce que plusieurs packs
+  sont à licence NON VÉRIFIÉE. Conséquences pratiques : tous les SHA d'avant le 2026-09-19 sont
+  périmés, et **ne jamais recommiter une source brute dans ce dépôt-ci** — si un pack doit être
+  retravaillé, le copier hors du projet. Le compte de `ProjectLoadCheck` n'a pas bougé (584), ce qui
+  est la preuve que rien de chargé n'est parti.
 
 ## 2. Méthode de travail (imposée, non négociable)
 
