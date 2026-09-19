@@ -75,13 +75,18 @@ const TRIMESH_MODELS := ["Business_GasStation"]
 # bâtiment à ce bord vaut donc exactement SETBACK[use], et `yaw = atan2(front.x, front.y)` donne la direction.
 # Relevé sur les 1 196 lots : 487 déjà au contact du dur, 689 franchissables d'une allée droite, 20 barrés par
 # un autre bâtiment, aucun trop long ni trop pentu (dénivelé médian 0,30 m, maxi 1,32 m).
-const DRIVE_ZONES := ["southside", "campagne_est", "bluffview", "midtown_nord", "eastgate", "willow_lake", "westbank"]          # zones traitées ; tableau vide = toutes
+const DRIVE_ZONES := ["southside", "campagne_est", "bluffview", "midtown_nord", "eastgate", "willow_lake", "westbank", "railyard"]          # zones traitées ; tableau vide = toutes
 # AU CONTACT du bord dur : laisser 0,5 m rendait un liseré d'herbe visible à hauteur d'homme sur les rues
 # locales. Les 10 cm gardés ici ne sont PAS un recul de confort, c'est la précision du modèle géométrique de
 # _paved_at : la bande d'un ruban est un « à moins de w/2 de l'axe », alors que la surface dessinée est un
 # polygone, et les deux s'écartent de quelques centimètres en courbe. Mesuré à westbank sans marge : 3 allées
 # mordaient de 0,065 m. 10 cm ne se voient pas — le liseré rejeté en faisait 500 à 1 000.
-const DRIVE_STOP := 0.10
+# 0,18 m : c'est la FLÈCHE de la polyligne. _paved_at teste « à moins de w/2 de l'axe » sur une polyligne
+# échantillonnée, alors que la surface dessinée suit la courbe ; l'écart vaut pas² / (8 R), soit environ 13 cm
+# sur un virage serré de rue locale (pas de 4 m, rayon de 15 m). Mesuré : 6,5 cm de morsure à westbank sans
+# marge, puis 3 cm à railyard avec 10 cm. 18 cm couvrent le cas le plus défavorable par construction, et ne se
+# voient pas — le liseré rejeté en faisait 500 à 1 000.
+const DRIVE_STOP := 0.18
 const DRIVE_WIDTH := {"house": 3.0, "commerce": 5.0, "office": 5.0, "service": 5.0, "industry": 6.0, "farm": 6.0}
 # Une allée de plus de DRIVE_MAX_SLOPE est injouable quelle que soit la zone. Quand le relief l'impose, on
 # essaie d'abord de la mettre EN BIAIS : traverser un remblai en écharpe étale la même dénivelée sur cos(angle)
