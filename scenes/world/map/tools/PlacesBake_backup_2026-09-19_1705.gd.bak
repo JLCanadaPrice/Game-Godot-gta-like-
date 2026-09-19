@@ -348,10 +348,7 @@ func _precinct() -> void:
 	_model("Business_Bank", Vector2(-713, 158), PI, y)
 	_paved(Vector2(-713, 136.25), Vector2(18, 18.5), y + 0.05, "concrete", Color(), false, 0.0)
 	_parking(Vector2(-690.5, 165), Vector2(13, 36), y + 0.05, false, 0.0)
-	# portail sur l'allée qui descend vers la rue : _fence ouvre 5 m de part et d'autre d'un point de portail
-	_fence(PackedVector2Array([Vector2(-697, 147), Vector2(-684, 147), Vector2(-684, 183), Vector2(-697, 183)]), 2.2, STEEL, "chain", y, [Vector2(-690.5, 147)])
-	if not AVANT:
-		_precinct_liaisons(y)
+	_fence(PackedVector2Array([Vector2(-697, 147), Vector2(-684, 147), Vector2(-684, 183), Vector2(-697, 183)]), 2.2, STEEL, "chain", y)
 	var pole := Vector3(-726, y, 141)
 	_box("steel", pole, Vector3(0.16, 11, 0.16), Color(0.8, 0.8, 0.8), true)
 	_quad("paint", pole + Vector3(0.1, 9.2, 0), pole + Vector3(2.5, 9.2, 0), pole + Vector3(2.5, 10.7, 0), pole + Vector3(0.1, 10.7, 0), Vector3(0, 0, -1), [], Color(0.12, 0.2, 0.5), false)
@@ -360,47 +357,12 @@ func _precinct() -> void:
 	# Voitures de patrouille dans la COUR CLÔTURÉE du commissariat (x -697 à -684, z 147 à 183), pas sur le parvis :
 	# le parvis porte le point de contrôle « allée du Central Precinct » en (-713, 132) et il est trop petit
 	# (18 x 18,5 m) pour garder les 12 m de dégagement exigés. La cour est de toute façon l'endroit où vivent des
-	# voitures de police.
-	#
-	# DANS LES PLACES, et non en travers. _parking trace ici une rangée unique de traits de 5,2 m orientés selon X,
-	# espacés de 2,8 m selon Z, centrés sur x -694,25 : une place fait donc 5,2 m de profondeur (x -696,85 à
-	# -691,65) et 2,8 m de large (Z), et l'allée de manoeuvre est le reste, x -691,65 à -684. Une voiture posée à
-	# x -690,5 avec un cap de 180° était couchée en long au milieu de l'allée, en travers des places.
-	# Les traits tombent sur z = 148,5 + 2,8 k : les centres de place sont donc à 149,9 + 2,8 k.
-	# Cap PI/2 : le nez des modèles est sur +Z, une rotation de +90° autour de Y l'envoie sur +X, vers l'allée.
-	for z: float in ([153.0, 160.0, 167.0] if AVANT else [155.5, 158.3, 161.1]):
-		var model := "Police/Veh_Police_SUV.glb" if z > (166.0 if AVANT else 160.0) else "Police/Veh_Police_Sedan.glb"
-		if AVANT:
-			_parked_vehicle(VEH + model, Vector2(-690.5, z), PI, y + 0.05)
-		else:
-			_parked_vehicle(VEH + model, Vector2(-694.25, z), PI * 0.5, y + 0.05)
+	# voitures de police. Nez vers la sortie, au sud.
+	for z: float in [153.0, 160.0, 167.0]:
+		var model := "Police/Veh_Police_SUV.glb" if z > 166.0 else "Police/Veh_Police_Sedan.glb"
+		_parked_vehicle(VEH + model, Vector2(-690.5, z), PI, y + 0.05)
 	footprints.append(_rect_footprint("building", Vector2(-713, 158), Vector2(26, 25)))
 	_end("Central Precinct", "police")
-
-
-# --- liaisons bitumées : plus une seule bande d'herbe entre deux surfaces dures --------------------------------------
-#
-# Le parvis, le parking et la rue étaient trois dalles posées sur la pelouse de l'îlot. Mesuré au rayon, au pas de
-# 0,25 m : la pelouse d'îlot est à -0,050 m, les dalles des lieux à +0,020 m, la chaussée à +0,050 m et le trottoir
-# à +0,200 m. Les liaisons sont donc posées au MÊME dessus que les dalles existantes (y + 0,05) et avec le même
-# revêtement, si bien qu'il n'y a aucune marche d'une dalle à l'autre : la seule marche est celle que les dalles
-# existantes avaient déjà sur la pelouse, 7 cm.
-# Chaque liaison mord de 0,5 m sur la dalle qu'elle rejoint, pour qu'aucune couture ne laisse passer un filet d'herbe.
-
-func _precinct_liaisons(y: float) -> void:
-	var top := y + 0.05
-	# Un premier découpage en trois bandes (parvis -> trottoir, allée, cheminement) laissait un îlot d'herbe de
-	# 10 x 10,5 m enclavé entre elles, c'est-à-dire exactement le défaut qu'on corrige. D'où ce découpage-ci, en
-	# deux morceaux seulement :
-	#  - le PARVIS s'étend du trottoir (z 125) jusqu'à la façade sud du bâtiment (z 145,5) et de x -722 à -694 ;
-	#  - l'ALLÉE goudronnée occupe les 7 m restants à l'est, de la rue jusqu'à la cour (z 147,5), à l'est du
-	#    bâtiment (dont la face est est à x -700), donc sans jamais passer dessous.
-	# Les deux se touchent sur toute leur longueur en x -694 : aucune couture ne laisse passer un filet d'herbe.
-	_paved(Vector2(-708, 135.25), Vector2(28, 20.5), top, "concrete", Color(), false, 0.0)
-	_paved(Vector2(-690.5, 136.25), Vector2(7, 22.5), top, "plain", Color(), false, 0.0)
-	# Coin entre l'allée et la face est du bâtiment, pour rejoindre le bord sud de la cour sans laisser de pointe
-	# d'herbe entre les deux.
-	_paved(Vector2(-697, 146.5), Vector2(6.0, 2.0), top, "concrete", Color(), false, 0.0)
 
 
 func _liberty_lot() -> void:
@@ -816,9 +778,6 @@ func _fbx_model(path: String, center: Vector2, yaw: float, base_y: float, collid
 # ambulance ferait 3,71 m de long au lieu de 6,12 m.
 const VEH := "res://assets/vehicle_models_extra/city_vehicles_UNVERIFIED_LICENSE/"
 const VEH_SCALE := 1.65
-# Interrupteur de CAPTURE seulement : à true, la cuisson reproduit l'état d'avant le chantier des liaisons, le
-# temps de reprendre les captures « avant » au même point de vue. Doit rester à false dans tout commit.
-const AVANT := false
 
 
 # Transform d'un noeud dans le repère de `top`, en remontant la chaîne des parents.
