@@ -86,25 +86,10 @@ const VIEWS := [
 	["chantier_rue_sol", Vector3(-302.0, 8.8, -1372.0), Vector3(-248.0, 22.0, -1306.0)],
 	["chantier_portail_sol", Vector3(-288.0, 11.2, -1300.0), Vector3(-232.0, 14.0, -1310.0)],
 	["chantier_interieur_sol", Vector3(-274.0, 10.9, -1344.0), Vector3(-252.0, 26.0, -1288.0)],
-	# Chantier jour/nuit : vues DE NUIT, au sol, à hauteur d'homme. Les 12 vues de référence sont
-	# toutes diurnes ; mesurées de jour elles ne prouvent rien sur le coût de l'éclairage nocturne,
-	# puisque les halos sont cachés et les vraies lumières éteintes. Le 5e champ force l'heure.
-	["nuit_artere_urbaine_sol", Vector3(-1606.0, 1.7, -8.0), Vector3(-1624.0, 1.5, -80.0), "sol", 1.0],
-	["nuit_centre_ville_sol", Vector3(-892.0, 1.7, -172.0), Vector3(-700.0, 1.6, -172.0), "sol", 1.0],
-	["nuit_echangeur_sol", Vector3(-330.0, 1.7, 690.0), Vector3(-380.0, 4.0, 770.0), "sol", 1.0],
-	["nuit_rond_point_echo_sol", Vector3(175.0, 1.7, -255.0), Vector3(110.0, 1.5, -316.0), "sol", 1.0],
-	["nuit_quartier_westbank_sol", Vector3(-1255.2, 1.7, 165.9), Vector3(-1245.6, 1.5, 265.4), "sol", 1.0],
-	["nuit_echo_circle_sol", Vector3(-520.0, 1.7, -300.0), Vector3(-586.0, 3.0, -365.0), "sol", 1.0],
-	# Crépuscule et lever, mêmes caméras : c'est là que le fondu des lampadaires se juge.
-	["crepuscule_artere_sol", Vector3(-1606.0, 1.7, -8.0), Vector3(-1624.0, 1.5, -80.0), "sol", 19.8],
-	["aube_artere_sol", Vector3(-1606.0, 1.7, -8.0), Vector3(-1624.0, 1.5, -80.0), "sol", 6.2],
 ]
 const SETTLE_FRAMES := 40
 
 var _out := ""
-var _hour := -1.0
-var _cycle: Node = null
-var _sans_image := false
 
 
 func _ready() -> void:
@@ -112,58 +97,17 @@ func _ready() -> void:
 		if arg.begins_with("--out="):
 			_out = arg.substr(6)
 	var only: PackedStringArray = []
-	var bassin := -1
-	var toutes := false
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--views="):
 			only = arg.substr(8).split(",")
-		elif arg.begins_with("--heure="):
-			_hour = arg.substr(8).to_float()
-		elif arg.begins_with("--bassin="):
-			bassin = arg.substr(9).to_int()
-		elif arg == "--toutes-lampes":
-			toutes = true
-		elif arg == "--sans-image":
-			# Mesure seule, sans get_image(). C'est get_image() qui fait décrocher le GPU au-delà de
-			# 800x450 (DXGI_ERROR_DEVICE_REMOVED, cf. CLAUDE.md §6), pas le rendu : sans lui on peut
-			# mesurer en 1920x1080, résolution à laquelle le GPU est enfin assez chargé pour que la
-			# différence entre 0 et 1540 lumières sorte du bruit. Les IMAGES, elles, restent en
-			# 800x450.
-			_sans_image = true
 	var world := WORLD.instantiate()
-	# Réglages de l'éclairage AVANT _ready : StreetLights crée son bassin au premier allumage, et
-	# c'est tout l'intérêt de ces deux options de pouvoir comparer des tailles de bassin, et l'option
-	# « une vraie lumière par lampadaire », sans recompiler quoi que ce soit.
-	var lights := world.get_node_or_null("StreetLights")
-	if lights != null:
-		if bassin >= 0:
-			lights.set("pool", bassin)
-		if toutes:
-			lights.set("all_lights", true)
 	add_child(world)
-	_cycle = world.get_node_or_null("DayNight")
-	if _cycle != null:
-		_cycle.set("show_clock", false)
-		# cycle figé : sans ça l'heure dériverait de 40 images entre deux vues, et deux mesures de
-		# la même vue ne seraient pas comparables
-		_cycle.set("paused", true)
-		if _hour >= 0.0:
-			_cycle.call("set_hour", _hour)
 	for spawner_name in ["CarSpawner", "NpcSpawner"]:
 		world.get_node(spawner_name).set_process(false)
 	var cam := Camera3D.new()
 	cam.far = 4000.0
 	add_child(cam)
 	cam.make_current()
-	# Temps GPU par image. Les appels de dessin ne mesurent PAS le coût des lumières : une
-	# OmniLight3D ou une SpotLight3D n'ajoute aucun appel, elle ajoute du travail dans la passe
-	# d'ombrage. Sans cette mesure, comparer « 0 lumière » et « 1540 lumières » donnerait exactement
-	# le même chiffre et ne prouverait rien.
-	RenderingServer.viewport_set_measure_render_time(get_viewport().get_viewport_rid(), true)
-	# Sans ça, le temps d'image mesuré est celui de l'écran, pas celui de la scène, et toutes les
-	# options se valent à 60 Hz près.
-	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
-	Engine.max_fps = 0
 	for k in 3:
 		await get_tree().physics_frame
 	for view: Array in VIEWS:
@@ -174,50 +118,19 @@ func _ready() -> void:
 		if view.size() > 3 and view[3] == "sol":
 			from.y += _ground(from)
 			to.y += _ground(to)
-		if _cycle != null:
-			# heure propre à la vue si elle en impose une, sinon celle de --heure=, sinon celle du
-			# cycle telle quelle
-			if view.size() > 4:
-				_cycle.call("set_hour", float(view[4]))
-			elif _hour >= 0.0:
-				_cycle.call("set_hour", _hour)
 		cam.global_position = from
 		cam.look_at(to, Vector3.UP)
 		for k in SETTLE_FRAMES:
 			await get_tree().process_frame
-		# moyenne du temps GPU sur les 20 dernières images : une image isolée est trop bruitée pour
-		# départager deux réglages d'éclairage
-		# Temps d'image AU MUR, mesuré à l'horloge, médiane sur 120 images. Les deux compteurs de
-		# Godot (viewport_get_measured_render_time_gpu/cpu) se sont montrés inexploitables sur cette
-		# machine le 2026-09-19 : ils donnaient « 0 lumière » plus lent que « 1540 lumières » et la
-		# même valeur au centième pour des bassins de 8, 32 et 64. L'horloge, elle, ne ment pas sur
-		# ce qu'une image coûte réellement.
-		var rid := get_viewport().get_viewport_rid()
-		var mesures: Array[float] = []
-		var cpu := 0.0
-		var t_prec := Time.get_ticks_usec()
-		for k in 120:
-			await get_tree().process_frame
-			var t := Time.get_ticks_usec()
-			mesures.append((t - t_prec) / 1000.0)
-			t_prec = t
-			cpu += RenderingServer.viewport_get_measured_render_time_cpu(rid)
-		cpu /= 120.0
-		# médiane, pas moyenne : une image isolée où le pilote recompile un pipeline fausse une
-		# moyenne et ne déplace pas une médiane
-		mesures.sort()
-		var gpu: float = mesures[mesures.size() / 2]
 		await RenderingServer.frame_post_draw
-		if not _sans_image:
-			var img := get_viewport().get_texture().get_image()
-			if _out != "":
-				img.save_png(_out.path_join(String(view[0]) + ".png"))
-		print("MAP_SHOT %s [%05.2f h] : %d appels de dessin, %d objets, %.2f M primitives, image %.3f ms, rendu CPU %.2f ms"
-				% [view[0], (_cycle.get("hour") if _cycle != null else 0.0),
-				RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TOTAL_DRAW_CALLS_IN_FRAME),
+		var img := get_viewport().get_texture().get_image()
+		if _out != "":
+			img.save_png(_out.path_join(String(view[0]) + ".png"))
+		print("MAP_SHOT %s : %d appels de dessin, %d objets, %.2f M primitives, %.0f FPS"
+				% [view[0], RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TOTAL_DRAW_CALLS_IN_FRAME),
 				RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TOTAL_OBJECTS_IN_FRAME),
 				RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TOTAL_PRIMITIVES_IN_FRAME) / 1e6,
-				gpu, cpu])
+				Engine.get_frames_per_second()])
 	get_tree().quit(0)
 
 

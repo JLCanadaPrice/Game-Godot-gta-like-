@@ -1,7 +1,6 @@
 [gd_scene format=3 uid="uid://c1wxwcjet2fhj"]
 
 [ext_resource type="PackedScene" uid="uid://csryoo0wwc28y" path="res://scenes/player/Player.tscn" id="1"]
-[ext_resource type="Script" path="res://scenes/world/DayNightCycle.gd" id="cycle_jour_nuit"]
 [ext_resource type="PackedScene" uid="uid://c3au1f1btxufy" path="res://scenes/ui/HUD.tscn" id="2"]
 [ext_resource type="PackedScene" path="res://scenes/ui/MapMenu.tscn" id="3"]
 [ext_resource type="PackedScene" uid="uid://ujk3wq5k15fd" path="res://scenes/ui/BuildingPurchaseUI.tscn" id="6"]
@@ -83,9 +82,6 @@ environment = SubResource("Environment_1")
 transform = Transform3D(0.707, -0.5, 0.5, 0, 0.707, 0.707, -0.707, -0.5, 0.5, 0, 30, 0)
 shadow_enabled = true
 directional_shadow_max_distance = 240.0
-
-[node name="DayNight" type="Node3D" parent="."]
-script = ExtResource("cycle_jour_nuit")
 
 [node name="Ground" type="Node3D" parent="." unique_id=820883506]
 

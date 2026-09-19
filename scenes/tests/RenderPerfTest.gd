@@ -99,7 +99,27 @@ func _ready() -> void:
 		# --verify-multimesh construit les MultiMesh lui-même, en gardant les sources pour comparer
 		if "--no-multimesh" in _args or "--verify-multimesh" in _args:
 			optimizer.multimesh = false
+	# Chantier jour/nuit : ce banc est le SEUL endroit qui mesure le GPU de façon exploitable, et
+	# c'est celui qui a servi pour les chiffres UHD 750 du CityRenderOptimizer. Les options
+	# ci-dessous permettent de refaire la comparaison des approches d'éclairage nocturne SUR LA
+	# MACHINE DE RÉFÉRENCE : la machine de développement rend la scène en ~2 ms, les lumières y sont
+	# noyées dans le bruit et trois métriques différentes s'y sont contredites le 2026-09-19.
+	#   --heure=1 --bassin=0    : halos seuls
+	#   --heure=1 --bassin=16   : réglage livré
+	#   --heure=1 --toutes-lampes : une vraie lumière par luminaire (1540), l'option écartée
+	var lights = _world.get_node_or_null("StreetLights")
+	if lights != null:
+		if _arg("--bassin=") != "":
+			lights.pool = _arg("--bassin=").to_int()
+		if "--toutes-lampes" in _args:
+			lights.all_lights = true
 	add_child(_world)
+	var cycle = _world.get_node_or_null("DayNight")
+	if cycle != null:
+		cycle.show_clock = false
+		cycle.paused = true
+		if _arg("--heure=") != "":
+			cycle.set_hour(_arg("--heure=").to_float())
 	await get_tree().process_frame
 	print("RENDER_PERF_LOAD World.tscn instancié et optimisé en %d ms, %d nœuds | optimiseur : %s | occlusion culling du viewport : %s"
 			% [Time.get_ticks_msec() - t0, Performance.get_monitor(Performance.OBJECT_NODE_COUNT),
