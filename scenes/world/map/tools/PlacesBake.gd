@@ -338,6 +338,7 @@ func _hospital() -> void:
 	# 1,4 m. Même règle que la végétation : rien à moins de 12 m d'un point de contrôle.
 	for x: float in [-278.0, -271.0, -264.0]:
 		_parked_vehicle(VEH + "Emergency/Veh_Ambulance.glb", Vector2(x, 137), PI, y + 0.05)
+	_hospital_liaisons(y)
 	footprints.append(_rect_footprint("building", Vector2(-280, 168), Vector2(48, 47)))
 	_end("St. Anselm Medical Center", "hospital")
 
@@ -401,6 +402,26 @@ func _precinct_liaisons(y: float) -> void:
 	# Coin entre l'allée et la face est du bâtiment, pour rejoindre le bord sud de la cour sans laisser de pointe
 	# d'herbe entre les deux.
 	_paved(Vector2(-697, 146.5), Vector2(6.0, 2.0), top, "concrete", Color(), false, 0.0)
+
+
+func _hospital_liaisons(y: float) -> void:
+	var top := y + 0.05
+	# Parvis des ambulances (x -305..-255, z 130..144) -> trottoir (z 123..125) : il restait 4,5 m d'herbe, de
+	# z 125,25 à 129,75. L'extension reprend la LARGEUR ENTIÈRE du parvis et pas seulement celle des ambulances :
+	# une allée plus étroite aurait laissé de part et d'autre deux bandes d'herbe coincées entre le parvis et le
+	# trottoir, c'est-à-dire le défaut qu'on corrige (leçon du parvis du commissariat).
+	_paved(Vector2(-280, 127.5), Vector2(50, 5.0), top, "concrete", Color(), false, 0.0)
+	# Parkings latéraux (x -319..-306 et -254..-241, z 146..192) -> parvis. Les deux liaisons passent au sud du
+	# bâtiment (x -304..-256, z 144,5..191,5) sans le toucher, et mordent de 0,5 m sur le parvis. Le reste de la
+	# pelouse latérale reste ouvert vers l'extérieur de l'îlot : il n'est enclavé nulle part.
+	_paved(Vector2(-311.5, 142.0), Vector2(15.0, 8.0), top, "concrete", Color(), false, 0.0)
+	_paved(Vector2(-248.75, 142.0), Vector2(15.5, 8.0), top, "concrete", Color(), false, 0.0)
+	# Les parkings latéraux s'arrêtaient à 2 m des murs du bâtiment : il restait de chaque côté une lisière
+	# d'herbe de 2 x 46 m le long de la façade, mesurée au balayage. Comblée jusqu'au mur.
+	_paved(Vector2(-305, 169.0), Vector2(2.0, 46.0), top, "concrete", Color(), false, 0.0)
+	# côté est, la lisière est prise 0,5 m sous le mur : posée pile sur la face (x -256), il restait au balayage
+	# une case d'herbe d'épaisseur nulle entre les deux quads
+	_paved(Vector2(-255.25, 169.0), Vector2(2.5, 46.0), top, "concrete", Color(), false, 0.0)
 
 
 func _liberty_lot() -> void:
