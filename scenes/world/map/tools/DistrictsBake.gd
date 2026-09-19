@@ -75,7 +75,7 @@ const TRIMESH_MODELS := ["Business_GasStation"]
 # bâtiment à ce bord vaut donc exactement SETBACK[use], et `yaw = atan2(front.x, front.y)` donne la direction.
 # Relevé sur les 1 196 lots : 487 déjà au contact du dur, 689 franchissables d'une allée droite, 20 barrés par
 # un autre bâtiment, aucun trop long ni trop pentu (dénivelé médian 0,30 m, maxi 1,32 m).
-const DRIVE_ZONES := ["southside", "campagne_est", "bluffview"]          # zones traitées ; tableau vide = toutes
+const DRIVE_ZONES := ["southside", "campagne_est", "bluffview", "midtown_nord"]          # zones traitées ; tableau vide = toutes
 const DRIVE_STOP := 0.0                     # AU CONTACT du bord dur : laisser 0,5 m rendait un liseré d'herbe
                                             # visible à hauteur d'homme sur les rues locales, alors que le contact
                                             # n'empiète pas (vérifié allée par allée, cf. probe_allees_ok)
