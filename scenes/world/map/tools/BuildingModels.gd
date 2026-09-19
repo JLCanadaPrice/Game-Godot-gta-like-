@@ -8,10 +8,12 @@ extends RefCounted
 const CATALOG := "res://scenes/world/map/data/building_catalog.json"
 const PACK := "res://assets/building_pack_everythinglibrary/"
 const OUT := "res://scenes/world/map/generated/buildings"
+const Windows := preload("res://scenes/world/map/tools/BuildingWindows.gd")
 
 var catalog := {}                        # nom -> entrée du catalogue
 var material: StandardMaterial3D
 var _baked := {}                         # nom -> {"mesh": Mesh, "aabb": AABB, "triangles": int, "trimesh": Shape3D}
+var _windows := {}                       # nom -> carreaux vitrés du modèle (BuildingWindows)
 var _mv := PackedVector3Array()
 var _mn := PackedVector3Array()
 var _mc := PackedColorArray()
@@ -32,6 +34,24 @@ func _init() -> void:
 	var path := OUT.path_join("building_material.tres")
 	ResourceSaver.save(m, path)
 	material = load(path)
+
+
+# Carreaux vitrés d'un modèle, dans son repère, pour les fenêtres allumées la nuit. Relus sur le
+# .glb d'origine : _bake fusionne toutes les surfaces en une seule, donc le maillage cuit ne dit
+# plus quel triangle était une vitre. _collect fusionne sans transformation supplémentaire, le
+# repère est donc le même. Voir l'en-tête de BuildingWindows pour ce qui a été mesuré sur le pack.
+func windows_of(name: String) -> Array:
+	if _windows.has(name):
+		return _windows[name]
+	var out: Array = []
+	if catalog.has(name):
+		var chemin := String(catalog[name]["path"])
+		if ResourceLoader.exists(chemin):
+			var inst: Node = (load(chemin) as PackedScene).instantiate()
+			out = Windows.panes(inst)
+			inst.free()
+	_windows[name] = out
+	return out
 
 
 func size_of(name: String) -> Vector3:

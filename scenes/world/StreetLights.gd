@@ -28,6 +28,19 @@ const GLOW_MATERIAL := "res://scenes/world/lamp_glow_material.tres"
 const GLOW_ON := Color(1.00, 0.88, 0.62)
 const GLOW_OFF := Color(0.26, 0.25, 0.23)    # capot éteint, gris tiède : le halo reste un objet le jour
 
+# FENÊTRES ALLUMÉES (bâtiments). Même mécanique exactement que les halos, et pour la même raison :
+# un carreau allumé est un petit quadrilatère posé 2 cm devant la vitre, fusionné avec les autres en
+# UN maillage par cellule, sur un matériau UNIQUE partagé par toute la ville. Allumer, c'est rendre
+# ces maillages visibles et donner sa couleur au matériau. Coût : un appel de dessin par cellule
+# visible la nuit, ZÉRO le jour. Aucune source lumineuse n'est créée — il y a 1 637 bâtiments.
+#
+# L'éteint n'est pas gris comme pour un capot de lampadaire mais sombre et froid, la couleur d'une
+# vitre non éclairée : au crépuscule le carreau devient visible avant d'être allumé, et il doit
+# alors se confondre avec le vitrage qu'il recouvre.
+const WINDOW_MATERIAL := "res://scenes/world/window_glow_material.tres"
+const WINDOW_ON := Color(1.00, 0.93, 0.76)
+const WINDOW_OFF := Color(0.09, 0.11, 0.15)
+
 # Réglages des vraies lumières, calés sur la géométrie mesurée : luminaire à 6,2 m du sol, trottoir
 # large de 2 à 3,5 m, chaussée d'artère de 10,5 m. Un cône de 55° depuis 6,2 m pose une flaque de
 # 17,7 m de diamètre, ce qui couvre la chaussée et les deux trottoirs.
@@ -42,12 +55,15 @@ const REASSIGN_MOVE := 4.0                   # ...ou dès que la caméra a boug�
 @export var pool := 16
 @export var all_lights := false              # mesure seulement : une vraie lumière par luminaire
 @export var glow := true
+@export var windows := true                  # fenêtres allumées des bâtiments (même mécanique que glow)
 
 var _heads := PackedVector3Array()
 var _aims := PackedVector3Array()
 var _lights: Array[SpotLight3D] = []
 var _material: StandardMaterial3D
 var _glow_nodes: Array[Node] = []
+var _window_material: StandardMaterial3D
+var _window_nodes: Array[Node] = []
 var _night := -1.0
 var _next_reassign := 0.0
 var _last_cam := Vector3(1e9, 1e9, 1e9)
@@ -62,16 +78,18 @@ func _ready() -> void:
 		_heads.append_array(res.heads)
 		_aims.append_array(res.aims)
 	_material = load(GLOW_MATERIAL)
+	_window_material = load(WINDOW_MATERIAL)
 	# Le groupe est posé à la cuisson (persistant), donc présent dès le chargement de la scène.
 	_glow_nodes = get_tree().get_nodes_in_group(&"lamp_glow")
+	_window_nodes = get_tree().get_nodes_in_group(&"window_glow")
 	var cycle := _find_cycle()
 	if cycle != null:
 		cycle.hour_changed.connect(_on_hour_changed)
 		_on_hour_changed(cycle.hour, cycle.night_factor())
 	else:
 		_apply_night(1.0)
-	print("STREET_LIGHTS %d luminaires, %d maillages de halo, bassin de %d vraie(s) lumière(s)%s"
-			% [_heads.size(), _glow_nodes.size(), (_heads.size() if all_lights else pool),
+	print("STREET_LIGHTS %d luminaires, %d maillages de halo, %d maillages de fenêtres, bassin de %d vraie(s) lumière(s)%s"
+			% [_heads.size(), _glow_nodes.size(), _window_nodes.size(), (_heads.size() if all_lights else pool),
 			" [MESURE : une lumière par luminaire]" if all_lights else ""])
 
 
@@ -105,6 +123,12 @@ func _apply_night(night: float) -> void:
 			_material.albedo_color = GLOW_OFF.lerp(GLOW_ON, night)
 		if allume != etait_allume:
 			for n in _glow_nodes:
+				(n as GeometryInstance3D).visible = allume
+	if windows:
+		if _window_material != null:
+			_window_material.albedo_color = WINDOW_OFF.lerp(WINDOW_ON, night)
+		if allume != etait_allume:
+			for n in _window_nodes:
 				(n as GeometryInstance3D).visible = allume
 	if allume and _lights.is_empty():
 		_spawn_lights()

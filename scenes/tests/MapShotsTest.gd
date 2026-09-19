@@ -105,6 +105,20 @@ const VIEWS := [
 	["mat_tranchee_est_sol", Vector3(-719.4, -4.45, -607.0), Vector3(-719.4, -4.2, -660.0)],
 	["mat_viaduc_est_sol", Vector3(30.0, 2.87, 797.0), Vector3(75.0, 4.6, 773.0)],
 	["mat_viaduc_est_contre_sol", Vector3(86.0, 2.73, 770.0), Vector3(40.0, 4.6, 794.0)],
+	# fenêtres allumées (2026-09-19). Toutes AU SOL, à hauteur d'homme, à 1 h du matin.
+	# Le centre-ville roule à +0,200 m (chaussée 0,05 + trottoir 0,15), d'où les altitudes absolues
+	# des vues rapprochées : le mode "sol" relèverait aussi le point visé et, visé au pied d'une
+	# tour de 263 m, il accrocherait la tour elle-même et retournerait la caméra vers le ciel.
+	["nuit_gratte_ciels_sol", Vector3(-430.0, 1.9, -232.0), Vector3(-585.0, 30.0, -280.0), "", 1.0],
+	["nuit_gratte_ciels_rue_sol", Vector3(-520.0, 1.9, -90.0), Vector3(-560.0, 40.0, -240.0), "", 1.0],
+	["jour_gratte_ciels_sol", Vector3(-430.0, 1.9, -232.0), Vector3(-585.0, 30.0, -280.0), "", 12.0],
+	# la ville DE LOIN, debout sur les collines du nord-ouest à 1,1 km : le mode "sol" pose la caméra
+	# à hauteur d'homme sur le relief et vise le sol au pied des tours. C'est la vue qui dit si la
+	# skyline vit la nuit ou si la ville reste noire au-delà de la bascule HLOD (650 m).
+	["nuit_skyline_collines_sol", Vector3(-1150.0, 1.7, -1150.0), Vector3(-550.0, 1.5, -230.0), "sol", 1.0],
+	["jour_skyline_collines_sol", Vector3(-1150.0, 1.7, -1150.0), Vector3(-550.0, 1.5, -230.0), "sol", 12.0],
+	# quartier de la carte : les 1 196 bâtiments, pour voir que ça vit aussi hors du centre-ville
+	["nuit_quartier_westbank_sol2", Vector3(-1255.2, 1.7, 165.9), Vector3(-1245.6, 1.5, 265.4), "sol", 1.0],
 	["aube_artere_sol", Vector3(-1606.0, 1.7, -8.0), Vector3(-1624.0, 1.5, -80.0), "sol", 6.2],
 ]
 const SETTLE_FRAMES := 40

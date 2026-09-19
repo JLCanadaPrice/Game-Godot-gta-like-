@@ -21,6 +21,7 @@ const Layout := preload("res://scenes/world/downtown/DowntownLayout.gd")
 const Spec := preload("res://scenes/world/downtown/DowntownSpec.gd")
 const MapSpec := preload("res://scenes/world/map/MapSpec.gd")
 const ELModels := preload("res://scenes/world/map/tools/BuildingModels.gd")
+const Windows := preload("res://scenes/world/map/tools/BuildingWindows.gd")
 
 const OUT := "res://scenes/world/downtown/generated"
 const MODELS := OUT + "/buildings"
@@ -36,6 +37,23 @@ const SHOP_MARGIN := 3.0
 # et jardins, relevé à la main ; vérifié par rayons comme les autres, cf. _checked_occluders)
 const SKY_OCCLUDER := {"Mk1": 0.42, "Mk2": 0.55, "Mk3": 0.9, "Mk4": 0.9, "Mk5": 0.78, "Mk6": 0.88, "Scraper001": 0.95}
 const SKY_ORDER := ["Mk1", "Mk2", "Mk6", "Scraper001", "Mk4", "Mk5"]
+
+# Fenêtres allumées la nuit, et jusqu'où elles portent. La question mérite d'être posée : au-delà de
+# 650 m DowntownHLOD remplace chaque bâtiment par une boîte de silhouette, et si les fenêtres
+# s'arrêtaient là, la ville serait noire de loin alors qu'elle est éclairée de près.
+#
+# ESSAYÉ ET MESURÉ le 2026-09-19, depuis les collines du nord-ouest à 1,1 km : porter les carreaux
+# des bâtiments ORDINAIRES jusqu'à 4 000 m coûte 23 appels de dessin de plus (513 -> 536) et ne
+# change RIEN à l'image. La raison se lit sur la vue de jour : à cette distance le bas de la ville
+# est un tapis de boîtes qui se masquent les unes les autres, et seules les tours dépassent. Les
+# carreaux du bas sont donc payés sans être vus. Ils s'arrêtent à la bascule HLOD.
+#
+# Les GRATTE-CIELS, eux, sont marqués no_hlod : ils gardent leur maillage à toute distance, ce sont
+# eux qu'on voit du bout de la carte, et ce sont eux qui doivent porter la skyline. D'où deux
+# portées, et pas une.
+const WINDOW_GLOW_RANGE := 650.0
+const WINDOW_GLOW_RANGE_SKY := 4000.0
+const WINDOW_CELL := 160.0            # côté de la cellule de fusion, aligné sur chunk_size de DowntownHLOD
 # paniers par zone : [modèle, poids] ; "el:" EverythingLibrary, "pack:" low_Poly_City_Pack (xN : étages empilés)
 const POOLS := {
 	"core_fill": [["el:Industrial_ModernSkyscraper_alt01", 1], ["el:Industrial_ModernSkyscraper_alt03", 1], ["el:Industrial_ModernSkyscraper_alt05", 1],
@@ -204,7 +222,33 @@ func model(key: String) -> Dictionary:
 				models[key]["front_fixed"] = false
 		models[key]["height"] = (models[key]["aabb"] as AABB).end.y
 		models[key]["hlod_color"] = _mean_color(models[key]["mesh"], family)
+		models[key]["windows"] = _window_panes(family, name)
 	return models[key]
+
+
+# Carreaux vitrés d'un modèle, dans son repère. Relus sur le .glb d'origine parce que la fusion en a
+# perdu la trace : _glb_model et BuildingModels écrasent toutes les surfaces en une seule, donc le
+# maillage cuit ne dit plus quel triangle était une vitre. Les deux fusionnent sans transformation
+# supplémentaire pour la première pièce, le repère est donc le même.
+#
+# La famille "pack" (lowpoly_city) n'a qu'une surface texturée sur un atlas de palette : rien à
+# isoler, elle reste éteinte. Voir l'en-tête de BuildingWindows pour le relevé complet.
+func _window_panes(family: String, name: String) -> Array:
+	var chemin := ""
+	match family:
+		"el":
+			if el.catalog.has(name):
+				chemin = String(el.catalog[name]["path"])
+		"sky":
+			chemin = String(_sky_json[name]["path"])
+		_:
+			return []
+	if chemin == "" or not ResourceLoader.exists(chemin):
+		return []
+	var inst: Node = (load(chemin) as PackedScene).instantiate()
+	var out := Windows.panes(inst)
+	inst.free()
+	return out
 
 
 # Couleur de silhouette lointaine (DowntownHLOD, sRGB) : moyenne des couleurs de sommet (EverythingLibrary, en linéaire),
@@ -642,11 +686,59 @@ func _check_overlaps(casino: Rect2) -> Array[String]:
 	return out
 
 
+# --- fenêtres allumées ------------------------------------------------------------------------------------------------
+
+# Range les carreaux ALLUMÉS d'un bâtiment dans la cellule de 160 m où il se trouve. Le tri allumé /
+# éteint est fait par BuildingWindows.lit sur la position MONDE du carreau : stable d'une cuisson à
+# l'autre, et sans le moindre appel à rng, pour que la ville ne clignote pas entre deux cuissons.
+func _collect_windows(p: Dictionary, mdl: Dictionary, cells: Dictionary, sky_cells: Dictionary) -> void:
+	var panes: Array = mdl.get("windows", [])
+	if panes.is_empty():
+		return
+	var xform: Transform3D = p["transform"]
+	var sky := String(p["model"]).begins_with("sky:")
+	var dest: Dictionary = sky_cells if sky else cells
+	var key := Vector2i(floori(xform.origin.x / WINDOW_CELL), floori(xform.origin.z / WINDOW_CELL))
+	if not dest.has(key):
+		dest[key] = [PackedVector3Array(), PackedVector3Array(), PackedInt32Array()]
+	var acc: Array = dest[key]
+	var allumes := Windows.emit(panes, xform, acc[0], acc[1], acc[2])
+	_stats["fenetres_posees"] = int(_stats.get("fenetres_posees", 0)) + panes.size()
+	_stats["fenetres_allumees"] = int(_stats.get("fenetres_allumees", 0)) + allumes
+
+
+# Un maillage de carreaux allumés par cellule, tous sur le matériau PARTAGÉ : un appel de dessin par
+# cellule visible la nuit, zéro le jour puisque les noeuds naissent cachés. C'est StreetLights qui
+# les allume, par le groupe window_glow, en même temps que les halos de lampadaire.
+func _write_window_glow(root: Node3D, cells: Dictionary, portee: float, prefixe: String) -> void:
+	var keys := cells.keys()
+	keys.sort_custom(func(a, b): return a.y * 1000 + a.x < b.y * 1000 + b.x)
+	for key: Vector2i in keys:
+		var acc: Array = cells[key]
+		if (acc[2] as PackedInt32Array).is_empty():
+			continue
+		var mesh := Windows.build_mesh(acc[0], acc[1], acc[2])
+		var chemin := MODELS.path_join("%s_%02d_%02d.res" % [prefixe.to_lower(), key.x + 20, key.y + 20])
+		ResourceSaver.save(mesh, chemin)
+		var mi := MeshInstance3D.new()
+		mi.name = "%s_%02d_%02d" % [prefixe, key.x + 20, key.y + 20]
+		mi.mesh = load(chemin)
+		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		mi.visibility_range_end = portee
+		mi.visible = false
+		mi.add_to_group(&"window_glow", true)
+		root.add_child(mi)
+		mi.owner = root
+		_stats["cellules_fenetres"] = int(_stats.get("cellules_fenetres", 0)) + 1
+
+
 # --- scène --------------------------------------------------------------------------------------------------------------
 
 func _write_scene() -> String:
 	var root := Node3D.new()
 	root.name = "Buildings"
+	var cells := {}       # Vector2i -> [sommets, normales, indices] des carreaux allumes ordinaires
+	var sky_cells := {}   # idem pour les gratte-ciels, qui portent beaucoup plus loin
 	for k in placements.size():
 		var p: Dictionary = placements[k]
 		var mdl := model(p["model"])
@@ -682,6 +774,7 @@ func _write_scene() -> String:
 		cs.position = Vector3(aabb.get_center().x, aabb.end.y * 0.5, aabb.get_center().z)
 		body.add_child(cs)
 		cs.owner = root
+		_collect_windows(p, mdl, cells, sky_cells)
 		var boxes: Array[AABB] = mdl["occluders"]
 		var low := false
 		for i in boxes.size():
@@ -702,6 +795,8 @@ func _write_scene() -> String:
 			_stats["occulteurs"] += 1
 			if low:
 				_stats["occulteurs_au_sol"] += 1
+	_write_window_glow(root, cells, WINDOW_GLOW_RANGE, "WindowGlow")
+	_write_window_glow(root, sky_cells, WINDOW_GLOW_RANGE_SKY, "WindowGlowSky")
 	var packed := PackedScene.new()
 	var err := packed.pack(root)
 	if err == OK:

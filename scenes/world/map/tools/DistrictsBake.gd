@@ -59,6 +59,12 @@ const SETBACK := {"house": 8.0, "commerce": 12.0, "office": 12.0, "service": 12.
 const LOT_GAP := {"house": 8.0, "commerce": 12.0, "office": 12.0, "service": 12.0, "industry": 14.0, "farm": 20.0}
 const MAX_DROP := {"house": 2.6, "commerce": 2.2, "office": 2.2, "service": 2.2, "industry": 2.0, "farm": 3.0}
 const RANGE := {"house": 600.0, "commerce": 800.0, "office": 1100.0, "service": 900.0, "industry": 1000.0, "farm": 800.0}
+
+# Fenêtres allumées la nuit : un maillage de carreaux par cellule de 256 m, matériau PARTAGÉ, caché
+# le jour. La portée est celle de la plus lointaine famille de bâtiments (office, 1 100 m) : au-delà
+# le bâtiment lui-même n'est plus dessiné, ses fenêtres n'ont donc plus rien à éclairer.
+const Windows := preload("res://scenes/world/map/tools/BuildingWindows.gd")
+const WINDOW_GLOW_RANGE := 1100.0
 const ROAD_STEP := 3.0                      # écart max entre le sol du lot et la chaussée en face
 const HIGHWAY_MARGIN := 14.0                # recul des lots par rapport aux autoroutes et bretelles
 const ROAD_MARGIN := 3.0
@@ -799,6 +805,9 @@ func _write_scene() -> Dictionary:
 		var body := StaticBody3D.new()
 		body.name = "Collision"
 		cell.add_child(body)
+		var win_v := PackedVector3Array()
+		var win_n := PackedVector3Array()
+		var win_i := PackedInt32Array()
 		var meshes: Array[Mesh] = []
 		var names: Array[String] = []
 		var data: Array[PackedFloat32Array] = []
@@ -812,6 +821,10 @@ func _write_scene() -> Dictionary:
 			var center := Vector3(float(lot["x"]), float(lot["base"]), float(lot["z"]))
 			# origine du modèle au niveau du sol (fondations sous l'origine), centre de l'emprise sur le centre du lot
 			var origin := center - basis * Vector3(aabb.get_center().x, 0.0, aabb.get_center().z)
+			var panes: Array = models.windows_of(name)
+			if not panes.is_empty():
+				stats["fenetres_posees"] = int(stats.get("fenetres_posees", 0)) + panes.size()
+				stats["fenetres_allumees"] = int(stats.get("fenetres_allumees", 0)) 						+ Windows.emit(panes, Transform3D(basis, origin), win_v, win_n, win_i)
 			var m := names.find(name)
 			if m < 0:
 				m = names.size()
@@ -861,6 +874,21 @@ func _write_scene() -> Dictionary:
 		field.set("meshes", meshes)
 		field.set("instance_data", data)
 		field.set("ranges", ranges)
+		# carreaux allumés de la cellule, fusionnés en UN maillage sur le matériau partagé : un appel
+		# de dessin par cellule visible la nuit, zéro le jour puisque le noeud naît caché. C'est
+		# StreetLights qui les allume, par le groupe window_glow, avec les halos de lampadaire.
+		if not win_i.is_empty():
+			var glow_path := OUT.path_join("window_glow_%02d_%02d.res" % [key.x + 10, key.y + 10])
+			ResourceSaver.save(Windows.build_mesh(win_v, win_n, win_i), glow_path)
+			var gi := MeshInstance3D.new()
+			gi.name = "WindowGlow"
+			gi.mesh = load(glow_path)
+			gi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+			gi.visibility_range_end = WINDOW_GLOW_RANGE
+			gi.visible = false
+			gi.add_to_group(&"window_glow", true)
+			cell.add_child(gi)
+			stats["cellules_fenetres"] = int(stats.get("cellules_fenetres", 0)) + 1
 		# allées de la cellule, fusionnées par matériau : un appel de dessin par matériau et par cellule
 		var tools := {}
 		for d: Dictionary in drives:

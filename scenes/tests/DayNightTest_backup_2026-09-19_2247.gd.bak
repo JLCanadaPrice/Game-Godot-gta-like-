@@ -1,0 +1,310 @@
+extends Node3D
+
+# Cycle jour/nuit et allumage des lampadaires, vérifiés dans le MONDE CUIT, pas sur les constantes.
+#
+# Ce que le test couvre, et pourquoi :
+#  - l'heure avance et le facteur nuit suit les charnières (sinon rien d'autre n'a de sens) ;
+#  - le soleil est au-dessus de l'horizon à midi et en dessous à minuit, et SES OMBRES SONT COUPÉES
+#    la nuit : c'est le poste GPU qui paie les halos, une régression là passerait inaperçue à l'œil ;
+#  - les halos sont cachés le jour et visibles la nuit, sur TOUTES les cellules ;
+#  - les 1540 halos partagent UN SEUL matériau : dès qu'une copie apparaît, chaque cellule redevient
+#    un appel de dessin que rien ne regroupe (c'est exactement la régression payée sur les mâts, cf.
+#    LampPoleLayer) ;
+#  - les luminaires cuits tombent bien en haut d'un mât, pas dans le vide ni sous terre ;
+#  - les vraies lumières du bassin se posent sur de vrais luminaires et suivent la caméra.
+
+const WORLD := preload("res://scenes/world/World.tscn")
+const MAP_HEADS := "res://scenes/world/map/generated/roads/lamp_heads.tres"
+const DOWNTOWN_HEADS := "res://scenes/world/downtown/generated/lamp_heads.tres"
+
+# Dégagement sous le luminaire, BORNES RELEVÉES le 2026-09-19 sur les 1540 luminaires cuits, pas
+# supposées : carte 6,129 / 6,205 / 6,995 m (min / médiane / max), centre-ville 6,227 à 6,377 m. Le
+# palier à 6,995 est celui des lampadaires de terre-plein, que RoadBake surélève de 0,85 m ; le
+# palier à 6,4 vient des mâts posés sur un léger dévers. D'où 5,9 - 7,2 m, avec marge.
+#
+# Vérifier la hauteur au-dessus du PIED DU MÂT ne testerait rien : le cuiseur pose le luminaire par
+# une transformation dont l'axe Y est la verticale, donc cette hauteur vaut exactement le décalage du
+# modèle par construction. Ce qui se teste, c'est que le luminaire surplombe un vrai mât et qu'il
+# dégage le sol.
+const HEAD_MIN := 5.9
+const HEAD_MAX := 7.2
+const ARM_MAX := 1.35          # longueur de crosse mesurée : 1,229 m (simple), 1,268 m (double)
+
+# Le COMPTE des mâts plantés sous un ouvrage n'est plus ici : il vit dans MapRoadsTest, qui le
+# mesure sur les triangles des chaussées cuites au lieu d'un rayon, et RoadBake refuse désormais de
+# poser un lampadaire sans Network.CLEARANCE au-dessus du pied. Ce test-ci garde seulement sa propre
+# question : un luminaire cuit est-il à une hauteur plausible au-dessus du sol, sur un vrai mât.
+
+var _fautes: Array[String] = []
+
+
+func _ready() -> void:
+	var world := WORLD.instantiate()
+	add_child(world)
+	for spawner_name in ["CarSpawner", "NpcSpawner"]:
+		var s := world.get_node_or_null(spawner_name)
+		if s != null:
+			s.set_process(false)
+	for k in 4:
+		await get_tree().physics_frame
+	var cycle := world.get_node_or_null("DayNight")
+	var lights := world.get_node_or_null("StreetLights")
+	if cycle == null or lights == null:
+		_fautes.append("DayNight ou StreetLights absent de World.tscn")
+		_verdict()
+		return
+	cycle.set("paused", true)
+	await _heure_et_nuit(cycle)
+	await _soleil(cycle)
+	await _halos(cycle)
+	await _luminaires(world)
+	await _bassin(cycle, lights)
+	_verdict()
+
+
+# --- l'heure et le facteur nuit ------------------------------------------------------------------
+
+func _heure_et_nuit(cycle: Node) -> void:
+	for essai: Array in [[12.0, 0.0], [1.0, 1.0], [23.5, 1.0], [4.0, 1.0], [8.0, 0.0], [18.0, 0.0]]:
+		cycle.call("set_hour", essai[0])
+		var n: float = cycle.call("night_factor")
+		if not is_equal_approx(n, float(essai[1])):
+			_fautes.append("à %.1f h, facteur nuit %.2f au lieu de %.2f" % [essai[0], n, essai[1]])
+	# crépuscule : strictement entre 0 et 1, et croissant
+	var avant := -1.0
+	for h: float in [19.2, 19.6, 20.0, 20.4, 20.8]:
+		cycle.call("set_hour", h)
+		var n: float = cycle.call("night_factor")
+		if n <= 0.0 or n >= 1.0:
+			_fautes.append("crépuscule %.1f h : facteur nuit %.2f, attendu strictement entre 0 et 1" % [h, n])
+		if n <= avant:
+			_fautes.append("crépuscule %.1f h : facteur nuit %.2f ne croît pas (précédent %.2f)" % [h, n, avant])
+		avant = n
+	# l'heure avance toute seule quand le cycle n'est pas figé
+	cycle.set("paused", false)
+	cycle.call("set_hour", 10.0)
+	for k in 12:
+		await get_tree().process_frame
+	var apres: float = cycle.get("hour")
+	if apres <= 10.0:
+		_fautes.append("cycle non figé : l'heure n'a pas avancé (%.4f)" % apres)
+	cycle.set("paused", true)
+	print("DAY_NIGHT_HEURE charnières et crépuscule conformes, heure avance jusqu'à %.4f h" % apres)
+
+
+# --- le soleil et ses ombres ---------------------------------------------------------------------
+
+func _soleil(cycle: Node) -> void:
+	var sun := _premier_soleil(self)
+	if sun == null:
+		_fautes.append("DirectionalLight3D introuvable")
+		return
+	cycle.call("set_hour", 12.0)
+	await get_tree().process_frame
+	var midi: Vector3 = cycle.call("sun_direction")
+	var ombre_midi := sun.shadow_enabled
+	var energie_midi := sun.light_energy
+	cycle.call("set_hour", 1.0)
+	await get_tree().process_frame
+	var minuit: Vector3 = cycle.call("sun_direction")
+	var ombre_minuit := sun.shadow_enabled
+	var energie_minuit := sun.light_energy
+	if midi.y <= 0.0:
+		_fautes.append("à midi le soleil est sous l'horizon (y = %.3f)" % midi.y)
+	if minuit.y >= 0.0:
+		_fautes.append("à 1 h le soleil est au-dessus de l'horizon (y = %.3f)" % minuit.y)
+	if not ombre_midi:
+		_fautes.append("ombres du soleil coupées à midi")
+	if ombre_minuit:
+		_fautes.append("ombres encore actives la nuit : c'est le poste GPU qui paie les halos")
+	if energie_minuit >= energie_midi:
+		_fautes.append("la lune (%.3f) éclaire autant que le soleil (%.3f)" % [energie_minuit, energie_midi])
+	print("DAY_NIGHT_SOLEIL midi élévation %.1f°, énergie %.2f, ombres %s | 1 h élévation %.1f°, énergie %.3f, ombres %s"
+			% [rad_to_deg(asin(midi.y)), energie_midi, str(ombre_midi),
+			rad_to_deg(asin(minuit.y)), energie_minuit, str(ombre_minuit)])
+
+
+func _premier_soleil(n: Node) -> DirectionalLight3D:
+	if n is DirectionalLight3D:
+		return n as DirectionalLight3D
+	for c in n.get_children():
+		var r := _premier_soleil(c)
+		if r != null:
+			return r
+	return null
+
+
+# --- les halos -----------------------------------------------------------------------------------
+
+func _halos(cycle: Node) -> void:
+	var halos := get_tree().get_nodes_in_group(&"lamp_glow")
+	if halos.is_empty():
+		_fautes.append("aucun maillage du groupe lamp_glow : la cuisson n'a pas posé les halos")
+		return
+	cycle.call("set_hour", 12.0)
+	await get_tree().process_frame
+	var visibles_jour := 0
+	for h in halos:
+		if (h as GeometryInstance3D).visible:
+			visibles_jour += 1
+	cycle.call("set_hour", 1.0)
+	await get_tree().process_frame
+	var visibles_nuit := 0
+	var materiaux := {}
+	var triangles := 0
+	for h in halos:
+		var mi := h as MeshInstance3D
+		if mi.visible:
+			visibles_nuit += 1
+		var m := mi.mesh
+		for s in m.get_surface_count():
+			materiaux[m.surface_get_material(s)] = true
+			var arr := m.surface_get_arrays(s)
+			triangles += (arr[Mesh.ARRAY_INDEX] as PackedInt32Array).size() / 3
+	if visibles_jour != 0:
+		_fautes.append("%d halo(s) allumé(s) en plein jour" % visibles_jour)
+	if visibles_nuit != halos.size():
+		_fautes.append("%d halo(s) sur %d éteint(s) en pleine nuit" % [halos.size() - visibles_nuit, halos.size()])
+	if materiaux.size() != 1:
+		_fautes.append("%d matériaux de halo au lieu d'un seul : les appels de dessin ne se regrouperont plus" % materiaux.size())
+	print("DAY_NIGHT_HALOS %d maillages, %d triangles, %d matériau(x) ; jour %d visibles, nuit %d visibles"
+			% [halos.size(), triangles, materiaux.size(), visibles_jour, visibles_nuit])
+
+
+# --- les luminaires cuits ------------------------------------------------------------------------
+
+func _luminaires(world: Node) -> void:
+	var total := 0
+	var espace := world.get_viewport().world_3d.direct_space_state
+	# pieds de mât relevés sur la scène cuite : RoadBake pose la capsule de collision à pied + 3,00 m
+	var pieds := PackedVector3Array()
+	_pieds(world, pieds)
+	for chemin in [MAP_HEADS, DOWNTOWN_HEADS]:
+		if not ResourceLoader.exists(chemin):
+			_fautes.append("%s absent : la cuisson n'a pas écrit les luminaires" % chemin)
+			continue
+		var res: MapLampHeads = load(chemin)
+		total += res.size()
+		if res.size() == 0:
+			_fautes.append("%s vide" % chemin)
+			continue
+		var carte: bool = chemin == MAP_HEADS
+		var hauts := 0
+		var bas := 0
+		var sans_sol := 0
+		var pire_haut := 0.0
+		var pire_bas := INF
+		var hors_mat := 0
+		var pire_mat := 0.0
+		for i in res.size():
+			var head := res.heads[i]
+			var hit := espace.intersect_ray(PhysicsRayQueryParameters3D.create(
+					head + Vector3(0, 0.6, 0), head - Vector3(0, 80.0, 0)))
+			if hit.is_empty():
+				sans_sol += 1
+			else:
+				var degagement := head.y - (hit["position"] as Vector3).y
+				if degagement < HEAD_MIN:
+					bas += 1
+					pire_bas = minf(pire_bas, degagement)
+				elif degagement > HEAD_MAX:
+					hauts += 1
+					pire_haut = maxf(pire_haut, degagement)
+			# le luminaire doit être au bout d'une crosse, donc à une longueur de crosse d'un mât
+			if carte and not pieds.is_empty():
+				var best := 1e9
+				for j in pieds.size():
+					best = minf(best, Vector2(head.x - pieds[j].x, head.z - pieds[j].z).length())
+				if best > ARM_MAX:
+					hors_mat += 1
+					pire_mat = maxf(pire_mat, best)
+		if sans_sol > 0:
+			_fautes.append("%s : %d luminaire(s) sans aucun sol en dessous sur 80 m" % [chemin.get_file(), sans_sol])
+		if hauts > 0:
+			_fautes.append("%s : %d luminaire(s) à plus de %.1f m du sol (pire %.2f m)"
+					% [chemin.get_file(), hauts, HEAD_MAX, pire_haut])
+		if bas > 0:
+			_fautes.append("%s : %d luminaire(s) à moins de %.1f m du sol (pire %.2f m) : mât enterré ou coincé sous un ouvrage, cf. MapRoadsTest"
+					% [chemin.get_file(), bas, HEAD_MIN, pire_bas])
+		if hors_mat > 0:
+			_fautes.append("%s : %d luminaire(s) à plus de %.2f m du mât le plus proche en plan (pire %.2f m) : flottent hors de leur crosse"
+					% [chemin.get_file(), hors_mat, ARM_MAX, pire_mat])
+		print("DAY_NIGHT_LUMINAIRES %s : %d luminaires, %d trop hauts, %d trop bas, %d hors crosse"
+				% [chemin.get_file(), res.size(), hauts, bas, hors_mat])
+	if total == 0:
+		_fautes.append("aucun luminaire cuit")
+	print("DAY_NIGHT_LUMINAIRES total %d luminaires" % total)
+
+
+func _pieds(n: Node, out: PackedVector3Array) -> void:
+	if n is CollisionShape3D and (n.name.begins_with("Lamps_") or n.name.begins_with("LampsDouble_")):
+		out.append((n as CollisionShape3D).global_position - Vector3(0, 3.0, 0))
+	for c in n.get_children():
+		_pieds(c, out)
+
+
+# --- le bassin de vraies lumières ----------------------------------------------------------------
+
+func _bassin(cycle: Node, lights: Node) -> void:
+	var cam := Camera3D.new()
+	add_child(cam)
+	cam.make_current()
+	# une rue du centre-ville, là où les lampadaires sont serrés
+	cam.global_position = Vector3(-892.0, 2.0, -172.0)
+	cycle.call("set_hour", 12.0)
+	await get_tree().process_frame
+	var allumees_jour := 0
+	for l in lights.get_children():
+		if l is SpotLight3D and (l as SpotLight3D).visible:
+			allumees_jour += 1
+	cycle.call("set_hour", 1.0)
+	for k in 4:
+		await get_tree().process_frame
+	var spots: Array[SpotLight3D] = []
+	for l in lights.get_children():
+		if l is SpotLight3D:
+			spots.append(l as SpotLight3D)
+	if spots.is_empty():
+		_fautes.append("aucune vraie lumière créée la nuit")
+		return
+	if allumees_jour != 0:
+		_fautes.append("%d vraie(s) lumière(s) allumée(s) en plein jour" % allumees_jour)
+	# chaque lumière allumée doit être sous un luminaire cuit, et pas n'importe où
+	var heads := PackedVector3Array()
+	for chemin in [MAP_HEADS, DOWNTOWN_HEADS]:
+		if ResourceLoader.exists(chemin):
+			heads.append_array((load(chemin) as MapLampHeads).heads)
+	var allumees := 0
+	var ecart_max := 0.0
+	var loin := 0
+	for s in spots:
+		if not s.visible:
+			continue
+		allumees += 1
+		var best := 1e9
+		for h in heads:
+			best = minf(best, s.global_position.distance_to(h))
+		ecart_max = maxf(ecart_max, best)
+		if s.global_position.distance_to(cam.global_position) > 120.0:
+			loin += 1
+		if s.shadow_enabled:
+			_fautes.append("une vraie lumière projette une ombre : interdit, c'est un rendu complet par lumière")
+			break
+	if ecart_max > 0.30:
+		_fautes.append("une vraie lumière est à %.2f m du luminaire le plus proche : elle n'est pas sur un lampadaire" % ecart_max)
+	if loin > 0:
+		_fautes.append("%d vraie(s) lumière(s) à plus de 120 m de la caméra : le bassin ne suit pas" % loin)
+	if allumees == 0:
+		_fautes.append("bassin créé mais aucune lumière allumée la nuit")
+	print("DAY_NIGHT_BASSIN %d lumières créées, %d allumées la nuit, écart maxi au luminaire %.3f m, 0 ombre"
+			% [spots.size(), allumees, ecart_max])
+
+
+func _verdict() -> void:
+	if _fautes.is_empty():
+		print("DAY_NIGHT_RESULT OK")
+	else:
+		for f in _fautes:
+			print("DAY_NIGHT_FAUTE %s" % f)
+		print("DAY_NIGHT_RESULT FAIL %d faute(s)" % _fautes.size())
+	get_tree().quit(0)

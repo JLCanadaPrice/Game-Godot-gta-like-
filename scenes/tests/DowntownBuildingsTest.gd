@@ -54,7 +54,16 @@ func _ready() -> void:
 	var occluders := 0
 	var occluders_low := 0
 	var occluders_outside := 0
+	# Nombre de VRAIS bâtiments : le noeud porte aussi les maillages de fenêtres allumées, un par
+	# cellule, qui ne sont pas des bâtiments. get_child_count() ne vaut donc plus comme total.
+	var batiments := 0
 	for building in holder.get_children():
+		# Les maillages de fenêtres allumées sont posés par la cuisson à côté des bâtiments, dans le
+		# même noeud : ce sont des MeshInstance3D de cellule, pas des bâtiments, et ils n'ont ni
+		# "Mesh" ni collision. DowntownHLOD les ignore déjà parce qu'ils naissent cachés.
+		if building.is_in_group(&"window_glow"):
+			continue
+		batiments += 1
 		var mi := building.get_node_or_null("Mesh") as MeshInstance3D
 		var cs := building.get_node_or_null("StaticBody3D/CollisionShape3D") as CollisionShape3D
 		if mi == null or mi.mesh == null or cs == null:
@@ -116,7 +125,7 @@ func _ready() -> void:
 	var lod_count: int = optimizer._lod_meshes.size() if optimizer != null else 0
 	var hlod = world.get_node_or_null("Map/DowntownHLOD")
 	print("DOWNTOWN_BUILDINGS_CHECK %d bâtiments : %d sans maillage ou collision, %d sans toit touché, %d hors îlot, %d sur une boutique ou un lieu, %d chevauchements %s"
-			% [holder.get_child_count(), no_mesh, no_roof, outside, on_reserved, overlaps, first])
+			% [batiments, no_mesh, no_roof, outside, on_reserved, overlaps, first])
 	print("DOWNTOWN_BUILDINGS_SKYLINE gratte-ciels %s | cœur jusqu'à %.0f m, îlots bas %.1f m en moyenne | %d bâtiments avec boîte d'occultation (%d au ras du sol, %d boîtes hors du bâtiment) | %d maillages suivis par le LOD lointain | silhouettes : %d blocs, %d bâtiments"
 			% [sky, core_top, low_mean, occluders, occluders_low, occluders_outside, lod_count, hlod.chunks if hlod != null else -1, hlod.buildings if hlod != null else -1])
 	if no_mesh > 0 or no_roof > 0 or outside > 0 or on_reserved > 0 or overlaps > 0:
@@ -127,7 +136,7 @@ func _ready() -> void:
 	if core_top < low_mean * 2.0:
 		_errors.append("silhouette plate : cœur %.0f m, îlots bas %.0f m" % [core_top, low_mean])
 	# boîtes au ras du sol : sans elles, rien de ce qui roule ou marche derrière un bâtiment n'est masqué vu de la rue
-	if occluders_low < holder.get_child_count() * 0.7 or occluders_outside > 0 or lod_count < holder.get_child_count() or hlod == null or hlod.buildings < holder.get_child_count() / 2:
+	if occluders_low < batiments * 0.7 or occluders_outside > 0 or lod_count < batiments or hlod == null or hlod.buildings < batiments / 2:
 		_errors.append("optimisations : %d occulteurs (%d au sol, %d hors du bâtiment), %d maillages LOD, silhouettes %s" % [occluders, occluders_low, occluders_outside, lod_count, hlod.buildings if hlod != null else "absentes"])
 	var casino := world.get_node_or_null("Map/Places/Place_casino")
 	var casino_meshes := 0

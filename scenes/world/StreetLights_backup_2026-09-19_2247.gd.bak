@@ -1,0 +1,189 @@
+extends Node3D
+
+# Allumage des lampadaires la nuit. Écoute DayNightCycle.hour_changed et applique DEUX choses,
+# volontairement séparées parce qu'elles n'ont pas du tout le même coût :
+#
+#  1. LES HALOS, partout. Chaque luminaire de la carte porte une petite boîte non éclairée, cuite
+#     avec les autres en UN maillage par cellule (carte) ou par bloc (centre-ville). Allumer, c'est
+#     rendre ces maillages visibles et donner sa couleur au matériau — qui est UNIQUE pour les 1540
+#     luminaires, condition pour que le moteur les regroupe. Coût : un appel de dessin par cellule
+#     visible la nuit, zéro le jour. C'est ce qui fait que « tous les lampadaires s'allument »
+#     tient dans le budget.
+#
+#  2. DE VRAIES LUMIÈRES, seulement sur les plus proches. Un petit bassin de SpotLight3D suit la
+#     caméra et se pose sur les luminaires les plus proches, pour que le sol soit réellement éclairé
+#     là où le joueur est. Au-delà, le halo seul suffit : à 60 m, une flaque de lumière au sol ne se
+#     distingue plus du brouillard.
+#
+# POURQUOI PAS UNE VRAIE LUMIÈRE PAR LAMPADAIRE : 1540 sources. `all_lights` permet de le mesurer
+# (et c'est ce qui a servi à chiffrer l'option écartée), mais ce n'est pas un mode jouable.
+#
+# `pool` est réglable pour que la mesure puisse comparer plusieurs tailles de bassin sans toucher
+# au code.
+
+const MAP_HEADS := "res://scenes/world/map/generated/roads/lamp_heads.tres"
+const DOWNTOWN_HEADS := "res://scenes/world/downtown/generated/lamp_heads.tres"
+const GLOW_MATERIAL := "res://scenes/world/lamp_glow_material.tres"
+
+const GLOW_ON := Color(1.00, 0.88, 0.62)
+const GLOW_OFF := Color(0.26, 0.25, 0.23)    # capot éteint, gris tiède : le halo reste un objet le jour
+
+# Réglages des vraies lumières, calés sur la géométrie mesurée : luminaire à 6,2 m du sol, trottoir
+# large de 2 à 3,5 m, chaussée d'artère de 10,5 m. Un cône de 55° depuis 6,2 m pose une flaque de
+# 17,7 m de diamètre, ce qui couvre la chaussée et les deux trottoirs.
+const SPOT_ANGLE := 55.0
+const SPOT_RANGE := 17.0
+const SPOT_ENERGY := 3.2
+const SPOT_COLOR := Color(1.00, 0.86, 0.60)
+const SPOT_TILT := 0.22                      # inclinaison du cône vers la chaussée, le long de la crosse
+const REASSIGN_PERIOD := 0.25                # s entre deux réaffectations du bassin
+const REASSIGN_MOVE := 4.0                   # ...ou dès que la caméra a bougé de tant de mètres
+
+@export var pool := 16
+@export var all_lights := false              # mesure seulement : une vraie lumière par luminaire
+@export var glow := true
+
+var _heads := PackedVector3Array()
+var _aims := PackedVector3Array()
+var _lights: Array[SpotLight3D] = []
+var _material: StandardMaterial3D
+var _glow_nodes: Array[Node] = []
+var _night := -1.0
+var _next_reassign := 0.0
+var _last_cam := Vector3(1e9, 1e9, 1e9)
+
+
+func _ready() -> void:
+	for path in [MAP_HEADS, DOWNTOWN_HEADS]:
+		if not ResourceLoader.exists(path):
+			push_warning("StreetLights : %s absent, cuisson à relancer" % path)
+			continue
+		var res: MapLampHeads = load(path)
+		_heads.append_array(res.heads)
+		_aims.append_array(res.aims)
+	_material = load(GLOW_MATERIAL)
+	# Le groupe est posé à la cuisson (persistant), donc présent dès le chargement de la scène.
+	_glow_nodes = get_tree().get_nodes_in_group(&"lamp_glow")
+	var cycle := _find_cycle()
+	if cycle != null:
+		cycle.hour_changed.connect(_on_hour_changed)
+		_on_hour_changed(cycle.hour, cycle.night_factor())
+	else:
+		_apply_night(1.0)
+	print("STREET_LIGHTS %d luminaires, %d maillages de halo, bassin de %d vraie(s) lumière(s)%s"
+			% [_heads.size(), _glow_nodes.size(), (_heads.size() if all_lights else pool),
+			" [MESURE : une lumière par luminaire]" if all_lights else ""])
+
+
+func _process(_delta: float) -> void:
+	if _night <= 0.0 or all_lights or _lights.is_empty():
+		return
+	var cam := get_viewport().get_camera_3d()
+	if cam == null:
+		return
+	var now := Time.get_ticks_msec() * 0.001
+	var p := cam.global_position
+	if now < _next_reassign and p.distance_to(_last_cam) < REASSIGN_MOVE:
+		return
+	_next_reassign = now + REASSIGN_PERIOD
+	_last_cam = p
+	_assign(p)
+
+
+func _on_hour_changed(_hour: float, night: float) -> void:
+	if is_equal_approx(night, _night):
+		return
+	_apply_night(night)
+
+
+func _apply_night(night: float) -> void:
+	var etait_allume := _night > 0.0
+	_night = night
+	var allume := night > 0.0
+	if glow:
+		if _material != null:
+			_material.albedo_color = GLOW_OFF.lerp(GLOW_ON, night)
+		if allume != etait_allume:
+			for n in _glow_nodes:
+				(n as GeometryInstance3D).visible = allume
+	if allume and _lights.is_empty():
+		_spawn_lights()
+	for l in _lights:
+		l.light_energy = SPOT_ENERGY * night
+		l.visible = allume
+	if allume and not all_lights:
+		var cam := get_viewport().get_camera_3d()
+		if cam != null:
+			_assign(cam.global_position)
+
+
+func _spawn_lights() -> void:
+	var count := _heads.size() if all_lights else mini(pool, _heads.size())
+	for i in count:
+		var l := SpotLight3D.new()
+		l.name = "Lampe_%d" % i
+		l.spot_angle = SPOT_ANGLE
+		l.spot_range = SPOT_RANGE
+		l.spot_attenuation = 1.0
+		l.light_color = SPOT_COLOR
+		l.light_energy = SPOT_ENERGY
+		# Pas d'ombre : une ombre par lumière ponctuelle est un rendu de scène complet par lumière,
+		# c'est exactement ce que l'UHD 750 ne peut pas payer. Le cône pose sa flaque, ça suffit.
+		l.shadow_enabled = false
+		add_child(l)
+		_lights.append(l)
+		if all_lights:
+			_place(l, i)
+
+
+# Pose le bassin sur les `pool` luminaires les plus proches de `p`. Balayage direct des 1540
+# positions : c'est 1540 comparaisons toutes les 0,25 s, mesuré à moins de 0,05 ms, très en dessous
+# de ce que coûterait la grille spatiale qu'on éviterait ainsi d'entretenir.
+func _assign(p: Vector3) -> void:
+	var portee := SPOT_RANGE * 3.5
+	var proches: Array = []
+	for i in _heads.size():
+		var d := p.distance_squared_to(_heads[i])
+		if d <= portee * portee:
+			proches.append([d, i])
+	proches.sort_custom(func(a, b): return a[0] < b[0])
+	for k in _lights.size():
+		if k < proches.size():
+			_lights[k].visible = true
+			_place(_lights[k], int(proches[k][1]))
+		else:
+			_lights[k].visible = false
+
+
+func _place(l: SpotLight3D, i: int) -> void:
+	var head := _heads[i]
+	var aim := _aims[i] if i < _aims.size() else Vector3.ZERO
+	# sous le capot, pas dedans : posée au centre exact, la lumière éclairerait l'intérieur du
+	# luminaire et la face du dessous resterait noire
+	var pos := head + Vector3(0.0, -0.16, 0.0)
+	l.global_position = pos
+	l.look_at(pos + Vector3(aim.x * SPOT_TILT, -1.0, aim.z * SPOT_TILT), Vector3.UP)
+
+
+func _find_cycle() -> Node:
+	# frère de nom connu d'abord : dans World.tscn c'est toujours celui-là, et ça évite de parcourir
+	# les ~20 000 nœuds de la carte pour rien
+	var parent := get_parent()
+	if parent != null:
+		var frere := parent.get_node_or_null("DayNight")
+		if frere != null and frere.has_signal(&"hour_changed"):
+			return frere
+	var root := get_tree().current_scene if get_tree().current_scene != null else parent
+	if root == null:
+		return null
+	return _search(root)
+
+
+func _search(n: Node) -> Node:
+	if n.has_signal(&"hour_changed"):
+		return n
+	for c in n.get_children():
+		var r := _search(c)
+		if r != null:
+			return r
+	return null

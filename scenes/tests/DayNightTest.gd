@@ -57,6 +57,7 @@ func _ready() -> void:
 	await _heure_et_nuit(cycle)
 	await _soleil(cycle)
 	await _halos(cycle)
+	await _fenetres(cycle)
 	await _luminaires(world)
 	await _bassin(cycle, lights)
 	_verdict()
@@ -132,6 +133,52 @@ func _premier_soleil(n: Node) -> DirectionalLight3D:
 		if r != null:
 			return r
 	return null
+
+
+# --- les fenêtres allumées -------------------------------------------------------------------------
+
+# Mêmes exigences que pour les halos, et pour les mêmes raisons : cachées le jour (sinon elles se
+# paient en plein soleil sans rien apporter), visibles la nuit, et UN SEUL matériau pour toute la
+# ville — dès qu'une copie apparaît, chaque cellule redevient un appel de dessin que rien ne
+# regroupe. Le matériau doit aussi être NON ÉCLAIRÉ : per-vertex ou per-pixel, un carreau s'assombrit
+# avec la nuit au moment précis où il doit s'allumer, et il reste noir (c'est arrivé).
+func _fenetres(cycle: Node) -> void:
+	var carreaux := get_tree().get_nodes_in_group(&"window_glow")
+	if carreaux.is_empty():
+		_fautes.append("aucun maillage du groupe window_glow : la cuisson n'a pas posé les fenêtres")
+		return
+	cycle.call("set_hour", 12.0)
+	await get_tree().process_frame
+	var jour := 0
+	for c in carreaux:
+		if (c as GeometryInstance3D).visible:
+			jour += 1
+	cycle.call("set_hour", 1.0)
+	await get_tree().process_frame
+	var nuit := 0
+	var materiaux := {}
+	var triangles := 0
+	var non_eclaire := true
+	for c in carreaux:
+		var mi := c as MeshInstance3D
+		if mi.visible:
+			nuit += 1
+		for s in mi.mesh.get_surface_count():
+			var mat := mi.mesh.surface_get_material(s)
+			materiaux[mat] = true
+			if mat is BaseMaterial3D and (mat as BaseMaterial3D).shading_mode != BaseMaterial3D.SHADING_MODE_UNSHADED:
+				non_eclaire = false
+			triangles += (mi.mesh.surface_get_arrays(s)[Mesh.ARRAY_INDEX] as PackedInt32Array).size() / 3
+	if jour != 0:
+		_fautes.append("%d maillage(s) de fenêtres allumé(s) en plein jour" % jour)
+	if nuit != carreaux.size():
+		_fautes.append("%d maillage(s) de fenêtres sur %d éteint(s) en pleine nuit" % [carreaux.size() - nuit, carreaux.size()])
+	if materiaux.size() != 1:
+		_fautes.append("%d matériaux de fenêtre au lieu d'un seul : les appels de dessin ne se regrouperont plus" % materiaux.size())
+	if not non_eclaire:
+		_fautes.append("matériau de fenêtre éclairé : un carreau doit être en SHADING_MODE_UNSHADED, sinon il noircit la nuit")
+	print("DAY_NIGHT_FENETRES %d maillages, %d triangles, %d matériau(x) ; jour %d visibles, nuit %d visibles"
+			% [carreaux.size(), triangles, materiaux.size(), jour, nuit])
 
 
 # --- les halos -----------------------------------------------------------------------------------

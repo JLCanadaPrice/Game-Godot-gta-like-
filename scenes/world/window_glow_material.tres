@@ -1,0 +1,27 @@
+[gd_resource type="StandardMaterial3D" format=3]
+
+; Matériau UNIQUE des fenêtres allumées, partagé par le centre-ville (DowntownBuildingsBake) et par
+; les quartiers de la carte (DistrictsBake). Un seul matériau pour toutes les fenêtres allumées du
+; jeu : c'est la condition pour que le moteur regroupe les maillages, exactement comme pour les
+; halos de lampadaire (cf. lamp_glow_material.tres, et LampPoleLayer où une copie par poteau avait
+; fabriqué 378 appels de dessin). Ne JAMAIS le dupliquer par bâtiment : 1 637 bâtiments, ce serait
+; 1 637 appels que rien ne peut regrouper.
+;
+; NON ÉCLAIRÉ, shading_mode = 0 : une fenêtre allumée est une source vue de l'extérieur, pas une
+; surface qui reçoit la lumière. Sans ça elle s'assombrit avec la nuit, au moment précis où elle
+; doit s'allumer, et le carreau reste noir.
+;
+; Attention au chiffre : dans BaseMaterial3D.ShadingMode, 0 = UNSHADED, 1 = PER_PIXEL et
+; 2 = PER_VERTEX. C'est 0 qu'il faut, pas 2.
+;
+; StreetLights fait varier albedo_color entre l'éteint et l'allumé, et cache carrément les maillages
+; le jour : le coût est donc NUL entre le lever et le coucher.
+;
+; La teinte allumée est un blanc chaud légèrement plus froid que le sodium des lampadaires : une
+; fenêtre éclairée de l'intérieur n'a pas la couleur d'un éclairage public.
+
+[resource]
+resource_name = "window_glow"
+shading_mode = 0
+albedo_color = Color(1, 0.93, 0.76, 1)
+disable_receive_shadows = true
