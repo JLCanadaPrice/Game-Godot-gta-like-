@@ -114,7 +114,7 @@ ligne `<NOM>_RESULT OK` ou `FAIL`.
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/DowntownStreetsTest.tscn
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/DowntownBuildingsTest.tscn
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/ShopBuildingsTest.tscn     # échec ANTÉRIEUR connu
-"$GODOT" --headless --path "$PROJET" --script res://scenes/world/map/tools/ProjectLoadCheck.gd   # attendu : 585 fichiers, 0 échec
+"$GODOT" --headless --path "$PROJET" --script res://scenes/world/map/tools/ProjectLoadCheck.gd   # attendu : 584 fichiers, 0 échec
 ```
 
 Outil d'inspection, hors batterie : `res://scenes/tests/VehicleSortTest.tscn` aligne les véhicules du catalogue
@@ -177,9 +177,10 @@ Captures et compteurs de rendu (fenêtré, pas headless : le rendu compte) :
   de la carte font **0,150 m** mesurés sur la collision cuite, en marche franche (la montée tient entre
   deux relevés distants de 2 cm), sur trimesh pour les artères et sur piles de boîtes au centre-ville.
   D'où `Car._try_step_up`, réservé au joueur. `scenes/world/CurbRamp.gd` était la réponse précédente :
-  il ne reconnaît que des `StaticBody3D` nommés `*Walk*` portant une seule `BoxShape3D` — la disposition
-  du monde d'essai d'origine — et **il n'est attaché à aucun nœud de `World.tscn`**, donc il ne tournait
-  plus du tout. Ne pas s'y fier.
+  il ne reconnaissait que des `StaticBody3D` nommés `*Walk*` portant une seule `BoxShape3D` — la
+  disposition du monde d'essai d'origine — et **il n'était attaché à aucun nœud de `World.tscn`**, donc
+  il ne tournait plus du tout. **Supprimé le 2026-09-19** (avec son `.uid`) ; il ne reste que dans
+  l'historique git et dans `World_backup_avant_integration.tscn.bak`. Ne pas le ressusciter.
 - **Les autoloads ne sont pas enregistrés en mode `--script`** : une sonde qui instancie
   `PlayerCarPhysics` échoue sur « Identifier not found: VitaVehicleSimulation ». La lancer comme
   **scène**, pas comme script.
@@ -208,7 +209,40 @@ débogage sur `V`.
 - **appartements reliés à la carte** (les intérieurs existent, ils ne sont pas raccordés aux
   bâtiments de la carte) ;
 - **concessionnaire enrichi** ;
-- **bug : 0 voiture exposée** chez le concessionnaire.
+- **bug : 0 voiture exposée** chez le concessionnaire ;
+- **chantier « relier tous les bâtiments à la route »** (cf. ci-dessous).
+
+### Chantier à prévoir : relier les bâtiments à la route
+
+Les lieux et les bâtiments sont posés sur la pelouse sans rien qui les raccorde à la chaussée : on tombe
+régulièrement sur 2 à 3 m d'herbe entre une dalle et le trottoir, et sur des dalles voisines séparées par une
+bande d'herbe. Le commissariat et l'hôpital ont été traités les 2026-09-19 (`d818e1e`, `ca797e8`), le reste non.
+
+**Recensement du 2026-09-19**, mesuré et non estimé : pour chaque bâtiment on part de son centre et on marche vers
+l'extérieur dans les quatre directions d'axe, au pas de 1 m jusqu'à 50 m, en retenant la direction qui atteint une
+chaussée ou un trottoir en traversant le moins d'herbe.
+
+| ensemble | bâtiments | reliés sans herbe | **coupés par de l'herbe** | sans route à moins de 50 m |
+|---|---|---|---|---|
+| quartiers (`buildings/lots.json`) | 1 196 | 486 | **682** | 28 |
+| centre-ville (`downtown/generated/buildings.json`) | 441 | 441 | 0 | 0 |
+| **total** | **1 637** | 927 | **682 (41,7 %)** | 28 |
+
+Épaisseur d'herbe à traverser : **médiane 8 m, maximum 34 m**. Le centre-ville est indemne parce que l'intérieur
+de ses îlots est déjà dur (sol à +0,200 m) ; le problème est entièrement dans les quartiers.
+
+Ce qu'il faut savoir avant de s'y mettre, tiré des deux sites déjà faits :
+
+- Altitudes de référence, relevées au rayon : **pelouse d'îlot -0,050 m, dalle de lieu +0,020 m, chaussée
+  +0,050 m, trottoir +0,200 m**. Poser une liaison au même dessus que la dalle qu'elle rejoint (`y + 0,05` dans
+  `PlacesBake`) ne crée aucune marche ; la seule marche restante est celle de 7 cm que les dalles avaient déjà
+  sur la pelouse.
+- **Découper en bandes étroites fabrique le défaut qu'on corrige.** Au commissariat, trois bandes (parvis vers
+  trottoir, allée, cheminement) ont laissé un îlot d'herbe de 10 x 10,5 m enclavé entre elles. Mieux vaut peu de
+  grands rectangles qui se touchent sur toute leur longueur, et faire mordre chaque liaison de 0,5 m sur la dalle
+  qu'elle rejoint.
+- Le contrôle qui décide est le **cheminement** : échantillonner la polyligne rue -> entrée tous les 0,25 m et
+  exiger zéro case d'herbe. Un balayage de la façade au pas de 1 m sert à débusquer les poches enclavées.
 
 ### Parc de véhicules
 
