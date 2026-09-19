@@ -422,6 +422,38 @@ func _hospital_liaisons(y: float) -> void:
 	# côté est, la lisière est prise 0,5 m sous le mur : posée pile sur la face (x -256), il restait au balayage
 	# une case d'herbe d'épaisseur nulle entre les deux quads
 	_paved(Vector2(-255.25, 169.0), Vector2(2.5, 46.0), top, "concrete", Color(), false, 0.0)
+	_hospital_esplanade(top)
+
+
+# Esplanade continue : plus un brin d'herbe entre le trottoir et les murs, sur toute la largeur du site.
+#
+# Limites mesurées au balayage : le trottoir court de z 123 à 125 sur toute la façade ; à l'ouest de x -319 et à
+# l'est de x -241 la pelouse continue sur 40 m sans route ni bâtiment, l'emprise de l'hôpital est donc bornée par
+# ses deux parkings, x -319 à -241. Le sol y est plat, pelouse à -0,050 m et dalles à +0,020 m : il n'y a rien à
+# aplanir, et poser au même dessus que les dalles existantes ne crée aucune marche.
+#
+# Pour que 78 x 21 m ne fassent pas une nappe grise uniforme, l'esplanade est découpée en trois : deux parkings
+# visiteurs en enrobé avec leurs places de part et d'autre, et au centre le parvis des ambulances en béton, tramé
+# de joints de dallage et desservi par un passage piéton depuis le trottoir. Tout est en matériaux déjà présents.
+func _hospital_esplanade(top: float) -> void:
+	# Lisière de 0,5 m restée en herbe entre le bord nord du parvis (z 144) et la façade sud (z 144,5), sur les
+	# 48 m du bâtiment. Relevée au balayage sur la ligne x = -280 : « pelouse de 144,25 à 144,25 ».
+	_paved(Vector2(-280, 144.5), Vector2(50, 2.0), top, "concrete", Color(), false, 0.0)
+	# Parkings visiteurs : ils remplacent les deux pelouses latérales, x -319..-305 et -255..-241, z 125..138.
+	# Deux rangées de places chacun, ce qui donne une allée centrale et du marquage plutôt qu'un aplat.
+	_parking(Vector2(-312, 131.5), Vector2(14, 13), top, true, 0.0)
+	_parking(Vector2(-248, 131.5), Vector2(14, 13), top, true, 0.0)
+	# Joints de dallage sur le béton central (x -305..-255, z 125..144), un ton plus sombre que la dalle.
+	var joint := Color(0.62, 0.62, 0.6)
+	for x: float in [-295.0, -285.0, -275.0, -265.0]:
+		_stripe(Vector2(x, 134.5), Vector2(0, 1), 19.0, 0.10, top + 0.012, joint)
+	for z: float in [131.0, 137.0]:
+		_stripe(Vector2(-280, z), Vector2(1, 0), 50.0, 0.10, top + 0.012, joint)
+	# Passage piéton du trottoir vers l'entrée, en face des portes (x -280).
+	var b := -283.0
+	while b <= -277.0:
+		_stripe(Vector2(b, 127.5), Vector2(0, 1), 5.0, 0.55, top + 0.015, WHITE)
+		b += 1.2
 
 
 func _liberty_lot() -> void:
