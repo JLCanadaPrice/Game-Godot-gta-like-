@@ -68,38 +68,9 @@ const OCCLUDER_MIN_HEIGHT := 10.0
 const OCCLUDER_MIN_AREA := 250.0
 const TRIMESH_MODELS := ["Business_GasStation"]
 
-# --- allées d'accès ---------------------------------------------------------------------------------------------
-# Chantier « relier les bâtiments à la route ». Rien n'est deviné : _try_lot pose le centre du lot à
-# at.point + normal * (offset + SETBACK[use] + size.z / 2), où `offset` mène au BORD DUR (bord extérieur du
-# trottoir sur une artère urbaine, bord de chaussée sur une rue locale). La distance de la face avant du
-# bâtiment à ce bord vaut donc exactement SETBACK[use], et `yaw = atan2(front.x, front.y)` donne la direction.
-# Relevé sur les 1 196 lots : 487 déjà au contact du dur, 689 franchissables d'une allée droite, 20 barrés par
-# un autre bâtiment, aucun trop long ni trop pentu (dénivelé médian 0,30 m, maxi 1,32 m).
-const DRIVE_ZONES := ["southside"]          # zones traitées ; tableau vide = toutes
-const DRIVE_STOP := 0.5                     # m gardés devant le bord dur, pour ne jamais empiéter
-const DRIVE_WIDTH := {"house": 3.0, "commerce": 5.0, "office": 5.0, "service": 5.0, "industry": 6.0, "farm": 6.0}
-const DRIVE_SURFACE := {"house": "gravier", "commerce": "enrobe", "office": "enrobe", "service": "enrobe",
-		"industry": "beton", "farm": "gravier"}
-# Colonnes de roads.png : « median » (enrobé sans marquage) et « dirt ». Deux aspects pour UN seul matériau, donc
-# sans appel de dessin supplémentaire ; seul le béton en ajoute un, et uniquement dans les cellules industrielles.
-const DRIVE_U := {"enrobe": 0.2246, "gravier": 0.6015}
-# L'allée n'a PAS de collision : c'est le terrain aplani dessous qui porte le joueur. La dalle doit donc être
-# posée au ras de ce terrain, sinon on s'y enfonce à pied. _flatten creuse de DRIVE_SINK sous la cote visée,
-# comme _flatten le fait pour les lots, et le quad se pose DRIVE_CLEAR au-dessus du terrain ainsi obtenu —
-# juste de quoi éviter la lutte de profondeur. Un premier essai posait le quad 10 cm plus haut : mesuré sur les
-# sommets cuits, écart médian 0,081 m, c'est-à-dire une dalle qui flotte.
-const DRIVE_SINK := 0.05
-const DRIVE_CLEAR := 0.055
-const DRIVE_TEX := 12.0                     # m couverts par la hauteur de texture, cf. RoadTexturesBake
-const DRIVE_RANGE := 700.0
-const MAT_ASPHALT := GEN + "/roads/asphalt_material.tres"
-const MAT_CONCRETE := GEN + "/roads/concrete_material.tres"
-
 var model: Model
 var net: Network
 var heights := PackedFloat32Array()
-var drives: Array = []
-var drive_skipped: Array = []
 var locked := PackedByteArray()          # grille du terrain : 1 sous une emprise déjà aplanie
 var mask := PackedByteArray()            # grille de 4 m calée sur PLAYABLE : 1 route / eau / réservé, 2 lot
 var mask_w := 0
@@ -161,7 +132,6 @@ func _initialize() -> void:
 			_cul_de_sac(srb, mix["street"], poly, zone, rng)
 			for side_sign: float in [-1.0, 1.0]:
 				_frontage(srb.points, side_sign, float(srb.width) * 0.5, mix["street"], float(mix["gap"]), poly, zone, rng, 14.0)
-	_driveways()
 	ResourceSaver.save(Image.create_from_data(model.width, model.depth, false, Image.FORMAT_RF, heights.to_byte_array()), GEN + "/terrain/heights.res")
 	# copie « routes et quartiers » : PlacesBake repart de celle-ci (cuisson rejouable)
 	ResourceSaver.save(Image.create_from_data(model.width, model.depth, false, Image.FORMAT_RF, heights.to_byte_array()), GEN + "/terrain/heights_districts.res")
@@ -173,9 +143,6 @@ func _initialize() -> void:
 	for lot in lots:
 		per_zone[lot["zone"]] = int(per_zone.get(lot["zone"], 0)) + 1
 		per_use[lot["use"]] = int(per_use.get(lot["use"], 0)) + 1
-	print("DISTRICTS_ALLEES %d posee(s), %d sautee(s) | zones traitees %s" % [drives.size(), drive_skipped.size(), str(DRIVE_ZONES)])
-	for s: Dictionary in drive_skipped:
-		print("DISTRICTS_ALLEE_SAUTEE zone %-14s %-34s en (%.1f, %.1f) : %s" % [s["zone"], s["lot"], s["x"], s["z"], s["cause"]])
 	print("DISTRICTS_ZONES %s" % per_zone)
 	print("DISTRICTS_USES %s | refus %s" % [per_use, refused])
 	print("DISTRICTS_BAKE %d bâtiments, %d modèles, %s en %.1f s" % [lots.size(), baked.size(), scene_stats, (Time.get_ticks_msec() - t0) / 1000.0])
@@ -421,120 +388,6 @@ func _flatten(center: Vector2, right: Vector2, front: Vector2, half: Vector2, ba
 		locked[idx] = 1
 
 
-# --- allées d'accès ---------------------------------------------------------------------------------------------
-
-# Une allée droite de la face avant du bâtiment jusqu'à DRIVE_STOP du bord dur. Posée APRÈS tous les lots, pour
-# pouvoir écarter celles qu'un autre bâtiment barre, et AVANT l'écriture de heights.res, pour que le terrain
-# aplani parte dans la cuisson du terrain.
-func _driveways() -> void:
-	for k in lots.size():
-		var lot: Dictionary = lots[k]
-		if not DRIVE_ZONES.is_empty() and not (String(lot["zone"]) in DRIVE_ZONES):
-			continue
-		var use := String(lot["use"])
-		var yaw := float(lot["yaw"])
-		var front := Vector2(sin(yaw), cos(yaw))       # du lot VERS la route, cf. _try_lot
-		var right := Vector2(-front.y, front.x)
-		var centre := Vector2(float(lot["x"]), float(lot["z"]))
-		var depart := centre + front * (float(lot["size"][2]) * 0.5)
-		var longueur: float = float(SETBACK[use]) - DRIVE_STOP
-		var largeur: float = float(DRIVE_WIDTH[use])
-		if longueur <= 1.0:
-			continue
-		var milieu := depart + front * (longueur * 0.5)
-		var barre := _drive_blocked(k, milieu, right, front, Vector2(largeur * 0.5, longueur * 0.5))
-		if barre != "":
-			drive_skipped.append({"x": centre.x, "z": centre.y, "zone": lot["zone"], "lot": lot["name"], "cause": barre})
-			continue
-		var y0 := float(lot["base"])
-		var y1 := _height(depart + front * longueur)
-		_flatten_ramp(depart, right, front, largeur * 0.5, longueur, y0, y1)
-		drives.append({"x": depart.x, "z": depart.y, "yaw": yaw, "l": longueur, "w": largeur,
-				"s": String(DRIVE_SURFACE[use]), "y0": y0, "y1": y1})
-		lot["drive"] = [snappedf(longueur, 0.01), snappedf(largeur, 0.01)]
-
-
-# Un autre bâtiment entre la façade et la route : on saute, on ne force pas.
-func _drive_blocked(self_index: int, centre: Vector2, right: Vector2, front: Vector2, half: Vector2) -> String:
-	for k in lots.size():
-		if k == self_index:
-			continue
-		var other: Dictionary = lots[k]
-		var oy := float(other["yaw"])
-		var of := Vector2(sin(oy), cos(oy))
-		var half_o := Vector2(float(other["size"][0]), float(other["size"][2])) * 0.5
-		if _rect_overlap(centre, right, front, half, Vector2(float(other["x"]), float(other["z"])),
-				Vector2(-of.y, of.x), of, half_o):
-			return "%s" % other["name"]
-	return ""
-
-
-# Recouvrement de deux rectangles orientés, par axes séparateurs (les 4 axes des deux repères suffisent).
-func _rect_overlap(ca: Vector2, ra: Vector2, fa: Vector2, ha: Vector2, cb: Vector2, rb: Vector2, fb: Vector2, hb: Vector2) -> bool:
-	var d := cb - ca
-	for axe: Vector2 in [ra, fa, rb, fb]:
-		var ea := absf(ra.dot(axe)) * ha.x + absf(fa.dot(axe)) * ha.y
-		var eb := absf(rb.dot(axe)) * hb.x + absf(fb.dot(axe)) * hb.y
-		if absf(d.dot(axe)) > ea + eb:
-			return false
-	return true
-
-
-# Terrain mis en rampe sous l'allée : la hauteur cible va de y0 (assiette du lot) à y1 (bord de la route), et se
-# raccorde au terrain sur BLEND m. On ne verrouille RIEN : les cases déjà verrouillées par _flatten (l'emprise du
-# lot) sont sautées, donc la jonction avec le bâtiment garde exactement son niveau.
-func _flatten_ramp(depart: Vector2, right: Vector2, front: Vector2, half_w: float, longueur: float, y0: float, y1: float) -> void:
-	var origin := Spec.TERRAIN.position
-	var centre := depart + front * (longueur * 0.5)
-	var half := Vector2(half_w, longueur * 0.5)
-	var c := (centre - origin) / Model.CELL
-	var r := (half.length() + BLEND + 2.0) / Model.CELL
-	for j in range(maxi(0, floori(c.y - r)), mini(model.depth - 1, ceili(c.y + r)) + 1):
-		for i in range(maxi(0, floori(c.x - r)), mini(model.width - 1, ceili(c.x + r)) + 1):
-			var idx := j * model.width + i
-			if locked[idx] != 0:
-				continue
-			var p := origin + Vector2(i, j) * Model.CELL
-			if model.is_excluded(p):
-				continue
-			var d := p - centre
-			var le := d.dot(front)
-			var outside := Vector2(maxf(0.0, absf(d.dot(right)) - half.x - 0.5), maxf(0.0, absf(le) - half.y - 0.5)).length()
-			if outside >= BLEND:
-				continue
-			if outside > 0.0:
-				var mi := _mask_index(p)
-				if mi < 0 or mask[mi] == 1:
-					continue
-			var cible := lerpf(y0, y1, clampf((le + half.y) / longueur, 0.0, 1.0)) - DRIVE_SINK
-			heights[idx] = lerpf(cible, heights[idx], smoothstep(0.0, BLEND, outside))
-
-
-# Un quad par allée, deux triangles, sans collision : le terrain aplani dessous porte déjà le joueur.
-func _drive_quad(st: SurfaceTool, d: Dictionary) -> void:
-	var yaw := float(d["yaw"])
-	var front := Vector3(sin(yaw), 0.0, cos(yaw))
-	var right := Vector3(-front.z, 0.0, front.x)
-	var l := float(d["l"])
-	var hw := float(d["w"]) * 0.5
-	var dessus := DRIVE_CLEAR - DRIVE_SINK          # au ras du terrain aplani, pas 10 cm au-dessus
-	var base := Vector3(float(d["x"]), float(d["y0"]) + dessus, float(d["z"]))
-	var loin := Vector3(float(d["x"]), float(d["y1"]) + dessus, float(d["z"])) + front * l
-	var u: float = float(DRIVE_U.get(String(d["s"]), 0.2246))
-	var coins := [base - right * hw, base + right * hw, loin + right * hw, loin - right * hw]
-	var uvs := [Vector2(u, 0.0), Vector2(u + 0.004, 0.0), Vector2(u + 0.004, l / DRIVE_TEX), Vector2(u, l / DRIVE_TEX)]
-	# même convention que PlacesBake._quad : on ordonne pour que la normale géométrique s'oppose à la normale voulue
-	var geom: Vector3 = (coins[1] - coins[0]).cross(coins[2] - coins[0]) + (coins[2] - coins[0]).cross(coins[3] - coins[0])
-	if geom.dot(Vector3.UP) >= 0.0:
-		coins = [coins[0], coins[3], coins[2], coins[1]]
-		uvs = [uvs[0], uvs[3], uvs[2], uvs[1]]
-	for t: Array in [[0, 1, 2], [0, 2, 3]]:
-		for n: int in t:
-			st.set_normal(Vector3.UP)
-			st.set_uv(uvs[n])
-			st.add_vertex(coins[n])
-
-
 func _mask_index(p: Vector2) -> int:
 	var i := floori((p.x - Spec.PLAYABLE.position.x) / GRID)
 	var j := floori((p.y - Spec.PLAYABLE.position.y) / GRID)
@@ -640,31 +493,6 @@ func _write_scene() -> Dictionary:
 		field.set("meshes", meshes)
 		field.set("instance_data", data)
 		field.set("ranges", ranges)
-		# allées de la cellule, fusionnées par matériau : un appel de dessin par matériau et par cellule
-		var tools := {}
-		for d: Dictionary in drives:
-			if Vector2i(floori(float(d["x"]) / GROUP), floori(float(d["z"]) / GROUP)) != key:
-				continue
-			var mat: String = MAT_CONCRETE if String(d["s"]) == "beton" else MAT_ASPHALT
-			if not tools.has(mat):
-				var st := SurfaceTool.new()
-				st.begin(Mesh.PRIMITIVE_TRIANGLES)
-				tools[mat] = st
-			_drive_quad(tools[mat], d)
-			stats["allees"] = int(stats.get("allees", 0)) + 1
-			stats["triangles"] += 2
-		if not tools.is_empty():
-			var mesh := ArrayMesh.new()
-			for mat: String in tools:
-				var st: SurfaceTool = tools[mat]
-				st.set_material(load(mat))
-				st.commit(mesh)
-			var mi := MeshInstance3D.new()
-			mi.name = "Allees"
-			mi.mesh = mesh
-			mi.visibility_range_end = DRIVE_RANGE
-			mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-			cell.add_child(mi)
 	_pack(root, SCENE)
 	return stats
 

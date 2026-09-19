@@ -126,13 +126,6 @@ func _build_mask() -> void:
 			var yaw := float(lot["yaw"])
 			var front := Vector2(sin(yaw), cos(yaw))
 			_stamp_rect(Vector2(float(lot["x"]), float(lot["z"])), Vector2(-front.y, front.x), front, Vector2(float(lot["size"][0]), float(lot["size"][2])) * 0.5 + Vector2(5.0, 5.0))
-			# allée d'accès du chantier « relier les bâtiments à la route » : la marge de 5 m autour du lot ne la
-			# couvre pas sur toute sa longueur, il faut donc son propre tampon, sinon on plante un arbre dessus
-			if lot.has("drive"):
-				var longueur := float(lot["drive"][0])
-				var depart := Vector2(float(lot["x"]), float(lot["z"])) + front * (float(lot["size"][2]) * 0.5)
-				_stamp_rect(depart + front * (longueur * 0.5), Vector2(-front.y, front.x), front,
-						Vector2(float(lot["drive"][1]) * 0.5 + 2.0, longueur * 0.5 + 2.0))
 	if FileAccess.file_exists(PLACES):
 		var data: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(PLACES))
 		for fp: Dictionary in data["footprints"]:
