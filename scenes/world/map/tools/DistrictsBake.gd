@@ -75,7 +75,7 @@ const TRIMESH_MODELS := ["Business_GasStation"]
 # bâtiment à ce bord vaut donc exactement SETBACK[use], et `yaw = atan2(front.x, front.y)` donne la direction.
 # Relevé sur les 1 196 lots : 487 déjà au contact du dur, 689 franchissables d'une allée droite, 20 barrés par
 # un autre bâtiment, aucun trop long ni trop pentu (dénivelé médian 0,30 m, maxi 1,32 m).
-const DRIVE_ZONES := ["southside", "campagne_est"]          # zones traitées ; tableau vide = toutes
+const DRIVE_ZONES := ["southside", "campagne_est", "bluffview"]          # zones traitées ; tableau vide = toutes
 const DRIVE_STOP := 0.0                     # AU CONTACT du bord dur : laisser 0,5 m rendait un liseré d'herbe
                                             # visible à hauteur d'homme sur les rues locales, alors que le contact
                                             # n'empiète pas (vérifié allée par allée, cf. probe_allees_ok)
@@ -176,6 +176,7 @@ func _initialize() -> void:
 			_cul_de_sac(srb, mix["street"], poly, zone, rng)
 			for side_sign: float in [-1.0, 1.0]:
 				_frontage(srb.points, side_sign, float(srb.width) * 0.5, mix["street"], float(mix["gap"]), poly, zone, rng, 14.0)
+	_build_paved()
 	_driveways()
 	ResourceSaver.save(Image.create_from_data(model.width, model.depth, false, Image.FORMAT_RF, heights.to_byte_array()), GEN + "/terrain/heights.res")
 	# copie « routes et quartiers » : PlacesBake repart de celle-ci (cuisson rejouable)
@@ -466,7 +467,13 @@ func _driveways() -> void:
 		var right := Vector2(-front.y, front.x)
 		var centre := Vector2(float(lot["x"]), float(lot["z"]))
 		var depart := centre + front * (float(lot["size"][2]) * 0.5)
-		var portee: float = float(lot.get("reach", SETBACK[use])) - DRIVE_STOP
+		# portée MESURÉE sur la géométrie du réseau, jamais la constante : voir _drive_reach
+		var portee := _drive_reach(depart, front, float(lot.get("reach", SETBACK[use])) + 8.0)
+		if portee < 0.0:
+			drive_skipped.append({"x": centre.x, "z": centre.y, "zone": lot["zone"], "lot": lot["name"],
+					"cause": "aucun pave trouve devant la facade"})
+			continue
+		portee -= DRIVE_STOP
 		var largeur: float = float(DRIVE_WIDTH[use])
 		if portee <= 1.0:
 			continue
@@ -523,6 +530,100 @@ func _driveways() -> void:
 		if angle != 0.0:
 			drive_biais.append({"x": centre.x, "z": centre.y, "zone": lot["zone"], "lot": lot["name"],
 					"angle": angle, "pente": pente, "l": longueur})
+
+
+# --- portée d'allée : la vraie, mesurée sur la géométrie du réseau -------------------------------------------------
+#
+# La portée ne peut PAS venir d'une constante. `SETBACK[use]` donne la distance de la façade à la ligne de
+# référence de _frontage, et cette ligne n'est pas le bord pavé : sur une artère non urbaine elle est 1 m en
+# deçà, le long d'une rue locale bordée d'un trottoir elle est 1 m au-delà, et au bulbe d'un cul-de-sac elle n'a
+# plus de sens du tout. Mesuré à bluffview : 4 allées posées à 8,00 m alors que le dur commençait à 6,98 m,
+# c'est-à-dire 1,02 m de dalle sous la chaussée.
+#
+# On interroge donc la géométrie : la surface pavée est l'union des RUBANS (bande de demi-largeur autour de leur
+# axe — les trottoirs sont des rubans à part entière, de type « sidewalk ») et des PLATEAUX de `net.pads`
+# (bulbes de cul-de-sac, carrefours, rond-point), dont `rim` donne le contour exact.
+const PAD_RING := 2.10                  # anneau de trottoir autour d'un bulbe : CDS_WALK_WIDTH + CDS_KERB_WIDTH
+var _pave_pads: Array = []          # {"poly": PackedVector2Array, "c": Vector2, "r": float}
+var _pave_bands: Array = []         # {"pts": PackedVector2Array, "hw": float, "bb": Rect2}
+
+
+func _build_paved() -> void:
+	for pad: Dictionary in net.pads:
+		var c3: Vector3 = pad["center"]
+		var c := Vector2(c3.x, c3.z)
+		var poly := PackedVector2Array()
+		var r := 0.0
+		for p: Vector3 in (pad["rim"] as PackedVector3Array):
+			var q := Vector2(p.x, p.z)
+			poly.append(q)
+			r = maxf(r, c.distance_to(q))
+		if poly.size() >= 3:
+			_pave_pads.append({"poly": poly, "c": c, "r": r})
+	for rb in net.ribbons:
+		# on ne filtre PAS sur rb.mesh : un ruban dessiné par un autre (anneau, trottoir de bulbe) pave quand même
+		if (rb.points as PackedVector3Array).size() < 2:
+			continue
+		var pts := PackedVector2Array()
+		var bb := Rect2()
+		var first := true
+		for p: Vector3 in (rb.points as PackedVector3Array):
+			var q := Vector2(p.x, p.z)
+			pts.append(q)
+			if first:
+				bb = Rect2(q, Vector2.ZERO)
+				first = false
+			else:
+				bb = bb.expand(q)
+		var hw: float = float(rb.width) * 0.5
+		_pave_bands.append({"pts": pts, "hw": hw, "bb": bb.grow(hw + 1.0)})
+	print("DISTRICTS_PAVE %d plateaux, %d bandes de ruban" % [_pave_pads.size(), _pave_bands.size()])
+
+
+func _paved_at(p: Vector2) -> bool:
+	for pad: Dictionary in _pave_pads:
+		if (pad["c"] as Vector2).distance_to(p) > float(pad["r"]) + PAD_RING + 0.5:
+			continue
+		if Geometry2D.is_point_in_polygon(p, pad["poly"]):
+			return true
+		# Les bulbes de cul-de-sac portent un anneau de trottoir DEHORS du rim (RoadBake.CDS_WALK_WIDTH 1,80 m
+		# plus sa bordure de 0,30 m), que le contour du plateau ne décrit pas. Sans lui, 4 allées de bluffview
+		# s'arrêtaient 2 m trop loin et passaient sous ce trottoir.
+		var poly: PackedVector2Array = pad["poly"]
+		for k in poly.size():
+			if p.distance_to(Geometry2D.get_closest_point_to_segment(p, poly[k], poly[(k + 1) % poly.size()])) <= PAD_RING:
+				return true
+	for band: Dictionary in _pave_bands:
+		if not (band["bb"] as Rect2).has_point(p):
+			continue
+		var pts: PackedVector2Array = band["pts"]
+		var hw: float = band["hw"]
+		for k in pts.size() - 1:
+			if p.distance_to(Geometry2D.get_closest_point_to_segment(p, pts[k], pts[k + 1])) <= hw:
+				return true
+	return false
+
+
+# Distance de la façade au premier point pavé, dans la direction `dir`. -1 si rien n'est trouvé dans `maxi`.
+func _drive_reach(depart: Vector2, dir: Vector2, maxi: float) -> float:
+	# On cherche le DERNIER point libre, pas le premier pavé : rendre le premier pavé faisait dépasser l'allée
+	# d'un pas entier, mesuré à -0,225 m de morsure sur 45 allées. Pas grossier de 0,25 m puis dichotomie au cm.
+	var libre := 0.0
+	var d := 0.5
+	while d <= maxi:
+		if _paved_at(depart + dir * d):
+			var lo := libre
+			var hi := d
+			while hi - lo > 0.01:
+				var mid := (lo + hi) * 0.5
+				if _paved_at(depart + dir * mid):
+					hi = mid
+				else:
+					lo = mid
+			return lo
+		libre = d
+		d += 0.25
+	return -1.0
 
 
 # Pente maximale, en %, d'un chemin de `longueur` m partant de `depart` dans la direction `dir`, lue sur le
