@@ -638,6 +638,19 @@ const FAMILY_OF := {"fountain": "objets_ombres", "bus_stop": "objets_ombres", "b
 		"tree_slim": "arbres", "tree_tall": "arbres", "firetruck": "camions"}
 const PALETTE_MATERIAL := OUT + "/buildings/lowpoly_material.tres"
 
+# --- halos de lampadaire (chantier jour/nuit) ---------------------------------------------------------------------
+# Décalage du LUMINAIRE dans le repère du modèle, mesuré sur les sommets des .glb le 2026-09-19
+# (sonde probe_luminaire). lamp_double a deux crosses, donc deux luminaires par mât.
+const LAMP_HEADS := {
+	"lamp_single": [Vector3(1.626, 6.227, 0.002)],
+	"lamp_double": [Vector3(1.563, 6.227, 0.002), Vector3(-1.529, 6.227, 0.002)],
+}
+const LAMP_GLOW_SIZE := Vector3(0.34, 0.26, 0.40)   # luminaire du pack : 0.141 x 0.221 x 0.351, un peu débordé
+const LAMP_GLOW_RANGE := 350.0                      # même portée que les mâts du centre-ville
+const GLOW_MATERIAL := "res://scenes/world/lamp_glow_material.tres"
+const LAMP_HEADS_OUT := OUT + "/lamp_heads.tres"
+const LampHeadsRes := preload("res://scenes/world/map/MapLampHeads.gd")
+
 
 # Mobilier fusionné par bloc et par famille en maillages statiques (un appel de dessin par matériau) : plusieurs dizaines de
 # petits MultiMesh par bloc coûtaient chacun leur appel ; les objets sont petits, leurs triangles comptent peu.
@@ -686,6 +699,7 @@ func _write_scene() -> String:
 		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON if FAMILIES[parts[0]]["shadow"] else GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		root.add_child(mi)
 		mi.owner = root
+	_write_lamp_glow(root)
 	var collision := Node3D.new()
 	collision.name = "Collision"
 	root.add_child(collision)
@@ -712,3 +726,86 @@ func _write_scene() -> String:
 		err = ResourceSaver.save(packed, OUT.path_join("Furniture.tscn"))
 	root.free()
 	return error_string(err)
+
+
+# Halos des luminaires du centre-ville (chantier jour/nuit), fusionnés PAR BLOC comme le reste du mobilier :
+# un appel de dessin par bloc visible la nuit, zéro le jour puisque les nœuds sont cachés. Les 866 lampadaires
+# du centre-ville sont fusionnés par bloc et par famille, donc aucune position de luminaire ne survit dans la
+# scène cuite : comme pour la carte, c'est ici qu'il faut les écrire, pour StreetLights.gd.
+func _write_lamp_glow(root: Node3D) -> void:
+	var par_bloc := {}                 # "i|j" -> Array[Vector3]
+	var heads := PackedVector3Array()
+	var aims := PackedVector3Array()
+	var keys := _instances.keys()
+	keys.sort()
+	for key: String in keys:
+		var parts := key.split("|")
+		var kind := parts[0]
+		if not LAMP_HEADS.has(kind):
+			continue
+		var bloc := "%s|%s" % [parts[1], parts[2]]
+		if not par_bloc.has(bloc):
+			par_bloc[bloc] = []
+		for t: Transform3D in _instances[key]:
+			for offset: Vector3 in LAMP_HEADS[kind]:
+				var head: Vector3 = t * offset
+				(par_bloc[bloc] as Array).append(head)
+				heads.append(head)
+				aims.append((head - Vector3(t.origin.x, head.y, t.origin.z)).normalized())
+	var material: Material = load(GLOW_MATERIAL)
+	var blocs := par_bloc.keys()
+	blocs.sort()
+	for bloc: String in blocs:
+		var parts := bloc.split("|")
+		var mesh := _glow_mesh(par_bloc[bloc], material)
+		var path := MODELS.path_join("chunks/lampes_%s_%s.res" % [parts[0], parts[1]])
+		ResourceSaver.save(mesh, path)
+		var mi := MeshInstance3D.new()
+		mi.name = "lampes_%s_%s" % [parts[0], parts[1]]
+		mi.mesh = load(path)
+		mi.visibility_range_end = LAMP_GLOW_RANGE
+		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		mi.visible = false
+		mi.add_to_group(&"lamp_glow", true)
+		root.add_child(mi)
+		mi.owner = root
+	var res := LampHeadsRes.new()
+	res.heads = heads
+	res.aims = aims
+	var err := ResourceSaver.save(res, LAMP_HEADS_OUT)
+	if err != OK:
+		push_error("écriture de %s : erreur %d" % [LAMP_HEADS_OUT, err])
+	print("FURNITURE_LAMPES %d luminaires, %d blocs de halos, hauteur %.2f -> %.2f m"
+			% [heads.size(), blocs.size(), res.bounds().position.y, res.bounds().end.y])
+
+
+# Une boîte par luminaire, 12 triangles, toutes fusionnées dans le maillage du bloc.
+func _glow_mesh(heads: Array, material: Material) -> ArrayMesh:
+	var verts := PackedVector3Array()
+	var normals := PackedVector3Array()
+	var indices := PackedInt32Array()
+	var h := LAMP_GLOW_SIZE * 0.5
+	var faces := [
+		[Vector3(0, 0, 1), Vector3(-h.x, -h.y, h.z), Vector3(h.x, -h.y, h.z), Vector3(h.x, h.y, h.z), Vector3(-h.x, h.y, h.z)],
+		[Vector3(0, 0, -1), Vector3(h.x, -h.y, -h.z), Vector3(-h.x, -h.y, -h.z), Vector3(-h.x, h.y, -h.z), Vector3(h.x, h.y, -h.z)],
+		[Vector3(1, 0, 0), Vector3(h.x, -h.y, h.z), Vector3(h.x, -h.y, -h.z), Vector3(h.x, h.y, -h.z), Vector3(h.x, h.y, h.z)],
+		[Vector3(-1, 0, 0), Vector3(-h.x, -h.y, -h.z), Vector3(-h.x, -h.y, h.z), Vector3(-h.x, h.y, h.z), Vector3(-h.x, h.y, -h.z)],
+		[Vector3(0, 1, 0), Vector3(-h.x, h.y, h.z), Vector3(h.x, h.y, h.z), Vector3(h.x, h.y, -h.z), Vector3(-h.x, h.y, -h.z)],
+		[Vector3(0, -1, 0), Vector3(-h.x, -h.y, -h.z), Vector3(h.x, -h.y, -h.z), Vector3(h.x, -h.y, h.z), Vector3(-h.x, -h.y, h.z)],
+	]
+	for head: Vector3 in heads:
+		for face: Array in faces:
+			var base := verts.size()
+			for k in range(1, 5):
+				verts.append(head + (face[k] as Vector3))
+				normals.append(face[0])
+			indices.append_array([base, base + 1, base + 2, base, base + 2, base + 3])
+	var arrays := []
+	arrays.resize(Mesh.ARRAY_MAX)
+	arrays[Mesh.ARRAY_VERTEX] = verts
+	arrays[Mesh.ARRAY_NORMAL] = normals
+	arrays[Mesh.ARRAY_INDEX] = indices
+	var mesh := ArrayMesh.new()
+	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	mesh.surface_set_material(0, material)
+	return mesh

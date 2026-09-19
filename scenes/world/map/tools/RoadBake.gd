@@ -85,8 +85,22 @@ const LAMP_DOUBLE := "res://assets/modular_roads/lamp_2.glb"
 const LAMP_SPACING := {"sidewalk": 30.0, "median": 45.0, "ring": 36.0}
 const LAMP_NEAR_RING := 320.0
 const LAMP_RANGE := 650.0           # mesurée au centre de la cellule de 256 m : ~350 m pour le lampadaire le plus loin
+# Décalage du LUMINAIRE dans le repère du modèle, mesuré sur les sommets des .glb le 2026-09-19
+# (sonde probe_luminaire : sommets au-delà de 70 % de l'écart maximal à l'axe du mât). Le modèle a
+# son +X le long de la crosse, d'où un décalage par crosse : une pour lamp_1, deux pour lamp_2.
+const LAMP_HEADS := {
+	"lamp_single": [Vector3(1.229, 6.205, 0.004)],
+	"lamp_double": [Vector3(1.268, 6.145, 0.005), Vector3(-1.268, 6.145, 0.005)],
+}
+# Boîte émissive posée sur chaque luminaire la nuit. Volontairement un peu plus grande que le
+# luminaire mesuré (0.391 x 0.258 x 0.386 pour lamp_1) pour déborder du capot et rester lisible
+# de loin, mais pas au point de faire un cube visible de près.
+const LAMP_GLOW_SIZE := Vector3(0.46, 0.30, 0.44)
+const LAMP_GLOW_RANGE := 650.0      # même portée que les mâts : un halo sans son mât serait absurde
+const GLOW_MATERIAL := "res://scenes/world/lamp_glow_material.tres"
 const TrafficGraph := preload("res://scenes/world/map/MapTrafficGraph.gd")
 const RailPathRes := preload("res://scenes/world/map/MapRailPath.gd")
+const LampHeadsRes := preload("res://scenes/world/map/MapLampHeads.gd")
 const TRAFFIC_SCRIPT := preload("res://scenes/world/map/MapTraffic.gd")
 const JERSEY := [Vector2(-0.3, 0.0), Vector2(-0.22, 0.28), Vector2(-0.1, 0.85), Vector2(0.1, 0.85), Vector2(0.22, 0.28), Vector2(0.3, 0.0)]
 
@@ -168,6 +182,7 @@ func _initialize() -> void:
 	ResourceSaver.save(Image.create_from_data(model.width, model.depth, false, Image.FORMAT_L8, roof), GEN + "/terrain/roof_mask.res")
 	_write_traffic_graph()
 	_write_rail_path()
+	_write_lamp_heads()
 	_write_scene()
 	_write_boundary_gaps()
 	_ensure_in_map()
@@ -1075,8 +1090,55 @@ func _lamp(part: String, base: Vector3, arm: Vector3) -> void:
 	var g := _group(base)
 	if not g.has(part):
 		g[part] = []
-	(g[part] as Array).append(Transform3D(Basis(arm, Vector3.UP, arm.cross(Vector3.UP)), base))
+	var t := Transform3D(Basis(arm, Vector3.UP, arm.cross(Vector3.UP)), base)
+	(g[part] as Array).append(t)
 	stats["lampadaires"] = int(stats.get("lampadaires", 0)) + 1
+	# Position monde de chaque luminaire : elle n'est nulle part ailleurs, les mâts étant fusionnés
+	# en un seul maillage par cellule. Sans cette liste, StreetLights n'aurait aucun point où poser
+	# ses lumières, et la cuisson n'aurait aucun point où poser ses halos.
+	for offset: Vector3 in LAMP_HEADS[part]:
+		var head := t * offset
+		lamp_heads.append(head)
+		lamp_aims.append((head - Vector3(base.x, head.y, base.z)).normalized())
+		if not g.has("lamp_glow"):
+			g["lamp_glow"] = []
+		(g["lamp_glow"] as Array).append(head)
+
+
+# Halos d'une cellule fusionnés en un seul maillage : une boîte par luminaire, 12 triangles.
+# On fusionne plutôt que d'instancier parce qu'un MultiMesh cuit sans rendu perd ses positions
+# (même raison que pour les mâts, cf. la boucle d'écriture des cellules), et parce qu'un maillage
+# fusionné par cellule donne un appel de dessin par cellule au lieu d'un par lampadaire.
+func _glow_mesh(heads: Array) -> ArrayMesh:
+	var verts := PackedVector3Array()
+	var normals := PackedVector3Array()
+	var indices := PackedInt32Array()
+	var h := LAMP_GLOW_SIZE * 0.5
+	# 6 faces indépendantes : une normale franche par face, pas de sommet partagé entre deux faces
+	var faces := [
+		[Vector3(0, 0, 1), Vector3(-h.x, -h.y, h.z), Vector3(h.x, -h.y, h.z), Vector3(h.x, h.y, h.z), Vector3(-h.x, h.y, h.z)],
+		[Vector3(0, 0, -1), Vector3(h.x, -h.y, -h.z), Vector3(-h.x, -h.y, -h.z), Vector3(-h.x, h.y, -h.z), Vector3(h.x, h.y, -h.z)],
+		[Vector3(1, 0, 0), Vector3(h.x, -h.y, h.z), Vector3(h.x, -h.y, -h.z), Vector3(h.x, h.y, -h.z), Vector3(h.x, h.y, h.z)],
+		[Vector3(-1, 0, 0), Vector3(-h.x, -h.y, -h.z), Vector3(-h.x, -h.y, h.z), Vector3(-h.x, h.y, h.z), Vector3(-h.x, h.y, -h.z)],
+		[Vector3(0, 1, 0), Vector3(-h.x, h.y, h.z), Vector3(h.x, h.y, h.z), Vector3(h.x, h.y, -h.z), Vector3(-h.x, h.y, -h.z)],
+		[Vector3(0, -1, 0), Vector3(-h.x, -h.y, -h.z), Vector3(h.x, -h.y, -h.z), Vector3(h.x, -h.y, h.z), Vector3(-h.x, -h.y, h.z)],
+	]
+	for head: Vector3 in heads:
+		for face: Array in faces:
+			var base := verts.size()
+			for k in range(1, 5):
+				verts.append(head + (face[k] as Vector3))
+				normals.append(face[0])
+			indices.append_array([base, base + 1, base + 2, base, base + 2, base + 3])
+	var arrays := []
+	arrays.resize(Mesh.ARRAY_MAX)
+	arrays[Mesh.ARRAY_VERTEX] = verts
+	arrays[Mesh.ARRAY_NORMAL] = normals
+	arrays[Mesh.ARRAY_INDEX] = indices
+	var mesh := ArrayMesh.new()
+	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	mesh.surface_set_material(0, load(GLOW_MATERIAL))
+	return mesh
 
 
 # Tracé de la voie ferrée pour les trains (chantier des trains, étape 1). L'axe est relevé sur la ligne cuite par
@@ -1129,6 +1191,23 @@ func _write_rail_path() -> void:
 		push_error("écriture de %s : erreur %d" % [path, err])
 	print("ROAD_BAKE_RAIL %d points au pas de %.2f m, %.0f m, rayon mini %.1f m, pente maxi %.2f %%, %d bouts, %d passages à niveau"
 			% [n, res.step, res.length, res.min_radius, res.max_grade * 100.0, res.ends.size(), res.crossings.size()])
+
+
+# Luminaires de la carte (chantier jour/nuit). Les mâts étant fusionnés par cellule, aucune
+# position individuelle ne survit dans la scène cuite : c'est ici, et nulle part ailleurs, qu'on
+# peut les écrire. StreetLights.gd s'en sert pour poser ses vraies lumières sur les lampadaires
+# les plus proches du joueur.
+func _write_lamp_heads() -> void:
+	var res := LampHeadsRes.new()
+	res.heads = lamp_heads
+	res.aims = lamp_aims
+	var path := OUT.path_join("lamp_heads.tres")
+	var err := ResourceSaver.save(res, path)
+	if err != OK:
+		push_error("écriture de %s : erreur %d" % [path, err])
+	var b := res.bounds()
+	print("ROAD_BAKE_LAMPES %d luminaires sur %d mâts, hauteur %.2f -> %.2f m, emprise %.0f x %.0f m"
+			% [res.size(), int(stats.get("lampadaires", 0)), b.position.y, b.end.y, b.size.x, b.size.z])
 
 
 # Graphe de circulation de la carte pour MapTraffic : noeuds, arêtes (trajet, voies, sens unique), anneaux, noeuds sans
@@ -1485,6 +1564,10 @@ func _materials() -> Dictionary:
 
 var lamp_meshes := {}
 var pole_shape: CylinderShape3D
+# Luminaires de toute la carte, en coordonnées monde, remplis par _lamp() et écrits en
+# lamp_heads.tres (cf. MapLampHeads : aucune autre source ne connaît ces positions).
+var lamp_heads := PackedVector3Array()
+var lamp_aims := PackedVector3Array()
 
 
 func _write_scene() -> void:
@@ -1588,6 +1671,23 @@ func _write_scene() -> void:
 				pole.shape = pole_shape
 				pole.position = (transforms[i] as Transform3D).origin + Vector3(0, 3.0, 0)
 				body.add_child(pole)
+		if g.has("lamp_glow"):
+			# Halos des luminaires de la cellule, fusionnés en UN maillage : allumés la nuit,
+			# cachés le jour. Un maillage par cellule, donc un appel de dessin par cellule visible
+			# la nuit, et zéro le jour. Le matériau est partagé par toute la carte et c'est
+			# DayNightCycle qui en fait varier l'émission ; ne pas le dupliquer par cellule, sinon
+			# chaque cellule redeviendrait un appel que rien ne peut regrouper (cf. LampPoleLayer).
+			var glow := _glow_mesh(g["lamp_glow"])
+			var glow_path := OUT.path_join("lamp_glow_%02d_%02d.res" % [key.x + 10, key.y + 10])
+			ResourceSaver.save(glow, glow_path)
+			var gi := MeshInstance3D.new()
+			gi.name = "LampGlow"
+			gi.mesh = load(glow_path)
+			gi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+			gi.visibility_range_end = LAMP_GLOW_RANGE
+			gi.visible = false
+			gi.add_to_group(&"lamp_glow", true)
+			body.add_child(gi)
 		stats["cellules"] += 1
 	var traffic := Node.new()
 	traffic.name = "Traffic"

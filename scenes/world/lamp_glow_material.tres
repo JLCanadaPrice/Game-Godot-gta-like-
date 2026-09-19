@@ -1,0 +1,17 @@
+[gd_resource type="StandardMaterial3D" format=3]
+
+; Matériau UNIQUE des halos de lampadaire, partagé par la carte (RoadBake) et par le centre-ville
+; (DowntownFurnitureBake). Un seul matériau pour les 1375 halos : c'est la condition pour que le
+; moteur regroupe les maillages de halo, exactement comme pour les mâts (cf. LampPoleLayer, où une
+; copie par poteau avait fabriqué 378 appels de dessin).
+;
+; Non éclairé (shading_mode = 2) : un halo est une source, pas une surface qui reçoit la lumière ;
+; ça évite aussi qu'il devienne gris quand le soleil se couche. DayNightCycle fait varier
+; albedo_color entre le gris éteint et le jaune sodium allumé, et cache carrément les maillages le
+; jour, donc le halo ne coûte rien entre le lever et le coucher.
+
+[resource]
+resource_name = "lamp_glow"
+shading_mode = 2
+albedo_color = Color(1, 0.88, 0.62, 1)
+disable_receive_shadows = true

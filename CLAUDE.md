@@ -64,6 +64,17 @@ travail imposée, les commandes exactes, les pièges déjà payés et l'état d'
 - La mesure « avant » doit être refaite **sur la machine du jour**, code non modifié, avant la
   modification — pas reprise d'une session ou d'un commentaire.
 
+- **Depuis le cycle jour/nuit, toute vue doit être mesurée DE JOUR ET DE NUIT.** Les 12 vues ci-dessous sont toutes
+  diurnes : de jour les halos de lampadaire sont cachés et les vraies lumières éteintes, donc elles ne prouvent
+  rien sur le coût nocturne. `MapShotsTest --heure=1` rejoue les mêmes vues de nuit ; les vues `nuit_*` au sol
+  servent aux captures.
+- **Les appels de dessin ne mesurent PAS le coût des lumières.** Une `OmniLight3D` ou une `SpotLight3D` n'ajoute
+  aucun appel de dessin : elle ajoute du travail dans la passe d'ombrage. Mesuré le 2026-09-19 : 0 et 1 540 vraies
+  lumières donnent exactement le même nombre d'appels. Pour comparer des approches d'éclairage, il faut le temps
+  GPU, et **la machine de développement ne sait pas le mesurer** : elle rend la scène en ~1,8 ms, les lumières y
+  sont noyées dans le bruit, et trois métriques s'y sont contredites (cf. §9). La seule mesure valable est
+  `RenderPerfTest` sur l'UHD 750, qui accepte maintenant `--heure=`, `--bassin=` et `--toutes-lampes`.
+
 Référence relevée le 2026-09-18 en 800x450 (après le chantier de Northgate Rise) :
 
 | vue de référence | appels | | vue ferroviaire | appels |
@@ -74,6 +85,24 @@ Référence relevée le 2026-09-18 en 800x450 (après le chantier de Northgate R
 | losange_aeroport | 395 | | sur_voie_express | 407 |
 | quartier_bluffview_survol | 267 | | portail_est | 201 |
 | lieu_echo_circle | 596 | | heurtoir_ouest | 154 |
+
+Référence relevée le **2026-09-19** en 800x450, après le cycle jour/nuit, sur la machine du jour. Le jour est
+mesuré à **12 h** et la nuit à **1 h**. La colonne « avant » est la mesure du même jour, code non modifié :
+
+| vue de référence | avant | jour 12 h | nuit 1 h | | vue ferroviaire | avant | jour | nuit |
+|---|---|---|---|---|---|---|---|---|
+| echangeur_nord_ouest | 354 | 333 | 259 | | pont_riviere | 406 | 404 | 342 |
+| carrefour_willow_lake | 402 | 352 | 175 | | passage_niveau | 268 | 266 | 209 |
+| rond_point_echo | 664 | 610 | 454 | | viaduc_est | 396 | 366 | 300 |
+| losange_aeroport | 400 | 351 | 252 | | sur_voie_express | 418 | 415 | 357 |
+| quartier_bluffview_survol | 274 | 268 | 213 | | portail_est | 199 | 179 | 89 |
+| lieu_echo_circle | 592 | 554 | 433 | | heurtoir_ouest | 161 | 152 | 61 |
+
+**La nuit coûte MOINS cher que le jour partout**, de 22 à 56 % d'appels en moins, et le jour lui-même a baissé.
+Ce n'est pas une surprise mais une conséquence voulue : `DayNightCycle` **coupe les ombres du soleil la nuit**
+(la lune n'en projette pas), et la passe d'ombre directionnelle est le plus gros poste d'appels de dessin de la
+scène. La baisse de jour vient du soleil qui culmine maintenant à 62° au lieu des 45° du soleil fixe d'avant :
+la cascade d'ombres attrape moins d'objets.
 
 ## 4. Chaîne de cuisson (ordre exact)
 
@@ -95,8 +124,14 @@ La passe `--import` finale n'est pas facultative : `MapBackgroundBake` réécrit
 
 Autres cuissons, plus rares, hors de cette chaîne : `RoadTexturesBake`, `TerrainTexturesBake`,
 `BuildingCatalogBake`, `TrainsBake` (fusionne les caisses du pack de trains en un maillage chacune dans
-`generated/trains/`, à relancer seulement si le pack change). Vérifications sans effet de bord : `MapSpecCheck`,
-`RoadNetworkPreview`, `ProjectLoadCheck`.
+`generated/trains/`, à relancer seulement si le pack change), `DowntownFurnitureBake` (mobilier du centre-ville :
+lampadaires, arbres, bancs, camions de caserne, **et les halos de lampadaire du cycle jour/nuit**). Vérifications
+sans effet de bord : `MapSpecCheck`, `RoadNetworkPreview`, `ProjectLoadCheck`.
+
+**Toucher aux lampadaires impose DEUX cuissons hors chaîne** : `RoadBake` écrit les luminaires de la carte
+(`generated/roads/lamp_heads.tres`) et `DowntownFurnitureBake` ceux du centre-ville
+(`downtown/generated/lamp_heads.tres`). Oublier la seconde laisse 906 lampadaires sur 1 375 sans halo et sans
+lumière la nuit.
 
 ## 5. Batterie de tests headless
 
@@ -114,6 +149,7 @@ ligne `<NOM>_RESULT OK` ou `FAIL`.
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/MapExplorationTest.tscn    # la carte reste parcourable
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/MapGateTest.tscn           # portail et bosquet de Hollow Creek
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/SimulationCullingTest.tscn # gel hors champ
+"$GODOT" --headless --path "$PROJET" res://scenes/tests/DayNightTest.tscn         # cycle jour/nuit, halos, luminaires
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/WorldTrafficSmokeTest.tscn # trafic (aléa connu, cf. §6)
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/NoclipTest.tscn            # noclip, aléa connu aussi
 "$GODOT" --headless --path "$PROJET" --fixed-fps 60 --quit-after 300 res://scenes/tests/VehicleCatalogTest.tscn  # catalogue des véhicules, 20 000 tirages
@@ -141,6 +177,12 @@ Captures et compteurs de rendu (fenêtré, pas headless : le rendu compte) :
 ```bash
 "$GODOT" --path "$PROJET" --resolution 800x450 res://scenes/tests/MapShotsTest.tscn -- --out=<dossier> --views=vue1,vue2
 ```
+
+`MapShotsTest` accepte aussi `--heure=<0..24>` (fige le cycle jour/nuit à cette heure, indispensable pour mesurer de
+nuit), `--bassin=<n>` (taille du bassin de vraies lumières de lampadaire), `--toutes-lampes` (une vraie lumière par
+luminaire : mesure de l'option écartée, jamais un réglage de jeu) et `--sans-image` (mesure sans `get_image()`, donc
+sans le plafond de 800x450 du §6). Une vue peut imposer sa propre heure par un 5e champ : c'est ce que font les vues
+`nuit_*`, `crepuscule_*` et `aube_*`.
 
 ## 6. Pièges connus (tous déjà payés)
 
@@ -334,3 +376,82 @@ Ce que l'étape 5 devra savoir :
 Réserve à ne pas oublier à l'étape 5 : un gel strict au-delà de 50 m ferait qu'un train attendu à
 un passage à niveau, à 240 m et hors écran, **n'arriverait jamais**. Le gel doit laisser avancer
 l'abscisse du train et ne couper que l'écriture des transformations de wagons.
+
+## 9. Cycle jour/nuit et éclairage des lampadaires
+
+Construit le 2026-09-19. Deux nœuds dans `World.tscn`, volontairement séparés parce qu'ils n'ont ni le même rôle
+ni le même coût :
+
+- **`DayNight`** (`scenes/world/DayNightCycle.gd`) : l'heure, la course du soleil, le ciel, le brouillard,
+  l'ambiante. N'allume rien lui-même ; il publie `hour_changed(heure, facteur_nuit)`.
+- **`StreetLights`** (`scenes/world/StreetLights.gd`) : écoute, et allume.
+
+**Durée : 48 minutes réelles pour 24 h de jeu** (2 min par heure de jeu, la durée de GTA V). Jour utile 6 h-20 h
+soit 28 min, nuit noire 21 h-5 h soit 16 min. Le « facteur nuit » vaut 0 en plein jour, 1 en pleine nuit et
+interpole entre 5-7 h et 19-21 h : c'est lui qui fond les lampadaires, pas un interrupteur.
+
+**Touche `N`** : +1 h. **`Maj+N`** : -1 h. **`Ctrl+N`** : fige ou relance le cycle. Une horloge s'affiche en haut
+à droite pendant 2,5 s après chaque changement, et en permanence quand le cycle est figé.
+
+### Comment les 1 375 lampadaires s'allument sans coûter
+
+**Il y a 1 375 mâts et 1 540 luminaires** (les doubles en portent deux) : 509 mâts / 634 luminaires sur la carte
+(`RoadBake`), 866 mâts / 906 luminaires au centre-ville (`DowntownFurnitureBake`).
+
+Deux mécanismes, et c'est la séparation qui tient le budget :
+
+1. **Les halos, partout.** Une petite boîte non éclairée sur chaque luminaire, **fusionnée avec les autres en un
+   maillage par cellule** (carte) ou par bloc (centre-ville) : 96 maillages, 18 480 triangles pour toute la carte.
+   Cachés le jour (0 appel de dessin), visibles la nuit (**1 appel par cellule visible**). Les 1 540 halos
+   partagent **UN SEUL matériau** (`scenes/world/lamp_glow_material.tres`) : c'est la condition pour que le moteur
+   les regroupe, exactement la leçon déjà payée sur les mâts (cf. `LampPoleLayer`, où une copie de matériau par
+   poteau avait fabriqué 378 appels). `DayNightTest` échoue si un deuxième matériau apparaît.
+2. **Les vraies lumières, seulement près du joueur.** Un bassin de **16 `SpotLight3D` sans ombre** suit la caméra
+   et se pose sur les 16 luminaires les plus proches, réaffecté toutes les 0,25 s ou dès que la caméra a bougé de
+   4 m. Cône de 55° et portée 17 m, calés sur la géométrie mesurée (luminaire à 6,2 m, artère de 10,5 m) : la
+   flaque couvre la chaussée et ses deux trottoirs.
+
+**Le réglage se change sans recompiler** : `pool` sur le nœud `StreetLights`. À 0, il ne reste que les halos — la
+rue garde ses lampadaires visibles mais perd ses flaques de lumière au sol (comparaison au sol faite, la
+différence est nette). C'est le bouton à baisser en premier si l'UHD 750 souffre.
+
+### Pourquoi pas une vraie lumière par lampadaire, et pourquoi je ne peux pas le chiffrer ici
+
+L'option a été construite et mesurée (`--toutes-lampes` : 1 540 `SpotLight3D`). **Trois métriques ont été
+essayées, aucune ne départage les options sur la machine de développement :**
+
+1. **Appels de dessin** : identiques à l'unité près entre 0, 8, 16, 32, 64 et 1 540 lumières. Normal, et c'est
+   une leçon à retenir : une lumière ponctuelle n'ajoute aucun appel de dessin, elle ajoute du travail dans la
+   passe d'ombrage. Le seuil du §3 ne mesure donc PAS le coût de l'éclairage.
+2. **`viewport_get_measured_render_time_gpu`, 800x450** : « 0 lumière » ressortait plus lent que 1 540, et b32
+   plus rapide que b16. Incohérent.
+3. **Même compteur en 1920x1080 sans capture, médiane sur 60 images** : b8, b32 et b64 donnaient 0,66 ms au
+   centième près, et « 0 lumière » restait la plus lente. Toujours incohérent.
+4. **Temps d'image à l'horloge, 1920x1080, vsync coupée, médiane sur 120 images** : 1 540 lumières ressortait
+   *plus rapide* que 0 sur une vue. L'écart entre les options est sous le bruit.
+
+Cause : cette machine rend la scène en ~1,8 ms quand l'UHD 750 met 30 à 100 ms (chiffres de `CityRenderOptimizer`).
+Le GPU n'est jamais le goulot ici, donc le coût des lumières ne sort pas. **Ne pas recommencer à chercher une
+cinquième métrique sur cette machine.** `RenderPerfTest` accepte désormais `--heure=`, `--bassin=` et
+`--toutes-lampes` : c'est là, et sur l'UHD 750, que la comparaison se fait.
+
+Le choix du bassin borné ne repose donc pas sur un écart mesuré ici, mais sur le fait que **son pire cas est borné
+par construction** : 16 lumières quoi qu'il arrive, où que soit le joueur. Le coût de l'option à 1 540 est, lui,
+non borné et non mesuré — ce qui est exactement la raison de ne pas l'embarquer.
+
+### Ce que ça rend possible plus tard
+
+Les **phares de véhicules** et les **gyrophares** se posent sur la même architecture, sans rien réinventer :
+le `hour_changed` donne l'allumage automatique au crépuscule, les halos non éclairés à matériau partagé donnent
+les feux de tous les véhicules lointains pour un appel de dessin par lot, et un bassin de vraies lumières borné
+donne les phares du joueur et des quelques voitures les plus proches. Le seul piège connu : un gyrophare qui
+clignote a besoin d'un matériau qui change, donc **il faut un matériau partagé par état** (bleu allumé, rouge
+allumé, éteint) et faire clignoter tout le monde en phase, jamais un matériau par véhicule.
+
+### Anomalie antérieure révélée par ce chantier
+
+**5 luminaires (3 mâts) de la carte sont plantés sous un tablier routier**, tête à 0,005 à 0,493 m de l'ouvrage,
+en (-697,1 / -694,6 ; 0,84 ; -776,1), (-720,6 / -718,3 ; 0,84 ; -635,8) et (53,3 ; 7,38 ; 791,6). Ces mâts
+existent depuis le chantier des routes ; le cycle jour/nuit n'a fait que les révéler, en demandant pour la
+première fois OÙ sont les luminaires. La cause est dans la pose des lampadaires de `RoadBake`, qui ne regarde pas
+le dégagement au-dessus du mât. `DayNightTest` constate les 5 et **échoue si le nombre augmente**.
