@@ -159,8 +159,6 @@ func _initialize() -> void:
 			modes[rb] = _modes(rb)
 	_carve(modes)
 	_index_roads()
-	# avant toute pose de lampadaire : _lamp a besoin du gabarit du mât et de l'index des chaussées
-	_load_lamp_meshes()
 	for rb in modes:
 		modes[rb] = _unsupported_to_bridges(rb, modes[rb])
 	ResourceSaver.save(Image.create_from_data(model.width, model.depth, false, Image.FORMAT_RF, heights.to_byte_array()), GEN + "/terrain/heights.res")
@@ -366,48 +364,6 @@ func _index_roads() -> void:
 			if not road_index.has(key):
 				road_index[key] = []
 			road_index[key].append(Vector2i(r, k))
-
-
-# Hauteur libre au-dessus du point p : distance de p à la SOUS-FACE de la chaussée la plus basse qui
-# lui passe dessus, INF si le ciel est dégagé. Pendant de _road_under, même index de 16 m.
-#
-# On interroge le MODÈLE de réseau, pas un rayon : la cuisson tourne avant que la scène existe, il
-# n'y a rien à sonder. Le modèle, lui, connaît déjà tous ses ouvrages — c'est le même index qui sert
-# à décider où poser une pile.
-#
-# `reach` est le débord de l'objet qu'on veut loger : un mât mince ne gêne pas au même endroit qu'une
-# crosse d'1,27 m. Le seuil de 0,5 m écarte les chaussées voisines qui passent au ras du point sans
-# être un ouvrage : en deçà, ce n'est pas un tablier au-dessus, c'est le sol d'à côté.
-func _road_over(p: Vector3, owner, reach: float) -> float:
-	var free := INF
-	var key := Vector2i(floori(p.x / 16.0), floori(p.z / 16.0))
-	for dz in range(-1, 2):
-		for dx in range(-1, 2):
-			for hit: Vector2i in road_index.get(key + Vector2i(dx, dz), []):
-				var other = net.ribbons[hit.x]
-				if other == owner:
-					continue
-				var q: Vector3 = other.points[hit.y]
-				var under := q.y - Network.DECK - p.y
-				if under < 0.5:
-					continue
-				if Vector2(q.x - p.x, q.z - p.z).length() < float(other.width) * 0.5 + reach:
-					free = minf(free, under)
-	return free
-
-
-# Un lampadaire tient-il ici ? Il faut Network.CLEARANCE au-dessus du pied — les 7,00 m que le
-# réseau garantit déjà sous un viaduc — et au minimum la hauteur du mât, mesurée sur son maillage.
-# Sans ce contrôle, RoadBake plantait des mâts sous un tablier : deux de terre-plein en tranchée
-# avec 4,95 m pour un mât de 6,30 m (luminaire à 5 mm de la dalle) et deux de trottoir sous le
-# viaduc de l'est, luminaire pendu à 0,49 et 0,63 m sous la sous-face.
-func _lamp_fits(part: String, base: Vector3, owner) -> bool:
-	var need: float = maxf(Network.CLEARANCE, float(lamp_top.get(part, 0.0)))
-	var free := _road_over(base, owner, float(lamp_reach.get(part, 1.5)))
-	if free >= need:
-		return true
-	stats["lampadaires_refuses"] = int(stats.get("lampadaires_refuses", 0)) + 1
-	return false
 
 
 # Vrai si une autre chaussée passe sous le point p (plus bas que `below` de plus de 3 m) : pas de pile ici.
@@ -1116,25 +1072,21 @@ func _place_lamps(modes: Dictionary) -> void:
 						in_entrance = in_entrance or Vector2(start.x - base.x, start.z - base.z).length() < 6.5
 					if in_entrance:
 						continue
-					_lamp("lamp_single", base, -side * outer_sign, rb)
+					_lamp("lamp_single", base, -side * outer_sign)
 				"median":
 					var near_ring := false
 					for c in ring_centers:
 						near_ring = near_ring or c.distance_to(Vector2(pts[k].x, pts[k].z)) < LAMP_NEAR_RING
 					if mode[k] != 1 and not near_ring:
 						continue
-					_lamp("lamp_double", pts[k] + Vector3(0, 0.85, 0), side, rb)
+					_lamp("lamp_double", pts[k] + Vector3(0, 0.85, 0), side)
 				"ring":
 					# anneau parcouru dans le sens trigonométrique : l'extérieur est à droite
-					_lamp("lamp_single", pts[k] + side * (rb.width * 0.5 + 0.8), -side, rb)
+					_lamp("lamp_single", pts[k] + side * (rb.width * 0.5 + 0.8), -side)
 			since = 0.0
 
 
-func _lamp(part: String, base: Vector3, arm: Vector3, owner = null) -> void:
-	# Rien au-dessus du pied : sinon le mât traverse l'ouvrage et le luminaire éclaire sa sous-face.
-	# Le contrôle est ici, et pas sur chacun des sites d'appel, pour qu'aucun n'y échappe.
-	if not _lamp_fits(part, base, owner):
-		return
+func _lamp(part: String, base: Vector3, arm: Vector3) -> void:
 	var g := _group(base)
 	if not g.has(part):
 		g[part] = []
@@ -1611,8 +1563,6 @@ func _materials() -> Dictionary:
 
 
 var lamp_meshes := {}
-var lamp_top := {}                # partie -> hauteur du sommet du mât, mesurée sur le maillage
-var lamp_reach := {}              # partie -> débord horizontal maximal (crosse + luminaire), mesuré
 var pole_shape: CylinderShape3D
 # Luminaires de toute la carte, en coordonnées monde, remplis par _lamp() et écrits en
 # lamp_heads.tres (cf. MapLampHeads : aucune autre source ne connaît ces positions).
@@ -1620,27 +1570,12 @@ var lamp_heads := PackedVector3Array()
 var lamp_aims := PackedVector3Array()
 
 
-# Modèles de lampadaire, et le gabarit qu'ils occupent, MESURÉ sur leurs sommets. Appelé avant
-# _place_lamps, qui a besoin de la hauteur du mât pour savoir s'il tient sous un ouvrage, et
-# réutilisé tel quel par _write_scene, qui fusionne ces mêmes maillages.
-func _load_lamp_meshes() -> void:
-	for pair in [["lamp_single", LAMP_SINGLE], ["lamp_double", LAMP_DOUBLE]]:
-		var inst: Node = (load(pair[1]) as PackedScene).instantiate()
-		var mesh: Mesh = (inst.find_children("*", "MeshInstance3D", true, false)[0] as MeshInstance3D).mesh
-		lamp_meshes[pair[0]] = mesh
-		inst.free()
-		# sommet du mât et débord de la crosse, lus sur l'emprise du maillage : si le modèle change,
-		# le contrôle de dégagement suit sans qu'on ait à retoucher un chiffre ici
-		var box := mesh.get_aabb()
-		lamp_top[pair[0]] = box.end.y
-		lamp_reach[pair[0]] = maxf(maxf(absf(box.position.x), absf(box.end.x)),
-				maxf(absf(box.position.z), absf(box.end.z)))
-
-
 func _write_scene() -> void:
 	var mats := _materials()
-	if lamp_meshes.is_empty():
-		_load_lamp_meshes()
+	for pair in [["lamp_single", LAMP_SINGLE], ["lamp_double", LAMP_DOUBLE]]:
+		var inst: Node = (load(pair[1]) as PackedScene).instantiate()
+		lamp_meshes[pair[0]] = (inst.find_children("*", "MeshInstance3D", true, false)[0] as MeshInstance3D).mesh
+		inst.free()
 	pole_shape = CylinderShape3D.new()
 	pole_shape.radius = 0.15
 	pole_shape.height = 6.0

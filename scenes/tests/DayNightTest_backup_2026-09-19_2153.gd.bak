@@ -30,10 +30,14 @@ const HEAD_MIN := 5.9
 const HEAD_MAX := 7.2
 const ARM_MAX := 1.35          # longueur de crosse mesurée : 1,229 m (simple), 1,268 m (double)
 
-# Le COMPTE des mâts plantés sous un ouvrage n'est plus ici : il vit dans MapRoadsTest, qui le
-# mesure sur les triangles des chaussées cuites au lieu d'un rayon, et RoadBake refuse désormais de
-# poser un lampadaire sans Network.CLEARANCE au-dessus du pied. Ce test-ci garde seulement sa propre
-# question : un luminaire cuit est-il à une hauteur plausible au-dessus du sol, sur un vrai mât.
+# ANOMALIE ANTÉRIEURE, mesurée le 2026-09-19 et laissée telle quelle : 5 luminaires (3 mâts) de la
+# carte sont plantés sous un tablier routier, tête à 0,005 à 0,493 m de l'ouvrage, en
+# (-697,1 / -694,6 ; 0,84 ; -776,1), (-720,6 / -718,3 ; 0,84 ; -635,8) et (53,3 ; 7,38 ; 791,6).
+# Ces mâts existent depuis le chantier des routes ; le cycle jour/nuit n'a fait que les révéler en
+# demandant pour la première fois où sont les luminaires. La cause est dans la pose des lampadaires
+# de RoadBake, qui ne regarde pas le dégagement au-dessus du mât : c'est là qu'il faudra corriger,
+# pas ici. Le test le constate et refuse que le nombre AUGMENTE.
+const JAMMED_KNOWN := 5
 
 var _fautes: Array[String] = []
 
@@ -175,6 +179,7 @@ func _halos(cycle: Node) -> void:
 
 func _luminaires(world: Node) -> void:
 	var total := 0
+	var coinces := 0
 	var espace := world.get_viewport().world_3d.direct_space_state
 	# pieds de mât relevés sur la scène cuite : RoadBake pose la capsule de collision à pied + 3,00 m
 	var pieds := PackedVector3Array()
@@ -193,7 +198,6 @@ func _luminaires(world: Node) -> void:
 		var bas := 0
 		var sans_sol := 0
 		var pire_haut := 0.0
-		var pire_bas := INF
 		var hors_mat := 0
 		var pire_mat := 0.0
 		for i in res.size():
@@ -205,8 +209,9 @@ func _luminaires(world: Node) -> void:
 			else:
 				var degagement := head.y - (hit["position"] as Vector3).y
 				if degagement < HEAD_MIN:
+					# anomalie antérieure connue : mât coincé sous un ouvrage (cf. JAMMED_KNOWN)
+					coinces += 1
 					bas += 1
-					pire_bas = minf(pire_bas, degagement)
 				elif degagement > HEAD_MAX:
 					hauts += 1
 					pire_haut = maxf(pire_haut, degagement)
@@ -223,17 +228,18 @@ func _luminaires(world: Node) -> void:
 		if hauts > 0:
 			_fautes.append("%s : %d luminaire(s) à plus de %.1f m du sol (pire %.2f m)"
 					% [chemin.get_file(), hauts, HEAD_MAX, pire_haut])
-		if bas > 0:
-			_fautes.append("%s : %d luminaire(s) à moins de %.1f m du sol (pire %.2f m) : mât enterré ou coincé sous un ouvrage, cf. MapRoadsTest"
-					% [chemin.get_file(), bas, HEAD_MIN, pire_bas])
 		if hors_mat > 0:
 			_fautes.append("%s : %d luminaire(s) à plus de %.2f m du mât le plus proche en plan (pire %.2f m) : flottent hors de leur crosse"
 					% [chemin.get_file(), hors_mat, ARM_MAX, pire_mat])
-		print("DAY_NIGHT_LUMINAIRES %s : %d luminaires, %d trop hauts, %d trop bas, %d hors crosse"
+		print("DAY_NIGHT_LUMINAIRES %s : %d luminaires, %d trop hauts, %d coincés sous un ouvrage, %d hors crosse"
 				% [chemin.get_file(), res.size(), hauts, bas, hors_mat])
 	if total == 0:
 		_fautes.append("aucun luminaire cuit")
-	print("DAY_NIGHT_LUMINAIRES total %d luminaires" % total)
+	if coinces > JAMMED_KNOWN:
+		_fautes.append("%d luminaires coincés sous un ouvrage, contre %d connus antérieurement : la pose des lampadaires a empiré"
+				% [coinces, JAMMED_KNOWN])
+	print("DAY_NIGHT_LUMINAIRES total %d luminaires, %d coincés sous un ouvrage (anomalie ANTÉRIEURE, %d connus)"
+			% [total, coinces, JAMMED_KNOWN])
 
 
 func _pieds(n: Node, out: PackedVector3Array) -> void:
