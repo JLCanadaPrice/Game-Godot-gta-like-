@@ -75,11 +75,21 @@ const TRIMESH_MODELS := ["Business_GasStation"]
 # bâtiment à ce bord vaut donc exactement SETBACK[use], et `yaw = atan2(front.x, front.y)` donne la direction.
 # Relevé sur les 1 196 lots : 487 déjà au contact du dur, 689 franchissables d'une allée droite, 20 barrés par
 # un autre bâtiment, aucun trop long ni trop pentu (dénivelé médian 0,30 m, maxi 1,32 m).
-const DRIVE_ZONES := ["southside"]          # zones traitées ; tableau vide = toutes
+const DRIVE_ZONES := ["southside", "campagne_est"]          # zones traitées ; tableau vide = toutes
 const DRIVE_STOP := 0.0                     # AU CONTACT du bord dur : laisser 0,5 m rendait un liseré d'herbe
                                             # visible à hauteur d'homme sur les rues locales, alors que le contact
                                             # n'empiète pas (vérifié allée par allée, cf. probe_allees_ok)
 const DRIVE_WIDTH := {"house": 3.0, "commerce": 5.0, "office": 5.0, "service": 5.0, "industry": 6.0, "farm": 6.0}
+# Une allée de plus de DRIVE_MAX_SLOPE est injouable quelle que soit la zone. Quand le relief l'impose, on
+# essaie d'abord de la mettre EN BIAIS : traverser un remblai en écharpe étale la même dénivelée sur cos(angle)
+# fois plus de chemin. On garde le plus petit angle qui suffit, des deux côtés, sans déborder de la façade du
+# lot ; si même le plus grand ne suffit pas, le lot est écarté et listé.
+const DRIVE_MAX_SLOPE := 16.0
+# BIAIS ABANDONNÉ, essayé et mesuré le 2026-09-19. Sur les 6 allées trop raides de campagne_est il n'en a sauvé
+# qu'une (22,2 % -> 13,2 % annoncés), et cette allée-là mordait ensuite de 1,70 m SUR LA CHAUSSÉE : partir de
+# travers sur `portee / cos(angle)` suppose que la route est une droite perpendiculaire à la façade, ce qui est
+# faux dès qu'elle tourne. Le tableau est laissé vide plutôt que le code supprimé, pour que l'essai reste lisible.
+const DRIVE_ANGLES := []
 const DRIVE_SURFACE := {"house": "gravier", "commerce": "enrobe", "office": "enrobe", "service": "enrobe",
 		"industry": "beton", "farm": "gravier"}
 # Colonnes de roads.png : « median » (enrobé sans marquage) et « dirt ». Deux aspects pour UN seul matériau, donc
@@ -104,6 +114,7 @@ var heights := PackedFloat32Array()
 var _front_extra := 0.0
 var drives: Array = []
 var drive_skipped: Array = []
+var drive_biais: Array = []
 var locked := PackedByteArray()          # grille du terrain : 1 sous une emprise déjà aplanie
 var mask := PackedByteArray()            # grille de 4 m calée sur PLAYABLE : 1 route / eau / réservé, 2 lot
 var mask_w := 0
@@ -177,7 +188,10 @@ func _initialize() -> void:
 	for lot in lots:
 		per_zone[lot["zone"]] = int(per_zone.get(lot["zone"], 0)) + 1
 		per_use[lot["use"]] = int(per_use.get(lot["use"], 0)) + 1
-	print("DISTRICTS_ALLEES %d posee(s), %d sautee(s) | zones traitees %s" % [drives.size(), drive_skipped.size(), str(DRIVE_ZONES)])
+	print("DISTRICTS_ALLEES %d posee(s), dont %d en biais, %d ecartee(s) | zones traitees %s" % [drives.size(), drive_biais.size(), drive_skipped.size(), str(DRIVE_ZONES)])
+	for s: Dictionary in drive_biais:
+		print("DISTRICTS_ALLEE_BIAIS zone %-14s %-34s en (%.1f, %.1f) : biais de %+.0f deg, %.1f m, pente %.1f %%"
+				% [s["zone"], s["lot"], s["x"], s["z"], s["angle"], s["l"], s["pente"]])
 	for s: Dictionary in drive_skipped:
 		print("DISTRICTS_ALLEE_SAUTEE zone %-14s %-34s en (%.1f, %.1f) : %s" % [s["zone"], s["lot"], s["x"], s["z"], s["cause"]])
 	print("DISTRICTS_ZONES %s" % per_zone)
@@ -452,21 +466,78 @@ func _driveways() -> void:
 		var right := Vector2(-front.y, front.x)
 		var centre := Vector2(float(lot["x"]), float(lot["z"]))
 		var depart := centre + front * (float(lot["size"][2]) * 0.5)
-		var longueur: float = float(lot.get("reach", SETBACK[use])) - DRIVE_STOP
+		var portee: float = float(lot.get("reach", SETBACK[use])) - DRIVE_STOP
 		var largeur: float = float(DRIVE_WIDTH[use])
-		if longueur <= 1.0:
+		if portee <= 1.0:
 			continue
-		var milieu := depart + front * (longueur * 0.5)
-		var barre := _drive_blocked(k, milieu, right, front, Vector2(largeur * 0.5, longueur * 0.5))
+		# Pente : une allée droite avale le remblai de face. En BIAIS elle le traverse en écharpe, donc la même
+		# dénivelée est étalée sur cos(angle) fois plus de chemin. On prend le plus petit angle qui passe sous
+		# DRIVE_MAX_SLOPE, des deux côtés, sans déborder sur le voisin ; si aucun ne passe, on écarte le lot.
+		var dir := front
+		var longueur := portee
+		var pente := _drive_slope(depart, front, portee)
+		var angle := 0.0
+		if pente > DRIVE_MAX_SLOPE:
+			var lateral_max: float = float(lot["size"][0]) * 0.5 + float(LOT_GAP[use]) * 0.4
+			for a_deg: float in DRIVE_ANGLES:
+				var a := deg_to_rad(a_deg)
+				if portee * tan(a) > lateral_max:
+					break                                  # on sortirait de la façade du lot
+				var l2 := portee / cos(a)
+				for cote: float in [1.0, -1.0]:
+					var essai := front.rotated(a * cote)
+					var p2 := _drive_slope(depart, essai, l2)
+					if p2 < pente:
+						pente = p2
+						dir = essai
+						longueur = l2
+						angle = a_deg * cote
+				if pente <= DRIVE_MAX_SLOPE:
+					break
+		if pente > DRIVE_MAX_SLOPE:
+			drive_skipped.append({"x": centre.x, "z": centre.y, "zone": lot["zone"], "lot": lot["name"],
+					"cause": "pente %.1f %% avant aplanissement" % pente})
+			continue
+		var lat := Vector2(-dir.y, dir.x)
+		var milieu := depart + dir * (longueur * 0.5)
+		var barre := _drive_blocked(k, milieu, lat, dir, Vector2(largeur * 0.5, longueur * 0.5))
 		if barre != "":
 			drive_skipped.append({"x": centre.x, "z": centre.y, "zone": lot["zone"], "lot": lot["name"], "cause": barre})
 			continue
 		var y0 := float(lot["base"])
-		var y1 := float(lot.get("road_y", _height(depart + front * longueur)))
-		_flatten_ramp(depart, right, front, largeur * 0.5, longueur, y0, y1)
-		drives.append({"x": depart.x, "z": depart.y, "yaw": yaw, "l": longueur, "w": largeur,
+		var y1 := float(lot.get("road_y", _height(depart + dir * longueur)))
+		_flatten_ramp(depart, lat, dir, largeur * 0.5, longueur, y0, y1)
+		# Pente relue APRÈS aplanissement, et c'est elle qui décide. La mesure d'avant portait sur le terrain
+		# brut ; or _flatten_ramp ne peut pas toucher les cases verrouillées du lot ni celles du couloir routier,
+		# si bien que le profil final garde ses raidillons aux deux bouts. Mesuré : une allée annoncée à 13,2 %
+		# avant aplanissement sortait à 22,2 % dans le monde cuit.
+		var pente_finale := _drive_slope(depart, dir, longueur)
+		if pente_finale > DRIVE_MAX_SLOPE:
+			drive_skipped.append({"x": centre.x, "z": centre.y, "zone": lot["zone"], "lot": lot["name"],
+					"cause": "pente %.1f %% apres aplanissement" % pente_finale})
+			continue
+		var yaw_allee := atan2(dir.x, dir.y)
+		drives.append({"x": depart.x, "z": depart.y, "yaw": yaw_allee, "l": longueur, "w": largeur,
 				"s": String(DRIVE_SURFACE[use]), "y0": y0, "y1": y1})
-		lot["drive"] = [snappedf(longueur, 0.01), snappedf(largeur, 0.01)]
+		lot["drive"] = [snappedf(longueur, 0.01), snappedf(largeur, 0.01), snappedf(yaw_allee, 0.0001)]
+		if angle != 0.0:
+			drive_biais.append({"x": centre.x, "z": centre.y, "zone": lot["zone"], "lot": lot["name"],
+					"angle": angle, "pente": pente, "l": longueur})
+
+
+# Pente maximale, en %, d'un chemin de `longueur` m partant de `depart` dans la direction `dir`, lue sur le
+# terrain tous les DRIVE_SEG m — c'est-à-dire exactement ce que la dalle suivra.
+func _drive_slope(depart: Vector2, dir: Vector2, longueur: float) -> float:
+	# pas de 0,5 m et non DRIVE_SEG : le terrain est une grille de 4 m TRIANGULÉE, pas une surface bilinéaire.
+	# Échantillonner au pas de la dalle sous-estimait la pente locale — mesuré, une allée retenue à 14 % sortait
+	# à 17,0 % dans le monde. Un pas plus fin que le critère ne peut que surestimer, donc jamais laisser passer.
+	var n := maxi(1, ceili(longueur / 0.5))
+	var pire := 0.0
+	for s in n:
+		var a := _height(depart + dir * (longueur * float(s) / n))
+		var b := _height(depart + dir * (longueur * float(s + 1) / n))
+		pire = maxf(pire, 100.0 * absf(b - a) / (longueur / n))
+	return pire
 
 
 # Un autre bâtiment entre la façade et la route : on saute, on ne force pas.

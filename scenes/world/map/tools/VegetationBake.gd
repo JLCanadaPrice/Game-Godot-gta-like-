@@ -130,8 +130,11 @@ func _build_mask() -> void:
 			# couvre pas sur toute sa longueur, il faut donc son propre tampon, sinon on plante un arbre dessus
 			if lot.has("drive"):
 				var longueur := float(lot["drive"][0])
+				# l'allée a SON propre cap : elle peut être en biais quand le relief l'imposait
+				var ya: float = float(lot["drive"][2]) if (lot["drive"] as Array).size() > 2 else yaw
+				var av := Vector2(sin(ya), cos(ya))
 				var depart := Vector2(float(lot["x"]), float(lot["z"])) + front * (float(lot["size"][2]) * 0.5)
-				_stamp_rect(depart + front * (longueur * 0.5), Vector2(-front.y, front.x), front,
+				_stamp_rect(depart + av * (longueur * 0.5), Vector2(-av.y, av.x), av,
 						Vector2(float(lot["drive"][1]) * 0.5 + 2.0, longueur * 0.5 + 2.0))
 	if FileAccess.file_exists(PLACES):
 		var data: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(PLACES))
