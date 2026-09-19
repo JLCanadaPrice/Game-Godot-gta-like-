@@ -827,11 +827,11 @@ func _drive_physics(delta: float) -> void:
 		rotate_y(_steer_input * TURN_RATE * delta * clampf(_drive_speed / DRIVE_MAX_SPEED, -1.0, 1.0))
 
 	# Montée de trottoir : voir _try_step_up, appelée après move_and_slide.
-	# (La réponse précédente était scenes/world/CurbRamp.gd, qui construisait des rampes de collision le
-	# long des trottoirs. Il ne reconnaissait que des StaticBody3D nommés *Walk* portant une seule
-	# BoxShape3D — la disposition du monde d'essai d'origine — alors que les trottoirs de la carte cuite
-	# sont des trimesh de RoadCell et des piles de boîtes sous Sol_*, et il n'était attaché à aucun nœud
-	# de World.tscn : il ne tournait plus du tout. Supprimé le 2026-09-19.)
+	# (L'ancien commentaire renvoyait à CurbRamp.gd, qui construisait des rampes de collision le long des
+	# trottoirs. Ce script ne reconnaît que des StaticBody3D nommés *Walk* portant une seule BoxShape3D —
+	# la disposition du monde d'essai d'origine — et il n'est attaché à aucun nœud de World.tscn : il ne
+	# tournait plus du tout. Les trottoirs de la carte cuite sont des trimesh de RoadCell et des piles de
+	# boîtes sous Sol_*.)
 
 	# recul de choc (décroît vite)
 	_recoil_vel = _recoil_vel.lerp(Vector3.ZERO, clampf(delta * 6.0, 0.0, 1.0))
