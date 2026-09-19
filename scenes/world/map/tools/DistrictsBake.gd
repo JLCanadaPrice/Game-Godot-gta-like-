@@ -76,7 +76,9 @@ const TRIMESH_MODELS := ["Business_GasStation"]
 # Relevé sur les 1 196 lots : 487 déjà au contact du dur, 689 franchissables d'une allée droite, 20 barrés par
 # un autre bâtiment, aucun trop long ni trop pentu (dénivelé médian 0,30 m, maxi 1,32 m).
 const DRIVE_ZONES := ["southside"]          # zones traitées ; tableau vide = toutes
-const DRIVE_STOP := 0.5                     # m gardés devant le bord dur, pour ne jamais empiéter
+const DRIVE_STOP := 0.0                     # AU CONTACT du bord dur : laisser 0,5 m rendait un liseré d'herbe
+                                            # visible à hauteur d'homme sur les rues locales, alors que le contact
+                                            # n'empiète pas (vérifié allée par allée, cf. probe_allees_ok)
 const DRIVE_WIDTH := {"house": 3.0, "commerce": 5.0, "office": 5.0, "service": 5.0, "industry": 6.0, "farm": 6.0}
 const DRIVE_SURFACE := {"house": "gravier", "commerce": "enrobe", "office": "enrobe", "service": "enrobe",
 		"industry": "beton", "farm": "gravier"}
@@ -98,6 +100,8 @@ const MAT_CONCRETE := GEN + "/roads/concrete_material.tres"
 var model: Model
 var net: Network
 var heights := PackedFloat32Array()
+# décalage, en m, entre la ligne de référence de _frontage et le vrai bord dur : 1 m d'accotement sur une artère
+var _front_extra := 0.0
 var drives: Array = []
 var drive_skipped: Array = []
 var locked := PackedByteArray()          # grille du terrain : 1 sous une emprise déjà aplanie
@@ -153,7 +157,7 @@ func _initialize() -> void:
 				continue
 			var offset: float = float(rb.width) * 0.5 + (Network.SIDEWALK_WIDTH if rb.style == "urban" else 1.0)
 			for side_sign: float in [-1.0, 1.0]:
-				_frontage(rb.points, side_sign, offset, mix["arterial"], float(mix["gap"]), poly, zone, rng, 30.0)
+				_frontage(rb.points, side_sign, offset, mix["arterial"], float(mix["gap"]), poly, zone, rng, 30.0, 0.0 if rb.style == "urban" else 1.0)
 		for street: Dictionary in net.local_streets:
 			if street["zone"] != zone["id"] or (mix["street"] as Array).is_empty():
 				continue
@@ -240,8 +244,11 @@ func _stamp_disc(p: Vector2, radius: float) -> void:
 
 # --- lots -----------------------------------------------------------------------------------------------------------
 # Lots le long d'une polyligne, côté side_sign, à partir de `offset` m de l'axe, façade vers la polyligne.
+# `hard_gap` : distance entre cette ligne de référence et le vrai bord dur, reportée sur chaque lot pour que son
+# allée d'accès aille jusqu'au bord et pas jusqu'à la ligne de référence.
 func _frontage(points: PackedVector3Array, side_sign: float, offset: float, groups: Array, gap_scale: float, poly: PackedVector2Array,
-		zone: Dictionary, rng: RandomNumberGenerator, end_margin: float) -> void:
+		zone: Dictionary, rng: RandomNumberGenerator, end_margin: float, hard_gap := 0.0) -> void:
+	_front_extra = hard_gap
 	var line := PackedVector2Array()
 	for p in points:
 		line.append(Vector2(p.x, p.z))
@@ -328,7 +335,14 @@ func _try_lot(center: Vector2, front: Vector2, entry: Dictionary, size: Vector3,
 	_mask_mark(center, right, front, half + Vector2(2.0, 2.0))
 	_flatten(center, right, front, Vector2(size.x * 0.5, size.z * 0.5), base)
 	lots.append({"name": entry["name"], "use": use, "zone": zone["id"], "x": snappedf(center.x, 0.01), "z": snappedf(center.y, 0.01),
-			"base": snappedf(base, 0.01), "yaw": snappedf(atan2(front.x, front.y), 0.0001), "size": [size.x, size.y, size.z], "tint": _tint(use)})
+			"base": snappedf(base, 0.01), "yaw": snappedf(atan2(front.x, front.y), 0.0001), "size": [size.x, size.y, size.z], "tint": _tint(use),
+			# portée d'allée : distance de la face avant au BORD DUR. Elle vaut SETBACK plus le décalage que
+			# _frontage a mis entre sa ligne de référence et ce bord — 1 m d'accotement sur une artère non
+			# urbaine, rien ailleurs. Sans ce terme l'allée s'arrêtait 1 m trop tôt et laissait de l'herbe.
+			"reach": snappedf(float(SETBACK[use]) + _front_extra, 0.01),
+			# hauteur de la ROUTE en face (celle du ruban, pas du terrain creusé à côté) : l'allée doit y monter,
+			# sinon elle finit sur une marche. Mesuré avant correction : 0,33 m de marche en médiane, 0,50 m au pire.
+			"road_y": snappedf(road_y, 0.01)})
 	return true
 
 
@@ -343,6 +357,7 @@ func _tint(use: String) -> Array:
 # Maisons autour du plateau de demi-tour d'une rue locale : dans l'axe de la rue et de part et d'autre, façade vers le
 # centre du plateau.
 func _cul_de_sac(rb, groups: Array, poly: PackedVector2Array, zone: Dictionary, rng: RandomNumberGenerator) -> void:
+	_front_extra = 0.0                       # le bulbe est sa propre reference : pas d'accotement a rattraper
 	var pts: PackedVector3Array = rb.points
 	var n := pts.size()
 	var tip := Vector2(pts[n - 1].x, pts[n - 1].z)
@@ -437,7 +452,7 @@ func _driveways() -> void:
 		var right := Vector2(-front.y, front.x)
 		var centre := Vector2(float(lot["x"]), float(lot["z"]))
 		var depart := centre + front * (float(lot["size"][2]) * 0.5)
-		var longueur: float = float(SETBACK[use]) - DRIVE_STOP
+		var longueur: float = float(lot.get("reach", SETBACK[use])) - DRIVE_STOP
 		var largeur: float = float(DRIVE_WIDTH[use])
 		if longueur <= 1.0:
 			continue
@@ -447,7 +462,7 @@ func _driveways() -> void:
 			drive_skipped.append({"x": centre.x, "z": centre.y, "zone": lot["zone"], "lot": lot["name"], "cause": barre})
 			continue
 		var y0 := float(lot["base"])
-		var y1 := _height(depart + front * longueur)
+		var y1 := float(lot.get("road_y", _height(depart + front * longueur)))
 		_flatten_ramp(depart, right, front, largeur * 0.5, longueur, y0, y1)
 		drives.append({"x": depart.x, "z": depart.y, "yaw": yaw, "l": longueur, "w": largeur,
 				"s": String(DRIVE_SURFACE[use]), "y0": y0, "y1": y1})
@@ -510,19 +525,41 @@ func _flatten_ramp(depart: Vector2, right: Vector2, front: Vector2, half_w: floa
 			heights[idx] = lerpf(cible, heights[idx], smoothstep(0.0, BLEND, outside))
 
 
-# Un quad par allée, deux triangles, sans collision : le terrain aplani dessous porte déjà le joueur.
+# L'allée ÉPOUSE le terrain, en tronçons de DRIVE_SEG m, au lieu d'être une rampe droite d'un seul quad.
+#
+# Une rampe droite tenait tant que _flatten_ramp pouvait mettre le terrain à la même pente. Ce n'est pas le cas
+# près de la route : les cases du couloir routier sont exclues de l'aplanissement, et le dernier mètre de dalle
+# se retrouvait en l'air — mesuré sur les sommets cuits, jusqu'à 0,343 m au-dessus du sol. En relisant la hauteur
+# du terrain tous les DRIVE_SEG m, la dalle reste à DRIVE_CLEAR du sol sur toute sa longueur, y compris là où
+# l'aplanissement n'a pas pu passer.
+const DRIVE_SEG := 2.0
+
+
 func _drive_quad(st: SurfaceTool, d: Dictionary) -> void:
 	var yaw := float(d["yaw"])
 	var front := Vector3(sin(yaw), 0.0, cos(yaw))
 	var right := Vector3(-front.z, 0.0, front.x)
 	var l := float(d["l"])
 	var hw := float(d["w"]) * 0.5
-	var dessus := DRIVE_CLEAR - DRIVE_SINK          # au ras du terrain aplani, pas 10 cm au-dessus
-	var base := Vector3(float(d["x"]), float(d["y0"]) + dessus, float(d["z"]))
-	var loin := Vector3(float(d["x"]), float(d["y1"]) + dessus, float(d["z"])) + front * l
 	var u: float = float(DRIVE_U.get(String(d["s"]), 0.2246))
-	var coins := [base - right * hw, base + right * hw, loin + right * hw, loin - right * hw]
-	var uvs := [Vector2(u, 0.0), Vector2(u + 0.004, 0.0), Vector2(u + 0.004, l / DRIVE_TEX), Vector2(u, l / DRIVE_TEX)]
+	var depart := Vector2(float(d["x"]), float(d["z"]))
+	var av := Vector2(front.x, front.z)
+	var n_seg := maxi(1, ceili(l / DRIVE_SEG))
+	for k in n_seg:
+		var d0 := l * float(k) / n_seg
+		var d1 := l * float(k + 1) / n_seg
+		_drive_segment(st, depart, av, front, right, hw, d0, d1, u)
+
+
+func _drive_segment(st: SurfaceTool, depart: Vector2, av: Vector2, front: Vector3, right: Vector3, hw: float,
+		d0: float, d1: float, u: float) -> void:
+	var y0 := _height(depart + av * d0) + DRIVE_CLEAR
+	var y1 := _height(depart + av * d1) + DRIVE_CLEAR
+	var a := Vector3(depart.x, y0, depart.y) + front * d0
+	var b := Vector3(depart.x, y1, depart.y) + front * d1
+	var coins := [a - right * hw, a + right * hw, b + right * hw, b - right * hw]
+	var uvs := [Vector2(u, d0 / DRIVE_TEX), Vector2(u + 0.004, d0 / DRIVE_TEX),
+			Vector2(u + 0.004, d1 / DRIVE_TEX), Vector2(u, d1 / DRIVE_TEX)]
 	# même convention que PlacesBake._quad : on ordonne pour que la normale géométrique s'oppose à la normale voulue
 	var geom: Vector3 = (coins[1] - coins[0]).cross(coins[2] - coins[0]) + (coins[2] - coins[0]).cross(coins[3] - coins[0])
 	if geom.dot(Vector3.UP) >= 0.0:
