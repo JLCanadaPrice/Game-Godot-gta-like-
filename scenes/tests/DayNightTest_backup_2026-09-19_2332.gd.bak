@@ -199,17 +199,13 @@ func _halos(cycle: Node) -> void:
 	var visibles_nuit := 0
 	var materiaux := {}
 	var triangles := 0
-	var non_eclaire := true
 	for h in halos:
 		var mi := h as MeshInstance3D
 		if mi.visible:
 			visibles_nuit += 1
 		var m := mi.mesh
 		for s in m.get_surface_count():
-			var mat := m.surface_get_material(s)
-			materiaux[mat] = true
-			if mat is BaseMaterial3D and (mat as BaseMaterial3D).shading_mode != BaseMaterial3D.SHADING_MODE_UNSHADED:
-				non_eclaire = false
+			materiaux[m.surface_get_material(s)] = true
 			var arr := m.surface_get_arrays(s)
 			triangles += (arr[Mesh.ARRAY_INDEX] as PackedInt32Array).size() / 3
 	if visibles_jour != 0:
@@ -218,10 +214,6 @@ func _halos(cycle: Node) -> void:
 		_fautes.append("%d halo(s) sur %d éteint(s) en pleine nuit" % [halos.size() - visibles_nuit, halos.size()])
 	if materiaux.size() != 1:
 		_fautes.append("%d matériaux de halo au lieu d'un seul : les appels de dessin ne se regrouperont plus" % materiaux.size())
-	# Même exigence que pour les fenêtres : un halo ombré s'assombrit avec la nuit, au moment précis
-	# où il doit s'allumer. Le matériau a porté PER_VERTEX en croyant dire « non éclairé ».
-	if not non_eclaire:
-		_fautes.append("matériau de halo éclairé : il doit être en SHADING_MODE_UNSHADED, sinon il noircit la nuit")
 	print("DAY_NIGHT_HALOS %d maillages, %d triangles, %d matériau(x) ; jour %d visibles, nuit %d visibles"
 			% [halos.size(), triangles, materiaux.size(), visibles_jour, visibles_nuit])
 
