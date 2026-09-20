@@ -128,10 +128,6 @@ const VIEWS := [
 	["nuit_feu_a_sol", Vector3(-523.7, 1.9, -86.6), Vector3(-523.7, 3.7, -94.6), "", 1.0],
 	["nuit_feu_b_sol", Vector3(-753.8, 1.9, -257.9), Vector3(-753.8, 3.7, -249.9), "", 1.0],
 	["jour_feu_a_sol", Vector3(-523.7, 1.9, -86.6), Vector3(-523.7, 3.7, -94.6), "", 12.0],
-	# eclairage des vehicules (2026-09-20). A utiliser avec --trafic= et --cadrer=, sinon la rue est
-	# vide : cet outil coupe les spawners par defaut. Rue du centre-ville, a hauteur d'homme.
-	["nuit_vehicules_sol", Vector3(-532.0, 1.9, -40.0), Vector3(-532.0, 2.1, -150.0), "", 1.0],
-	["jour_vehicules_sol", Vector3(-532.0, 1.9, -40.0), Vector3(-532.0, 2.1, -150.0), "", 12.0],
 	["aube_artere_sol", Vector3(-1606.0, 1.7, -8.0), Vector3(-1624.0, 1.5, -80.0), "sol", 6.2],
 ]
 const SETTLE_FRAMES := 40
@@ -141,8 +137,6 @@ var _hour := -1.0
 var _cycle: Node = null
 var _sans_image := false
 var _feux := -1                      # etat impose aux feux tricolores, -1 = les laisser vivre
-var _trafic := 0.0                   # s d'attente avec les spawners ACTIFS avant de capturer
-var _cadrer := ""                    # "phare" | "frein" | "gyro" : recadre sur un vrai vehicule
 
 
 func _ready() -> void:
@@ -161,17 +155,6 @@ func _ready() -> void:
 			bassin = arg.substr(9).to_int()
 		elif arg == "--toutes-lampes":
 			toutes = true
-		elif arg.begins_with("--trafic="):
-			# Laisse les spawners tourner N secondes avant de capturer, et TELEPORTE le joueur sous
-			# la camera : LoopSpawner fait apparaitre ses vehicules dans un anneau de 60 a 400 m
-			# autour du JOUEUR (cf. _process_proximity), donc sans le deplacer la rue reste vide.
-			# Mesure faussee expres : les 6 vues de reference, elles, gardent les spawners coupes.
-			_trafic = arg.substr(9).to_float()
-		elif arg.begins_with("--cadrer="):
-			# Va chercher un VRAI vehicule dans l'etat voulu et cadre dessus. Sans ca une capture de
-			# rue est une loterie : les voitures suivent leur circuit et ne passent pas forcement
-			# dans le champ d'une camera fixe. Rien n'est deplace ni truque cote vehicule.
-			_cadrer = arg.substr(9)
 		elif arg.begins_with("--feux="):
 			# Fige TOUS les feux tricolores dans un etat, le temps de la capture. Sans ca l'orange
 			# ne dure que le temps d'une transition et ne se laisse pas photographier : il faudrait
@@ -203,9 +186,8 @@ func _ready() -> void:
 		_cycle.set("paused", true)
 		if _hour >= 0.0:
 			_cycle.call("set_hour", _hour)
-	if _trafic <= 0.0:
-		for spawner_name in ["CarSpawner", "NpcSpawner"]:
-			world.get_node(spawner_name).set_process(false)
+	for spawner_name in ["CarSpawner", "NpcSpawner"]:
+		world.get_node(spawner_name).set_process(false)
 	var cam := Camera3D.new()
 	cam.far = 4000.0
 	add_child(cam)
@@ -245,15 +227,6 @@ func _ready() -> void:
 				_cycle.call("set_hour", _hour)
 		cam.global_position = from
 		cam.look_at(to, Vector3.UP)
-		if _trafic > 0.0:
-			await _peupler(from, to)
-			if _cadrer != "":
-				var vue := _cadrer_sur(from)
-				if not vue.is_empty():
-					from = vue[0]
-					to = vue[1]
-					cam.global_position = from
-					cam.look_at(to, Vector3.UP)
 		for k in SETTLE_FRAMES:
 			await get_tree().process_frame
 		# moyenne du temps GPU sur les 20 dernières images : une image isolée est trop bruitée pour
@@ -300,77 +273,6 @@ func _tous_les_feux(n: Node) -> Array[Node]:
 	for c in n.get_children():
 		out.append_array(_tous_les_feux(c))
 	return out
-
-
-# Amene le joueur sous la camera et laisse la circulation se remplir, pour --trafic=.
-func _peupler(depuis: Vector3, vers: Vector3) -> void:
-	var joueur := get_tree().get_first_node_in_group("player") as Node3D
-	if joueur != null:
-		var arriere := depuis - vers
-		arriere.y = 0.0
-		if arriere.length() > 0.01:
-			arriere = arriere.normalized() * 6.0
-		joueur.global_position = depuis + arriere - Vector3(0, 1.6, 0)
-	var t := 0.0
-	while t < _trafic:
-		await get_tree().process_frame
-		t += get_process_delta_time()
-	print("MAP_SHOT_TRAFIC %d vehicules apres %.1f s" % [get_tree().get_nodes_in_group(&"vehicle").size(), _trafic])
-
-
-# Cadre sur un vrai vehicule dans l'etat demande, pour --cadrer=.
-#   phare : devant un vehicule quelconque, on voit ses optiques de face
-#   frein : derriere un vehicule qui freine vraiment
-#   gyro  : devant un vehicule d'urgence
-func _cadrer_sur(depuis: Vector3) -> Array:
-	var choisi: Node3D = null
-	var meilleure := INF
-	for v in get_tree().get_nodes_in_group(&"vehicle"):
-		var body := v as Node3D
-		if body == null or not body.is_inside_tree() or not body.visible:
-			continue
-		if _cadrer == "frein" and not (body.has_method("brake_lights_on") and body.call("brake_lights_on")):
-			continue
-		if _cadrer == "gyro":
-			var mp = body.get("model_path")
-			if mp == null or not String(mp).to_lower().contains("emergency"):
-				continue
-		var d := body.global_position.distance_to(depuis)
-		if d < meilleure:
-			meilleure = d
-			choisi = body
-	if choisi == null:
-		print("MAP_SHOT_CADRE aucun vehicule dans l'etat %s" % _cadrer)
-		return []
-	# le corps regarde son -Z local (Car._dir_from_heading)
-	var avant: Vector3 = -choisi.global_transform.basis.z
-	avant.y = 0.0
-	avant = avant.normalized()
-	var droite := avant.cross(Vector3.UP).normalized()
-	var pos: Vector3
-	var vise: Vector3
-	if _cadrer == "frein":
-		# derriere, legerement de cote : on voit les feux rouges ET la voiture
-		pos = choisi.global_position - avant * 7.0 + droite * 2.2 + Vector3(0, 1.5, 0)
-		vise = choisi.global_position + Vector3(0, 0.7, 0)
-	else:
-		# A COTE de la voiture et LEGEREMENT EN ARRIERE, en regardant le long de son faisceau : c'est
-		# le seul cadrage ou l'on voit d'un coup ses optiques allumees ET le cone qu'elles posent sur
-		# la chaussee. Vise de face, les cones tombent sous le bord bas de l'image ; vise de loin,
-		# la voiture est trop petite pour qu'on lise ses optiques.
-		pos = choisi.global_position - avant * 2.5 + droite * 3.2 + Vector3(0, 1.4, 0)
-		vise = choisi.global_position + avant * 14.0 + Vector3(0, 0.1, 0)
-	# FIGE la circulation : entre le cadrage et le declenchement il s'ecoule SETTLE_FRAMES plus les
-	# 120 images de mesure, soit ~2,7 s, pendant lesquelles une voiture a 10 m/s parcourt 27 m et
-	# sort du champ. Mesure faite : sans ce gel on photographiait l'arriere d'une voiture partie.
-	# L'etat de chaque vehicule est fige tel quel, freinage compris.
-	var geles := 0
-	for v in get_tree().get_nodes_in_group(&"vehicle"):
-		(v as Node).set_physics_process(false)
-		(v as Node).set_process(false)
-		geles += 1
-	print("MAP_SHOT_CADRE %s : %s a %.1f m, %d vehicules figes" % [_cadrer, choisi.name, meilleure, geles])
-	return [pos, vise]
 
 
 func _ground(p: Vector3) -> float:

@@ -1,0 +1,24 @@
+[gd_resource type="StandardMaterial3D" format=3]
+
+; Matériau UNIQUE des PHARES allumés, partagé par tous les véhicules du jeu. Un seul matériau, donc
+; les optiques d'un même modèle tiennent dans un MultiMesh et coûtent UN appel de dessin pour toutes
+; les voitures de ce modèle. Jamais une copie par véhicule : 252 voitures en circulation, ce serait
+; 252 appels que rien ne peut regrouper (régression déjà payée sur les mâts, cf. LampPoleLayer).
+;
+; NON ÉCLAIRÉ, shading_mode = 0 : un phare allumé est une source, pas une surface qui reçoit la
+; lumière. Rappel du chiffre, payé trois fois sur ce projet : 0 = UNSHADED, 1 = PER_PIXEL,
+; 2 = PER_VERTEX.
+;
+; Ce matériau n'habille PAS un quadrilatère ajouté : il habille les triangles d'optique EXTRAITS du
+; maillage du modèle (cf. VehicleLightParts). C'est la géométrie du véhicule qui s'allume.
+;
+; Léger débord géométrique : les triangles allumés sont rendus tels quels, à leur place exacte, avec
+; grow pour qu'ils passent devant l'optique éteinte sans se battre en z.
+
+[resource]
+resource_name = "vehicle_optic_on"
+shading_mode = 0
+albedo_color = Color(1, 0.97, 0.88, 1)
+disable_receive_shadows = true
+grow = true
+grow_amount = 0.006

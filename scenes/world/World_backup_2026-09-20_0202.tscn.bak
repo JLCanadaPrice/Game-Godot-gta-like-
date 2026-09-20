@@ -3,7 +3,6 @@
 [ext_resource type="PackedScene" uid="uid://csryoo0wwc28y" path="res://scenes/player/Player.tscn" id="1"]
 [ext_resource type="Script" path="res://scenes/world/DayNightCycle.gd" id="cycle_jour_nuit"]
 [ext_resource type="Script" path="res://scenes/world/StreetLights.gd" id="lampadaires_nuit"]
-[ext_resource type="Script" path="res://scenes/world/VehicleLights.gd" id="phares_vehicules"]
 [ext_resource type="PackedScene" uid="uid://c3au1f1btxufy" path="res://scenes/ui/HUD.tscn" id="2"]
 [ext_resource type="PackedScene" path="res://scenes/ui/MapMenu.tscn" id="3"]
 [ext_resource type="PackedScene" uid="uid://ujk3wq5k15fd" path="res://scenes/ui/BuildingPurchaseUI.tscn" id="6"]
@@ -91,9 +90,6 @@ script = ExtResource("cycle_jour_nuit")
 
 [node name="StreetLights" type="Node3D" parent="."]
 script = ExtResource("lampadaires_nuit")
-
-[node name="VehicleLights" type="Node3D" parent="."]
-script = ExtResource("phares_vehicules")
 
 [node name="Ground" type="Node3D" parent="." unique_id=820883506]
 
