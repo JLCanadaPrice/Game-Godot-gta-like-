@@ -4,8 +4,7 @@ extends Node
 # spawners coupés) :
 #  - chaque bâtiment de Downtown/Buildings : maillage, collision (un rayon descendant au centre de son emprise touche
 #    son toit), emprise dans l'intérieur de son îlot, hors des boutiques, des lieux (places.json) et des autres bâtiments ;
-#  - silhouette : gratte-ciels du SkyScraperBundle au cœur (les six retenus présents et marqués sans boîte
-#    lointaine ; Scraper001 retiré le 2026-09-20, sans fenêtre, remplacé par un second Mk6), plus haut
+#  - silhouette : gratte-ciels du SkyScraperBundle au cœur (tous présents, marqués sans boîte lointaine), plus haut
 #    bâtiment du cœur au moins deux fois plus haut que la moyenne des îlots bas ;
 #  - optimisations : boîtes d'occultation posées dans le volume des bâtiments, au ras du sol pour 70 % au moins d'entre
 #    eux, bâtiments pris en charge par CityRenderOptimizer (LOD lointain) et
@@ -17,13 +16,7 @@ const WORLD := preload("res://scenes/world/World.tscn")
 const Layout := preload("res://scenes/world/downtown/DowntownLayout.gd")
 const Spec := preload("res://scenes/world/downtown/DowntownSpec.gd")
 const PLACES_JSON := "res://scenes/world/map/generated/places/places.json"
-# Gratte-ciels que le coeur DOIT porter. Scraper001 en a ete RETIRE le 2026-09-20 : c'est une
-# boite de 28 triangles sans aucune fenetre modelisee, qui restait donc noire toutes les nuits au
-# milieu du coeur. Il est remplace par un second Mk6, de meme emprise (33,0 x 33,0 m) et de
-# hauteur quasi identique (152,3 m contre 153,0), qui lui a un vrai vitrage. Le modele reste dans
-# le pack et reutilisable ; il ne doit simplement plus etre pose.
-const SKY_MODELS := ["Mk1", "Mk2", "Mk3", "Mk4", "Mk5", "Mk6"]
-const SKY_INTERDITS := ["Scraper001"]
+const SKY_MODELS := ["Mk1", "Mk2", "Mk3", "Mk4", "Mk5", "Mk6", "Scraper001"]
 
 var _errors: Array[String] = []
 
@@ -140,9 +133,6 @@ func _ready() -> void:
 	for name: String in SKY_MODELS:
 		if not sky.has(name) or not sky[name]:
 			_errors.append("gratte-ciel %s absent ou sans marque no_hlod" % name)
-	for name: String in SKY_INTERDITS:
-		if sky.has(name):
-			_errors.append("gratte-ciel %s repose alors qu'il a ete retire : il n'a aucune fenetre" % name)
 	if core_top < low_mean * 2.0:
 		_errors.append("silhouette plate : cœur %.0f m, îlots bas %.0f m" % [core_top, low_mean])
 	# boîtes au ras du sol : sans elles, rien de ce qui roule ou marche derrière un bâtiment n'est masqué vu de la rue

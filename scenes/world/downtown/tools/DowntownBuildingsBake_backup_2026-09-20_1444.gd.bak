@@ -35,25 +35,8 @@ const GAP_MAX := 1.5
 const SHOP_MARGIN := 3.0
 # gratte-ciels : haut de la boîte d'occultation le plus haut essayé, en fraction de la hauteur (sous les retraits, flèches
 # et jardins, relevé à la main ; vérifié par rayons comme les autres, cf. _checked_occluders)
-# Scraper001 n'est plus pose (cf. SKY_ORDER) : son entree reste pour que le modele redevienne
-# utilisable sans re-mesurer, mais elle n'est plus lue.
 const SKY_OCCLUDER := {"Mk1": 0.42, "Mk2": 0.55, "Mk3": 0.9, "Mk4": 0.9, "Mk5": 0.78, "Mk6": 0.88, "Scraper001": 0.95}
-# Scraper001 A ETE RETIRE le 2026-09-20 et remplace par un SECOND Mk6.
-#
-# Pourquoi : Scraper001 est une boite de 28 triangles, une seule surface, sans aucune fenetre
-# modelisee et sans atlas ou en chercher. Il restait donc NOIR toutes les nuits, au milieu du
-# coeur, a 153 m de haut. Mk6 est le remplacant exact : 33,0 x 33,0 m d'emprise contre 33,0 x
-# 33,0, et 152,3 m de haut contre 153,0 — la silhouette du centre-ville ne bouge pas — et il
-# porte un VRAI vitrage (surfaces LightWindow et DarkWindow), donc ses fenetres s'allument.
-#
-# Mk6 est donc pose DEUX FOIS. C'est assume : deux tours jumelles dans un coeur de ville est
-# une situation banale, et c'etait le seul choix qui garde l'emprise et la hauteur. Les cinq
-# autres Mk sont deja utilises une fois chacun (Mk3 par _lincoln), et Mk3 est le seul qui n'ait
-# pas de vitrage separable — le reprendre aurait refait le probleme qu'on corrige.
-#
-# `towers.erase(name)` ne retire que la PREMIERE occurrence : la seconde reste disponible pour
-# le bloc suivant, ce qui est exactement le comportement voulu.
-const SKY_ORDER := ["Mk1", "Mk2", "Mk6", "Mk6", "Mk4", "Mk5"]
+const SKY_ORDER := ["Mk1", "Mk2", "Mk6", "Scraper001", "Mk4", "Mk5"]
 
 # Fenêtres allumées la nuit, et jusqu'où elles portent. La question mérite d'être posée : au-delà de
 # 650 m DowntownHLOD remplace chaque bâtiment par une boîte de silhouette, et si les fenêtres
