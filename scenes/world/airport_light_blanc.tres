@@ -1,0 +1,21 @@
+[gd_resource type="StandardMaterial3D" format=3]
+
+; Feu de balisage aéroportuaire, couleur « blanc ». UN matériau par couleur, partagé par tous les feux
+; de cette couleur : c'est la condition pour que le moteur regroupe les maillages, comme pour les
+; halos de lampadaire (cf. LampPoleLayer, où une copie par poteau avait fabriqué 378 appels).
+;
+; shading_mode = 0 : NON ÉCLAIRÉ. Un feu est une source, pas une surface qui reçoit la lumière.
+; ATTENTION : 0 = UNSHADED, 1 = PER_PIXEL, 2 = PER_VERTEX. Le 2 avait déjà été posé par erreur sur
+; les halos de lampadaire, qui sortaient presque noirs de nuit.
+;
+; La couleur est posée NETTEMENT SOUS 1.0 : le tonemapper ACES délave tout ce qui approche 1.0 et un
+; rouge à 1.0 ressort saumon (mesuré : (184, 121, 82)). À 0,62 il ressort (178, 1, 3), un vrai rouge.
+;
+; Les feux ne se fondent pas au crépuscule, ils S'ALLUMENT : un balisage de piste est commandé par un
+; interrupteur, pas par un gradateur. StreetLights montre ou cache le groupe airport_glow.
+
+[resource]
+resource_name = "airport_light_blanc"
+shading_mode = 0
+albedo_color = Color(0.78, 0.76, 0.68, 1)
+disable_receive_shadows = true

@@ -1,0 +1,22 @@
+[gd_resource type="StandardMaterial3D" format=3]
+
+; Gyrophare, état « ambre ». L'ambre ne sert qu'à l'ARRIÈRE des camions de pompiers : dans la vraie vie il dévie la circulation, il n'est jamais mêlé au rouge et bleu de la police.
+;
+; UN matériau par état, partagé par TOUS les véhicules du jeu, et tout le monde sur la MÊME phase :
+; c'est ce qui permet d'avoir cinq matériaux pour la ville entière au lieu d'un par véhicule. Une
+; copie par véhicule ferait autant d'appels de dessin que de voitures, que rien ne regrouperait
+; (régression déjà payée sur les mâts de lampadaire, cf. LampPoleLayer).
+;
+; Couleur SOUS 1.0 : le tonemapper ACES délave les hautes lumières et un rouge posé à 1.0 ressort
+; saumon (184, 121, 82 mesuré). Mesuré, pas deviné.
+;
+; NON ÉCLAIRÉ, shading_mode = 0. Rappel du chiffre, payé trois fois sur ce projet :
+; 0 = UNSHADED, 1 = PER_PIXEL, 2 = PER_VERTEX.
+
+[resource]
+resource_name = "vehicle_gyro_ambre"
+shading_mode = 0
+albedo_color = Color(0.78, 0.44, 0.02, 1)
+disable_receive_shadows = true
+grow = true
+grow_amount = 0.006

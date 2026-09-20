@@ -1,0 +1,340 @@
+extends Node3D
+
+# Phares des véhicules (chantier jour/nuit). Allumés la nuit, éteints le jour, pilotés par le même
+# signal `hour_changed` que les lampadaires et les fenêtres.
+#
+# ON ALLUME LA GÉOMÉTRIE DU MODÈLE, on n'ajoute rien par-dessus. VehicleLightParts extrait du
+# maillage de chaque modèle les triangles qui SONT déjà les optiques — repérés par la couleur de
+# palette qu'ils échantillonnent ET par leur position sur la caisse, les deux étant nécessaires (la
+# couleur seule confond un phare avec une vitre, la position seule confond une optique avec la
+# tôle). Ces triangles-là sont redessinés par-dessus eux-mêmes avec le matériau allumé.
+#
+# DEUX NIVEAUX, volontairement séparés parce qu'ils n'ont pas du tout le même coût :
+#
+#  1. L'ÉMISSION, sur tous les véhicules proches. Les optiques d'un MÊME MODÈLE tiennent dans un
+#     MultiMesh — même géométrie, même matériau — donc UN appel de dessin par modèle visible, pas
+#     par voiture. À 252 voitures tirées dans 72 modèles, seuls les modèles réellement présents à
+#     l'écran coûtent quelque chose.
+#  2. DE VRAIES LUMIÈRES, un bassin BORNÉ de SpotLight3D qui éclairent réellement la route, repris
+#     du bassin de StreetLights. Le joueur est prioritaire, puis les véhicules les plus proches. Une
+#     lumière n'ajoute aucun appel de dessin mais coûte dans la passe d'ombrage : 252 voitures x 2
+#     seraient 504 sources, ce qu'on ne peut pas se permettre sur l'UHD 750.
+
+const Parts := preload("res://scenes/world/VehicleLightParts.gd")
+const OPTIC_MATERIAL := "res://scenes/world/vehicle_optic_material.tres"
+const BRAKE_MATERIAL := "res://scenes/world/vehicle_brake_material.tres"
+const GYRO_MATERIALS := ["res://scenes/world/vehicle_gyro_rouge_material.tres",
+		"res://scenes/world/vehicle_gyro_bleu_material.tres",
+		"res://scenes/world/vehicle_gyro_eteint_material.tres"]
+const CATALOGUE := "res://resources/vehicle_models"
+
+# RYTHME DU GYROPHARE : période de 0,80 s en quatre temps de 0,20 s — rouge, éteint, bleu, éteint.
+# Soit 1,25 éclat par seconde et par couleur, l'allure d'un vrai bandeau. Plus rapide ça stroboscope
+# et ça scintille de loin ; plus lent ça ne se lit plus comme une urgence. Le temps mort entre deux
+# couleurs est ce qui fait l'ÉCLAT : sans lui le gyrophare vire du rouge au bleu comme une guirlande.
+#
+# TOUT LE MONDE EN PHASE, sur l'horloge du moteur et non sur un compteur par véhicule. C'est ce qui
+# permet de n'avoir que TROIS matériaux pour toute la ville — un par état — au lieu d'un par voiture.
+const GYRO_PERIODE := 0.80
+const GYRO_TEMPS := [0, 2, 1, 2]
+
+# Rôles qui portent un gyrophare : sur une voiture civile, la peinture du toit passerait le test de
+# couleur et on allumerait un toit. Sert dès l'extraction.
+const ROLES_URGENCE := ["police", "emergency", "swat"]
+
+@export var enabled := true
+@export var portee := 260.0              # au-delà, une optique fait moins d'un pixel
+@export var vraies_lumieres := true
+@export var bassin := 6                  # paires de phares réellement éclairantes (12 SpotLight3D)
+# Fige le gyrophare sur un état, pour la capture : sans ça l'éclat ne dure que 0,20 s et on ne
+# photographie pas la couleur qu'on veut. -1 = il clignote normalement. N'a d'effet que sur l'image.
+@export var gyro_force := -1
+
+# Réglages des spots, calés sur la géométrie : optique à ~0,6 m du sol, on veut poser une vraie
+# flaque sur la chaussée devant la voiture sans écraser le premier plan.
+const SPOT_ANGLE := 30.0
+const SPOT_RANGE := 30.0
+const SPOT_ENERGY := 5.0
+const SPOT_COLOR := Color(1.00, 0.97, 0.89)
+const SPOT_TILT := 0.16                  # plongée du cône vers la route
+const SPOT_AVANCE := 0.15                # m devant le nez, pour ne pas éclairer sa propre carrosserie
+
+var _night := 0.0
+var _material: StandardMaterial3D
+var _mat_frein: StandardMaterial3D
+var _mats_gyro: Array = []
+var _roles := {}                         # chemin de modèle -> rôle du catalogue
+var _gyro_etat := -1
+var _par_modele := {}                    # chemin de modèle -> {"mm": MultiMeshInstance3D, "n": int}
+var _spots: Array[SpotLight3D] = []
+var _modeles_dessines := 0
+var _optiques := 0
+
+
+func _ready() -> void:
+	if not enabled:
+		return
+	_material = load(OPTIC_MATERIAL)
+	_mat_frein = load(BRAKE_MATERIAL)
+	for m in GYRO_MATERIALS:
+		_mats_gyro.append(load(m))
+	_lire_roles()
+	var cycle := get_parent().get_node_or_null("DayNight") if get_parent() != null else null
+	if cycle != null:
+		cycle.hour_changed.connect(_on_hour_changed)
+		_apply_night(cycle.night_factor())
+	else:
+		_apply_night(1.0)
+	print("VEHICLE_LIGHTS pret, portee %.0f m, bassin %d paires de vrais phares" % [portee, bassin])
+
+
+# Rôle de chaque modèle, lu une fois dans le catalogue : on n'extrait un gyrophare QUE sur les
+# véhicules qui en portent un, sinon la peinture de toit d'une civile passerait le test de couleur.
+func _lire_roles() -> void:
+	var d := DirAccess.open(CATALOGUE)
+	if d == null:
+		return
+	d.list_dir_begin()
+	var f := d.get_next()
+	while f != "":
+		if f.ends_with(".tres"):
+			var data = load(CATALOGUE.path_join(f))
+			if data != null and not data.model_paths.is_empty():
+				_roles[String(data.model_paths[0])] = str(data.role)
+		f = d.get_next()
+
+
+func _urgence(cle: String) -> bool:
+	return String(_roles.get(cle, "")) in ["police", "emergency", "swat"]
+
+
+func _on_hour_changed(_hour: float, night: float) -> void:
+	if not is_equal_approx(night, _night):
+		_apply_night(night)
+
+
+func _apply_night(night: float) -> void:
+	_night = night
+	var allume := night > 0.0
+	# un modèle sans optique repérable est mémorisé avec un calque nul : il ne faut pas le suivre
+	for cle in _par_modele:
+		for fam in _par_modele[cle]:
+			var mi = _par_modele[cle][fam]
+			if mi != null:
+				(mi as MultiMeshInstance3D).visible = false
+	for s in _spots:
+		s.visible = allume
+		s.light_energy = SPOT_ENERGY * night
+
+
+func _process(_delta: float) -> void:
+	# Pas de sortie sur la nuit : les FEUX DE FREINAGE servent surtout de jour, et les GYROPHARES
+	# clignotent en permanence. Seuls les phares et les vrais spots suivent le crépuscule.
+	if not enabled:
+		_vider()
+		return
+	var cam := get_viewport().get_camera_3d()
+	if cam == null:
+		return
+	var oeil := cam.global_position
+	var portee2 := portee * portee
+	# regroupement par MODÈLE : c'est la condition du MultiMesh, une instance ne peut porter qu'un
+	# seul maillage et chaque modèle a ses propres optiques
+	var par_modele := {}
+	var freinent := {}
+	var gyros := {}
+	var candidats: Array = []
+	for v in get_tree().get_nodes_in_group(&"vehicle"):
+		var body := v as Node3D
+		if body == null or not body.is_inside_tree() or not body.visible:
+			continue
+		var d := body.global_position.distance_squared_to(oeil)
+		if d > portee2:
+			continue
+		var racine := _racine_modele(body)
+		if racine == null:
+			continue
+		var cle := _cle(body)
+		if cle == "":
+			continue
+		if not par_modele.has(cle):
+			par_modele[cle] = []
+		par_modele[cle].append(racine)
+		if body.has_method("brake_lights_on") and body.call("brake_lights_on"):
+			freinent[cle] = freinent.get(cle, []) + [racine]
+		if _urgence(cle):
+			gyros[cle] = gyros.get(cle, []) + [racine]
+		candidats.append([d, body, racine])
+	_modeles_dessines = 0
+	_optiques = 0
+	# un modèle sans optique repérable est mémorisé avec un calque nul : il ne faut pas le suivre
+	for cle in _par_modele:
+		for fam in _par_modele[cle]:
+			var mi = _par_modele[cle][fam]
+			if mi != null:
+				(mi as MultiMeshInstance3D).visible = false
+	# phares : seulement la nuit
+	if _night > 0.0:
+		for cle in par_modele:
+			_poser(cle, par_modele[cle], "phares")
+	# feux de freinage : de jour comme de nuit
+	for cle in freinent:
+		_poser(cle, freinent[cle], "feux")
+	# gyrophares : en permanence, tout le monde sur la MÊME phase
+	var etat: int = gyro_force if gyro_force >= 0 else GYRO_TEMPS[int(fmod(Time.get_ticks_msec() * 0.001, GYRO_PERIODE) / (GYRO_PERIODE / GYRO_TEMPS.size()))]
+	_gyro_etat = etat
+	for cle in gyros:
+		var mi := _poser(cle, gyros[cle], "gyro")
+		if mi != null:
+			# on change le POINTEUR de matériau, jamais le matériau : trois matériaux pour la ville
+			mi.multimesh.mesh.surface_set_material(0, _mats_gyro[etat])
+	if vraies_lumieres and _night > 0.0:
+		_eclairer(candidats)
+	elif not _spots.is_empty():
+		for s in _spots:
+			s.visible = false
+
+
+# Pose les instances d'une famille pour un modèle. Rend le calque, ou null s'il n'existe pas.
+func _poser(cle: String, racines: Array, fam: String) -> MultiMeshInstance3D:
+	if racines.is_empty():
+		return null
+	var calque := _calque(cle, racines[0], fam)
+	if calque == null:
+		return null
+	var mm := calque.multimesh
+	if mm.instance_count < racines.size():
+		mm.instance_count = racines.size()
+	for i in racines.size():
+		var xf := (racines[i] as Node3D).global_transform
+		mm.set_instance_transform(i, xf)
+	mm.visible_instance_count = racines.size()
+	calque.visible = true
+	_modeles_dessines += 1
+	_optiques += racines.size()
+	return calque
+
+
+func _vider() -> void:
+	# un modèle sans optique repérable est mémorisé avec un calque nul : il ne faut pas le suivre
+	for cle in _par_modele:
+		for fam in _par_modele[cle]:
+			var mi = _par_modele[cle][fam]
+			if mi != null:
+				(mi as MultiMeshInstance3D).visible = false
+	for s in _spots:
+		s.visible = false
+
+
+# Clé de regroupement : le modèle tiré par Car dans le catalogue. Sans elle les 72 modèles
+# partageraient les optiques du premier rencontré.
+func _cle(body: Node3D) -> String:
+	var m = body.get("model_path")
+	if m != null and String(m) != "":
+		return String(m)
+	return body.scene_file_path if body.scene_file_path != "" else String(body.name)
+
+
+# Le noeud qui porte le modèle : c'est SA transformation qui place les optiques, parce qu'il porte
+# l'échelle du catalogue, le demi-tour de model_yaw_deg et le décalage vertical.
+func _racine_modele(body: Node3D) -> Node3D:
+	var m = body.get("_model")
+	if m != null and m is Node3D:
+		return m as Node3D
+	for c in body.get_children():
+		if c is Node3D and (c as Node3D).find_children("*", "MeshInstance3D", true, false).size() > 0:
+			return c as Node3D
+	return null
+
+
+# Calque d'un modèle : extraction des optiques à la première rencontre, puis réutilisation. Rend
+# null si le modèle n'a aucune optique repérable — bus sans phare de verre clair, pack lowpoly dont
+# toutes les pièces sont grises : ceux-là restent éteints, comme convenu.
+func _calque(cle: String, racine: Node3D, fam: String) -> MultiMeshInstance3D:
+	if not _par_modele.has(cle):
+		var parts := Parts.extraire(racine, _urgence(cle))
+		var entree := {}
+		for f in ["phares", "feux", "gyro"]:
+			var mat: Material = _material
+			if f == "feux":
+				mat = _mat_frein
+			elif f == "gyro":
+				mat = _mats_gyro[0]
+			entree[f] = _instancier(cle, f, Parts.maillage(parts[f], mat))
+		_par_modele[cle] = entree
+	return _par_modele[cle][fam]
+
+
+# Un calque : un MultiMesh sur le maillage d'optiques du modèle. Rend null si le modèle n'a pas
+# cette optique — le pack lowpoly n'a aucune couleur d'optique distincte, le bus pas de verre clair
+# à l'avant, l'ambulance pas de rouge à l'arrière. Ceux-là restent éteints (cf. CLAUDE.md §6).
+func _instancier(cle: String, fam: String, maille: ArrayMesh) -> MultiMeshInstance3D:
+	if maille == null:
+		return null
+	var mm := MultiMesh.new()
+	mm.transform_format = MultiMesh.TRANSFORM_3D
+	mm.mesh = maille
+	mm.instance_count = 0
+	var mi := MultiMeshInstance3D.new()
+	mi.name = "%s_%s" % [fam, cle.get_file().get_basename()]
+	mi.multimesh = mm
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	# L'emprise d'un MultiMesh dont les instances bougent ne peut pas être devinée par le moteur :
+	# sans ça il la calcule sur les transformations du moment et la circulation qui s'éloigne
+	# disparaît d'un coup. On la fixe à la carte entière.
+	mi.custom_aabb = AABB(Vector3(-2500, -50, -2500), Vector3(5000, 400, 5000))
+	mi.visible = false
+	add_child(mi)
+	return mi
+
+
+# Ce modèle porte-t-il cette famille d'optique ? Sert aux outils de capture, qui doivent cadrer sur
+# un véhicule qui a vraiment le feu qu'on veut montrer.
+func a_famille(body: Node3D, fam: String) -> bool:
+	var cle := _cle(body)
+	var racine := _racine_modele(body)
+	if cle == "" or racine == null:
+		return false
+	return _calque(cle, racine, fam) != null
+
+
+# Bassin borné de vrais phares. Joueur d'abord, puis les plus proches de la caméra.
+func _eclairer(candidats: Array) -> void:
+	candidats.sort_custom(func(a, b):
+		var pa: bool = a[1].has_method("is_occupied") and a[1].call("is_occupied")
+		var pb: bool = b[1].has_method("is_occupied") and b[1].call("is_occupied")
+		if pa != pb:
+			return pa
+		return a[0] < b[0])
+	var vises: int = mini(bassin, candidats.size())
+	while _spots.size() < vises * 2:
+		var l := SpotLight3D.new()
+		l.spot_angle = SPOT_ANGLE
+		l.spot_range = SPOT_RANGE
+		l.light_color = SPOT_COLOR
+		l.shadow_enabled = false   # l'ombre portée de 12 phares doublerait le coût pour rien
+		add_child(l)
+		_spots.append(l)
+	for i in _spots.size():
+		var paire := i / 2
+		if paire >= vises:
+			_spots[i].visible = false
+			continue
+		var racine: Node3D = candidats[paire][2]
+		var info := Parts.caisse(racine)
+		var boite: AABB = info["aabb"]
+		if boite.size.z <= 0.0:
+			_spots[i].visible = false
+			continue
+		var xf := racine.global_transform
+		# l'avant du modèle est son +Z ; les optiques sont à mi-hauteur, écartées de l'axe
+		var z := boite.end.z + SPOT_AVANCE
+		var y := boite.position.y + boite.size.y * 0.42
+		var dx := boite.size.x * 0.5 * 0.62 * (-1.0 if i % 2 == 0 else 1.0)
+		var cx := boite.get_center().x
+		var l := _spots[i]
+		l.visible = true
+		l.light_energy = SPOT_ENERGY * _night
+		l.global_position = xf * Vector3(cx + dx, y, z)
+		var avant: Vector3 = (xf.basis * Vector3(0, 0, 1)).normalized()
+		l.look_at(l.global_position + avant - Vector3(0, SPOT_TILT, 0), Vector3.UP)

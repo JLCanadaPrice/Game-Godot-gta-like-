@@ -201,6 +201,7 @@ var has_npc_driver := false
 var is_player_owned := false
 var _abandoned := false
 var _drive_speed := 0.0
+var _player_braking := false
 var _player_near := false
 var _steer_input := 0.0
 
@@ -823,6 +824,11 @@ func _drive_physics(delta: float) -> void:
 	var throttle := Input.get_axis("move_back", "move_forward")
 	_steer_input = Input.get_axis("move_right", "move_left")
 
+	# Feux de freinage du JOUEUR : la pédale, pas la vitesse. brake_lights_on() ne regardait que
+	# _drive_speed < BRAKE_STOP_SPEED, donc les feux ne s'allumaient qu'une fois la voiture presque
+	# arrêtée — appuyer sur S en roulant ne faisait rien. C'est ici, et nulle part ailleurs, que la
+	# voiture du joueur décide de freiner : marche arrière demandée alors qu'on avance encore.
+	_player_braking = throttle < 0.0 and _drive_speed > 0.5
 	if throttle > 0.0:
 		_drive_speed = move_toward(_drive_speed, DRIVE_MAX_SPEED, DRIVE_ACCEL * delta)
 	elif throttle < 0.0:
@@ -969,6 +975,22 @@ func stop_drive() -> void:
 	if not is_player_owned:
 		get_tree().create_timer(ABANDON_DESPAWN).timeout.connect(queue_free)
 
+# Voiture EN STATIONNEMENT (ParkedVehicles) : aucun trajet, aucune IA, elle se pose au sol et
+# attend qu'on la prenne. `_abandoned` est exactement l'état qui convient — c'est celui d'une voiture
+# laissée là — et c'est le seul qui laisse la gravité agir quand `_path` est nul : sans lui,
+# _physics_process sort immédiatement et la voiture reste en l'air. Aucun compte à rebours de
+# disparition n'est armé ici ; il n'est créé que dans stop_drive(), quand le joueur la quitte.
+func park() -> void:
+	_abandoned = true
+	_drive_speed = 0.0
+	velocity = Vector3.ZERO
+
+
+# Voiture à l'arrêt que personne ne conduit : garée par ParkedVehicles, ou abandonnée par le joueur.
+func is_parked() -> bool:
+	return _abandoned and not driven_by_player
+
+
 func is_occupied() -> bool:
 	return driven_by_player
 
@@ -1048,6 +1070,11 @@ func _add_body_stain() -> void:
 # Feux de freinage allumés : la voiture décélère, ou elle est à l'arrêt. Lu par VehicleLights.
 # Quand c'est le joueur qui conduit cette Car (modèle arcade), c'est _drive_speed qui fait foi.
 func brake_lights_on() -> bool:
+	# Une voiture laissée là n'a personne au volant : ses feux doivent être ÉTEINTS. Sans cette
+	# sortie, les véhicules en stationnement des lieux (ParkedVehicles) auraient leurs feux de
+	# freinage allumés en permanence, puisque _ai_speed y vaut zéro.
+	if is_parked():
+		return false
 	if driven_by_player:
-		return _drive_speed < BRAKE_STOP_SPEED
+		return _player_braking or absf(_drive_speed) < BRAKE_STOP_SPEED
 	return _braking or _ai_speed < BRAKE_STOP_SPEED

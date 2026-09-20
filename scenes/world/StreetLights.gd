@@ -56,6 +56,12 @@ const REASSIGN_MOVE := 4.0                   # ...ou dès que la caméra a boug�
 @export var all_lights := false              # mesure seulement : une vraie lumière par luminaire
 @export var glow := true
 @export var windows := true                  # fenêtres allumées des bâtiments (même mécanique que glow)
+# Balisage de l'aéroport. Il NE SE FOND PAS au crépuscule, contrairement aux lampadaires et aux
+# fenêtres : un balisage de piste est commandé par un interrupteur, et dans la vraie vie il s'allume
+# d'un coup. D'où un simple seuil sur le facteur nuit, et des matériaux à couleur fixe (un par
+# couleur de feu) que ce nœud ne touche jamais.
+@export var airport := true
+const AIRPORT_ON_AT := 0.35
 
 var _heads := PackedVector3Array()
 var _aims := PackedVector3Array()
@@ -64,6 +70,8 @@ var _material: StandardMaterial3D
 var _glow_nodes: Array[Node] = []
 var _window_material: StandardMaterial3D
 var _window_nodes: Array[Node] = []
+var _airport_nodes: Array[Node] = []
+var _airport_on := false
 var _night := -1.0
 var _next_reassign := 0.0
 var _last_cam := Vector3(1e9, 1e9, 1e9)
@@ -82,14 +90,16 @@ func _ready() -> void:
 	# Le groupe est posé à la cuisson (persistant), donc présent dès le chargement de la scène.
 	_glow_nodes = get_tree().get_nodes_in_group(&"lamp_glow")
 	_window_nodes = get_tree().get_nodes_in_group(&"window_glow")
+	_airport_nodes = get_tree().get_nodes_in_group(&"airport_glow")
 	var cycle := _find_cycle()
 	if cycle != null:
 		cycle.hour_changed.connect(_on_hour_changed)
 		_on_hour_changed(cycle.hour, cycle.night_factor())
 	else:
 		_apply_night(1.0)
-	print("STREET_LIGHTS %d luminaires, %d maillages de halo, %d maillages de fenêtres, bassin de %d vraie(s) lumière(s)%s"
-			% [_heads.size(), _glow_nodes.size(), _window_nodes.size(), (_heads.size() if all_lights else pool),
+	print("STREET_LIGHTS %d luminaires, %d maillages de halo, %d maillages de fenêtres, %d maillages de balisage, bassin de %d vraie(s) lumière(s)%s"
+			% [_heads.size(), _glow_nodes.size(), _window_nodes.size(), _airport_nodes.size(),
+			(_heads.size() if all_lights else pool),
 			" [MESURE : une lumière par luminaire]" if all_lights else ""])
 
 
@@ -130,6 +140,12 @@ func _apply_night(night: float) -> void:
 		if allume != etait_allume:
 			for n in _window_nodes:
 				(n as GeometryInstance3D).visible = allume
+	if airport:
+		var balise := night >= AIRPORT_ON_AT
+		if balise != _airport_on:
+			_airport_on = balise
+			for n in _airport_nodes:
+				(n as GeometryInstance3D).visible = balise
 	if allume and _lights.is_empty():
 		_spawn_lights()
 	for l in _lights:

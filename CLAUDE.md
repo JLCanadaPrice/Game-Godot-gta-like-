@@ -23,8 +23,9 @@ travail imposée, les commandes exactes, les pièges déjà payés et l'état d'
   séparé** (`D:/p-recree/sources-brutes`, arborescence identique) : privé parce que plusieurs packs
   sont à licence NON VÉRIFIÉE. Conséquences pratiques : tous les SHA d'avant le 2026-09-19 sont
   périmés, et **ne jamais recommiter une source brute dans ce dépôt-ci** — si un pack doit être
-  retravaillé, le copier hors du projet. Le compte de `ProjectLoadCheck` n'a pas bougé (584), ce qui
-  est la preuve que rien de chargé n'est parti.
+  retravaillé, le copier hors du projet. Le compte de `ProjectLoadCheck` n'avait pas bougé (584) ce jour-là, ce qui
+  est la preuve que rien de chargé n'etait parti ; il vaut **608** depuis les chantiers du
+  2026-09-20 (matériaux de balisage, de feux de véhicule, scripts et tests ajoutés).
 
 ## 2. Méthode de travail (imposée, non négociable)
 
@@ -150,6 +151,7 @@ ligne `<NOM>_RESULT OK` ou `FAIL`.
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/MapGateTest.tscn           # portail et bosquet de Hollow Creek
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/SimulationCullingTest.tscn # gel hors champ
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/DayNightTest.tscn         # cycle jour/nuit, halos, luminaires
+"$GODOT" --headless --path "$PROJET" res://scenes/tests/VehicleLightsTest.tscn    # freins, gyrophares, véhicules garés
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/WorldTrafficSmokeTest.tscn # trafic (aléa connu, cf. §6)
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/NoclipTest.tscn            # noclip, aléa connu aussi
 "$GODOT" --headless --path "$PROJET" --fixed-fps 60 --quit-after 300 res://scenes/tests/VehicleCatalogTest.tscn  # catalogue des véhicules, 20 000 tirages
@@ -159,7 +161,7 @@ ligne `<NOM>_RESULT OK` ou `FAIL`.
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/DowntownStreetsTest.tscn
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/DowntownBuildingsTest.tscn
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/ShopBuildingsTest.tscn     # échec ANTÉRIEUR connu
-"$GODOT" --headless --path "$PROJET" --script res://scenes/world/map/tools/ProjectLoadCheck.gd   # attendu : 584 fichiers, 0 échec
+"$GODOT" --headless --path "$PROJET" --script res://scenes/world/map/tools/ProjectLoadCheck.gd   # attendu : 608 fichiers, 0 échec
 ```
 
 Outil d'inspection, hors batterie : `res://scenes/tests/VehicleSortTest.tscn` aligne les véhicules du catalogue
@@ -233,6 +235,36 @@ sans le plafond de 800x450 du §6). Une vue peut imposer sa propre heure par un 
   46 triangles de phare au lieu de 8, jusque sur l'axe de la calandre. Couverture réelle :
   **50 modèles sur 72 ont des phares, 48 des feux arrière, 9 des 11 véhicules d'urgence un
   gyrophare.**
+- **UN ATLAS DE PALETTE NE DIT PAS SON SENS DE V, ET SE TROMPER INVERSE TOUT.** Le pack lowpoly_city
+  peint ses 71 bâtiments avec une palette de **4 x 4 texels de couleurs plates**. Échantillonnée en
+  `1 - v`, elle donne des murs vert vif et des fenêtres blanches ; échantillonnée en `v`, des murs
+  gris foncé et des fenêtres bleues. Les deux lectures sont « plausibles » sur le papier. Ce qui a
+  tranché, le 2026-09-20, c'est **une image** : trois bâtiments du pack rendus en plein jour, murs
+  gris et fenêtres bleues en grille. La bonne convention est `v` DIRECT, sans inversion. Règle
+  générale : devant un atlas, ne jamais conclure d'un échantillonnage sans avoir regardé le rendu.
+- **INVENTAIRE CORRIGÉ : LES FENÊTRES DU PACK lowpoly_city SONT SÉPARABLES, AU TEXEL DE PALETTE.**
+  L'inventaire du 2026-09-19 écrivait le contraire, noir sur blanc : « Pack lowpoly_city (71 bâtiments
+  du centre-ville) : UNE seule surface `base_Material` sur un atlas de palette. Les fenêtres n'y sont
+  pas séparables, ces bâtiments restent éteints. » **C'ÉTAIT FAUX**, et ça a laissé 71 bâtiments du
+  centre-ville éteints pour rien pendant une journée.
+  Ce qui est vrai, mesuré le 2026-09-20 : la palette fait **4 x 4 texels de couleurs plates**, chaque
+  triangle en vise un, et il suffit de lire lequel. Murs `#404040`, **vitrages `#68C0FF` et
+  `#23A3FF`**, encadrements `#808080`. La règle d'extraction par atlas est dans `BuildingWindows`
+  (`_by_atlas`), et le cuiseur du centre-ville lui passe la palette pour la famille `pack`.
+  **NE PAS RECONCLURE « NON SÉPARABLE » SUR CE PACK.** Et, plus largement : une seule surface et un
+  seul matériau ne veulent pas dire une seule matière. Tant qu'un modèle a des UV et une texture,
+  la séparation peut se faire au texel — l'épuiser AVANT d'écrire qu'un modèle n'a rien d'isolable.
+  Les vrais cas non séparables de ce projet, eux, sont vérifiés à l'image et nommés : `Mk3` (son seul
+  candidat dessine un treillis sur toute la façade) et `Scraper001` (28 triangles, aucune fenêtre
+  modélisée, aucun atlas — remplacé par un `Mk6` le 2026-09-20).
+- **Une voiture à l'arrêt a `_ai_speed` nul, donc ses feux de freinage s'allument.** `brake_lights_on`
+  rendait vrai sous `BRAKE_STOP_SPEED` — correct pour une voiture de la circulation qui s'arrête à un
+  feu, absurde pour les 22 véhicules GARÉS des lieux, qui auraient eu leurs feux allumés jour et nuit.
+  D'où `Car.is_parked()`, qui coupe feux de freinage ET feux de position.
+- **`LoopSpawner` plafonnait la circulation en comptant TOUT le groupe `vehicle`.** C'était juste tant
+  que lui seul en posait. Depuis les véhicules garés (22) et les blocs d'arrêt des passages à niveau
+  (2 par fermeture), le plafond `max_active` mangeait autant de voitures de circulation. Il ne compte
+  plus que SES PROPRES ENFANTS, comme `_recycle` le faisait déjà.
 - **`ShopBuildingsTest` échoue depuis avant ces chantiers** : ne pas l'imputer à la modification du
   jour, ne pas le « réparer » au passage.
 - **Le mode `"sol"` de `MapShotsTest` élève aussi le point visé** : un point visé au-dessus d'un
@@ -478,3 +510,107 @@ en (-697,1 / -694,6 ; 0,84 ; -776,1), (-720,6 / -718,3 ; 0,84 ; -635,8) et (53,3
 existent depuis le chantier des routes ; le cycle jour/nuit n'a fait que les révéler, en demandant pour la
 première fois OÙ sont les luminaires. La cause est dans la pose des lampadaires de `RoadBake`, qui ne regarde pas
 le dégagement au-dessus du mât. `DayNightTest` constate les 5 et **échoue si le nombre augmente**.
+
+### Fenêtres allumées : les huit cas signalés le 2026-09-20, et ce qu'ils étaient
+
+Le joueur a listé huit bâtiments mal ou pas éclairés. Ce n'était pas un défaut mais **quatre défauts
+différents**, et un seul touchait vraiment l'extraction :
+
+| cas signalé | ce que c'était | corrigé ? |
+|---|---|---|
+| lowrise building, midrise building | les **71 bâtiments du pack lowpoly_city**, une seule surface sur un atlas de palette. On avait conclu « pas séparable » : c'était faux, les vitrages visent les texels `#68C0FF` et `#23A3FF` | **oui**, règle d'atlas — 218 à 268 carreaux par modèle, contre 0 |
+| midrise industrial, TraditionalSkyscraper | trois modèles vitrent leur façade avec **UN SEUL QUAD** : `Industrial_TraditionalSkyscraper_alt02`, `Industrial_ModernSkyscraper_alt06`, `Industrial_WideOfficeBuilding_alt04` n'avaient que **4 carreaux**, un par façade. Le tirage à 28 % allumait donc une FAÇADE ENTIÈRE d'un coup | **oui**, re-maillage au grain d'une travée — 4 carreaux deviennent 336 à 608, de 2,2 x 2,9 m |
+| Central Precinct, St. Anselm, Ashford Grand Hotel | leurs modèles ont un vitrage tout à fait ordinaire (56, 130 et 735 carreaux). La cause n'était pas dans les modèles : **`PlacesBake` n'appelait jamais `BuildingWindows`** | **oui**, 389 carreaux allumés sur les 12 lieux |
+| core_002_Scraper001 | `Scraper001` est une **boîte de 28 triangles**, 33 x 153 x 33 m, une seule surface `Material`, aucune fenêtre modélisée et aucun atlas où en chercher | **NON, et ce n'est pas corrigeable** par extraction. Il est posé UNE seule fois. Le remplacer par une tour de la série Mk (qui, elles, ont un vitrage) est un changement d'une ligne de données, à décider |
+
+Deux constats de la même passe, à ne pas refaire :
+
+- **Mk3 est confirmé non séparable.** Son seul candidat sérieux, `Material.002`, est 100 % vertical
+  sur toute la hauteur — mais rendu en rouge il dessine un **treillis triangulé sur toute la façade**,
+  pas un bandeau vitré. Ne pas y revenir sans une nouvelle image.
+- **`Industrial_Warehouse_alt01` n'a aucun matériau de vitrage** (`Mat_Standard`, `Mat_Refl`). Un
+  entrepôt sans fenêtre est un entrepôt sans fenêtre.
+
+Et un défaut trouvé à l'image pendant la correction : **un carreau trop grand qu'on ne sait pas
+retailler n'est plus allumé du tout**. Les panneaux de mur-rideau des tours à facettes, allumés d'un
+bloc, fabriquaient des **nappes blanches de plusieurs dizaines de mètres flottant entre les
+immeubles**. Mieux vaut un panneau éteint qu'une nappe.
+
+### Balisage de l'aéroport (Prairie Wind International)
+
+315 feux, posés selon le balisage réel (OACI annexe 14 / FAA) : **bords de piste blancs** espacés de
+60 m, **seuils verts** et **fins de piste rouges** en barres de part et d'autre (dans la vraie vie
+c'est le même feu bidirectionnel, vert d'un côté et rouge de l'autre ; on ne sait pas faire un feu
+directionnel à ce prix, les deux barres sont donc à 3 m l'une de l'autre, vert à l'extérieur),
+**PAPI** de 4 feux moitié blancs moitié rouges à côté de chaque seuil, **bords de voie de circulation
+bleus**, projecteurs blancs sur l'aire de trafic, bandeau de l'aérogare et vigie de la tour allumés,
+feu d'obstacle rouge en haut du mât.
+
+Deux écarts au réel, assumés et dits :
+
+- **Le jaune de la zone de prudence.** En vrai les 600 derniers mètres (ou le dernier tiers) des
+  bords de piste sont jaunes. Sur une piste de 900 m ce tiers fait 300 m à chaque bout, soit les deux
+  tiers de la piste en jaune : ça se lit comme une erreur. Le jaune ne couvre donc que les 300
+  derniers mètres du seuil 09, celui par lequel on se pose.
+- **La rampe d'approche** court jusqu'à 900 m avant le seuil en vrai. Le plateau de l'aéroport
+  s'arrête à 70 m à l'ouest : on pose donc des barres tant que le terrain reste au niveau de la piste
+  (`APPROACH_TOLERANCE`), **mesuré à chaque barre**, et on s'arrête là où il décroche. Six barres
+  tiennent, soit 120 m.
+
+Un feu réel fait 0,30 m et ne ferait plus un pixel au-delà de 200 m : ils font **0,55 m** ici, assumé,
+pour que la piste reste lisible depuis l'aérogare et depuis l'air.
+
+Le balisage **ne se fond pas au crépuscule, il s'allume** : un balisage de piste est commandé par un
+interrupteur. `StreetLights` montre ou cache le groupe `airport_glow` au passage de `AIRPORT_ON_AT`.
+Un matériau par couleur, partagé, donc **un appel de dessin par couleur visible**, zéro le jour.
+
+### Feux arrière : deux niveaux, et le sol éclairé
+
+- **La nuit, tout véhicule qui roule porte ses feux rouges en permanence** (matériau `vehicle_tail`,
+  albedo 0,30) ; **dès qu'il freine il passe au rouge vif** (`vehicle_brake`, albedo 0,62). Deux
+  matériaux sur la MÊME géométrie d'optique, et deux listes **disjointes** : les poser ensemble ferait
+  un combat en z.
+- **Le freinage éclaire le sol** : un bassin borné de 4 `SpotLight3D` rouges dirigés vers l'arrière et
+  vers le bas, **le joueur d'abord**.
+- Une **voiture garée** n'allume rien : `Car.is_parked()` coupe les deux.
+- Le défaut corrigé : quand le joueur conduisait, `brake_lights_on()` ne regardait que la VITESSE.
+  Les feux ne s'allumaient donc qu'une fois la voiture presque arrêtée, et appuyer sur S en roulant
+  ne faisait rien, ni de jour ni de nuit. La pédale est maintenant relevée là où elle est lue.
+
+### Gyrophares
+
+**Éteints par défaut.** Ils s'allumeront sur événement ; le déclencheur est prêt
+(`VehicleLights.set_gyro()`, `toggle_gyro()`, `allumer_urgences()`), le système d'événements ne l'est
+pas. Le joueur qui conduit un véhicule d'urgence bascule avec **R**.
+
+**Le motif est celui d'une vraie rampe américaine** : la rampe est coupée en deux et **les deux
+moitiés alternent** — jamais allumées ensemble — avec un **double éclat** par phase (allumé, éteint,
+allumé, éteint). Huit temps de 0,125 s, soit deux éclats par seconde et par moitié. Couleurs :
+**rouge à gauche / bleu à droite** pour la police et le SWAT, **rouge / blanc** pour les urgences, et
+**ambre à l'arrière des camions de pompiers seulement** (en vrai l'ambre dévie la circulation, il
+n'est jamais mêlé au rouge et bleu). `VehicleLightsTest` refuse tout chevauchement des deux moitiés
+et vérifie les couleurs par rôle.
+
+**Ils éclairent le décor** : un bassin borné de 3 `OmniLight3D` — une source qui envoie dans toutes
+les directions, ce qu'est une rampe — suit la MÊME phase et fait battre les murs, le sol et les PNJ.
+Joueur prioritaire.
+
+Cinq matériaux pour toute la ville, un par état, **tout le monde en phase** : c'est ce qui évite un
+matériau par véhicule, et donc un appel de dessin par voiture que rien ne regrouperait.
+
+### Véhicules garés conduisibles
+
+Les 22 véhicules en stationnement des lieux — 3 voitures de patrouille au Central Precinct,
+3 ambulances au St. Anselm, 8 camions dans les 4 casernes, 8 voitures au parking de l'aéroport —
+étaient **cuits en décor** : leur maillage était fusionné dans celui du lieu, leur collision était une
+boîte du lieu. Une voiture de police devant le commissariat était un morceau de bâtiment.
+
+Les cuissons écrivent maintenant une **fiche** par véhicule (`places.json` clé `parked`,
+`downtown/generated/parked.json`) et `ParkedVehicles` instancie une **vraie `Car`** au lancement :
+même scène, même catalogue, même zone d'interaction, donc **on monte dedans comme dans n'importe
+quelle voiture de la rue**. Le rôle du catalogue suit avec — la voiture de patrouille a donc son
+gyrophare, éteint par défaut.
+
+Elles ne roulent pas (aucun `setup()`, donc aucun trajet) et `Car.park()` les met dans l'état
+« laissée là », le seul qui laisse la gravité les poser au sol quand elles n'ont pas de trajet. Elles
+ne disparaissent pas : le compte à rebours d'abandon n'est armé que lorsque le joueur les quitte.

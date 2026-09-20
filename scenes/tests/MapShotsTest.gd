@@ -96,6 +96,12 @@ const VIEWS := [
 	["nuit_quartier_westbank_sol", Vector3(-1255.2, 1.7, 165.9), Vector3(-1245.6, 1.5, 265.4), "sol", 1.0],
 	["nuit_echo_circle_sol", Vector3(-520.0, 1.7, -300.0), Vector3(-586.0, 3.0, -365.0), "sol", 1.0],
 	# Crépuscule et lever, mêmes caméras : c'est là que le fondu des lampadaires se juge.
+	# Chantier du 2026-09-20 : balisage de l'aeroport et silhouette du centre-ville, DE NUIT et AU SOL.
+	# Mode "sol" : les hauteurs sont relevees sur le terrain sous la camera et sous le point vise.
+	["nuit_aeroport_piste_sol", Vector3(760.0, 1.7, -1350.0), Vector3(140.0, 2.6, -1350.0), "sol", 1.0],
+	["nuit_aeroport_seuil_sol", Vector3(186.0, 1.7, -1350.0), Vector3(136.0, 1.4, -1350.0), "sol", 1.0],
+	["nuit_aeroport_tablier_sol", Vector3(470.0, 1.7, -1272.0), Vector3(600.0, 26.0, -1210.0), "sol", 1.0],
+	["nuit_skyline_quai_sol", Vector3(-250.0, 1.7, -500.0), Vector3(-470.0, 55.0, -230.0), "sol", 1.0],
 	["crepuscule_artere_sol", Vector3(-1606.0, 1.7, -8.0), Vector3(-1624.0, 1.5, -80.0), "sol", 19.8],
 	# lampadaires sous un ouvrage (2026-09-19) : les 4 mâts que RoadBake refuse désormais de poser.
 	# Altitudes ABSOLUES et à hauteur d'homme — le mode "sol" ne convient pas ici, il relèverait la
@@ -143,6 +149,7 @@ var _sans_image := false
 var _feux := -1                      # etat impose aux feux tricolores, -1 = les laisser vivre
 var _trafic := 0.0                   # s d'attente avec les spawners ACTIFS avant de capturer
 var _cadrer := ""                    # "phare" | "frein" | "face" | "gyro" : recadre sur un vrai vehicule
+var _gyros_allumes := false
 var _gyro := -1                      # fige les gyrophares sur un etat, pour la capture
 var _vehicule := ""                  # convertit le vehicule le plus proche en ce modele du catalogue
 var _converti: Node3D = null         # ce vehicule-la, qu'on cadrera en priorite
@@ -177,10 +184,18 @@ func _ready() -> void:
 			# On ne triche pas sur le rendu : c'est une vraie Car, avec le vrai modele du catalogue,
 			# qui passe par le meme _setup_model() que la circulation.
 			_vehicule = arg.substr(11)
+		elif arg == "--gyros-allumes":
+			# Les gyrophares sont ETEINTS par defaut depuis le 2026-09-20 : ils s'allumeront sur
+			# evenement. Sans cette option, une capture de gyrophare ne montrerait rien.
+			_gyros_allumes = true
 		elif arg.begins_with("--gyro="):
 			# Fige TOUS les gyrophares sur un etat. Sans ca un eclat ne dure que 0,20 s et on ne
 			# photographie pas la couleur voulue : il faudrait relancer jusqu'a tomber dessus.
-			_gyro = {"rouge": 0, "bleu": 1, "eteint": 2}.get(arg.substr(7), -1)
+			# Depuis le 2026-09-20 la rampe est coupee en deux moities qui ALTERNENT sur huit temps
+			# de 0,125 s : gyro_force fige un TEMPS, plus un etat de couleur. Temps 0 et 2 = moitie
+			# gauche allumee (rouge), temps 4 et 6 = moitie droite (bleue pour la police, blanche
+			# pour les urgences), temps impairs = les deux eteintes.
+			_gyro = {"gauche": 0, "droite": 4, "eteint": 1}.get(arg.substr(7), arg.substr(7).to_int())
 		elif arg.begins_with("--cadrer="):
 			# Va chercher un VRAI vehicule dans l'etat voulu et cadre dessus. Sans ca une capture de
 			# rue est une loterie : les voitures suivent leur circuit et ne passent pas forcement
@@ -220,11 +235,10 @@ func _ready() -> void:
 	if _trafic <= 0.0:
 		for spawner_name in ["CarSpawner", "NpcSpawner"]:
 			world.get_node(spawner_name).set_process(false)
-	if _gyro >= 0:
-		var vl := world.get_node_or_null("VehicleLights")
-		if vl != null:
-			vl.set("gyro_force", _gyro)
-			print("MAP_SHOT_GYRO gyrophares figes sur l'etat %d" % _gyro)
+	var vl := world.get_node_or_null("VehicleLights")
+	if vl != null and _gyro >= 0:
+		vl.set("gyro_force", _gyro)
+		print("MAP_SHOT_GYRO gyrophares figes sur le temps %d" % _gyro)
 	var cam := Camera3D.new()
 	cam.far = 4000.0
 	add_child(cam)
@@ -240,6 +254,9 @@ func _ready() -> void:
 	Engine.max_fps = 0
 	for k in 3:
 		await get_tree().physics_frame
+	if _gyros_allumes and vl != null:
+		# apres les premieres images : en _ready, les voitures de la circulation ne sont pas encore nees
+		print("MAP_SHOT_GYRO %d vehicule(s) d'urgence allume(s)" % vl.call("allumer_urgences", true))
 	if _feux >= 0:
 		var n := 0
 		for feu in _tous_les_feux(self):

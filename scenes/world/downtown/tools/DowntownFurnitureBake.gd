@@ -84,6 +84,7 @@ var _meshes := {}                    # modèle -> Mesh fusionné, gardé entre l
 var _instances := {}                 # "modèle|i|j" -> Array[Transform3D]
 var _collisions := {}                # Vector2i -> [[forme, Transform3D]]
 var _shapes := {}
+var _camions: Array = []             # camions de caserne, instanciés au lancement par ParkedVehicles
 var _counts := {}
 
 
@@ -523,9 +524,13 @@ func _fire_stations() -> void:
 		var y := WALK_Y - box.position.y * FIRE_SCALE      # bas du maillage posé sur le sol de la cour
 		for k: float in [0.5, -0.5]:
 			var p := Vector3(rect.get_center().x + vers_x * k * (size.z + FIRE_GAP), y, z)
-			_add("firetruck", Transform3D(rot * Basis.from_scale(Vector3.ONE * FIRE_SCALE), p))
-			# la collision reçoit une base SANS échelle et une boîte déjà à l'échelle, sinon l'échelle compte double
-			_collide_box(Transform3D(rot, p), size, box.get_center() * FIRE_SCALE)
+			# Le camion n'est PLUS cuit en décor : il est écrit en fiche et ParkedVehicles instancie
+			# une vraie Car au lancement, volable comme n'importe quelle voiture de la rue. Sa
+			# collision vient alors de la Car elle-même, d'où la boîte cuite qui disparaît aussi.
+			# `y` est le bas du maillage posé sur le sol de la cour ; une Car se pose par son origine,
+			# on redonne donc le sol de la cour.
+			_camions.append({"model": KINDS["firetruck"][0], "pos": [snappedf(p.x, 0.01), snappedf(WALK_Y, 0.01), snappedf(p.z, 0.01)],
+					"yaw": snappedf(atan2(vers_x, 0.0), 0.001), "place": "caserne_%d" % int(b["block"])})
 		print("DOWNTOWN_FURNITURE caserne du bloc %d : cour de %.2f m cote %s, 2 camions sur %.2f m, nez vers %sX, axe z %.2f, sol %.2f"
 				% [int(b["block"]), profondeur, "+Z" if vers > 0.0 else "-Z", longueur, "+" if vers_x > 0.0 else "-", z, WALK_Y])
 
@@ -720,6 +725,9 @@ func _write_scene() -> String:
 			body.add_child(cs)
 			cs.owner = root
 			k += 1
+	var fj := FileAccess.open(OUT.path_join("parked.json"), FileAccess.WRITE)
+	fj.store_string(JSON.stringify({"parked": _camions}, "	"))
+	fj.close()
 	var packed := PackedScene.new()
 	var err := packed.pack(root)
 	if err == OK:

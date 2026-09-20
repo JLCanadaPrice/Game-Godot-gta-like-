@@ -1,0 +1,28 @@
+[gd_resource type="StandardMaterial3D" format=3]
+
+; FEUX DE POSITION arrière. Une vraie voiture roule la nuit avec ses feux rouges allumés EN
+; PERMANENCE ; le freinage ne les allume pas, il les rend plus vifs. D'où deux matériaux sur la même
+; géométrie d'optique et non un interrupteur :
+;
+;   position (ici)              albedo 0.30 -> braise, visible mais discrète
+;   freinage (vehicle_brake)    albedo 0.62 -> rouge franc, deux fois plus lumineux
+;
+; Un véhicule est dans UN des deux états, jamais les deux : les deux calques dessinent exactement les
+; mêmes triangles au même endroit, les poser ensemble ferait un combat en z. VehicleLights répartit
+; donc les véhicules en deux listes disjointes.
+;
+; Couleur SOUS 1.0 : le tonemapper ACES délave les hautes lumières et un rouge posé à 1.0 ressort
+; saumon (184, 121, 82 mesuré). Mesuré, pas deviné.
+;
+; NON ÉCLAIRÉ, shading_mode = 0. Rappel du chiffre, payé trois fois sur ce projet :
+; 0 = UNSHADED, 1 = PER_PIXEL, 2 = PER_VERTEX.
+;
+; Matériau UNIQUE de cet état, partagé par TOUS les véhicules : c'est la condition du MultiMesh.
+
+[resource]
+resource_name = "vehicle_tail"
+shading_mode = 0
+albedo_color = Color(0.30, 0.008, 0.004, 1)
+disable_receive_shadows = true
+grow = true
+grow_amount = 0.005

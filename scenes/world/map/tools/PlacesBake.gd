@@ -62,9 +62,66 @@ var faces := PackedVector3Array()
 var body: StaticBody3D
 var places: Array[Dictionary] = []
 var footprints: Array = []
+var parked: Array = []               # véhicules en stationnement, instanciés au lancement par ParkedVehicles
 # Maillages de pack FBX déjà fusionnés et enregistrés, rangés par chemin de fichier : deux camions partagent un .res
 var fbx_cache := {}
-var stats := {"lieux": 0, "modèles": 0, "étiquettes": 0, "triangles": 0, "sommets_aplanis": 0}
+var stats := {"lieux": 0, "modèles": 0, "étiquettes": 0, "triangles": 0, "sommets_aplanis": 0, "carreaux_allumés": 0}
+
+# --- fenêtres allumées des lieux (chantier jour/nuit) ------------------------------------------------------------
+# Les 12 lieux restaient NOIRS la nuit alors que leurs modèles ont un vitrage : Central Precinct
+# (Business_Bank, 56 carreaux), St. Anselm (Business_Hospital, 130) et Ashford Grand Hotel
+# (Industrial_TraditionalSkyscraper_alt05, 735) sont des modèles EverythingLibrary tout à fait
+# ordinaires. La cause n'était pas dans les modèles : PlacesBake n'appelait tout simplement JAMAIS
+# BuildingWindows, contrairement aux deux autres cuissons de bâtiments. Corrigé le 2026-09-20.
+#
+# Même mécanique que partout ailleurs : un maillage fusionné par lieu, LE matériau partagé, le
+# groupe window_glow que StreetLights allume. Un appel de dessin par lieu visible la nuit, zéro le
+# jour puisque le nœud est caché.
+const Windows := preload("res://scenes/world/map/tools/BuildingWindows.gd")
+const WINDOW_RANGE := 1200.0
+var _window_acc := [PackedVector3Array(), PackedVector3Array(), PackedInt32Array()]
+
+# --- balisage de l'aéroport (chantier jour/nuit) -------------------------------------------------------------------
+# CE QUE DIT LE BALISAGE RÉEL (OACI annexe 14 / FAA), et ce que je retiens ici :
+#
+#  - BORDS DE PISTE : blancs, espacés de 60 m au plus. En réalité les 600 derniers mètres (ou le
+#    dernier tiers, le plus court des deux) sont JAUNES, zone de prudence. Sur une piste de 900 m ce
+#    tiers fait 300 m à chaque bout, soit les deux tiers de la piste en jaune : ça se lit comme une
+#    erreur. Je garde donc le jaune SEULEMENT sur les 300 derniers mètres du seuil 09, celui par
+#    lequel on se pose ici, et le blanc partout ailleurs.
+#  - SEUIL : VERT, une barre en travers de la piste, vue par l'avion qui arrive.
+#  - FIN DE PISTE : ROUGE, vue par l'avion qui roule vers ce bout. Dans la vraie vie c'est le MÊME
+#    feu, bidirectionnel : vert d'un côté, rouge de l'autre. On ne sait pas faire un feu directionnel
+#    à ce prix, donc les deux barres sont posées à 3 m l'une de l'autre, vert à l'extérieur : c'est
+#    exactement ce qu'on voit de loin.
+#  - PAPI : 4 feux en ligne à côté du seuil, moitié blancs moitié rouges selon le plan de descente.
+#    On pose 2 blancs et 2 rouges, la configuration « sur le plan ».
+#  - RAMPE D'APPROCHE : en vrai elle court jusqu'à 900 m avant le seuil. Le plateau de l'aéroport
+#    s'arrête à 70 m à l'ouest du seuil : on pose donc des barres tant que le terrain reste au niveau
+#    de la piste (APPROACH_TOLERANCE) et on s'arrête là où il décroche. Mesuré, pas supposé.
+#  - BORDS DE VOIE DE CIRCULATION : BLEUS, c'est la couleur universelle du taxiway.
+#  - AIRE DE TRAFIC ET BÂTIMENTS : projecteurs blancs sur mâts.
+#
+# Un feu réel fait 0,30 m. À 0,30 m il ne fait plus un pixel dès 200 m et la piste disparaît : les
+# feux font donc 0,55 m ici, assumé, pour rester lisibles depuis l'aérogare et depuis l'air.
+const AIRPORT_MATERIALS := {
+	"blanc": "res://scenes/world/airport_light_blanc.tres",
+	"jaune": "res://scenes/world/airport_light_jaune.tres",
+	"vert": "res://scenes/world/airport_light_vert.tres",
+	"rouge": "res://scenes/world/airport_light_rouge.tres",
+	"bleu": "res://scenes/world/airport_light_bleu.tres",
+}
+const LIGHT_SIZE := 0.55
+const RUNWAY_EDGE_SPACING := 60.0
+const TAXIWAY_EDGE_SPACING := 30.0
+const THRESHOLD_SPACING := 3.2
+const CAUTION_ZONE := 300.0          # dernier tiers d'une piste de 900 m
+const APPROACH_BARS := 6             # au plus, de 20 m en 20 m
+const APPROACH_STEP := 20.0
+const APPROACH_TOLERANCE := 1.0      # m d'écart au niveau de la piste au-delà duquel on arrête la rampe
+const AIRPORT_LIGHT_RANGE := 2500.0
+var _air_acc := {}                   # couleur -> [verts, normals, indices]
+var stats_air := {"feux": 0, "par_couleur": {}, "rampe_barres": 0}
 
 
 func _initialize() -> void:
@@ -104,9 +161,10 @@ func _initialize() -> void:
 	ResourceSaver.save(Image.create_from_data(model.width, model.depth, false, Image.FORMAT_RF, heights.to_byte_array()), GEN + "/terrain/heights.res")
 	_pack(root_node, SCENE)
 	var f := FileAccess.open(OUT.path_join("places.json"), FileAccess.WRITE)
-	f.store_string(JSON.stringify({"places": places, "footprints": footprints}, "\t"))
+	f.store_string(JSON.stringify({"places": places, "footprints": footprints, "parked": parked}, "\t"))
 	f.close()
 	_ensure_in_map()
+	print("PLACES_BALISAGE %s" % stats_air)
 	print("PLACES_BAKE %s en %.1f s" % [stats, (Time.get_ticks_msec() - t0) / 1000.0])
 	quit(0)
 
@@ -160,7 +218,137 @@ func _airport() -> void:
 	_fence(PackedVector2Array([Vector2(370, -1214), Vector2(70, -1214), Vector2(70, -1372), Vector2(1070, -1372), Vector2(1070, -970),
 			Vector2(640, -970), Vector2(640, -1214), Vector2(570, -1214)]), 2.4, STEEL, "chain")
 	_sign_board("PRAIRIE WIND INTERNATIONAL AIRPORT", Vector2(330, -1176), -PI * 0.5, 9.0)
+	# voitures en stationnement sur le parking de l'aérogare (126 x 47 m centré en (537, -1173.5)) :
+	# deux rangées nez à nez, à l'écart de l'allée centrale et des points de contrôle de MapGateTest
+	var modeles := ["Sedans/Veh_Sedan_01_Blue", "SUVs/Veh_SUV_01_White", "Sedans/Veh_Sedan_02_Red",
+			"SUVs/Veh_SUV_02_Green", "Vans/Veh_Van_01_White", "Sedans/Veh_Sedan_01_Yellow",
+			"SUVs/Veh_SUV_03_Blue", "Sedans/Veh_Sedan_02_White"]
+	var k := 0
+	for z: float in [-1186.0, -1161.0]:
+		for x: float in [500.0, 514.0, 528.0, 542.0]:
+			var chemin: String = VEH + modeles[k % modeles.size()] + ".glb"
+			if ResourceLoader.exists(chemin):
+				_parked_vehicle(chemin, Vector2(x, z), 0.0 if z < -1173.5 else PI, top + 0.03)
+			k += 1
+	_balisage_aeroport(top)
 	_end("Prairie Wind International Airport", "airport")
+
+
+# --- pose des feux de balisage --------------------------------------------------------------------------------------
+# Un feu = une petite boîte non éclairée, fusionnée avec les autres de SA COULEUR en un seul maillage
+# par lieu : un appel de dessin par couleur présente à l'écran, zéro le jour puisque les nœuds sont
+# cachés. Aucune vraie lumière, comme pour les lampadaires.
+func _feu(pos: Vector3, couleur: String) -> void:
+	if not _air_acc.has(couleur):
+		_air_acc[couleur] = [PackedVector3Array(), PackedVector3Array(), PackedInt32Array()]
+	var acc: Array = _air_acc[couleur]
+	var verts: PackedVector3Array = acc[0]
+	var normals: PackedVector3Array = acc[1]
+	var indices: PackedInt32Array = acc[2]
+	var h := LIGHT_SIZE * 0.5
+	var faces := [
+		[Vector3(0, 0, 1), Vector3(-h, -h, h), Vector3(h, -h, h), Vector3(h, h, h), Vector3(-h, h, h)],
+		[Vector3(0, 0, -1), Vector3(h, -h, -h), Vector3(-h, -h, -h), Vector3(-h, h, -h), Vector3(h, h, -h)],
+		[Vector3(1, 0, 0), Vector3(h, -h, h), Vector3(h, -h, -h), Vector3(h, h, -h), Vector3(h, h, h)],
+		[Vector3(-1, 0, 0), Vector3(-h, -h, -h), Vector3(-h, -h, h), Vector3(-h, h, h), Vector3(-h, h, -h)],
+		[Vector3(0, 1, 0), Vector3(-h, h, h), Vector3(h, h, h), Vector3(h, h, -h), Vector3(-h, h, -h)],
+	]
+	for face: Array in faces:
+		var base := verts.size()
+		for k in range(1, 5):
+			verts.append(pos + (face[k] as Vector3))
+			normals.append(face[0])
+		indices.append_array([base, base + 1, base + 2, base, base + 2, base + 3])
+	acc[0] = verts
+	acc[1] = normals
+	acc[2] = indices
+	stats_air["feux"] += 1
+	stats_air["par_couleur"][couleur] = int(stats_air["par_couleur"].get(couleur, 0)) + 1
+
+
+# Rangée de feux de `a` à `b` inclus, au pas demandé.
+func _ligne_feux(a: Vector3, b: Vector3, pas: float, couleur: String) -> void:
+	var d := b - a
+	var n := maxi(1, roundi(d.length() / pas))
+	for k in n + 1:
+		_feu(a + d * (float(k) / float(n)), couleur)
+
+
+# Barre en travers, centrée sur `centre`, de largeur `largeur` le long de `axe`.
+func _barre_feux(centre: Vector3, axe: Vector3, largeur: float, pas: float, couleur: String) -> void:
+	var n := maxi(1, roundi(largeur / pas))
+	for k in n + 1:
+		_feu(centre + axe * ((float(k) / float(n) - 0.5) * largeur), couleur)
+
+
+# Balisage complet de Prairie Wind. Les coordonnées viennent de la géométrie posée juste au-dessus,
+# pas d'un relevé séparé : piste 09/27 en (590, -1350) sur 900 x 45 m, piste secondaire en
+# (830, -1020) sur 420 x 30 m, voies de circulation et aire de trafic aux emprises de _paved.
+func _balisage_aeroport(top: float) -> void:
+	var y := top + 0.35
+	# --- piste principale 09/27 : bords blancs, tiers ouest en jaune (zone de prudence du seuil 09)
+	var xa := 140.0
+	var xb := 1040.0
+	var zc := -1350.0
+	var demi := 22.5
+	for cote: float in [-1.0, 1.0]:
+		var z := zc + cote * demi
+		var x := xa
+		while x <= xb + 0.01:
+			var couleur := "jaune" if x >= xb - CAUTION_ZONE else "blanc"
+			_feu(Vector3(x, y, z), couleur)
+			x += RUNWAY_EDGE_SPACING
+	# seuils : vert à l'extérieur, rouge 3 m à l'intérieur, aux deux bouts
+	for bout: Array in [[xa, 1.0], [xb, -1.0]]:
+		var x0: float = bout[0]
+		var vers: float = bout[1]
+		_barre_feux(Vector3(x0, y, zc), Vector3(0, 0, 1), demi * 2.0 - 3.0, THRESHOLD_SPACING, "vert")
+		_barre_feux(Vector3(x0 + vers * 3.0, y, zc), Vector3(0, 0, 1), demi * 2.0 - 3.0, THRESHOLD_SPACING, "rouge")
+	# PAPI : 4 feux à 18 m au sud du bord, 300 m après chaque seuil, 2 blancs puis 2 rouges
+	for bout: Array in [[xa + 300.0, 1.0], [xb - 300.0, -1.0]]:
+		for k in 4:
+			var px: float = bout[0] + bout[1] * k * 9.0
+			_feu(Vector3(px, y + 0.4, zc - demi - 18.0), "blanc" if k < 2 else "rouge")
+	# rampe d'approche du seuil 09, à l'ouest : on s'arrête là où le terrain décroche
+	for k in range(1, APPROACH_BARS + 1):
+		var x := xa - k * APPROACH_STEP
+		if absf(_height(Vector2(x, zc)) - top) > APPROACH_TOLERANCE:
+			break
+		_barre_feux(Vector3(x, y, zc), Vector3(0, 0, 1), 8.0, 2.0, "blanc")
+		stats_air["rampe_barres"] += 1
+	# --- piste secondaire : bords blancs, seuils verts et rouges, pas de rampe
+	var xc := 620.0
+	var xd := 1040.0
+	var zs := -1020.0
+	for cote: float in [-1.0, 1.0]:
+		var z := zs + cote * 15.0
+		_ligne_feux(Vector3(xc, y, z), Vector3(xd, y, z), RUNWAY_EDGE_SPACING, "blanc")
+	for bout: Array in [[xc, 1.0], [xd, -1.0]]:
+		_barre_feux(Vector3(bout[0], y, zs), Vector3(0, 0, 1), 27.0, THRESHOLD_SPACING, "vert")
+		_barre_feux(Vector3(bout[0] + bout[1] * 3.0, y, zs), Vector3(0, 0, 1), 27.0, THRESHOLD_SPACING, "rouge")
+	# --- voies de circulation : bleu de chaque côté
+	for bord: float in [-9.0, 9.0]:
+		_ligne_feux(Vector3(180.0, y, -1300.0 + bord), Vector3(1000.0, y, -1300.0 + bord), TAXIWAY_EDGE_SPACING, "bleu")
+	for bord: float in [-9.0, 9.0]:
+		_ligne_feux(Vector3(660.0 + bord, y, -1291.0), Vector3(660.0 + bord, y, -1035.0), TAXIWAY_EDGE_SPACING, "bleu")
+	for x: float in [180.0, 590.0, 1000.0]:
+		for bord: float in [-9.0, 9.0]:
+			_ligne_feux(Vector3(x + bord, y, -1327.5), Vector3(x + bord, y, -1309.0), TAXIWAY_EDGE_SPACING, "bleu")
+	# --- aire de trafic : projecteurs blancs sur mâts de 12 m, le long du bord nord
+	for x in range(350, 651, 60):
+		var mat := Vector3(float(x), top, -1244.0)
+		_box("steel", mat, Vector3(0.3, 12.0, 0.3), STEEL, false)
+		_feu(mat + Vector3(0, 12.2, 0), "blanc")
+	# --- aérogare : bandeau de fenêtres allumées sur les deux grandes faces, et façade éclairée
+	for cote: float in [-1.0, 1.0]:
+		var z := -1229.0 + cote * 15.15
+		for x in range(380, 561, 10):
+			_feu(Vector3(float(x), top + 5.6, z), "blanc")
+	# --- tour de contrôle : vigie allumée et feu d'obstacle rouge en haut du mât
+	for a: float in [-4.0, 4.0]:
+		for b: float in [-4.0, 4.0]:
+			_feu(Vector3(620.0 + a, top + 36.0, -1205.0 + b), "blanc")
+	_feu(Vector3(622.0, top + 47.0, -1203.0), "rouge")
 
 
 func _motel() -> void:
@@ -786,6 +974,10 @@ func _model(name: String, center: Vector2, yaw: float, base_y: float, scale := 1
 	_flatten_rect(center, Vector2(cos(yaw), -sin(yaw)), Vector2(sin(yaw), cos(yaw)), Vector2(aabb.size.x, aabb.size.z) * scale * 0.5 + Vector2(1, 1), base_y - 0.05)
 	stats["modèles"] += 1
 	stats["triangles"] += int(info["triangles"])
+	# carreaux allumés du modèle, dans la transformation exacte où il vient d'être posé
+	var panes := models.windows_of(name)
+	if not panes.is_empty():
+		stats["carreaux_allumés"] += Windows.emit(panes, mi.transform, _window_acc[0], _window_acc[1], _window_acc[2])
 
 
 # Modèle d'un pack FBX hors catalogue EverythingLibrary (le catalogue ne couvre que ce pack-là). Les maillages de la
@@ -885,12 +1077,18 @@ func _relative_to(n: Node3D, top: Node) -> Transform3D:
 	return xf
 
 
+# Véhicule en stationnement. Il n'est PLUS cuit en décor : jusqu'au 2026-09-20 le modèle était
+# fusionné dans le maillage du lieu, donc impossible à voler — une voiture de patrouille devant le
+# commissariat était un morceau de bâtiment. On écrit maintenant sa fiche dans places.json et c'est
+# ParkedVehicles qui instancie une VRAIE Car au lancement : même scène, même catalogue, même
+# interaction que n'importe quelle voiture de la rue. Le rôle du catalogue suit avec (une voiture de
+# police garée a donc son gyrophare, éteint par défaut).
 func _parked_vehicle(path: String, center: Vector2, yaw: float, base_y: float) -> void:
-	var aabb := _fbx_model(path, center, yaw, base_y, "boite", Vector2.ZERO, VEH_SCALE)
 	stats["vehicules_gares"] = int(stats.get("vehicules_gares", 0)) + 1
-	if aabb.size.x > 0.0:
-		print("PLACES_VEHICLE %-26s en (%.1f, %.1f) cap %.0f deg : %.2f x %.2f x %.2f m"
-				% [path.get_file(), center.x, center.y, rad_to_deg(yaw), aabb.size.z * VEH_SCALE, aabb.size.x * VEH_SCALE, aabb.size.y * VEH_SCALE])
+	parked.append({"model": path, "pos": [snappedf(center.x, 0.01), snappedf(base_y, 0.01), snappedf(center.y, 0.01)],
+			"yaw": snappedf(yaw, 0.001), "place": String(place.get_meta("place_id"))})
+	print("PLACES_VEHICLE %-26s en (%.1f, %.1f) cap %.0f deg : conduisible"
+			% [path.get_file(), center.x, center.y, rad_to_deg(yaw)])
 
 
 func _prop(path: String, pos: Vector3, yaw: float) -> void:
@@ -1025,6 +1223,8 @@ func _begin(id: String, entrance: Vector3) -> void:
 	root_node.add_child(place)
 	parts = {}
 	faces = PackedVector3Array()
+	_window_acc = [PackedVector3Array(), PackedVector3Array(), PackedInt32Array()]
+	_air_acc = {}
 	body = StaticBody3D.new()
 	body.name = "Collision"
 	place.add_child(body)
@@ -1055,6 +1255,40 @@ func _end(display_name: String, kind: String) -> void:
 		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON if part == "paint" else GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		place.add_child(mi)
 		stats["triangles"] += batch.indices.size() / 3
+	for couleur: String in _air_acc:
+		var acc: Array = _air_acc[couleur]
+		if (acc[2] as PackedInt32Array).is_empty():
+			continue
+		var arrays := []
+		arrays.resize(Mesh.ARRAY_MAX)
+		arrays[Mesh.ARRAY_VERTEX] = acc[0]
+		arrays[Mesh.ARRAY_NORMAL] = acc[1]
+		arrays[Mesh.ARRAY_INDEX] = acc[2]
+		var amesh := ArrayMesh.new()
+		amesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+		amesh.surface_set_material(0, load(AIRPORT_MATERIALS[couleur]))
+		var apath := OUT.path_join("%s_feux_%s.res" % [String(place.get_meta("place_id")), couleur])
+		ResourceSaver.save(amesh, apath)
+		var ami := MeshInstance3D.new()
+		ami.name = "Feux" + couleur.capitalize()
+		ami.mesh = load(apath)
+		ami.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		ami.visibility_range_end = AIRPORT_LIGHT_RANGE
+		ami.visible = false
+		ami.add_to_group(&"airport_glow", true)
+		place.add_child(ami)
+	if not (_window_acc[2] as PackedInt32Array).is_empty():
+		var wmesh := Windows.build_mesh(_window_acc[0], _window_acc[1], _window_acc[2])
+		var wpath := OUT.path_join("%s_fenetres.res" % String(place.get_meta("place_id")))
+		ResourceSaver.save(wmesh, wpath)
+		var wmi := MeshInstance3D.new()
+		wmi.name = "WindowGlow"
+		wmi.mesh = load(wpath)
+		wmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		wmi.visibility_range_end = WINDOW_RANGE
+		wmi.visible = false
+		wmi.add_to_group(&"window_glow", true)
+		place.add_child(wmi)
 	if not faces.is_empty():
 		var shape := ConcavePolygonShape3D.new()
 		shape.set_faces(faces)

@@ -32,6 +32,15 @@ const OPTIQUE_Y_MIN := 0.18     # au-dessus du bas de caisse : écarte le bas de
 const OPTIQUE_Y_MAX := 0.62     # sous la ceinture de caisse : écarte pare-brise et lunette
 const OPTIQUE_FLANC := 0.30     # écarté de l'axe : écarte plaque et calandre centrale
 const GYRO_Y := 0.78            # hauteur de toit : c'est ce qui sépare le gyrophare des feux
+# La rampe est COUPÉE EN DEUX, gauche et droite, parce que c'est ainsi qu'elle clignote en vrai :
+# une rampe américaine alterne ses deux moitiés (rouge à gauche, bleu à droite sur une voiture de
+# police), elle ne clignote pas d'un seul bloc. La coupe se fait sur l'axe X de la caisse, le modèle
+# ayant son nez en +Z.
+#
+# GYRO_ARRIERE : sur un camion de pompiers, les feux AMBRE sont ceux de l'arrière — dans la vraie vie
+# l'ambre sert à dévier la circulation, il n'est jamais mêlé au rouge et bleu. La fraction est
+# mesurée sur la caisse, pas devinée : au-delà de cette limite vers l'avant, c'est la rampe de toit.
+const GYRO_ARRIERE := 0.34
 
 # Les clignotants ambre sont RECONNUS mais volontairement PAS extraits comme optique allumable : il
 # n'y a pas de système d'indicateurs dans le jeu, un clignotant allumé en permanence serait faux.
@@ -94,6 +103,11 @@ static func extraire(racine: Node, avec_gyro: bool) -> Dictionary:
 		"phares": {"v": PackedVector3Array(), "n": PackedVector3Array()},
 		"feux": {"v": PackedVector3Array(), "n": PackedVector3Array()},
 		"gyro": {"v": PackedVector3Array(), "n": PackedVector3Array()},
+		"gyro_g": {"v": PackedVector3Array(), "n": PackedVector3Array()},
+		"gyro_d": {"v": PackedVector3Array(), "n": PackedVector3Array()},
+		"gyro_ar": {"v": PackedVector3Array(), "n": PackedVector3Array()},
+		"gyro_centre": Vector3.ZERO,
+		"gyro_n": 0,
 	}
 	if boite.size.z <= 0.0 or boite.size.y <= 0.0 or boite.size.x <= 0.0:
 		return out
@@ -141,6 +155,20 @@ static func extraire(racine: Node, avec_gyro: bool) -> Dictionary:
 						famille = "feux"
 				if famille == "":
 					continue
+				if famille == "gyro":
+					# on garde « gyro » entier (les outils s'en servent pour savoir si le modèle en a
+					# un) ET on le répartit en moitié gauche, moitié droite, arrière
+					var cible := "gyro_ar" if fz < GYRO_ARRIERE else ("gyro_g" if ctr.x < boite.get_center().x else "gyro_d")
+					var dd: Dictionary = out[cible]
+					var vv: PackedVector3Array = dd["v"]
+					var nnn: PackedVector3Array = dd["n"]
+					for k in [i0, i1, i2]:
+						vv.append(xf * vs[k])
+						nnn.append((nb * (ns[k] if k < ns.size() else Vector3.UP)).normalized())
+					dd["v"] = vv
+					dd["n"] = nnn
+					out["gyro_centre"] = (out["gyro_centre"] as Vector3) + ctr
+					out["gyro_n"] = int(out["gyro_n"]) + 1
 				var d: Dictionary = out[famille]
 				var v: PackedVector3Array = d["v"]
 				var nn: PackedVector3Array = d["n"]
@@ -149,6 +177,8 @@ static func extraire(racine: Node, avec_gyro: bool) -> Dictionary:
 					nn.append((nb * (ns[k] if k < ns.size() else Vector3.UP)).normalized())
 				d["v"] = v
 				d["n"] = nn
+	if int(out["gyro_n"]) > 0:
+		out["gyro_centre"] = (out["gyro_centre"] as Vector3) / float(out["gyro_n"])
 	return out
 
 

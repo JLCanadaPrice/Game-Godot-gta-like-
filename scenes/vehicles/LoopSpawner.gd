@@ -83,7 +83,7 @@ func _process(delta: float) -> void:
 		if _cooldowns[i] > 0.0:
 			continue
 		_cooldowns[i] = randf_range(interval_min, interval_max)
-		if get_tree().get_nodes_in_group(kind).size() >= max_active:
+		if _actifs() >= max_active:
 			continue
 		_try_spawn(i)
 
@@ -214,3 +214,16 @@ func _is_visible_to_player(spawn_pos: Vector3) -> bool:
 
 	var hit_dist: float = eye_pos.distance_to(hit["position"] as Vector3)
 	return hit_dist >= dist - 0.5   # un obstacle plus proche que le point = masqué, pas visible
+
+
+# Entités que CE spawner a fait naître. Compter tout le groupe `vehicle` était juste tant que
+# personne d'autre n'en posait ; depuis, les véhicules garés des lieux (commissariat, hôpital,
+# casernes, aéroport) en font partie et sont là en permanence. Les compter dans le plafond revenait à
+# retirer autant de voitures à la circulation de fond — le même effet de bord que les blocs d'arrêt
+# des passages à niveau, corrigé ici une fois pour toutes. Même critère que _recycle : le parent.
+func _actifs() -> int:
+	var n := 0
+	for e in get_tree().get_nodes_in_group(kind):
+		if e is Node and (e as Node).get_parent() == self:
+			n += 1
+	return n
