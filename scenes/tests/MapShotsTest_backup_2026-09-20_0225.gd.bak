@@ -142,10 +142,7 @@ var _cycle: Node = null
 var _sans_image := false
 var _feux := -1                      # etat impose aux feux tricolores, -1 = les laisser vivre
 var _trafic := 0.0                   # s d'attente avec les spawners ACTIFS avant de capturer
-var _cadrer := ""                    # "phare" | "frein" | "face" | "gyro" : recadre sur un vrai vehicule
-var _gyro := -1                      # fige les gyrophares sur un etat, pour la capture
-var _vehicule := ""                  # convertit le vehicule le plus proche en ce modele du catalogue
-var _converti: Node3D = null         # ce vehicule-la, qu'on cadrera en priorite
+var _cadrer := ""                    # "phare" | "frein" | "gyro" : recadre sur un vrai vehicule
 
 
 func _ready() -> void:
@@ -170,17 +167,6 @@ func _ready() -> void:
 			# autour du JOUEUR (cf. _process_proximity), donc sans le deplacer la rue reste vide.
 			# Mesure faussee expres : les 6 vues de reference, elles, gardent les spawners coupes.
 			_trafic = arg.substr(9).to_float()
-		elif arg.begins_with("--vehicule="):
-			# Convertit le vehicule le plus PROCHE en un modele precis du catalogue. Necessaire pour
-			# photographier un vehicule d'urgence : ils ne sont que 1,4 % du trafic, et attendre
-			# qu'il en passe un devant la camera est une loterie qu'on a perdue plusieurs fois.
-			# On ne triche pas sur le rendu : c'est une vraie Car, avec le vrai modele du catalogue,
-			# qui passe par le meme _setup_model() que la circulation.
-			_vehicule = arg.substr(11)
-		elif arg.begins_with("--gyro="):
-			# Fige TOUS les gyrophares sur un etat. Sans ca un eclat ne dure que 0,20 s et on ne
-			# photographie pas la couleur voulue : il faudrait relancer jusqu'a tomber dessus.
-			_gyro = {"rouge": 0, "bleu": 1, "eteint": 2}.get(arg.substr(7), -1)
 		elif arg.begins_with("--cadrer="):
 			# Va chercher un VRAI vehicule dans l'etat voulu et cadre dessus. Sans ca une capture de
 			# rue est une loterie : les voitures suivent leur circuit et ne passent pas forcement
@@ -220,11 +206,6 @@ func _ready() -> void:
 	if _trafic <= 0.0:
 		for spawner_name in ["CarSpawner", "NpcSpawner"]:
 			world.get_node(spawner_name).set_process(false)
-	if _gyro >= 0:
-		var vl := world.get_node_or_null("VehicleLights")
-		if vl != null:
-			vl.set("gyro_force", _gyro)
-			print("MAP_SHOT_GYRO gyrophares figes sur l'etat %d" % _gyro)
 	var cam := Camera3D.new()
 	cam.far = 4000.0
 	add_child(cam)
@@ -273,10 +254,6 @@ func _ready() -> void:
 					to = vue[1]
 					cam.global_position = from
 					cam.look_at(to, Vector3.UP)
-					# le joueur vient d'etre teleporte a cote du sujet : on laisse SimulationCuller
-					# le reveiller avant de declencher, sinon il reste cache
-					for k in 90:
-						await get_tree().process_frame
 		for k in SETTLE_FRAMES:
 			await get_tree().process_frame
 		# moyenne du temps GPU sur les 20 dernières images : une image isolée est trop bruitée pour
@@ -338,36 +315,7 @@ func _peupler(depuis: Vector3, vers: Vector3) -> void:
 	while t < _trafic:
 		await get_tree().process_frame
 		t += get_process_delta_time()
-	if _vehicule != "":
-		_convertir(depuis)
 	print("MAP_SHOT_TRAFIC %d vehicules apres %.1f s" % [get_tree().get_nodes_in_group(&"vehicle").size(), _trafic])
-
-
-# Convertit le vehicule le plus proche au modele demande, pour --vehicule=.
-func _convertir(depuis: Vector3) -> void:
-	var data = load("res://resources/vehicle_models/%s.tres" % _vehicule)
-	if data == null or data.model_paths.is_empty():
-		print("MAP_SHOT_VEHICULE modele %s introuvable" % _vehicule)
-		return
-	var choisi: Node3D = null
-	var meilleure := INF
-	for v in get_tree().get_nodes_in_group(&"vehicle"):
-		var body := v as Node3D
-		if body == null or not body.is_inside_tree() or not body.has_method("start_drive"):
-			continue
-		var d := body.global_position.distance_to(depuis)
-		if d < meilleure:
-			meilleure = d
-			choisi = body
-	if choisi == null:
-		return
-	var ancien = choisi.get("_model")
-	if ancien != null and ancien is Node:
-		(ancien as Node).queue_free()
-	choisi.set("forced_model_path", String(data.model_paths[0]))
-	choisi.call("_setup_model")
-	_converti = choisi
-	print("MAP_SHOT_VEHICULE %s converti en %s a %.1f m" % [choisi.name, _vehicule, meilleure])
 
 
 # Cadre sur un vrai vehicule dans l'etat demande, pour --cadrer=.
@@ -377,51 +325,17 @@ func _convertir(depuis: Vector3) -> void:
 func _cadrer_sur(depuis: Vector3) -> Array:
 	var choisi: Node3D = null
 	var meilleure := INF
-	var lights := get_node_or_null("World/VehicleLights")
-	if lights == null:
-		for c in get_children():
-			lights = c.get_node_or_null("VehicleLights")
-			if lights != null:
-				break
-	# le vehicule converti par --vehicule= est le sujet voulu : on le cadre en priorite, sinon le
-	# choix retombe sur un autre vehicule du meme type et le cadrage se fait ailleurs
-	if _converti != null and is_instance_valid(_converti) and _converti.is_inside_tree():
-		choisi = _converti
-		meilleure = _converti.global_position.distance_to(depuis)
 	for v in get_tree().get_nodes_in_group(&"vehicle"):
 		var body := v as Node3D
 		if body == null or not body.is_inside_tree() or not body.visible:
 			continue
-		if choisi == _converti and _converti != null:
-			break
-		if _cadrer == "frein" or _cadrer == "face":
-			if not (body.has_method("brake_lights_on") and body.call("brake_lights_on")):
-				continue
-			# et qui ait VRAIMENT un feu arriere extractible : 24 modeles sur 72 n'en ont pas, viser
-			# l'un d'eux donnerait une capture ou il ne se passe rien
-			if lights != null and not lights.call("a_famille", body, "feux"):
-				continue
-		if _cadrer == "face" and lights != null and not lights.call("a_famille", body, "feux"):
-			continue
-		if _cadrer == "gyro" and lights != null and not lights.call("a_famille", body, "gyro"):
+		if _cadrer == "frein" and not (body.has_method("brake_lights_on") and body.call("brake_lights_on")):
 			continue
 		if _cadrer == "gyro":
-			# reconnu sur le NOM du modele : les vehicules d'urgence du pack sont Veh_Police_*,
-			# Veh_Ambulance, Veh_Firetruck, Veh_SWAT_*, Veh_Emergency_Van
 			var mp = body.get("model_path")
-			var nom := String(mp).to_lower() if mp != null else ""
-			var urgence := false
-			for mot in ["police", "ambulance", "firetruck", "swat", "emergency"]:
-				urgence = urgence or nom.contains(mot)
-			if not urgence:
+			if mp == null or not String(mp).to_lower().contains("emergency"):
 				continue
 		var d := body.global_position.distance_to(depuis)
-		# Un vehicule d'urgence ne represente que 1,4 % du trafic : il faut accepter d'aller le
-		# chercher loin. On amene ensuite le JOUEUR a cote (voir plus bas), sans quoi
-		# SimulationCuller, qui gele et cache ce qui est loin du joueur, le rendrait invisible au
-		# declenchement -- mesure faite, la capture sortait vide.
-		if d > 400.0:
-			continue
 		if d < meilleure:
 			meilleure = d
 			choisi = body
@@ -439,17 +353,6 @@ func _cadrer_sur(depuis: Vector3) -> Array:
 		# derriere, legerement de cote : on voit les feux rouges ET la voiture
 		pos = choisi.global_position - avant * 7.0 + droite * 2.2 + Vector3(0, 1.5, 0)
 		vise = choisi.global_position + Vector3(0, 0.7, 0)
-	elif _cadrer == "gyro":
-		# TROIS QUARTS AVANT et un peu surelevee, visant la hauteur du TOIT : c'est le seul cadrage
-		# qui montre le bandeau, qui est sur le toit et invisible de face comme de derriere.
-		# TROIS QUARTS AVANT et un peu surelevee, visant la hauteur du TOIT : c'est le cadrage qui
-		# montre le bandeau, invisible de face comme de plein arriere.
-		pos = choisi.global_position + avant * 6.0 + droite * 4.5 + Vector3(0, 2.3, 0)
-		vise = choisi.global_position + Vector3(0, 1.35, 0)
-	elif _cadrer == "face":
-		# DE FACE, a 8 m : sert aux essais ou il faut voir l'avant d'un vehicule qui freine
-		pos = choisi.global_position + avant * 8.0 + Vector3(0, 1.5, 0)
-		vise = choisi.global_position + Vector3(0, 0.7, 0)
 	else:
 		# A COTE de la voiture et LEGEREMENT EN ARRIERE, en regardant le long de son faisceau : c'est
 		# le seul cadrage ou l'on voit d'un coup ses optiques allumees ET le cone qu'elles posent sur
@@ -461,34 +364,12 @@ func _cadrer_sur(depuis: Vector3) -> Array:
 	# 120 images de mesure, soit ~2,7 s, pendant lesquelles une voiture a 10 m/s parcourt 27 m et
 	# sort du champ. Mesure faite : sans ce gel on photographiait l'arriere d'une voiture partie.
 	# L'etat de chaque vehicule est fige tel quel, freinage compris.
-	# et on amene le JOUEUR a cote du sujet, pour que le culler le garde eveille et visible
-	var joueur := get_tree().get_first_node_in_group("player") as Node3D
-	if joueur != null:
-		# DE COTE, pas derriere : le joueur doit rester pres du sujet pour que SimulationCuller le
-		# garde eveille, mais derriere lui il se plante au milieu de la photo.
-		joueur.global_position = choisi.global_position + Vector3(0, 0.5, 0) + avant.cross(Vector3.UP).normalized() * 9.0
-	# On COUPE les spawners maintenant : ils tournent encore (--trafic= les laisse actifs) et
-	# LoopSpawner._recycle() supprime les vehicules loin du joueur. Comme on vient justement de
-	# teleporter le joueur, le sujet qu'on vient de choisir se faisait recycler pendant l'attente,
-	# et la capture sortait sans lui -- mesure faite, plusieurs fois.
-	var n: Node = get_parent()
-	for c in get_children():
-		if c.get_node_or_null("CarSpawner") != null:
-			n = c
-			break
-	for nom in ["CarSpawner", "NpcSpawner"]:
-		var sp := n.get_node_or_null(nom) if n != null else null
-		if sp != null:
-			sp.set_process(false)
 	var geles := 0
 	for v in get_tree().get_nodes_in_group(&"vehicle"):
 		(v as Node).set_physics_process(false)
 		(v as Node).set_process(false)
 		geles += 1
-	var mp = choisi.get("model_path")
-	var frein = choisi.call("brake_lights_on") if choisi.has_method("brake_lights_on") else null
-	print("MAP_SHOT_CADRE %s : %s a %.1f m, %d figes | modele %s | freine %s"
-			% [_cadrer, choisi.name, meilleure, geles, String(mp).get_file() if mp != null else "?", str(frein)])
+	print("MAP_SHOT_CADRE %s : %s a %.1f m, %d vehicules figes" % [_cadrer, choisi.name, meilleure, geles])
 	return [pos, vise]
 
 

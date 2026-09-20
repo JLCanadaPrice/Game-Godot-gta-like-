@@ -1,0 +1,21 @@
+[gd_resource type="StandardMaterial3D" format=3]
+
+; Gyrophare ETEINT : la lentille sombre d'un bandeau au repos. Sert aussi de temps mort entre deux eclats.
+;
+; Materiau UNIQUE de cet etat, partage par TOUS les vehicules du jeu. Une copie par vehicule ferait
+; autant d'appels de dessin que de voitures, que rien ne pourrait regrouper (regression payee sur
+; les mats de lampadaire, cf. LampPoleLayer).
+;
+; NON ECLAIRE, shading_mode = 0. Rappel du chiffre, paye trois fois sur ce projet :
+; 0 = UNSHADED, 1 = PER_PIXEL, 2 = PER_VERTEX.
+;
+; Il habille les triangles d'optique EXTRAITS du maillage du modele (cf. VehicleLightParts) : c'est
+; la geometrie du vehicule qui s'allume, rien n'est ajoute par-dessus.
+
+[resource]
+resource_name = "vehicle_gyro_eteint"
+shading_mode = 0
+albedo_color = Color(0.16, 0.15, 0.17, 1)
+disable_receive_shadows = true
+grow = true
+grow_amount = 0.006
