@@ -131,13 +131,16 @@ sans effet de bord : `MapSpecCheck`, `RoadNetworkPreview`, `ProjectLoadCheck`.
 
 **Toucher aux lampadaires impose DEUX cuissons hors chaîne** : `RoadBake` écrit les luminaires de la carte
 (`generated/roads/lamp_heads.tres`) et `DowntownFurnitureBake` ceux du centre-ville
-(`downtown/generated/lamp_heads.tres`). Oublier la seconde laisse 906 lampadaires sur 1 375 sans halo et sans
+(`downtown/generated/lamp_heads.tres`). Oublier la seconde laisse 906 lampadaires sur 1 371 sans halo et sans
 lumière la nuit.
 
 ## 5. Batterie de tests headless
 
 Les tests sont des **scènes** (sauf `ProjectLoadCheck`, qui est un script). Chacun imprime une
-ligne `<NOM>_RESULT OK` ou `FAIL`.
+ligne `<NOM>_RESULT OK` ou `FAIL`, **sauf `CarDrivingTest` et `CarDropTest`** : ces deux-là sont des
+sondes qui impriment des chiffres (`DRIVE_TEST_END`, `DROP_TEST_END`) et ne rendent aucun verdict.
+Il faut donc LIRE leurs chiffres ; un script de batterie qui ne cherche qu'une ligne `RESULT` les
+manque en silence, ce qui est arrivé jusqu'au 2026-09-21.
 
 ```bash
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/MapRoadsTest.tscn          # rubans, croisements, pentes
@@ -155,8 +158,8 @@ ligne `<NOM>_RESULT OK` ou `FAIL`.
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/WorldTrafficSmokeTest.tscn # trafic (aléa connu, cf. §6)
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/NoclipTest.tscn            # noclip, aléa connu aussi
 "$GODOT" --headless --path "$PROJET" --fixed-fps 60 --quit-after 300 res://scenes/tests/VehicleCatalogTest.tscn  # catalogue des véhicules, 20 000 tirages
-"$GODOT" --headless --path "$PROJET" res://scenes/tests/CarDrivingTest.tscn
-"$GODOT" --headless --path "$PROJET" res://scenes/tests/CarDropTest.tscn
+"$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/CarDrivingTest.tscn  # sonde, PAS de ligne RESULT
+"$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/CarDropTest.tscn     # sonde, PAS de ligne RESULT
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/CarKerbTest.tscn          # bordures : le joueur monte, l'IA non
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/DowntownStreetsTest.tscn
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/DowntownBuildingsTest.tscn
@@ -267,6 +270,18 @@ sans le plafond de 800x450 du §6). Une vue peut imposer sa propre heure par un 
   plus que SES PROPRES ENFANTS, comme `_recycle` le faisait déjà.
 - **`ShopBuildingsTest` échoue depuis avant ces chantiers** : ne pas l'imputer à la modification du
   jour, ne pas le « réparer » au passage.
+- **Geler la circulation pour une capture demande `PROCESS_MODE_DISABLED`, pas
+  `set_physics_process(false)`.** Payé le 2026-09-21 sur `--cadrer=frein` : `SimulationCuller`
+  réveille les véhicules proches du joueur à chaque passage et leur REND leur `_physics_process`.
+  Entre le cadrage et le déclenchement il s'écoule ~250 images (~4 s) : le sujet repartait, relevé
+  à **17,51 m au lieu des 7,49 m** du cadrage, son feu était repassé au vert et il ne freinait plus.
+  Résultat, des captures de freinage sans la moindre flaque — et l'illusion que la fonction ne
+  marchait pas, alors que la voiture était simplement partie. Deux enseignements qui valent au-delà
+  de ce cas : un relevé pris AU CADRAGE ne vaut rien, il faut le prendre AU DÉCLENCHEMENT (d'où
+  `MAP_SHOT_OEIL` et `MAP_SHOT_LUMIERE`, qui impriment la position de la caméra et des vraies
+  lumières à l'image capturée) ; et le bassin de vraies lumières est réaffecté à chaque image aux
+  véhicules les plus proches de la CAMÉRA, donc il ne se pose sur le sujet qu'une fois la caméra
+  déplacée.
 - **Le mode `"sol"` de `MapShotsTest` élève aussi le point visé** : un point visé au-dessus d'un
   bâtiment accroche son toit et retourne la caméra vers le ciel. Pour une caméra devant un immeuble,
   relever la hauteur du sol et écrire des altitudes absolues.
@@ -316,6 +331,15 @@ débogage sur `V`.
   bâtiments de la carte) ;
 - **concessionnaire enrichi** ;
 - **bug : 0 voiture exposée** chez le concessionnaire ;
+- **bug : `PlayerCarPhysics` finit SUR LE TOIT** dans ses deux sondes, et c'est ANTÉRIEUR — mesuré le
+  2026-09-21, chiffres identiques au centième sur `0344b79`, donc sans rapport avec les chantiers en
+  cours. `CarDrivingTest` (posée à plat à la hauteur de repos documentée, 2,57 m) finit
+  `min_up_dot = -0,9977` et `final_speed = 11,99` après sa phase de freinage, au lieu de s'arrêter ;
+  `CarDropTest` finit `up_dot = -0,9999`, `rotation_deg = (0,000 ; 52,85 ; -179,12)` et **20,39 m de
+  dérive**. Les deux sondes annoncent `mass = 90.00` : une voiture de 90 kg pour une suspension
+  réglée sur une caisse lourde est le premier suspect. Ça ne se voit pas forcément en jeu — les 252
+  voitures de la circulation et la voiture prise dans la rue sont des `Car.gd` arcade, pas ce
+  `RigidBody3D` — mais c'est bien lui qu'on conduit en `PlayerCarPhysics` ;
 - **chantier « relier tous les bâtiments à la route »** (cf. ci-dessous).
 
 ### Chantier à prévoir : relier les bâtiments à la route
@@ -448,16 +472,18 @@ interpole entre 5-7 h et 19-21 h : c'est lui qui fond les lampadaires, pas un in
 **Touche `N`** : +1 h. **`Maj+N`** : -1 h. **`Ctrl+N`** : fige ou relance le cycle. Une horloge s'affiche en haut
 à droite pendant 2,5 s après chaque changement, et en permanence quand le cycle est figé.
 
-### Comment les 1 375 lampadaires s'allument sans coûter
+### Comment les 1 371 lampadaires s'allument sans coûter
 
-**Il y a 1 375 mâts et 1 540 luminaires** (les doubles en portent deux) : 509 mâts / 634 luminaires sur la carte
-(`RoadBake`), 866 mâts / 906 luminaires au centre-ville (`DowntownFurnitureBake`).
+**Il y a 1 371 mâts et 1 534 luminaires** (les doubles en portent deux) : 505 mâts / 628 luminaires sur la carte
+(`RoadBake`), 866 mâts / 906 luminaires au centre-ville (`DowntownFurnitureBake`). Les chiffres de 1 375 / 1 540
+qu'on lit plus haut dans les mesures du 2026-09-19 étaient exacts ce jour-là : `RoadBake` a depuis refusé 4 mâts
+faute de dégagement (cf. l'anomalie corrigée en fin de chapitre), ce qui retire 4 mâts et 6 luminaires.
 
 Deux mécanismes, et c'est la séparation qui tient le budget :
 
 1. **Les halos, partout.** Une petite boîte non éclairée sur chaque luminaire, **fusionnée avec les autres en un
    maillage par cellule** (carte) ou par bloc (centre-ville) : 96 maillages, 18 480 triangles pour toute la carte.
-   Cachés le jour (0 appel de dessin), visibles la nuit (**1 appel par cellule visible**). Les 1 540 halos
+   Cachés le jour (0 appel de dessin), visibles la nuit (**1 appel par cellule visible**). Les 1 534 halos
    partagent **UN SEUL matériau** (`scenes/world/lamp_glow_material.tres`) : c'est la condition pour que le moteur
    les regroupe, exactement la leçon déjà payée sur les mâts (cf. `LampPoleLayer`, où une copie de matériau par
    poteau avait fabriqué 378 appels). `DayNightTest` échoue si un deuxième matériau apparaît.
@@ -503,13 +529,23 @@ donne les phares du joueur et des quelques voitures les plus proches. Le seul pi
 clignote a besoin d'un matériau qui change, donc **il faut un matériau partagé par état** (bleu allumé, rouge
 allumé, éteint) et faire clignoter tout le monde en phase, jamais un matériau par véhicule.
 
-### Anomalie antérieure révélée par ce chantier
+### Anomalie antérieure révélée par ce chantier, et corrigée
 
-**5 luminaires (3 mâts) de la carte sont plantés sous un tablier routier**, tête à 0,005 à 0,493 m de l'ouvrage,
-en (-697,1 / -694,6 ; 0,84 ; -776,1), (-720,6 / -718,3 ; 0,84 ; -635,8) et (53,3 ; 7,38 ; 791,6). Ces mâts
-existent depuis le chantier des routes ; le cycle jour/nuit n'a fait que les révéler, en demandant pour la
-première fois OÙ sont les luminaires. La cause est dans la pose des lampadaires de `RoadBake`, qui ne regarde pas
-le dégagement au-dessus du mât. `DayNightTest` constate les 5 et **échoue si le nombre augmente**.
+**5 luminaires (3 mâts) de la carte étaient plantés sous un tablier routier**, tête à 0,005 à 0,493 m de
+l'ouvrage, en (-697,1 / -694,6 ; 0,84 ; -776,1), (-720,6 / -718,3 ; 0,84 ; -635,8) et (53,3 ; 7,38 ; 791,6). Ces
+mâts existaient depuis le chantier des routes ; le cycle jour/nuit n'a fait que les révéler, en demandant pour la
+première fois OÙ sont les luminaires.
+
+**C'est réglé, et le contrôle a changé de place.** `RoadBake` exige maintenant `Network.CLEARANCE` au-dessus du
+pied avant de poser un mât et en **refuse 4** (`"lampadaires_refuses": 4` dans sa sortie), d'où 505 mâts au lieu
+de 509 et 628 luminaires au lieu de 634. Le comptage vit désormais dans **`MapRoadsTest`**, qui le mesure sur les
+triangles des chaussées cuites au lieu d'un rayon : `MAP_ROADS_LAMPES ... 0 mât(s) sous un ouvrage`. `DayNightTest`
+ne garde que ses propres bornes de dégagement (5,9 - 7,2 m sous le luminaire).
+
+**Son rayon de dégagement ne regarde que la couche 1, le monde statique** — leçon payée le 2026-09-21. Une
+berline garée pile sous le luminaire du parking de l'aérogare renvoyait 4,75 m au lieu de 6,2 et le test accusait
+un mât enterré alors qu'il mesurait un toit de voiture. Toute sonde qui mesure le SOL doit exclure la couche 3
+(les véhicules, `Car.tscn` `collision_layer = 4`).
 
 ### Fenêtres allumées : les huit cas signalés le 2026-09-20, et ce qu'ils étaient
 
@@ -531,10 +567,11 @@ Deux constats de la même passe, à ne pas refaire :
 - **`Industrial_Warehouse_alt01` n'a aucun matériau de vitrage** (`Mat_Standard`, `Mat_Refl`). Un
   entrepôt sans fenêtre est un entrepôt sans fenêtre.
 
-Et un défaut trouvé à l'image pendant la correction : **un carreau trop grand qu'on ne sait pas
-retailler n'est plus allumé du tout**. Les panneaux de mur-rideau des tours à facettes, allumés d'un
-bloc, fabriquaient des **nappes blanches de plusieurs dizaines de mètres flottant entre les
-immeubles**. Mieux vaut un panneau éteint qu'une nappe.
+Et un défaut trouvé à l'image pendant la correction : les panneaux de mur-rideau des tours à
+facettes, allumés d'un bloc, fabriquaient des **nappes blanches de plusieurs dizaines de mètres
+flottant entre les immeubles**. La première réponse — ne plus allumer un carreau trop grand qu'on ne
+sait pas retailler — a été **RETIRÉE le 2026-09-20 au soir** : elle éteignait bien plus que les
+nappes (un modèle est tombé de 42 carreaux à 6). Voir la sous-section suivante.
 
 ### Balisage de l'aéroport (Prairie Wind International)
 
@@ -614,3 +651,144 @@ gyrophare, éteint par défaut.
 Elles ne roulent pas (aucun `setup()`, donc aucun trajet) et `Car.park()` les met dans l'état
 « laissée là », le seul qui laisse la gravité les poser au sol quand elles n'ont pas de trajet. Elles
 ne disparaissent pas : le compte à rebours d'abandon n'est armé que lorsque le joueur les quitte.
+
+### Recenser les fenêtres allumées : la méthode, et les chiffres
+
+**Vérifier sur trois modèles ne suffit pas.** La correction du 2026-09-20 au matin avait été validée
+sur trois cas représentatifs et déclarée finie ; plusieurs familles de bâtiments restaient noires. La
+vérification qui vaut est un **recensement de toute la population**, lu sur le monde CUIT :
+
+1. charger tous les maillages de carreaux (`buildings/window_glow_*.res` pour la carte,
+   `buildings/windowglow*.res` pour le centre-ville — **attention, `windowglowsky_*` est un préfixe
+   distinct, l'oublier fait ressortir toutes les tours à zéro**) ;
+2. **parcourir les CARREAUX, pas les bâtiments**, et donner chaque barycentre au bâtiment dont
+   l'emprise est la plus PROCHE (distance à la boîte, 0 si dedans) — la carte par
+   `buildings/lots.json`, le centre-ville par `downtown/generated/buildings.json` ;
+3. sortir la liste des bâtiments à zéro carreau, **groupée par modèle**, et la lire.
+
+**Le point 2 a une histoire.** La première version testait la CONTENANCE avec une marge fixe autour
+de l'emprise, et le résultat dépendait de la marge : **89 bâtiments noirs à 1,5 m, 83 à 6 m**. La
+cause est réelle et pas un arrondi — le vitrage de certains modèles déborde l'emprise notée dans
+`lots.json`, l'auvent d'une station-service par exemple, si bien que `Business_GasStation` et
+`Industrial_Warehouse_alt03` ressortaient noirs alors qu'ils ont 12 carreaux chacun (mesuré :
+1,5 à 8,3 m² l'unité). Le **plus proche** ne dépend d'aucun réglage, et c'est cette version-là qui
+donne les chiffres ci-dessous. Un recensement dont le résultat bouge avec un seuil n'est pas un
+recensement.
+
+Chiffres relevés ainsi, sur 1 637 bâtiments posés. **Les trois colonnes sont mesurées avec LE MÊME
+instrument**, en rejouant la sonde sur les mondes cuits de `0344b79` et de `470ed6d` (worktree déjà
+importé, `git checkout <commit> -- scenes/world/*/generated` suffit, la sonde ne lit que des `.res`
+et des `.json`) :
+
+| | `0344b79` | `470ed6d` | ce commit |
+|---|---|---|---|
+| triangles de carreaux allumés | 47 668 | 83 146 | **127 580** |
+| bâtiments avec ≥ 1 fenêtre | 1 413 | 1 508 | **1 548** |
+| bâtiments sans aucune lumière | 224 | 129 | **89** |
+| modèles distincts concernés | 39 | 19 | **12** |
+| lieux avec fenêtres | 0 | 7 | **10** sur 12 |
+
+**Les 89 qui restent ne sont pas corrigeables et il ne faut pas essayer.** Les 12 modèles, avec leur
+compte : `SmallIndustrialStructure_alt01` (14), `alt05` (13), `IndustrialBuilding_alt02` (12),
+`alt07` (11), `StorageFacility` (8), `Warehouse_alt01` (7 + 6 au centre-ville), `Warehouse_alt02` (6),
+`Farm_MetalWindmill` (6), `Farm_Barn` (4), `Mk3` (1), `Historical_Bandstand` (1). Aucun n'a de
+matériau de vitrage (`Mat_Standard`, `Mat_Refl`). Peindre des fenêtres qui n'existent pas est
+explicitement refusé.
+
+De la même passe : `Industrial_TraditionalSkyscraper_alt07` n'a de vitrage que sur **deux façades sur
+quatre** dans le modèle (560 carreaux, tous sur ±X). Ce n'est pas un défaut d'extraction, c'est
+l'asset. Vérifié aussi que toutes ses normales pointent vers l'extérieur — l'hypothèse « carreau
+poussé dans le mur » a été testée et écartée.
+
+### La portée des carreaux doit suivre celle du bâtiment
+
+Symptôme à connaître : **un bâtiment qui reste visible alors que ses fenêtres ont disparu** est un
+écart de portée, pas un défaut d'extraction. Relevé le 2026-09-20 sur le monde cuit :
+
+- **Centre-ville, aucun écart.** `WindowGlow` est à **650 m**, exactement le `hlod_distance` de
+  `DowntownHLOD` : au-delà, le bâtiment lui-même cède la place à sa silhouette fusionnée, donc les
+  deux s'éteignent ensemble. Les gratte-ciels marqués `no_hlod` gardent leur maillage à toute
+  distance et portent un `WindowGlowSky` à **4 000 m**. `core_003_Mk1` et `midrise_182` sont dans ce
+  cas : leur noirceur venait du taux d'allumage, pas de la portée.
+- **Carte, écart réel mais invisible.** `DistrictsBake.WINDOW_GLOW_RANGE` est **fixe à 1 100 m**
+  alors que la portée d'un modèle est proportionnelle à sa taille (`RANGE` par usage, `office`
+  1 100) et monte jusqu'à **1 165,21 m** : **33 couples modèle-cellule sur 557** dépassent 1 100.
+  Bande concernée : 65 m, à une distance où un carreau de 2,6 m fait moins d'un pixel. Constaté et
+  laissé tel quel ; si un jour on y touche, la bonne valeur est le maximum de `ranges` de la
+  cellule, pas une constante.
+
+### Trois corrections de l'extraction, le 2026-09-20 au soir
+
+1. **UN CARREAU TROP GRAND EST SUBDIVISÉ, PLUS JAMAIS JETÉ.** La version du matin retaillait en
+   grille sur la boîte 2D et n'allumait pas ce qu'elle ne savait pas retailler (carreau non plan, ou
+   qui ne remplit pas sa boîte). Ça marchait sur un quad bien carré et ça éteignait tout le reste.
+   Maintenant on **découpe les triangles du modèle** sur la grille de travées de 2,6 x 3,2 m. Aucune
+   contrainte de planéité ni de rectangle, **aucun débordement possible** puisqu'on ne fait que
+   redécouper ce qui existe, et une nappe de mur-rideau devient une grille de fenêtres.
+
+   **DEUX MANIÈRES DE DÉCOUPER, ET LA PREMIÈRE A ÉTÉ REJETÉE PAR L'IMAGE** (2026-09-21). La version
+   du 20 au soir coupait chaque triangle au milieu de son plus long côté jusqu'au grain d'une travée,
+   puis rangeait chaque morceau dans la case de son **barycentre**. Tous les comptes étaient bons —
+   107 372 carreaux posés, 13 modèles noirs, les tours allumées — et pourtant, au sol devant une tour
+   à mur-rideau, les fenêtres sortaient en **taches irrégulières** : des L, des drapeaux, des découpes
+   en dents de scie. Un morceau dont le barycentre tombe dans une case déborde dans la voisine, et le
+   contour d'une case est donc la réunion de morceaux qui dépassent. **Aucun compteur ne pouvait le
+   dire ; il a fallu recadrer sur la façade et regarder.** La version qui tient rogne chaque triangle
+   contre les quatre plans de sa case (Sutherland-Hodgman, mené en 3D pour que les carreaux non plans
+   passent aussi) et re-triangule le morceau gardé : les carreaux sont alors de vrais rectangles.
+   Coût mesuré : 107 372 -> 110 982 carreaux posés au centre-ville, les triangles en proportion.
+2. **AU MOINS UNE FENÊTRE ALLUMÉE par bâtiment qui a des carreaux.** Une maison de 7 carreaux a
+   0,72^7 = 10 % de chances de ressortir entièrement noire : 41 maisons de la carte l'étaient, et
+   c'était la cause n°1 du recensement. Le carreau retenu est celui de clé de tirage maximale, donc
+   stable d'une cuisson à l'autre comme tout le reste.
+3. **LES LIEUX BÂTIS EN PRIMITIVES ONT AUSSI DES FENÊTRES.** Le motel, le chantier, Echo Circle,
+   Liberty Motors et l'aérogare ne sont pas des modèles : ils sont dessinés en `_box` et `_quad`, donc
+   `BuildingWindows` n'avait rien à y extraire. Leurs vitrages sont les quads peints d'une couleur de
+   `VITRAGES` ; `PlacesBake._quad` les reconnaît à la couleur au moment où il les dessine et en fait
+   des carreaux, découpés au même grain que les autres.
+
+**Le taux d'allumage se règle en ligne de commande** : les trois cuiseurs de fenêtres acceptent
+`--fraction=<0..1>`, ce qui permet de cuire la ville à plusieurs taux et de comparer les images
+depuis le même point sans toucher au code. Mesuré le 2026-09-20 : **28 %, 40 % et 55 % coûtent
+exactement le même nombre d'appels de dessin** (487, 488, 488 sur la silhouette depuis le quai) —
+les carreaux sont fusionnés dans les mêmes maillages de cellule, le taux ne change que des triangles.
+Le choix est donc purement visuel.
+
+### Une lumière de véhicule n'éclaire pas son propre véhicule
+
+Le gyrophare projetait bien son rouge sur les murs et le sol, **mais la rampe elle-même restait
+grise**. Ce n'était ni le matériau (bon), ni la géométrie (bonne : 11 triangles à 0,92 m sur le toit),
+ni la visibilité (le calque était posé, visible, avec le matériau rouge). La rampe de ces modèles est
+une bande PLATE peinte sur le toit, et l'OmniLight du gyrophare, posée juste au-dessus, **inondait ce
+toit de rouge** : la bande s'y noyait.
+
+La réponse est celle qui servait déjà aux mâts de lampadaire : les carrosseries sont sur le calque
+visuel 3 (`Car.DECAL_EXCLUDE_LAYERS = 4`), on retire donc ce bit du `light_cull_mask` des gyrophares
+et des feux de freinage. La lumière éclaire le décor et pas le véhicule qui la porte, et la rampe
+ressort. **Règle générale : une lumière portée par un véhicule ne doit jamais éclairer les
+carrosseries.**
+
+### Les deux repères opposés d'une voiture
+
+Payé le 2026-09-20 : **l'avant d'une VOITURE est `-basis.z`** (`Car._drive_physics` : `var fwd :=
+-global_transform.basis.z`), mais **l'avant d'un MODÈLE est son `+Z`**, et le catalogue lui applique
+`model_yaw_deg = 180` pour aligner les deux. Les deux repères sont donc opposés. Mesurer un recul sur
+le mauvais des deux donne un résultat de signe inverse — c'est arrivé sur la flaque de freinage, où
+le test a d'abord annoncé « la lumière est devant la voiture » alors que le code était juste.
+
+La flaque de freinage part maintenant de la **demi-longueur réelle de la caisse**, relevée à
+l'extraction (`Parts.caisse`) et remise à l'échelle du catalogue, plus 0,55 m : elle tombe derrière la
+poupe et non plus sous la voiture, où la plaçait un recul de 0,25 m pris depuis le CENTRE du véhicule.
+Et elle ne sort que la nuit : un vrai feu de freinage n'éclaire pas la chaussée en plein soleil.
+
+### Se garer sur le marquage
+
+`PlacesBake._parking` **rend maintenant la liste des places qu'il dessine** : centre de chaque place
+(l'intervalle entre deux traits, 2,8 m de large et 5,2 m de profondeur, centre à 1,4 m du trait) et
+direction du nez. Les voitures du parking de l'aérogare sont posées sur ces places, une par place, au
+lieu de coordonnées écrites à la main qui tombaient à côté du marquage.
+
+Le tirage est **stable et dérivé de la position de la place**, comme celui des fenêtres : une place
+garde sa voiture, son angle et son décalage d'une cuisson à l'autre. Une place sur trois reste vide,
+et chaque voiture prend quelques degrés de travers et un peu d'avance ou de recul, pour que la rangée
+ne soit pas alignée au cordeau. **58 véhicules garés** au total, contre 14.

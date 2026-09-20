@@ -79,6 +79,17 @@ var stats := {"lieux": 0, "modèles": 0, "étiquettes": 0, "triangles": 0, "somm
 # jour puisque le nœud est caché.
 const Windows := preload("res://scenes/world/map/tools/BuildingWindows.gd")
 const WINDOW_RANGE := 1200.0
+# LES LIEUX BÂTIS EN PRIMITIVES ONT AUSSI DES FENÊTRES. Le motel, le chantier, Echo Circle, Liberty
+# Motors et l'aérogare ne sont pas des modèles : ils sont dessinés en _box et en _quad, donc
+# BuildingWindows n'a rien à y extraire et ils restaient NOIRS. Leurs vitrages existent pourtant —
+# ce sont les quads peints d'une des couleurs ci-dessous. On les reconnaît donc à la couleur, au
+# moment où ils sont dessinés, et on en fait des carreaux comme les autres : même tirage stable sur
+# la position monde, même matériau partagé, même groupe window_glow.
+#
+# GLASS est le vitrage générique des lieux ; le second est celui des chambres du motel, une teinte
+# plus froide relevée dans _motel.
+const VITRAGES := [Color(0.22, 0.3, 0.36), Color(0.12, 0.36, 0.42)]
+const VITRAGE_TOLERANCE := 0.02
 var _window_acc := [PackedVector3Array(), PackedVector3Array(), PackedInt32Array()]
 
 # --- balisage de l'aéroport (chantier jour/nuit) -------------------------------------------------------------------
@@ -125,6 +136,12 @@ var stats_air := {"feux": 0, "par_couleur": {}, "rampe_barres": 0}
 
 
 func _initialize() -> void:
+	# Taux de fenetres allumees impose en ligne de commande, pour comparer plusieurs reglages sur
+	# la meme vue sans toucher au code (cf. BuildingWindows.fraction).
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("--fraction="):
+			Windows.fraction = clampf(a.substr(11).to_float(), 0.0, 1.0)
+			print("WINDOW_FRACTION %.2f" % Windows.fraction)
 	var t0 := Time.get_ticks_msec()
 	model = Model.new()
 	net = Network.new(model)
@@ -213,23 +230,20 @@ func _airport() -> void:
 	_prop(PLANE, Vector3(612, top, -1277), -PI * 0.5)
 	_prop(PLANE, Vector3(630, top, -1256), -PI * 0.5)
 	# parking de l'aérogare
-	_parking(Vector2(537, -1173.5), Vector2(126, 47), top - 0.02, true)   # 2 cm sous le plateau de fin d'artère qu'il recoupe
 	# clôture du côté piste, l'aérogare fait la limite
 	_fence(PackedVector2Array([Vector2(370, -1214), Vector2(70, -1214), Vector2(70, -1372), Vector2(1070, -1372), Vector2(1070, -970),
 			Vector2(640, -970), Vector2(640, -1214), Vector2(570, -1214)]), 2.4, STEEL, "chain")
 	_sign_board("PRAIRIE WIND INTERNATIONAL AIRPORT", Vector2(330, -1176), -PI * 0.5, 9.0)
-	# voitures en stationnement sur le parking de l'aérogare (126 x 47 m centré en (537, -1173.5)) :
-	# deux rangées nez à nez, à l'écart de l'allée centrale et des points de contrôle de MapGateTest
-	var modeles := ["Sedans/Veh_Sedan_01_Blue", "SUVs/Veh_SUV_01_White", "Sedans/Veh_Sedan_02_Red",
-			"SUVs/Veh_SUV_02_Green", "Vans/Veh_Van_01_White", "Sedans/Veh_Sedan_01_Yellow",
-			"SUVs/Veh_SUV_03_Blue", "Sedans/Veh_Sedan_02_White"]
-	var k := 0
-	for z: float in [-1186.0, -1161.0]:
-		for x: float in [500.0, 514.0, 528.0, 542.0]:
-			var chemin: String = VEH + modeles[k % modeles.size()] + ".glb"
-			if ResourceLoader.exists(chemin):
-				_parked_vehicle(chemin, Vector2(x, z), 0.0 if z < -1173.5 else PI, top + 0.03)
-			k += 1
+	# Voitures en stationnement sur le parking de l'aérogare. Elles sont posées AU CENTRE DES PLACES
+	# que _parking vient de dessiner, une par place, et non plus à des coordonnées écrites à la main
+	# qui tombaient à côté du marquage.
+	#
+	# Le tirage est STABLE et dérivé de la position de la place, comme celui des fenêtres : une place
+	# donnée garde sa voiture, son angle et son décalage d'une cuisson à l'autre. Rien n'est aligné au
+	# cordeau — quelques degrés de travers, un peu d'avance ou de recul dans la place, et une place
+	# sur trois laissée vide.
+	for place: Dictionary in _parking(Vector2(537, -1173.5), Vector2(126, 47), top - 0.02, true):
+		_garer_sur_place(place, top)
 	_balisage_aeroport(top)
 	_end("Prairie Wind International Airport", "airport")
 
@@ -750,7 +764,14 @@ func _paved(center: Vector2, size: Vector2, top: float, surface: String, line_co
 
 
 # Parking : surface pavée et places perpendiculaires au grand côté, en une rangée (côté -travers) ou deux.
-func _parking(center: Vector2, size: Vector2, top: float, two_rows := true, lip := LIP) -> void:
+# Rend la liste des PLACES dessinees : centre de chaque place et direction du nez d'une voiture qui
+# s'y gare. Une place est l'intervalle entre deux traits : 2,8 m de large le long de la rangee, 5,2 m
+# de profondeur, et son centre est a 1,4 m du trait qui la precede. Le nez pointe vers le bord
+# exterieur du parking, l'allee etant du cote interieur.
+#
+# C'est cette liste qui sert a garer les voitures : avant le 2026-09-20 elles etaient posees a des
+# coordonnees ecrites a la main, donc A COTE des places et non dedans.
+func _parking(center: Vector2, size: Vector2, top: float, two_rows := true, lip := LIP) -> Array:
 	_paved(center, size, top, "plain", Color(), false, lip)
 	var along := Vector2(1, 0) if size.x >= size.y else Vector2(0, 1)
 	var across := Vector2(0, 1) if size.x >= size.y else Vector2(1, 0)
@@ -759,12 +780,16 @@ func _parking(center: Vector2, size: Vector2, top: float, two_rows := true, lip 
 	var rows: Array[float] = [-1.0]
 	if two_rows:
 		rows.append(1.0)
+	var places: Array = []
 	for row: float in rows:
 		var line_center := center + across * row * (depth * 0.5 - 2.75)
 		var s := -length * 0.5 + 1.5
 		while s <= length * 0.5 - 1.5:
 			_stripe(line_center + along * s, across, 5.2, 0.12, top + 0.015, WHITE)
+			if s + 2.8 <= length * 0.5 - 1.5:
+				places.append({"pos": line_center + along * (s + 1.4), "nez": across * row})
 			s += 2.8
+	return places
 
 
 func _stripe(center: Vector2, dir: Vector2, length: float, width: float, y: float, color: Color) -> void:
@@ -1305,6 +1330,8 @@ func _end(display_name: String, kind: String) -> void:
 
 # Quadrilatère a-b-c-d, face visible du côté de `normal` ; collision (surfaces porteuses) si `collide`.
 func _quad(part: String, a: Vector3, b: Vector3, c: Vector3, d: Vector3, normal: Vector3, uv: Array = [], color := Color.WHITE, collide := true) -> void:
+	if _est_vitrage(color):
+		_carreau_primitif(a, b, c, d, normal)
 	if not parts.has(part):
 		parts[part] = Batch.new()
 	var batch: Batch = parts[part]
@@ -1356,3 +1383,57 @@ func _own(node: Node, root: Node) -> void:
 		child.owner = root
 		if child.scene_file_path == "":
 			_own(child, root)
+
+
+func _est_vitrage(c: Color) -> bool:
+	for v: Color in VITRAGES:
+		if absf(c.r - v.r) < VITRAGE_TOLERANCE and absf(c.g - v.g) < VITRAGE_TOLERANCE and absf(c.b - v.b) < VITRAGE_TOLERANCE:
+			return true
+	return false
+
+
+# Un quad de vitrage dessiné à la main devient un carreau, découpé au grain d'une fenêtre par
+# BuildingWindows exactement comme le vitrage d'un modèle : un bandeau de 196 m de long à l'aérogare
+# ne doit pas s'allumer d'un bloc.
+func _carreau_primitif(a: Vector3, b: Vector3, c: Vector3, d: Vector3, normal: Vector3) -> void:
+	var n := normal.normalized()
+	if n.length_squared() < 0.5:
+		return
+	var carreaux: Array = []
+	Windows.decouper(PackedVector3Array([a, b, c, a, c, d]), n, carreaux)
+	stats["carreaux_allumés"] = int(stats.get("carreaux_allumés", 0)) 			+ Windows.emit(carreaux, Transform3D.IDENTITY, _window_acc[0], _window_acc[1], _window_acc[2])
+
+
+# --- stationnement sur une place marquée -----------------------------------------------------------------------------
+# Parc du parking de l'aérogare : des voitures ordinaires, pas de véhicule d'urgence.
+const PARKING_MODELES := [
+	"Sedans/Veh_Sedan_01_Blue", "Sedans/Veh_Sedan_01_White", "Sedans/Veh_Sedan_02_Red",
+	"Sedans/Veh_Sedan_02_White", "Sedans/Veh_Sedan_01_Yellow", "SUVs/Veh_SUV_01_White",
+	"SUVs/Veh_SUV_02_Green", "SUVs/Veh_SUV_03_Blue", "SUVs/Veh_SUV_01_Red",
+	"Vans/Veh_Van_01_White", "Pickup/Veh_Pickup_01_Blue", "Coupes/Veh_Coupe_01_Red",
+	"Microcar/Veh_Microcar_01_Yellow", "Minivan/Veh_Minivan_01_White",
+]
+const PARKING_VIDE := 32            # % de places laissées libres
+const PARKING_TRAVERS := 4.0        # degrés de travers, au plus
+const PARKING_AVANCE := 0.45        # m d'avance ou de recul dans la place
+const PARKING_LATERAL := 0.30       # m de décalage vers un côté de la place
+
+
+func _garer_sur_place(place: Dictionary, top: float) -> void:
+	var pos: Vector2 = place["pos"]
+	var nez: Vector2 = place["nez"]
+	# tirage stable dérivé de la position, comme pour les fenêtres : la même place garde sa voiture
+	var h := Windows.cle(Vector3(pos.x, 0.0, pos.y))
+	if h % 100 < PARKING_VIDE:
+		return
+	var chemin: String = VEH + PARKING_MODELES[(h >> 7) % PARKING_MODELES.size()] + ".glb"
+	if not ResourceLoader.exists(chemin):
+		return
+	var travers := (float((h >> 11) % 2001) / 1000.0 - 1.0) * deg_to_rad(PARKING_TRAVERS)
+	var avance := (float((h >> 17) % 2001) / 1000.0 - 1.0) * PARKING_AVANCE
+	var lateral := (float((h >> 23) % 2001) / 1000.0 - 1.0) * PARKING_LATERAL
+	var cote := Vector2(-nez.y, nez.x)
+	var centre := pos + nez * avance + cote * lateral
+	# Le cap enregistré est celui du MODÈLE BRUT, même convention que les voitures du commissariat :
+	# nez vers (-x, -z) donne atan2(-nez.x, -nez.y).
+	_parked_vehicle(chemin, centre, atan2(-nez.x, -nez.y) + travers, top + 0.03)

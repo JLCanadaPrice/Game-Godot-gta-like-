@@ -41,6 +41,7 @@ func _ready() -> void:
 	for k in 8:
 		await get_tree().physics_frame
 	await _freins_joueur()
+	await _flaque_de_frein()
 	_stationnement()
 	_gyro_motif()
 	_gyro_api()
@@ -82,6 +83,62 @@ func _freins_joueur() -> void:
 		_fautes.append("feux de freinage allumés sur une voiture garée")
 	print("VEHICLE_LIGHTS_FREINS roule %s / freine %s / garee %s" % [str(au_repos), str(en_freinant), str(garee)])
 	car.queue_free()
+
+
+# --- la flaque de freinage tombe DERRIERE la voiture ----------------------------------------------
+# Elle etait posee a 0,25 m de l'ORIGINE du vehicule, c'est-a-dire de son centre : la lumiere se
+# trouvait donc SOUS la caisse. On exige maintenant qu'elle soit au-dela de la poupe.
+
+func _flaque_de_frein() -> void:
+	var vl := _monde.get_node_or_null("VehicleLights")
+	if vl == null:
+		return
+	var car := CAR.instantiate()
+	car.forced_model_path = BERLINE
+	add_child(car)
+	car.global_position = Vector3(0, 300, 0)
+	car.driven_by_player = true
+	car.set("_drive_speed", 10.0)
+	Input.action_press("move_back")
+	# la camera doit voir la voiture : VehicleLights ne pose que ce qui est a portee
+	var cam := Camera3D.new()
+	add_child(cam)
+	cam.make_current()
+	cam.global_position = Vector3(0, 302, 12)
+	cam.look_at(Vector3(0, 300, 0), Vector3.UP)
+	var cycle := _monde.get_node_or_null("DayNight")
+	if cycle != null:
+		cycle.set("paused", true)
+		cycle.call("set_hour", 1.0)
+	for k in 10:
+		await get_tree().process_frame
+	Input.action_release("move_back")
+	var spots: Array = []
+	for n in vl.get_children():
+		if n is SpotLight3D and String(n.name).begins_with("Frein_") and (n as SpotLight3D).visible:
+			spots.append(n)
+	if spots.is_empty():
+		_fautes.append("aucune flaque de freinage posee la nuit sur une voiture qui freine")
+		car.queue_free()
+		cam.queue_free()
+		return
+	var l: SpotLight3D = spots[0]
+	# distance derriere l'origine, le long de l'axe de la voiture
+	# CONVENTION, verifiee dans Car.gd : l'AVANT d'une voiture est -basis.z (var fwd := -basis.z), donc
+	# sa POUPE est +basis.z. Le modele, lui, porte un lacet de 180° (model_yaw_deg), si bien que son
+	# propre +Z est l'avant : les deux reperes sont opposes. Mesurer le recul sur le mauvais des deux
+	# donne un resultat de signe inverse, ce qui est arrive une fois ici.
+	var xf: Transform3D = car.global_transform
+	var arriere: Vector3 = xf.basis.z.normalized()
+	var recul: float = (l.global_position - xf.origin).dot(arriere)
+	var demi := 2.08   # demi-longueur mesuree d'une berline du pack a l'echelle 1,65
+	if recul < demi:
+		_fautes.append("la flaque de freinage est a %.2f m de l'origine, soit SOUS la voiture (poupe a %.2f m)" % [recul, demi])
+	if l.light_cull_mask & 4 != 0:
+		_fautes.append("la flaque de freinage eclaire la carrosserie : le calque 3 doit etre exclu")
+	print("VEHICLE_LIGHTS_FLAQUE %d flaque(s), recul %.2f m (poupe a %.2f m), masque %d" % [spots.size(), recul, demi, l.light_cull_mask])
+	car.queue_free()
+	cam.queue_free()
 
 
 # --- véhicules en stationnement -------------------------------------------------------------------

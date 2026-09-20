@@ -113,6 +113,12 @@ var _stats := {"par_zone": {}, "par_famille": {}, "occulteurs": 0, "occulteurs_a
 
 
 func _initialize() -> void:
+	# Taux de fenetres allumees impose en ligne de commande, pour comparer plusieurs reglages sur
+	# la meme vue sans toucher au code (cf. BuildingWindows.fraction).
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("--fraction="):
+			Windows.fraction = clampf(a.substr(11).to_float(), 0.0, 1.0)
+			print("WINDOW_FRACTION %.2f" % Windows.fraction)
 	rng.seed = SEED
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(MODELS.path_join("models")))
 	layout = Layout.new()

@@ -30,6 +30,15 @@ const HEAD_MIN := 5.9
 const HEAD_MAX := 7.2
 const ARM_MAX := 1.35          # longueur de crosse mesurée : 1,229 m (simple), 1,268 m (double)
 
+# Le rayon qui mesure ce dégagement ne doit voir QUE LE MONDE STATIQUE (couche 1). Payé le
+# 2026-09-21 : depuis que le parking de l'aérogare est rempli, une berline est garée pile sous le
+# luminaire (479,46 ; 11,66 ; -1195,43) — mât à 0,22 m de la caisse, donc rien ne se touche, c'est
+# un vrai parking éclairé. Le rayon tombait sur son toit et annonçait 4,75 m de dégagement au lieu
+# de 6,2 : le test accusait un mât enterré alors qu'il mesurait une voiture. Les véhicules sont sur
+# la couche 3 (`Car.tscn`, collision_layer = 4), les piétons ailleurs ; seule la couche 1 porte le
+# sol et les ouvrages, qui sont les seules choses qui peuvent réellement coincer un luminaire.
+const MONDE_STATIQUE := 1
+
 # Le COMPTE des mâts plantés sous un ouvrage n'est plus ici : il vit dans MapRoadsTest, qui le
 # mesure sur les triangles des chaussées cuites au lieu d'un rayon, et RoadBake refuse désormais de
 # poser un lampadaire sans Network.CLEARANCE au-dessus du pied. Ce test-ci garde seulement sa propre
@@ -254,7 +263,7 @@ func _luminaires(world: Node) -> void:
 		for i in res.size():
 			var head := res.heads[i]
 			var hit := espace.intersect_ray(PhysicsRayQueryParameters3D.create(
-					head + Vector3(0, 0.6, 0), head - Vector3(0, 80.0, 0)))
+					head + Vector3(0, 0.6, 0), head - Vector3(0, 80.0, 0), MONDE_STATIQUE))
 			if hit.is_empty():
 				sans_sol += 1
 			else:

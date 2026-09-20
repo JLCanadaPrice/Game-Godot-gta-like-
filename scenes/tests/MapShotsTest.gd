@@ -102,6 +102,20 @@ const VIEWS := [
 	["nuit_aeroport_seuil_sol", Vector3(186.0, 1.7, -1350.0), Vector3(136.0, 1.4, -1350.0), "sol", 1.0],
 	["nuit_aeroport_tablier_sol", Vector3(470.0, 1.7, -1272.0), Vector3(600.0, 26.0, -1210.0), "sol", 1.0],
 	["nuit_skyline_quai_sol", Vector3(-250.0, 1.7, -500.0), Vector3(-470.0, 55.0, -230.0), "sol", 1.0],
+	# Controle du 2026-09-20 : les deux tours que le joueur voit noires. Altitudes ABSOLUES (le mode
+	# "sol" eleve aussi le point vise, et viser le haut d'une tour renverrait la camera vers le ciel).
+	["nuit_tour_mk1_sol", Vector3(-230.0, 60.0, -279.0), Vector3(-566.0, 130.0, -279.0), "", 1.0],
+	["nuit_tour_alt02_sol", Vector3(-580.0, 30.0, -224.0), Vector3(-717.0, 34.0, -224.0), "", 1.0],
+	# Gros plan sur une rampe de gyrophare, a 6 m : c'est la seule distance ou l'on voit si la
+	# GEOMETRIE de la rampe s'allume, et pas seulement la lumiere qu'elle projette.
+	["nuit_gyro_gros_plan", Vector3(-692.6, 2.6, 155.0), Vector3(-694.3, 1.75, 158.3), "", 1.0],
+	# Parking de l'aerogare : une vue elevee pour juger l'ALIGNEMENT sur le marquage (c'est un
+	# controle de geometrie, pas de rendu), et une a hauteur d'homme pour juger l'image.
+	["jour_parking_aeroport", Vector3(537.0, 22.0, -1128.0), Vector3(537.0, 0.0, -1176.0), "", 12.0],
+	["jour_parking_aeroport_sol", Vector3(600.0, 1.7, -1160.0), Vector3(500.0, 1.2, -1180.0), "sol", 12.0],
+	# la meme vue de nuit : c'est la seule qui montre a la fois les voitures sur leur marquage et
+	# les lampadaires du parking allumes.
+	["nuit_parking_aeroport_sol", Vector3(600.0, 1.7, -1160.0), Vector3(500.0, 1.2, -1180.0), "sol", 1.0],
 	["crepuscule_artere_sol", Vector3(-1606.0, 1.7, -8.0), Vector3(-1624.0, 1.5, -80.0), "sol", 19.8],
 	# lampadaires sous un ouvrage (2026-09-19) : les 4 mâts que RoadBake refuse désormais de poser.
 	# Altitudes ABSOLUES et à hauteur d'homme — le mode "sol" ne convient pas ici, il relèverait la
@@ -150,9 +164,14 @@ var _feux := -1                      # etat impose aux feux tricolores, -1 = les
 var _trafic := 0.0                   # s d'attente avec les spawners ACTIFS avant de capturer
 var _cadrer := ""                    # "phare" | "frein" | "face" | "gyro" : recadre sur un vrai vehicule
 var _gyros_allumes := false
+# Rayon de recherche de --cadrer=. Par defaut on va chercher loin (un vehicule d'urgence ne fait
+# que 1,4 % du trafic), mais pour une capture au sol il vaut mieux un sujet PROCHE du point de
+# vue : plus il est loin, plus la camera part dans une rue qu'on n'a pas choisie.
+var _cadrer_max := 400.0
 var _gyro := -1                      # fige les gyrophares sur un etat, pour la capture
 var _vehicule := ""                  # convertit le vehicule le plus proche en ce modele du catalogue
 var _converti: Node3D = null         # ce vehicule-la, qu'on cadrera en priorite
+var _sujet: Node3D = null            # le vehicule cadre par --cadrer=, pour le releve des lumieres
 
 
 func _ready() -> void:
@@ -196,6 +215,8 @@ func _ready() -> void:
 			# gauche allumee (rouge), temps 4 et 6 = moitie droite (bleue pour la police, blanche
 			# pour les urgences), temps impairs = les deux eteintes.
 			_gyro = {"gauche": 0, "droite": 4, "eteint": 1}.get(arg.substr(7), arg.substr(7).to_int())
+		elif arg.begins_with("--cadrer-max="):
+			_cadrer_max = arg.substr(13).to_float()
 		elif arg.begins_with("--cadrer="):
 			# Va chercher un VRAI vehicule dans l'etat voulu et cadre dessus. Sans ca une capture de
 			# rue est une loterie : les voitures suivent leur circuit et ne passent pas forcement
@@ -319,6 +340,37 @@ func _ready() -> void:
 		mesures.sort()
 		var gpu: float = mesures[mesures.size() / 2]
 		await RenderingServer.frame_post_draw
+		# Ou est l'oeil AU MOMENT DU DECLENCHEMENT, et est-ce bien notre camera qui rend ? Sans ce
+		# releve, une capture mal cadree ne dit pas si le cadrage a echoue ou si une autre camera a
+		# pris la main entre-temps.
+		var oeil := get_viewport().get_camera_3d()
+		print("MAP_SHOT_OEIL %s a (%.1f, %.1f, %.1f), la notre est %s a (%.1f, %.1f, %.1f)"
+				% [oeil.name if oeil != null else "aucune",
+				oeil.global_position.x if oeil != null else 0.0,
+				oeil.global_position.y if oeil != null else 0.0,
+				oeil.global_position.z if oeil != null else 0.0,
+				cam.name, cam.global_position.x, cam.global_position.y, cam.global_position.z])
+		if _cadrer != "" and _sujet != null and is_instance_valid(_sujet):
+			# Le bassin de vraies lumieres est REAFFECTE a chaque image, aux vehicules les plus proches
+			# de la CAMERA. Le relever au moment du cadrage ne dit rien : la camera n'a pas encore
+			# bouge. Paye le 2026-09-21, ou le releve annoncait une flaque a 2,5 m du sujet alors
+			# qu'elle etait encore a 60 m, sur une voiture restee pres du point de vue.
+			var vl2 := _vehicle_lights()
+			print("MAP_SHOT_SUJET_ETAT freine=%s visible=%s dessine=%s a %.2f m de la camera"
+					% [str(_sujet.call("brake_lights_on") if _sujet.has_method("brake_lights_on") else null),
+					str(_sujet.is_visible_in_tree()), str(_racine_visible(_sujet)),
+					_sujet.global_position.distance_to(cam.global_position)])
+			if vl2 != null:
+				for enfant in (vl2 as Node).get_children():
+					if not (enfant.name.begins_with("Frein_") or enfant.name.begins_with("Gyro_")):
+						continue
+					var l := enfant as Light3D
+					if l == null or not l.visible:
+						continue
+					print("MAP_SHOT_LUMIERE %s energie=%.2f pos=(%.2f, %.2f, %.2f) a %.2f m du sujet, %.2f m de la camera"
+							% [l.name, l.light_energy, l.global_position.x, l.global_position.y,
+							l.global_position.z, l.global_position.distance_to(_sujet.global_position),
+							l.global_position.distance_to(cam.global_position)])
 		if not _sans_image:
 			var img := get_viewport().get_texture().get_image()
 			if _out != "":
@@ -437,7 +489,7 @@ func _cadrer_sur(depuis: Vector3) -> Array:
 		# chercher loin. On amene ensuite le JOUEUR a cote (voir plus bas), sans quoi
 		# SimulationCuller, qui gele et cache ce qui est loin du joueur, le rendrait invisible au
 		# declenchement -- mesure faite, la capture sortait vide.
-		if d > 400.0:
+		if d > _cadrer_max:
 			continue
 		if d < meilleure:
 			meilleure = d
@@ -497,16 +549,45 @@ func _cadrer_sur(depuis: Vector3) -> Array:
 		var sp := n.get_node_or_null(nom) if n != null else null
 		if sp != null:
 			sp.set_process(false)
+	# GEL DUR, pas set_physics_process(false). Paye le 2026-09-21 : SimulationCuller reveille les
+	# vehicules proches du joueur a chaque passage, donc il leur RENDAIT leur _physics_process. Entre
+	# le cadrage et le declenchement (~250 images, ~4 s) le sujet repartait : releve au moment de la
+	# photo, il etait a 17,51 m au lieu des 7,49 m du cadrage, son feu vert etait passe et il ne
+	# freinait plus -- d'ou des captures de freinage sans la moindre flaque, la voiture etant partie.
+	# PROCESS_MODE_DISABLED, lui, ne se laisse pas rallumer par un set_physics_process(true).
 	var geles := 0
 	for v in get_tree().get_nodes_in_group(&"vehicle"):
-		(v as Node).set_physics_process(false)
-		(v as Node).set_process(false)
+		(v as Node).process_mode = Node.PROCESS_MODE_DISABLED
 		geles += 1
 	var mp = choisi.get("model_path")
 	var frein = choisi.call("brake_lights_on") if choisi.has_method("brake_lights_on") else null
-	print("MAP_SHOT_CADRE %s : %s a %.1f m, %d figes | modele %s | freine %s"
-			% [_cadrer, choisi.name, meilleure, geles, String(mp).get_file() if mp != null else "?", str(frein)])
+	print("MAP_SHOT_CADRE %s : %s a %.1f m, %d figes | modele %s | freine %s | sujet (%.1f, %.1f, %.1f), camera (%.1f, %.1f, %.1f) a %.2f m"
+			% [_cadrer, choisi.name, meilleure, geles, String(mp).get_file() if mp != null else "?", str(frein),
+			choisi.global_position.x, choisi.global_position.y, choisi.global_position.z,
+			pos.x, pos.y, pos.z, pos.distance_to(choisi.global_position)])
+	_sujet = choisi
 	return [pos, vise]
+
+
+func _vehicle_lights() -> Node:
+	var vl := get_node_or_null("World/VehicleLights")
+	if vl != null:
+		return vl
+	for c in get_children():
+		vl = c.get_node_or_null("VehicleLights")
+		if vl != null:
+			return vl
+	return null
+
+
+# Un maillage au moins est-il reellement dessine sous ce noeud ?
+func _racine_visible(n: Node) -> bool:
+	if n is MeshInstance3D and (n as MeshInstance3D).is_visible_in_tree():
+		return true
+	for c in n.get_children():
+		if _racine_visible(c):
+			return true
+	return false
 
 
 func _ground(p: Vector3) -> float:

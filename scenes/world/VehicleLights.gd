@@ -105,13 +105,26 @@ const SPOT_AVANCE := 0.15                # m devant le nez, pour ne pas éclaire
 # LE FREINAGE ÉCLAIRE LE SOL. Un bassin BORNÉ de SpotLight3D rouges, dirigés vers l'arrière et vers
 # le bas, se pose sur les véhicules qui freinent — LE JOUEUR D'ABORD. Même raison que partout
 # ailleurs : 252 voitures x 1 lumière de frein seraient 252 sources dans la passe d'ombrage.
+# LES LUMIERES DES VEHICULES N'ECLAIRENT PAS LES VEHICULES. Les carrosseries sont sur le calque
+# visuel 3 (Car.DECAL_EXCLUDE_LAYERS = 4) ; on retire ce bit du light_cull_mask des gyrophares et des
+# feux de freinage. Sans ca, le projecteur du gyrophare inonde de rouge le toit de sa propre voiture,
+# et la rampe — qui est une bande PLATE peinte sur ce toit, pas un bloc saillant — s'y noie : elle
+# reste grise a l'image alors qu'elle emet correctement. Meme procede que les 98 spots de feux
+# tricolores, qui excluent deja le calque des mats (cf. LampPoleLayer).
+const CALQUE_CARROSSERIE := 4
+const MASQUE_HORS_VEHICULE := 0xFFFFFFFF & ~CALQUE_CARROSSERIE
+
 @export var bassin_frein := 4
 const FREIN_ANGLE := 48.0
 const FREIN_RANGE := 9.0
 const FREIN_ENERGY := 3.0
 const FREIN_COLOR := Color(1.00, 0.10, 0.06)
-const FREIN_RECUL := 0.25                # m derrière la poupe
-const FREIN_PLONGEE := 0.55              # le cône regarde vers l'arrière ET vers le bas
+# La flaque doit tomber DERRIERE la voiture, pas dessous. FREIN_RECUL valait 0,25 m, mesure depuis
+# l'ORIGINE du vehicule, c'est-a-dire son centre : la lumiere etait donc sous la caisse. On part
+# maintenant de la demi-longueur reelle du modele, relevee a l'extraction, plus une marge.
+const FREIN_MARGE := 0.55                # m au-dela de la poupe
+const FREIN_HAUTEUR := 0.75              # m, hauteur du feu arriere
+const FREIN_PLONGEE := 0.75              # le cône regarde vers l'arrière ET vers le bas
 
 var _night := 0.0
 var _material: StandardMaterial3D
@@ -232,7 +245,7 @@ func _process(_delta: float) -> void:
 		var freine: bool = body.has_method("brake_lights_on") and body.call("brake_lights_on")
 		if freine:
 			freinent[cle] = freinent.get(cle, []) + [racine]
-			candidats_frein.append([d, body, racine])
+			candidats_frein.append([d, body, racine, cle])
 		elif _night > 0.0 and not gare:
 			# Feux de position : tout véhicule qui ROULE et ne freine pas, la nuit. Listes DISJOINTES,
 			# sinon les deux calques dessinent les mêmes triangles au même endroit. Une voiture garée
@@ -360,6 +373,9 @@ func _calque(cle: String, racine: Node3D, fam: String) -> MultiMeshInstance3D:
 				mat = _mats_gyro[GYRO_ETEINT]
 			entree[f] = _instancier(cle, f, Parts.maillage(parts[source], mat))
 		entree["gyro_centre"] = parts["gyro_centre"]
+		# demi-longueur de la CAISSE (roues exclues), pour poser la flaque de freinage derriere la
+		# poupe et non sous la voiture. Relevee une fois, avec le reste de l'extraction.
+		entree["demi_long"] = (Parts.caisse(racine)["aabb"] as AABB).size.z * 0.5
 		_par_modele[cle] = entree
 	return _par_modele[cle][fam]
 
@@ -462,6 +478,7 @@ func _eclairer_freins(candidats: Array) -> void:
 			l.light_color = FREIN_COLOR
 			l.light_energy = FREIN_ENERGY
 			l.shadow_enabled = false
+			l.light_cull_mask = MASQUE_HORS_VEHICULE
 			l.visible = false
 			add_child(l)
 			_spots_frein.append(l)
@@ -480,7 +497,8 @@ func _eclairer_freins(candidats: Array) -> void:
 		var xf := racine.global_transform
 		# l'avant du modèle est son +Z : la poupe est donc en -Z, et le cône regarde vers l'arrière
 		var arriere := -xf.basis.z.normalized()
-		var pos := xf.origin + arriere * FREIN_RECUL + Vector3(0, 0.55, 0)
+		var recul: float = _demi_longueur(candidats[k][3] if candidats[k].size() > 3 else "") * xf.basis.z.length() + FREIN_MARGE
+		var pos := xf.origin + arriere * recul + Vector3(0, FREIN_HAUTEUR, 0)
 		var l := _spots_frein[k]
 		l.visible = true
 		l.light_energy = FREIN_ENERGY * _night
@@ -575,6 +593,7 @@ func _eclairer_gyros(candidats: Array, temps: int) -> void:
 			l.omni_range = GYRO_LIGHT_RANGE
 			l.light_energy = GYRO_LIGHT_ENERGY
 			l.shadow_enabled = false
+			l.light_cull_mask = MASQUE_HORS_VEHICULE
 			l.visible = false
 			add_child(l)
 			_omnis_gyro.append(l)
@@ -605,3 +624,12 @@ func _eclairer_gyros(candidats: Array, temps: int) -> void:
 		l.visible = true
 		l.global_position = racine.global_transform * centre
 		l.light_color = mat.albedo_color if mat != null else Color.RED
+
+
+# Demi-longueur de caisse d'un modele, dans son propre repere (l'echelle du catalogue est portee par
+# la racine, on la remet au moment de s'en servir). 2,2 m par defaut : la mediane du parc.
+func _demi_longueur(cle: String) -> float:
+	var e = _par_modele.get(cle)
+	if e == null:
+		return 2.2
+	return float(e.get("demi_long", 2.2))

@@ -39,7 +39,11 @@ const WINDOW_WORDS := ["window", "glass"]
 const GLOW_MATERIAL := "res://scenes/world/window_glow_material.tres"
 
 # Part des carreaux allumés. Ni trop (un immeuble entièrement allumé fait faux), ni trop peu.
+# RÉGLABLE EN LIGNE DE COMMANDE : les cuiseurs acceptent --fraction=<0..1> et écrivent ici, ce qui
+# permet de cuire la ville à plusieurs taux et de comparer les images depuis le même point de vue
+# sans toucher au code. Le défaut est ce que la carte embarque.
 const LIT_FRACTION := 0.28
+static var fraction := LIT_FRACTION
 
 # Décollement du carreau allumé devant la vitre, en m : sans lui les deux surfaces sont coplanaires
 # et se battent en z. 2 cm ne se voit pas à hauteur d'homme et suffit à trancher.
@@ -71,9 +75,8 @@ const MASK := 0xffffffff
 const PANE_MAX := 4.0        # au-delà, en m, dans un sens ou dans l'autre : on retaille
 const PANE_W := 2.6          # largeur d'une travée, m
 const PANE_H := 3.2          # hauteur d'un étage, m
-const PANE_INSET := 0.18     # retrait par côté : c'est ce qui fait lire des fenêtres séparées
-const PANE_FULL := 0.95      # part de la boîte 2D couverte en dessous de laquelle on ne retaille pas
-const PANE_FLAT := 0.05      # écart maximal au plan, m : au-delà le carreau enjambe un angle
+const PANE_MIN_AIRE := 0.05  # m² : en dessous, la rognure de bord de case ne se voit pas, on la jette
+const PANE_MAX_CASES := 8192 # garde-fou : nombre de cases qu'un seul triangle peut recouvrir
 
 
 # Carreaux d'un modèle, dans son repère : chacun est une soupe de triangles avec sa normale moyenne.
@@ -206,9 +209,33 @@ static func _split(arrays: Array, xform: Transform3D, out: Array) -> void:
 		_emettre(tris, normale.normalized(), out)
 
 
-# Ajoute un carreau, retaillé en grille s'il couvre une façade entière (cf. PANE_MAX).
+# Ajoute un carreau. S'il couvre plus qu'une fenêtre, il est SUBDIVISÉ jusqu'au grain d'une travée.
+#
+# La première réponse, le 2026-09-20 au matin, était de retailler le carreau en grille sur sa boîte
+# 2D, et de ne PAS l'allumer quand ce n'était pas possible (carreau non plan, ou qui ne remplit pas
+# sa boîte). Ça marchait sur un quad de façade bien carré et ça ÉTEIGNAIT tout le reste : un modèle
+# est tombé de 42 carreaux à 6, et des tours entières se sont retrouvées sans lumière d'un côté.
+#
+# La bonne réponse ne fabrique aucune géométrie nouvelle : on DÉCOUPE LES TRIANGLES DU MODÈLE sur la
+# GRILLE DE TRAVÉES elle-même. Chaque triangle est rogné (Sutherland-Hodgman) contre les quatre plans
+# de la case PANE_W x PANE_H qu'il recouvre, case par case ; le morceau gardé est re-triangulé. Une
+# case = un carreau. Aucune contrainte de planéité — les plans de coupe sont ceux de la grille, pas
+# celui du carreau — et aucun débordement, puisqu'on ne fait que redécouper ce qui existe.
+#
+# CE QUI A ÉTÉ ESSAYÉ ET REJETÉ PAR L'IMAGE, le 2026-09-21 : couper chaque triangle au milieu de son
+# plus long côté jusqu'au grain d'une travée, puis ranger chaque morceau dans la case de son
+# BARYCENTRE. Les comptes étaient bons et la carte s'allumait, mais un morceau dont le barycentre
+# tombe dans une case déborde dans la voisine : au sol, devant une tour à mur-rideau, les fenêtres
+# allumées sortaient en TACHES IRRÉGULIÈRES — des L, des drapeaux, des découpes en dents de scie —
+# au lieu d'une grille. Vu à l'image, jamais dans un compteur. Le rognage exact coûte quelques
+# triangles de plus et rend des rectangles.
+# Point d'entree public du decoupage : sert aux vitrages dessines a la main (lieux batis en
+# primitives), qui n'ont pas de modele a extraire mais doivent etre decoupes au meme grain.
+static func decouper(tris: PackedVector3Array, n: Vector3, out: Array) -> void:
+	_emettre(tris, n, out)
+
+
 static func _emettre(tris: PackedVector3Array, n: Vector3, out: Array) -> void:
-	# repère du carreau : `droite` horizontale dans son plan, `haut` complétant le trièdre
 	var droite := Vector3.UP.cross(n)
 	if droite.length_squared() < 1e-9:
 		out.append({"tris": tris, "n": n})
@@ -226,42 +253,68 @@ static func _emettre(tris: PackedVector3Array, n: Vector3, out: Array) -> void:
 		var v := d.dot(haut)
 		umin = minf(umin, u); umax = maxf(umax, u)
 		vmin = minf(vmin, v); vmax = maxf(vmax, v)
-	var larg := umax - umin
-	var haut_m := vmax - vmin
-	if larg <= PANE_MAX and haut_m <= PANE_MAX:
+	if umax - umin <= PANE_MAX and vmax - vmin <= PANE_MAX:
 		out.append({"tris": tris, "n": n})
 		return
-	# PLANÉITÉ D'ABORD. L'union-find fusionne par sommets partagés, et au coin d'un bâtiment le
-	# vitrage de deux façades partage les sommets de l'arête : le carreau obtenu enjambe alors l'angle
-	# et n'est pas plan. Le retailler en grille dans un seul plan fabrique une NAPPE qui traverse le
-	# coin et flotte entre les immeubles — constaté à l'image le 2026-09-20 sur le centre-ville de
-	# nuit, avant ce garde-fou. Un carreau non plan garde donc ses triangles d'origine.
-	for p in tris:
-		if absf((p - o).dot(n)) > PANE_FLAT:
-			return
-	# aire réelle des triangles : on ne retaille qu'un rectangle PLEIN, sinon on déborderait
-	var aire := 0.0
+	# Rognage exact sur la grille : chaque triangle contre chaque case qu'il recouvre.
+	var cases := {}
 	for t in tris.size() / 3:
-		aire += 0.5 * (tris[t * 3 + 1] - tris[t * 3]).cross(tris[t * 3 + 2] - tris[t * 3]).length()
-	if larg * haut_m <= 1e-6 or aire / (larg * haut_m) < PANE_FULL:
-		return
-	var nu := maxi(1, roundi(larg / PANE_W))
-	var nv := maxi(1, roundi(haut_m / PANE_H))
-	var pu := larg / float(nu)
-	var pv := haut_m / float(nv)
-	var ru := minf(PANE_INSET, pu * 0.3)
-	var rv := minf(PANE_INSET, pv * 0.3)
-	for i in nu:
-		for j in nv:
-			var u0 := umin + i * pu + ru
-			var u1 := umin + (i + 1) * pu - ru
-			var v0 := vmin + j * pv + rv
-			var v1 := vmin + (j + 1) * pv - rv
-			var a := o + droite * u0 + haut * v0
-			var b := o + droite * u1 + haut * v0
-			var c := o + droite * u1 + haut * v1
-			var d := o + droite * u0 + haut * v1
-			out.append({"tris": PackedVector3Array([a, b, c, a, c, d]), "n": n})
+		var a := tris[t * 3]
+		var b := tris[t * 3 + 1]
+		var c := tris[t * 3 + 2]
+		var ua := (a - o).dot(droite); var ub := (b - o).dot(droite); var uc := (c - o).dot(droite)
+		var va := (a - o).dot(haut); var vb := (b - o).dot(haut); var vc := (c - o).dot(haut)
+		var i0 := floori(minf(ua, minf(ub, uc)) / PANE_W)
+		var i1 := floori(maxf(ua, maxf(ub, uc)) / PANE_W)
+		var j0 := floori(minf(va, minf(vb, vc)) / PANE_H)
+		var j1 := floori(maxf(va, maxf(vb, vc)) / PANE_H)
+		if (i1 - i0 + 1) * (j1 - j0 + 1) > PANE_MAX_CASES:
+			continue
+		for i in range(i0, i1 + 1):
+			for j in range(j0, j1 + 1):
+				var poly := PackedVector3Array([a, b, c])
+				poly = _demi(poly, droite, o, float(i) * PANE_W, true)
+				poly = _demi(poly, droite, o, float(i + 1) * PANE_W, false)
+				poly = _demi(poly, haut, o, float(j) * PANE_H, true)
+				poly = _demi(poly, haut, o, float(j + 1) * PANE_H, false)
+				if poly.size() < 3:
+					continue
+				var aire := 0.0
+				for k in range(1, poly.size() - 1):
+					aire += (poly[k] - poly[0]).cross(poly[k + 1] - poly[0]).length() * 0.5
+				if aire < PANE_MIN_AIRE:
+					continue
+				var cle := "%d|%d" % [i, j]
+				var acc: PackedVector3Array = cases[cle] if cases.has(cle) else PackedVector3Array()
+				for k in range(1, poly.size() - 1):
+					acc.append(poly[0])
+					acc.append(poly[k])
+					acc.append(poly[k + 1])
+				cases[cle] = acc
+	for cle in cases:
+		out.append({"tris": cases[cle], "n": n})
+
+
+# Rogne un polygone CONVEXE par un demi-espace de la grille de travées : garde ce qui est au-delà du
+# seuil le long de `axe` (`sup`), ou en deçà. Sutherland-Hodgman, mené en 3D — les plans de coupe
+# sont ceux de la grille, verticaux et parallèles entre eux, donc un carreau non plan (un vitrage qui
+# enjambe l'angle d'un immeuble) se rogne aussi bien qu'un quad plat.
+static func _demi(poly: PackedVector3Array, axe: Vector3, o: Vector3, seuil: float, sup: bool) -> PackedVector3Array:
+	var out := PackedVector3Array()
+	var m := poly.size()
+	if m < 3:
+		return out
+	var sens := 1.0 if sup else -1.0
+	for i in m:
+		var p := poly[i]
+		var q := poly[(i + 1) % m]
+		var dp := ((p - o).dot(axe) - seuil) * sens
+		var dq := ((q - o).dot(axe) - seuil) * sens
+		if dp >= 0.0:
+			out.append(p)
+		if (dp >= 0.0) != (dq >= 0.0):
+			out.append(p.lerp(q, dp / (dp - dq)))
+	return out
 
 
 static func _find(parent: PackedInt32Array, a: int) -> int:
@@ -274,11 +327,17 @@ static func _find(parent: PackedInt32Array, a: int) -> int:
 # Le tirage stable. Mélangeur entier (murmur3 fmix32) sur la position monde quantifiée : aucune
 # dépendance à l'ordre de parcours, au compteur d'objets ni à une graine globale, donc le même
 # carreau retombe toujours du même côté. Voir SEED_QUANTUM.
-static func lit(centre: Vector3, fraction := LIT_FRACTION) -> bool:
+static func lit(centre: Vector3, part := -1.0) -> bool:
+	return float(cle(centre) % 100000) < (fraction if part < 0.0 else part) * 100000.0
+
+
+# La clé de tirage d'un carreau : c'est elle qu'on compare au seuil, et c'est elle qui sert à
+# désigner LE carreau à allumer quand un bâtiment n'en a aucun (cf. emit).
+static func cle(centre: Vector3) -> int:
 	var a := _mix(roundi(centre.x / SEED_QUANTUM))
 	var b := _mix(roundi(centre.y / SEED_QUANTUM) ^ 0x9e3779b9)
 	var c := _mix(roundi(centre.z / SEED_QUANTUM) ^ 0x85ebca6b)
-	return float(_mix(a ^ b ^ c) % 100000) < fraction * 100000.0
+	return _mix(a ^ b ^ c)
 
 
 static func _mix(v: int) -> int:
@@ -299,23 +358,43 @@ static func center(pane: Dictionary, xform: Transform3D) -> Vector3:
 
 # Ajoute à `verts`/`normals`/`indices` les carreaux allumés d'un bâtiment posé en `xform`.
 # Retourne le nombre de carreaux allumés. Les carreaux sont décollés de GLOW_OFFSET devant la vitre.
+# AU MOINS UNE FENÊTRE ALLUMÉE par bâtiment qui a des carreaux. Sans cette garantie, une maison de
+# 7 carreaux a 0,72^7 = 10 % de chances de ressortir entièrement noire : sur la carte, 41 maisons
+# l'étaient, et c'était la cause n°1 des bâtiments éteints du recensement du 2026-09-20. Une maison
+# habitée a une lumière quelque part. Le carreau choisi est celui de clé maximale : c'est stable
+# d'une cuisson à l'autre, comme tout le reste du tirage.
 static func emit(panes_of_model: Array, xform: Transform3D, verts: PackedVector3Array,
-		normals: PackedVector3Array, indices: PackedInt32Array, fraction := LIT_FRACTION) -> int:
+		normals: PackedVector3Array, indices: PackedInt32Array, part := -1.0) -> int:
 	var nb := xform.basis.inverse().transposed()
 	var allumes := 0
-	for pane: Dictionary in panes_of_model:
-		if not lit(center(pane, xform), fraction):
+	var meilleur := -1
+	var meilleure_cle := -1
+	for i in panes_of_model.size():
+		var centre := center(panes_of_model[i], xform)
+		var k := cle(centre)
+		if k > meilleure_cle:
+			meilleure_cle = k
+			meilleur = i
+		if not lit(centre, part):
 			continue
 		allumes += 1
-		var n: Vector3 = (nb * (pane["n"] as Vector3)).normalized()
-		var tris: PackedVector3Array = pane["tris"]
-		var base := verts.size()
-		for p in tris:
-			verts.append(xform * p + n * GLOW_OFFSET)
-			normals.append(n)
-		for k in tris.size():
-			indices.append(base + k)
+		_poser(panes_of_model[i], xform, nb, verts, normals, indices)
+	if allumes == 0 and meilleur >= 0:
+		_poser(panes_of_model[meilleur], xform, nb, verts, normals, indices)
+		allumes = 1
 	return allumes
+
+
+static func _poser(pane: Dictionary, xform: Transform3D, nb: Basis, verts: PackedVector3Array,
+		normals: PackedVector3Array, indices: PackedInt32Array) -> void:
+	var n: Vector3 = (nb * (pane["n"] as Vector3)).normalized()
+	var tris: PackedVector3Array = pane["tris"]
+	var base := verts.size()
+	for p in tris:
+		verts.append(xform * p + n * GLOW_OFFSET)
+		normals.append(n)
+	for k in tris.size():
+		indices.append(base + k)
 
 
 # Maillage d'une cellule : une seule surface, le matériau PARTAGÉ, donc un appel de dessin.

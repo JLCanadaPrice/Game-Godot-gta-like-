@@ -146,6 +146,12 @@ var tint_rng := RandomNumberGenerator.new()
 
 
 func _initialize() -> void:
+	# Taux de fenetres allumees impose en ligne de commande, pour comparer plusieurs reglages sur
+	# la meme vue sans toucher au code (cf. BuildingWindows.fraction).
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("--fraction="):
+			Windows.fraction = clampf(a.substr(11).to_float(), 0.0, 1.0)
+			print("WINDOW_FRACTION %.2f" % Windows.fraction)
 	var t0 := Time.get_ticks_msec()
 	model = Model.new()
 	net = Network.new(model)
