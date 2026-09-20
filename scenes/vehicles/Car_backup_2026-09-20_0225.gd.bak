@@ -85,8 +85,6 @@ const MAX_STAINS := 8
 
 # --- circulation IA : accélération / freinage / virage progressifs ---
 const AI_ACCEL := 3.5             # m/s² pour rejoindre la vitesse de croisière
-const BRAKE_EPS := 0.05           # m/s de marge : en deçà, la consigne "descend" par simple bruit
-const BRAKE_STOP_SPEED := 0.4     # m/s sous quoi la voiture compte comme arrêtée, feux allumés
 const AI_DECEL := 12.0            # m/s² pour freiner (obstacle, arrêt) — DOIT correspondre à la
 								   # décélération utilisée dans la formule de distance de freinage
 								   # ci-dessous, sinon la voiture peut dépasser la marge de sécurité.
@@ -123,9 +121,6 @@ var _speed := 10.0
 var _lateral := 2.0
 var _edges_left := 20
 var _ai_speed := 0.0              # vitesse réelle actuelle (rampe vers _speed, ou vers 0 si bloquée)
-# Vrai tant que la voiture décélère vers une consigne plus basse (carrefour, obstacle, véhicule
-# suivi). Lu par VehicleLights pour les feux de freinage ; sans aucun effet sur la conduite.
-var _braking := false
 var _heading_deg := 0.0           # cap actuel lissé (degrés autour de Y), tourne à AI_TURN_RATE_DEG max
 # Vrai dès que la voiture s'est engagée dans un carrefour à feu VERT (déjà
 # dans la marge d'arrêt à ce moment-là) : le feu ne peut plus la faire
@@ -457,11 +452,6 @@ func _physics_process(delta: float) -> void:
 			_intersection_speed_limit(_speed))
 	var desired_speed: float = _cached_obstacle_speed_limit
 	var accel := AI_ACCEL if desired_speed > _ai_speed else AI_DECEL
-	# Feux de freinage : c'est ICI que la voiture décide de ralentir, et nulle part ailleurs. Il
-	# n'existait aucun indicateur de freinage sur Car — seul _committed_to_stop existait, et il ne
-	# couvre que l'arrêt à un carrefour, pas le suivi de véhicule. On le relève donc sur la rampe
-	# elle-même : la consigne est sous la vitesse actuelle, donc on décélère. Rien d'inventé.
-	_braking = desired_speed < _ai_speed - BRAKE_EPS
 	_ai_speed = move_toward(_ai_speed, desired_speed, accel * delta)
 
 	velocity = heading_dir * _ai_speed
@@ -1043,11 +1033,3 @@ func _add_body_stain() -> void:
 	mi.position = Vector3(randf_range(-0.7, 0.7), randf_range(0.1, 0.9), -2.02)
 	mi.rotation_degrees = Vector3(0, 180, randf_range(0.0, 360.0))
 	add_child(mi)
-
-
-# Feux de freinage allumés : la voiture décélère, ou elle est à l'arrêt. Lu par VehicleLights.
-# Quand c'est le joueur qui conduit cette Car (modèle arcade), c'est _drive_speed qui fait foi.
-func brake_lights_on() -> bool:
-	if driven_by_player:
-		return _drive_speed < BRAKE_STOP_SPEED
-	return _braking or _ai_speed < BRAKE_STOP_SPEED

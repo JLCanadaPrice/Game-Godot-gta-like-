@@ -48,21 +48,6 @@ func stop_drive() -> void:
 func get_drive_speed() -> float:
 	return linear_velocity.length()
 
-
-# Feux de freinage allumés. Contrairement à Car.gd, l'info EXISTE déjà dans le coeur physique du
-# pack : `brake` et `handbrake` sont les pédales lues à l'entrée, `brakepedal` leur course de 0 à 1.
-# On y ajoute l'arrêt, parce qu'une voiture immobile garde ses feux allumés.
-#
-# `brakepedal` plutôt que `brake` seul : la pédale garde une course résiduelle pendant le relâchement
-# (OffBrakeRate), le feu s'éteint donc en fondu comme sur une vraie voiture au lieu de claquer.
-const BRAKE_PEDAL_MIN := 0.05
-const BRAKE_STOP_SPEED := 0.4
-
-func brake_lights_on() -> bool:
-	if not Controlled:
-		return linear_velocity.length() < BRAKE_STOP_SPEED
-	return brake or handbrake or brakepedal > BRAKE_PEDAL_MIN or linear_velocity.length() < BRAKE_STOP_SPEED
-
 func _on_interact_zone_body_entered(body: Node3D) -> void:
 	if body.is_in_group("player") and body.has_method("notify_car_in_range"):
 		body.notify_car_in_range(self)

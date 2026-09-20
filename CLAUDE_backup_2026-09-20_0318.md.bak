@@ -210,17 +210,6 @@ sans le plafond de 800x450 du §6). Une vue peut imposer sa propre heure par un 
   relatif à la racine. Sans conséquence sur les FBX du chantier, dont la hiérarchie est plate, mais un `.glb` dont
   les maillages sont sous un nœud mis à l'échelle sortait à une taille délirante — une ambulance de 225 m de long.
   Corrigé le 2026-09-18 ; le nombre de triangles des modèles déjà posés n'a pas bougé.
-- **Le tonemapper ACES délave ce qui est posé à `albedo` 1.0, et un compteur de pixels par ratio de
-  canaux ment alors.** Payé le 2026-09-20 sur les feux de freinage : un rouge posé à 1.0 ressort à
-  **(184, 121, 82)**, un saumon dont le rapport rouge/vert ne vaut que 1,52. Le test de détection
-  `r > g × 1,8` ne matchait jamais, et j'ai conclu pendant des heures que le calque « ne produisait
-  aucun fragment » alors qu'il se dessinait parfaitement depuis le début. Deux règles :
-  **poser les couleurs émissives nettement sous 1.0** (0,62 pour un rouge qui doit rester rouge —
-  mesuré, il ressort à (178, 1, 3)) ; et surtout **REGARDER L'IMAGE avant de conclure d'un
-  compteur**. Un seuil sert à localiser, jamais à prouver qu'un rendu marche ou ne marche pas.
-  Quand tous les contrôles de structure sont bons (noeud dans l'arbre, visible, bonne
-  transformation, bon matériau, bonne géométrie) et que « ça ne marche toujours pas », c'est
-  l'instrument de mesure qu'il faut suspecter.
 - **20 modèles de véhicules sur 72 n'ont AUCUNE optique séparable** : ne pas les rechercher, c'est
   mesuré. Le pack `lowpoly_cars_free` en entier (`lowpoly_armor/coupe/fenyr/ghini/italia/jeep/
   kamaro/lamb/mobil/police/rally/van`, `normalcar1`, `normalcar2`, `sportscar`, `sportscar2`,
