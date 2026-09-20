@@ -210,18 +210,6 @@ sans le plafond de 800x450 du §6). Une vue peut imposer sa propre heure par un 
   relatif à la racine. Sans conséquence sur les FBX du chantier, dont la hiérarchie est plate, mais un `.glb` dont
   les maillages sont sous un nœud mis à l'échelle sortait à une taille délirante — une ambulance de 225 m de long.
   Corrigé le 2026-09-18 ; le nombre de triangles des modèles déjà posés n'a pas bougé.
-- **20 modèles de véhicules sur 72 n'ont AUCUNE optique séparable** : ne pas les rechercher, c'est
-  mesuré. Le pack `lowpoly_cars_free` en entier (`lowpoly_armor/coupe/fenyr/ghini/italia/jeep/
-  kamaro/lamb/mobil/police/rally/van`, `normalcar1`, `normalcar2`, `sportscar`, `sportscar2`,
-  `suv`, `taxi`) n'utilise que des gris `#2e2e2e` et `#424242` à l'avant comme à l'arrière : rien
-  n'y distingue un phare d'un pare-chocs. S'y ajoutent, dans la famille `city_*`, le bus et
-  l'autocar (pas de verre clair `#cfeaf3` à l'avant), l'ambulance, le camion-poubelle, le
-  `city_truck_02` et le `city_stepvan_01` (pas de rouge d'optique `#782225` à l'arrière, seulement
-  de la livrée ou de la carrosserie). Élargir les listes de couleurs de `VehicleLightParts`
-  rallumerait de la tôle : c'est l'erreur déjà payée une fois, où la voiture de police sortait avec
-  46 triangles de phare au lieu de 8, jusque sur l'axe de la calandre. Couverture réelle :
-  **50 modèles sur 72 ont des phares, 48 des feux arrière, 9 des 11 véhicules d'urgence un
-  gyrophare.**
 - **`ShopBuildingsTest` échoue depuis avant ces chantiers** : ne pas l'imputer à la modification du
   jour, ne pas le « réparer » au passage.
 - **Le mode `"sol"` de `MapShotsTest` élève aussi le point visé** : un point visé au-dessus d'un
