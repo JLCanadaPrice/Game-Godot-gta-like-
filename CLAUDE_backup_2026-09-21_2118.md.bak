@@ -1192,20 +1192,3 @@ dalles, murets, poteaux, tours), partagés par les trois exemplaires (`downtown/
 est un seul plan — qu'on traverserait depuis la pièce de l'escalier. `ParkingStructureTest` lâche un piéton (la capsule
 du joueur) et une voiture à 1 m au-dessus de chaque plateau de chaque exemplaire : les 30 s'y posent, à 5 mm près. Les
 plateaux y sont relevés sur le maillage cuit (`planchers()`) : **0,36 / 4,93 / 9,49 / 14,05 / 18,61 m** au centimètre.
-
-**Étape 3 — la voiture du joueur : rayon de braquage et assiette en pente** (`Car.gd`, commit séparé parce que ça
-touche toute la conduite).
-- **Rayon de braquage.** Le lacet valait `TURN_RATE x v / DRIVE_MAX_SPEED` : un rayon CONSTANT de 24 / 2,4 = **10 m à
-  toute vitesse**, le double d'une vraie voiture. Impossible de faire demi-tour dans un étage (19 m entre les murets,
-  poteaux au milieu), de suivre une rampe en hélice ou d'entrer à angle droit dans une travée. `rayon_braquage(v)` :
-  **5,5 m sous 4 m/s**, les 10 m d'avant au-delà de 12 m/s, linéaire entre les deux. Mesuré sur le vrai
-  `_drive_physics` (arc parcouru / lacet) : 5,50 m à 3 m/s, 7,67 m à 8 m/s, 10,00 m à 16 m/s.
-- **Assiette en pente.** La boîte de collision ne s'incline jamais : `move_and_slide` la fait bien monter une pente de
-  12 %, mais horizontale, appuyée sur son arête avant (en montée) ou arrière (en descente). À mi-pente, la roue la plus
-  haute de la berline du pack city flottait à **0,38 m**. Le modèle prend maintenant l'angle du sol sous la voiture
-  (normale lissée) et descend de la demi-longueur de la caisse x tan(angle) : les quatre roues à 1,6 cm de la pente.
-  Visuel seulement, joueur seulement (la circulation ne va pas sur les rampes). Piège de signe : la rotation du modèle
-  se compose avec son lacet de catalogue de 180°, un angle positif autour de son X BAISSE le nez — d'où le
-  `cos(lacet)`.
-- `ParkingStructureTest` mesure les deux sur un sol témoin : rayons à 3, 8 et 16 m/s, et une vraie rampe de 12 %
-  d'un seul tenant (plat, pente, plat) que la voiture du joueur monte en 8,4 s puis redescend en marche arrière.

@@ -73,14 +73,6 @@ const DRIVE_REVERSE_MAX := 8.0
 const DRIVE_FRICTION := 9.0
 const DRIVE_BRAKE := 26.0
 const TURN_RATE := 2.4
-# RAYON DE BRAQUAGE DU JOUEUR (2026-09-21). Le lacet valait TURN_RATE x v / DRIVE_MAX_SPEED : un rayon CONSTANT de
-# DRIVE_MAX_SPEED / TURN_RATE = 10 m, à toute vitesse — le double d'une vraie voiture (5 à 6 m). Payé en construisant
-# le parking à étages : impossible d'y faire demi-tour (19 m entre les murets, poteaux au milieu), de suivre une
-# rampe en hélice ou de tourner à angle droit pour entrer dans une travée. Sous BRAQUAGE_V_BAS le rayon descend à
-# BRAQUAGE_R_MIN ; au-delà de BRAQUAGE_V_HAUT il reste les 10 m d'avant, et la conduite rapide ne change pas.
-const BRAQUAGE_R_MIN := 5.5
-const BRAQUAGE_V_BAS := 4.0
-const BRAQUAGE_V_HAUT := 12.0
 # Franchissement de bordure, JOUEUR SEULEMENT (cf. _try_step_up). 0,22 m : les bordures de la carte font
 # 0,150 m mesurés sur la collision cuite, la marge couvre les raccords de tuiles sans rendre franchissable un
 # muret. 0,32 m d'avance testée : un peu plus que ce que la voiture parcourt en une frame à pleine vitesse.
@@ -240,12 +232,6 @@ var _knock_vel := Vector3.ZERO
 var _recoil_vel := Vector3.ZERO
 var _tilt_pitch := 0.0
 var _tilt_roll := 0.0
-# ASSIETTE SUR UNE PENTE (2026-09-21). La boîte de collision de la voiture ne s'incline jamais : move_and_slide la
-# fait monter une rampe, mais elle reste horizontale, appuyée sur son arête avant (en montée) ou arrière (en
-# descente). Sur 12 %, une voiture de 4,5 m roulait donc l'essieu arrière suspendu 0,27 m au-dessus de la rampe.
-# Le MODÈLE prend l'angle du sol (normale sous la voiture, lissée) et descend de la demi-longueur de la caisse x
-# tan(angle), pour que ses deux essieux touchent la pente. Visuel seulement : la physique ne change pas.
-var _pente := 0.0
 var _stains := 0
 
 # visuel
@@ -1192,7 +1178,7 @@ func _drive_physics(delta: float) -> void:
 		_drive_speed = move_toward(_drive_speed, 0.0, DRIVE_FRICTION * delta)
 
 	if absf(_drive_speed) > 0.3:
-		rotate_y(_steer_input * _drive_speed / rayon_braquage(_drive_speed) * delta)
+		rotate_y(_steer_input * TURN_RATE * delta * clampf(_drive_speed / DRIVE_MAX_SPEED, -1.0, 1.0))
 
 	# Montée de trottoir : voir _try_step_up, appelée après move_and_slide.
 	# (La réponse précédente était scenes/world/CurbRamp.gd, qui construisait des rampes de collision le
@@ -1214,19 +1200,6 @@ func _drive_physics(delta: float) -> void:
 	move_and_slide()
 	_try_step_up(fwd)
 	_resolve_drive_collisions(fwd)
-	# assiette sur une pente (cf. ASSIETTE)
-	var pente_cible := 0.0
-	if is_on_floor():
-		var nsol := get_floor_normal()
-		var avant_h := Vector3(fwd.x, 0.0, fwd.z).normalized()
-		pente_cible = atan2(-nsol.dot(avant_h), nsol.y)
-	_pente = lerpf(_pente, pente_cible, clampf(delta * 8.0, 0.0, 1.0))
-
-
-# Rayon de braquage à la vitesse `v` (cf. BRAQUAGE_R_MIN).
-func rayon_braquage(v: float) -> float:
-	var t := clampf((absf(v) - BRAQUAGE_V_BAS) / (BRAQUAGE_V_HAUT - BRAQUAGE_V_BAS), 0.0, 1.0)
-	return lerpf(BRAQUAGE_R_MIN, DRIVE_MAX_SPEED / TURN_RATE, t)
 
 # Franchissement de bordure. move_and_slide() ne monte AUCUNE marche verticale, si basse soit-elle : mesuré, la
 # voiture arcade s'arrête net devant les bordures de 0,150 m, à 3, 6, 10 et 15 m/s, aussi bien sur le trimesh
@@ -1345,13 +1318,9 @@ func _update_visuals(delta: float, fwd_speed: float, steer_target: float) -> voi
 	_tilt_pitch = lerpf(_tilt_pitch, 0.0, clampf(delta * 6.0, 0.0, 1.0))
 	_tilt_roll = lerpf(_tilt_roll, 0.0, clampf(delta * 6.0, 0.0, 1.0))
 	if _model != null:
-		# la rotation du modèle se compose avec son lacet de catalogue (ordre YXZ) : avec le lacet de 180°, un angle
-		# positif autour de son X BAISSE le nez de la voiture ; pour le lever d'un angle `_pente`, il faut donc
-		# _pente x cos(lacet) (vérifié par WheelSpinTest / ParkingStructureTest sur le nez du modèle)
-		_model.rotation.x = _tilt_pitch + _pente * cos(deg_to_rad(model_yaw_deg))
+		_model.rotation.x = _tilt_pitch
 		_model.rotation.z = _tilt_roll
 		_model.rotation.y = deg_to_rad(model_yaw_deg)
-		_model.position.y = model_y_offset - _half_length * tan(absf(_pente))
 
 # ROUES QUI ROULENT À L'ENDROIT (2026-09-21). Toutes les roues tournaient autour du X LOCAL de leur noeud,
 # dans le même sens, quel que soit le modèle. Relevé sur les 72 modèles du catalogue posés comme ici
