@@ -25,9 +25,8 @@ travail imposée, les commandes exactes, les pièges déjà payés et l'état d'
   périmés, et **ne jamais recommiter une source brute dans ce dépôt-ci** — si un pack doit être
   retravaillé, le copier hors du projet. Le compte de `ProjectLoadCheck` n'avait pas bougé (584) ce jour-là, ce qui
   est la preuve que rien de chargé n'etait parti ; il vaut **608** depuis les chantiers du
-  2026-09-20 (matériaux de balisage, de feux de véhicule, scripts et tests ajoutés), **611** depuis
-  le 2026-09-21 (trois lentilles de gyrophare « au repos ») et **613** depuis le test du rond-point
-  (`RoundaboutTrafficTest`, même jour).
+  2026-09-20 (matériaux de balisage, de feux de véhicule, scripts et tests ajoutés), et **611** depuis
+  le 2026-09-21 (trois lentilles de gyrophare « au repos »).
 
 ## 2. Méthode de travail (imposée, non négociable)
 
@@ -158,7 +157,6 @@ manque en silence, ce qui est arrivé jusqu'au 2026-09-21.
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/DayNightTest.tscn         # cycle jour/nuit, halos, luminaires
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/VehicleLightsTest.tscn    # freins, gyrophares, véhicules garés
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/WorldTrafficSmokeTest.tscn # trafic (aléa connu, cf. §6)
-"$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/RoundaboutTrafficTest.tscn  # 5 min de circulation à Echo Circle, cf. §10
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/NoclipTest.tscn            # noclip, aléa connu aussi
 "$GODOT" --headless --path "$PROJET" --fixed-fps 60 --quit-after 300 res://scenes/tests/VehicleCatalogTest.tscn  # catalogue des véhicules, 20 000 tirages
 "$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/CarDrivingTest.tscn  # sonde, PAS de ligne RESULT
@@ -167,7 +165,7 @@ manque en silence, ce qui est arrivé jusqu'au 2026-09-21.
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/DowntownStreetsTest.tscn
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/DowntownBuildingsTest.tscn
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/ShopBuildingsTest.tscn     # échec ANTÉRIEUR connu
-"$GODOT" --headless --path "$PROJET" --script res://scenes/world/map/tools/ProjectLoadCheck.gd   # attendu : 613 fichiers, 0 échec
+"$GODOT" --headless --path "$PROJET" --script res://scenes/world/map/tools/ProjectLoadCheck.gd   # attendu : 611 fichiers, 0 échec
 ```
 
 Outil d'inspection, hors batterie : `res://scenes/tests/VehicleSortTest.tscn` aligne les véhicules du catalogue
@@ -848,72 +846,3 @@ Le tirage est **stable et dérivé de la position de la place**, comme celui des
 garde sa voiture, son angle et son décalage d'une cuisson à l'autre. Une place sur trois reste vide,
 et chaque voiture prend quelques degrés de travers et un peu d'avance ou de recul, pour que la rangée
 ne soit pas alignée au cordeau. **58 véhicules garés** au total, contre 14.
-
-## 10. Circulation : Echo Circle à deux voies, et les interblocages (2026-09-21)
-
-Le joueur a vu une file figée sur l'anneau. Une sonde jetable a laissé rouler la circulation et relevé,
-pour chaque voiture arrêtée, ce qui la retenait (lu sur `Car.diag_raison`, cf. plus bas). **Quatre
-interblocages**, chacun permanent une fois formé, et les deux derniers **ANTÉRIEURS** au chantier :
-
-1. **Entrée contre anneau.** La voiture qui attendait à une entrée cédait à toute voiture de l'anneau à
-   moins de 14 m du point d'entrée, même arrêtée, même déjà passée ; et la voiture de l'anneau cherchait
-   ses obstacles dans un couloir DROIT de 22 m le long de son cap. Sur un cercle de 30 m, ce couloir file
-   tangent, vers l'extérieur, là où attendent les voitures des entrées : elle freinait pour une voiture
-   qui n'était pas sur sa route. Reproduit en 47 s de jeu. Correction : sur l'anneau, `Car` ne suit que
-   les voitures de l'anneau dans SA voie, mesurées LE LONG DU GRAPHE (`_ring_gap_to`), et ignore les
-   voitures qui attendent à une entrée ; à l'entrée, on ne cède qu'aux voitures qui ARRIVENT sur ce point
-   (`ring_arrival_distance`, 18 m en amont) ou qui l'occupent encore.
-2. **Priorité de virage cédée à la voiture de derrière**, au bout de chaque branche (bretelle de sortie,
-   bretelle d'entrée et artère s'y rejoignent, sans feu) : la voiture de TÊTE cédait sa priorité de virage
-   à la voiture qui la SUIVAIT, inscrite plus tôt au même noeud, et celle-ci la suivait.
-3. **Cycles de priorité de virage, sur toute la carte.** Au carrefour à feux (-100, -316), la voiture
-   engagée dans le bloc cédait à une voiture qui attendait DERRIÈRE ELLE sur une autre approche ; au bout de
-   la branche ouest, A cédait à B, bloquée derrière C, qui cédait à D, bloquée derrière A. Règle : **une
-   voiture arrêtée derrière une autre ne réclame plus sa priorité** (`retenue_par_une_voiture`), elle la
-   retrouve dès que la voie devant elle se libère ; elle subsume la règle du point 2.
-4. **Suivi en rond au milieu d'un carrefour**, apparu une fois le point 3 corrigé, au carrefour à feux
-   (-28, -316) : quatre voitures engagées dans le bloc, une par approche, chacune arrêtée derrière la
-   suivante dans son couloir d'obstacles. On remonte la chaîne des voitures suivies (`_cycle_de_suivi`) ;
-   si elle revient à soi et que TOUTES sont arrêtées, une seule passe outre — la plus petite
-   `get_instance_id()`, pour que ce soit toujours la même — pendant 4 s, et les autres la suivent.
-
-**Antériorité prouvée** : la même sonde, rejouée sur le monde de `0344b79` (worktree déjà importé, `Car.gd`
-d'avant le chantier), relève au bout de 270 s **104 voitures figées depuis 40 s ou plus, en 21 files** :
-36 au carrefour (-28, -316), les autres aux entrées d'Echo Circle, aux deux bouts de ses branches, en
-(222, -313), (-100, 116), (-28, -244)… Le rond-point n'était que l'endroit où le joueur l'a vu.
-
-**DEUX VOIES.** L'anneau fait 8 m entre son trait intérieur (r = 26 m) et son trait extérieur (r = 34 m) :
-la place de deux voies de 4 m. Le graphe n'en avait qu'une, au milieu, à r = 30 m. `RoadNetwork` donne
-maintenant aux arêtes de l'anneau les voies `[-2, +2]` : **intérieure à r = 28 m, extérieure à r = 32 m**.
-Aucun noeud ne bouge ; ce sont les trajectoires qui passent de r = 30 à r = 28 ou 32. La voie est tirée à
-l'entrée, moitié-moitié (Echo Circle n'a que deux branches : tout le monde va « en face », et les deux voies
-sont permises pour ça) ; en sortant, la voie intérieure traverse l'extérieure, donc elle CÈDE à une voiture
-de l'extérieure à sa hauteur ou juste derrière (`_ring_merge_limit`), jamais l'inverse — sauf si celle-ci
-est elle-même arrêtée derrière une autre (point 3). Le nombre de sorties à laisser passer est tiré à
-l'entrée aussi, jamais celle par laquelle on est arrivé : plus de demi-tour sur l'anneau.
-
-| noeud | rôle | position (inchangée) | voie unique avant | intérieure après | extérieure après |
-|---|---|---|---|---|---|
-| 247 | entrée est (NE) | (137,52 ; -327,94) | idem | (135,69 ; -327,14) | (139,36 ; -328,74) |
-| 248 | sortie ouest (NO) | (82,81 ; -328,68) | idem | (84,62 ; -327,83) | (81,00 ; -329,52) |
-| 249 | entrée ouest (SO) | (82,81 ; -303,32) | idem | (84,62 ; -304,17) | (81,00 ; -302,48) |
-| 250 | sortie est (SE) | (136,84 ; -302,59) | idem | (135,05 ; -303,49) | (138,63 ; -301,70) |
-
-**`RoundaboutTrafficTest`** (dans la batterie) : 5 min de vraie circulation, joueur sur l'îlot ; échoue si
-3 voitures de la zone sont figées 40 s, si moins de 20 voitures sortent de l'anneau, ou si une voie ne sert
-jamais. Il ne remplace pas la simulation longue, qui se fait avec la sonde de toute la carte (30 min de jeu,
-gel coupé).
-
-Trois pièges de mesure, payés pendant ce chantier :
-
-- **Une sonde de circulation doit neutraliser `SimulationCuller`.** Il fige ce qui est à plus de 50 m du
-  joueur ET hors de sa vue. Une première sonde posait le joueur à 54 m du centre : une partie de l'anneau
-  était gelée, et la sonde comptait du GEL comme du blocage. D'où `--sans-gel` (logique de circulation
-  seule) et `--joueur-centre`, et le joueur sur l'îlot dans le test.
-- **Une sonde ne doit pas refaire les règles de `Car` : elle doit les LIRE.** Tant qu'elle reconstruisait
-  « qui attend qui » avec les anciennes règles, elle décrivait encore l'ancien interblocage après la
-  correction. `Car` expose maintenant `diag_raison` (« suit », « cede_anneau », « fusion_anneau »,
-  « insertion », « priorite_virage », « feu ») et `diag_objet`, sans effet sur la conduite.
-- **Regarder au-delà du rond-point.** Le point 3 ne se voyait pas depuis l'anneau : la file de la branche
-  ouest venait d'un carrefour à 130 m. La sonde qui l'a trouvé remonte chaque file jusqu'à sa TÊTE, sur
-  toute la carte, puis suit la chaîne d'attente de la tête jusqu'à un cycle.

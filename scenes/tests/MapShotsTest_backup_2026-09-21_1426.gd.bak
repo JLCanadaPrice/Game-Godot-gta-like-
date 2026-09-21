@@ -130,12 +130,6 @@ const VIEWS := [
 	# les memes de jour, rampe ETEINTE : moitie droite bleue de la police, feux blancs de l'ambulance
 	["jour_repos_police", Vector3(-692.6, 2.6, 155.0), Vector3(-694.3, 1.75, 158.3), "", 12.0],
 	["jour_repos_ambulance", Vector3(-265.0, 2.8, 145.0), Vector3(-271.0, 1.6, 137.0), "", 12.0],
-	# Section D du 2026-09-21 : l'anneau d'Echo Circle a deux voies. A capturer avec --trafic= : la meme
-	# camera que nuit_rond_point_echo_sol, de jour, puis une vue haute pour voir les deux voies tenues.
-	["jour_rond_point_echo_sol", Vector3(175.0, 1.7, -255.0), Vector3(110.0, 1.5, -316.0), "sol", 12.0],
-	["jour_rond_point_echo_haut", Vector3(165.0, 28.0, -262.0), Vector3(110.0, 0.8, -316.0), "", 12.0],
-	# au bord de l'anneau, a hauteur d'homme : la vue precedente depuis le pre ne voit pas la chaussee
-	["jour_anneau_echo_sol", Vector3(147.0, 1.7, -301.0), Vector3(100.0, 1.2, -330.0), "sol", 12.0],
 	# Parking de l'aerogare : une vue elevee pour juger l'ALIGNEMENT sur le marquage (c'est un
 	# controle de geometrie, pas de rendu), et une a hauteur d'homme pour juger l'image.
 	["jour_parking_aeroport", Vector3(537.0, 22.0, -1128.0), Vector3(537.0, 0.0, -1176.0), "", 12.0],

@@ -121,24 +121,6 @@ var _from_node := -1
 var _edge_progress := 0.0
 var _speed := 10.0
 var _lateral := 2.0
-var _ring_skip := -1                  # sorties à laisser passer sur l'anneau ; -1 = pas sur un anneau
-var _ring_lane := 2.0                 # voie tenue sur l'anneau : RING_INNER ou RING_OUTER
-# Véhicule suivi : le plus proche devant, dans le couloir de _obstacle_speed_limit, relevé à chaque
-# recheck (null s'il n'y en a pas), et la place qui reste avant de devoir s'arrêter derrière lui. Sert à
-# la priorité de virage des AUTRES voitures (cf. retenue_par_une_voiture) et au diagnostic.
-var _devant: Object = null
-var _devant_ecart := INF
-var _passe_outre: Object = null       # véhicule traversé pour rompre un cycle de suivi (cf. _cycle_de_suivi)
-var _passe_outre_t := 0.0
-# DIAGNOSTIC, sans aucun effet sur la conduite : ce qui a limité la vitesse au dernier calcul
-# ("suit", "cede_anneau", "fusion_anneau", "insertion", "priorite_virage", "feu") et le véhicule en
-# cause. Lu par les sondes de circulation : sans lui, une sonde doit REFAIRE les règles de Car.gd pour
-# dire pourquoi une voiture est arrêtée, et elle se trompe dès que les règles changent (payé le
-# 2026-09-21 : la sonde du rond-point décrivait encore les anciennes règles après la correction).
-var diag_raison := ""
-var diag_objet: Object = null
-var _diag_carrefour := ""
-var _diag_carrefour_objet: Object = null
 var _edges_left := 20
 var _ai_speed := 0.0              # vitesse réelle actuelle (rampe vers _speed, ou vers 0 si bloquée)
 # Vrai tant que la voiture décélère vers une consigne plus basse (carrefour, obstacle, véhicule
@@ -454,7 +436,7 @@ func _physics_process(delta: float) -> void:
 		# (cf. _intersection_speed_limit) si elle existe, pour rester cohérent
 		# avec la décision qui a servi à établir la priorité de virage ; sinon
 		# (rond-point, simple passage...) tire au hasard comme d'habitude.
-		var next_edge: int = _planned_next_edge if _planned_next_edge >= 0 else _choisir_arete(_from_node, _cur_edge)
+		var next_edge: int = _planned_next_edge if _planned_next_edge >= 0 else _path.pick_next_edge(_from_node, _cur_edge)
 		if next_edge < 0:
 			queue_free()
 			return
@@ -469,23 +451,11 @@ func _physics_process(delta: float) -> void:
 	var heading_dir := _dir_from_heading(_heading_deg)
 
 	_obstacle_recheck_timer -= delta
-	_passe_outre_t -= delta
 	if _obstacle_recheck_timer <= 0.0:
 		_obstacle_recheck_timer = OBSTACLE_RECHECK_INTERVAL + randf_range(-0.02, 0.02)
-		_diag_carrefour = ""
-		_diag_carrefour_objet = null
-		var lim_suivi := _obstacle_speed_limit(heading_dir, _speed)
-		var lim_carrefour := _intersection_speed_limit(_speed)
-		_cached_obstacle_speed_limit = minf(lim_suivi, lim_carrefour)
-		if _cached_obstacle_speed_limit >= _speed - 0.01:
-			diag_raison = ""
-			diag_objet = null
-		elif lim_suivi <= lim_carrefour:
-			diag_raison = "suit"
-			diag_objet = _devant
-		else:
-			diag_raison = _diag_carrefour
-			diag_objet = _diag_carrefour_objet
+		_cached_obstacle_speed_limit = minf(
+			_obstacle_speed_limit(heading_dir, _speed),
+			_intersection_speed_limit(_speed))
 	var desired_speed: float = _cached_obstacle_speed_limit
 	var accel := AI_ACCEL if desired_speed > _ai_speed else AI_DECEL
 	# Feux de freinage : c'est ICI que la voiture décide de ralentir, et nulle part ailleurs. Il
@@ -500,7 +470,7 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 
 	# trajet en 3D (ponts, bretelles de la carte) : hauteur du graphe + hauteur de caisse (graphe du centre-ville à y = 0)
-	var ideal := _path.sample_offset(_cur_edge, _from_node, _edge_progress, _path.lane_offset(_cur_edge, _lane_pref()))
+	var ideal := _path.sample_offset(_cur_edge, _from_node, _edge_progress, _path.lane_offset(_cur_edge, _lateral))
 	ideal.y += _ride_height
 	global_position = global_position.lerp(ideal, clampf(delta * LANE_SNAP, 0.0, 1.0))
 	rotation_degrees.y = _heading_deg
@@ -509,7 +479,7 @@ func _physics_process(delta: float) -> void:
 func _snap_to_path() -> void:
 	if _path == null or _cur_edge < 0:
 		return
-	var ideal := _path.sample_offset(_cur_edge, _from_node, _edge_progress, _path.lane_offset(_cur_edge, _lane_pref()))
+	var ideal := _path.sample_offset(_cur_edge, _from_node, _edge_progress, _path.lane_offset(_cur_edge, _lateral))
 	ideal.y += _ride_height
 	global_position = ideal
 	_heading_deg = _heading_from_dir(_path.direction_at(_cur_edge, _from_node, _edge_progress))
@@ -600,26 +570,10 @@ func _obstacle_speed_limit(heading_dir: Vector3, cruise_speed: float) -> float:
 	var nearest := INF
 	var nearest_body: Object = null
 	var my_pos := global_position
-	var sur_anneau := is_on_ring()
 	for idx in _nearby_indices(my_pos):
 		var o := _vehicle_cache[idx] as Node3D
 		if o == self or o == null:
 			continue
-		if o == _passe_outre and _passe_outre_t > 0.0:
-			continue
-		if sur_anneau and o.has_method("ring_arrival_distance"):
-			# sur l'anneau, on ne suit que ce qui est sur SON chemin (cf. RING_INNER)
-			var ecart := _ring_gap_to(o)
-			if ecart < INF:
-				var moitie: float = o.get("_half_length") if "_half_length" in o else OBSTACLE_DEFAULT_HALF_LENGTH
-				if ecart - moitie < nearest:
-					nearest = ecart - moitie
-					nearest_body = o
-				continue
-			if o.is_on_ring() or o.waits_for_ring():
-				continue    # autre voie de l'anneau, ou voiture qui attend à une entrée : c'est elle qui cède
-			if _ring_skip != 0:
-				continue    # voiture d'une bretelle de sortie qu'on ne prend pas
 		var rel: Vector3 = o.global_position - my_pos
 		rel.y = 0.0
 		var fwd_dist := rel.dot(heading_dir)
@@ -634,19 +588,8 @@ func _obstacle_speed_limit(heading_dir: Vector3, cruise_speed: float) -> float:
 			nearest = fwd_dist - other_half
 			nearest_body = o
 	if nearest == INF:
-		_devant = null
-		_devant_ecart = INF
 		return cruise_speed
 	var brake_dist := nearest - (_half_length + OBSTACLE_BUMPER_GAP)
-	_devant = nearest_body
-	_devant_ecart = brake_dist
-	if brake_dist < RETENUE_ECART and _ai_speed < RETENUE_VITESSE and _cycle_de_suivi(nearest_body):
-		# cf. _cycle_de_suivi : c'est à moi de passer, les autres me suivront
-		_passe_outre = nearest_body
-		_passe_outre_t = PASSE_OUTRE_DUREE
-		_devant = null
-		_devant_ecart = INF
-		return cruise_speed
 	if brake_dist <= 0.0:
 		_keep_awake(nearest_body)
 		return 0.0
@@ -692,39 +635,8 @@ const INTERSECTION_CHECK_DIST := 28.0
 const INTERSECTION_HALF_SIZE := 6.0     # 12x12m réel (RoadsCollision "RoadFlat_*"), pas une estimation
 const STOP_LINE_BUFFER := 0.5           # petit espace visuel entre le pare-choc et la zone
 const CROSSWALK_STOP_MARGIN := 0.5      # petite marge additionnelle avant le bord du passage piéton (0.3 laissait une marge réelle mesurée de seulement ~0.08m à cause du léger dépassement inhérent au freinage discret, déjà présent sur STOP_LINE_BUFFER)
+const YIELD_RING_RADIUS := 14.0
 const YIELD_STOP_BUFFER := 1.0          # le rond-point n'a pas de bloc 12x12 : juste la caisse + une marge
-
-# ANNEAU À DEUX VOIES ET INTERBLOCAGE (2026-09-21). Une file se figeait pour de bon sur l'anneau d'Echo
-# Circle. Reproduit en 47 s de jeu par une sonde (10 voitures immobiles de 50 s à 300 s, 3 sorties en
-# 5 minutes), et le cycle d'attente relevé voiture par voiture :
-#   - la voiture qui ATTEND à une entrée cédait le passage à toute voiture de l'anneau à moins de
-#     14 m du point d'entrée, même ARRÊTÉE, même déjà passée ;
-#   - la voiture de l'ANNEAU, elle, cherchait ses obstacles dans un couloir DROIT de 22 m le long de
-#     son cap. Sur un cercle de 30 m, ce couloir file tangent à l'anneau, donc vers l'extérieur, là où
-#     attendent les voitures des entrées : elle freinait pour une voiture qui n'était pas sur sa route.
-# Chacune attendait l'autre. D'où deux règles, qui valent pour tous les anneaux (rond-point et
-# échangeurs) :
-#   1. sur l'anneau, on ne suit que ce qui est sur SON chemin : les voitures de l'anneau dans SA voie,
-#      devant soi, mesurées LE LONG DU GRAPHE et non en ligne droite ; une voiture qui attend à une
-#      entrée est ignorée — c'est elle qui cède ;
-#   2. à l'entrée, on ne cède qu'aux voitures de l'anneau qui ARRIVENT sur ce point (en amont, à moins
-#      de RING_YIELD_UPSTREAM m le long de l'anneau) ou qui l'occupent encore, pas à celles déjà passées.
-#
-# Et DEUX VOIES sur l'anneau (intérieure à -2 m, extérieure à +2 m de l'axe du graphe). La voie est
-# tirée à l'ENTRÉE, moitié-moitié : les deux sont permises pour aller en face, et Echo Circle n'a que
-# deux branches. La voiture garde sa voie ; en sortant, celle de la voie INTÉRIEURE traverse
-# l'extérieure, donc elle CÈDE à une voiture de l'extérieure qui est à sa hauteur ou juste derrière —
-# jamais l'inverse, ce qui ne peut pas faire de cycle. Le nombre de sorties à laisser passer est tiré
-# à l'entrée aussi, jamais celle par laquelle on est arrivé (pas de demi-tour) ; avec deux branches,
-# tout le monde sort à la première.
-const RING_INNER := -2.0
-const RING_OUTER := 2.0
-const RING_YIELD_UPSTREAM := 18.0       # m le long de l'anneau, en amont du point d'entrée
-const RING_YIELD_DOWNSTREAM := 4.0      # m : une voiture de l'anneau qui vient de passer occupe encore l'entrée
-const RING_SAME_LANE := 1.0             # m d'écart entre deux voies pour les dire « la même »
-const RING_MERGE_ZONE := 16.0           # m avant sa sortie où la voie intérieure regarde l'extérieure
-const RING_MERGE_BEHIND := 8.0          # m : une voiture de l'extérieure si peu derrière passe d'abord
-const RING_MERGE_AHEAD := 2.5           # m : ... ou à peine devant
 const MERGE_CHECK_DIST := 80.0          # bretelle d'insertion : surveillance du point de convergence
 const MERGE_STOP_BEFORE := 42.0         # arrêt avant le raccord à la chaussée (RoadNetwork.BLEND 40 m + marge)
 const MERGE_YIELD_RADIUS := 45.0
@@ -740,9 +652,7 @@ func _intersection_speed_limit(cruise_speed: float) -> float:
 		_turn_priority_node = -1
 
 	if _path.is_ring_edge(_cur_edge):
-		# déjà sur l'anneau : prioritaire sur les entrées ; seule la voie intérieure, en sortant, cède à
-		# la voie extérieure qu'elle doit traverser
-		return _ring_merge_limit(cruise_speed)
+		return cruise_speed   # déjà sur l'anneau : prioritaire, pas de cédez-le-passage à faire
 
 	var next_node := _path.edge_other_node(_cur_edge, _from_node)
 	var remaining := _path.edge_length(_cur_edge) - _edge_progress
@@ -760,8 +670,6 @@ func _intersection_speed_limit(cruise_speed: float) -> float:
 				continue
 			if o.nears_node(next_node, _cur_edge, MERGE_YIELD_RADIUS):
 				_keep_awake(o)
-				_diag_carrefour = "insertion"
-				_diag_carrefour_objet = o
 				var brake := remaining - (MERGE_STOP_BEFORE + _half_length)
 				return 0.0 if brake <= 0.0 else minf(cruise_speed, sqrt(2.0 * AI_DECEL * brake))
 		return cruise_speed
@@ -770,22 +678,19 @@ func _intersection_speed_limit(cruise_speed: float) -> float:
 		return cruise_speed
 
 	if _path.is_roundabout_node(next_node):
-		# cédez-le-passage : une voiture de l'anneau ARRIVE-t-elle sur ce point d'entrée, ou l'occupe-t-elle
-		# encore ? Pas « est-elle à moins de 14 m » : celle qui est déjà passée ne compte plus, et c'est
-		# la voiture de l'anneau qui ne compte plus les voitures en attente (cf. RING_INNER).
+		# cédez-le-passage : une voiture est-elle déjà engagée sur l'anneau
+		# près de ce point d'entrée précis ?
 		var stop_margin := _half_length + YIELD_STOP_BUFFER
 		var must_stop := false
 		var entry_pos := _path.node_pos(next_node)
 		_refresh_vehicle_index()
-		for idx in _nearby_indices(entry_pos, 2):
+		for idx in _nearby_indices(entry_pos):
 			var o := _vehicle_cache[idx] as Node3D
-			if o == self or o == null or not o.has_method("ring_arrival_distance"):
+			if o == self or o == null or not (o.has_method("is_on_ring") and o.is_on_ring()):
 				continue
-			if float(o.ring_arrival_distance(next_node)) <= RING_YIELD_UPSTREAM:
+			if o.global_position.distance_to(entry_pos) <= YIELD_RING_RADIUS:
 				must_stop = true
 				_keep_awake(o)
-				_diag_carrefour = "cede_anneau"
-				_diag_carrefour_objet = o
 				break
 		if not must_stop:
 			return cruise_speed
@@ -843,27 +748,8 @@ func _intersection_speed_limit(cruise_speed: float) -> float:
 				var o := _vehicle_cache[idx] as Node3D
 				if o == self or o == null or not o.has_method("blocks_turn_at"):
 					continue
-				# JAMAIS à une voiture qui est DERRIÈRE soi sur sa propre arête : elle ne peut pas passer
-				# avant, puisqu'elle nous suit. Payé le 2026-09-21 aux deux bouts des branches d'Echo Circle :
-				# sur la bretelle de sortie, la voiture de tête cédait la priorité de virage à la voiture qui
-				# la suivait (inscrite plus tôt au même noeud), et celle-ci la suivait — les deux attendaient
-				# pour toujours, et la file remontait jusque sur l'anneau.
-				if int(o.get("_cur_edge")) == _cur_edge and int(o.get("_from_node")) == _from_node \
-						and float(o.get("_edge_progress")) < _edge_progress:
-					continue
-				# NI à une voiture ARRÊTÉE derrière une autre : elle ne peut pas passer avant celle qui la
-				# retient. Payé le même jour, sur toute la carte, par une sonde qui remontait les files :
-				# les files figées restantes étaient TOUTES des cycles de priorité de virage de ce genre —
-				# au carrefour (-100, -316), la voiture engagée dans le bloc cédait à celle qui attendait
-				# DERRIÈRE ELLE sur une autre approche ; au bout de la branche ouest d'Echo Circle, A cédait
-				# à B, bloquée derrière C, qui cédait à D, bloquée derrière A. Une voiture qui ne peut pas
-				# avancer ne réclame plus sa priorité ; elle la retrouve dès que la voie devant elle se libère.
-				if o.has_method("retenue_par_une_voiture") and o.retenue_par_une_voiture():
-					continue
 				if o.blocks_turn_at(next_node, _turn_priority_seq):
 					must_yield_for_turn = true
-					_diag_carrefour = "priorite_virage"
-					_diag_carrefour_objet = o
 					break
 			if must_yield_for_turn:
 				var brake_dist_y := remaining - stop_margin2
@@ -892,8 +778,6 @@ func _intersection_speed_limit(cruise_speed: float) -> float:
 			light_limit = cruise_speed
 		else:
 			_committed_to_stop = true
-			if _diag_carrefour == "":
-				_diag_carrefour = "feu"
 			var brake_dist2 := remaining - stop_margin2
 			light_limit = 0.0 if brake_dist2 <= 0.0 else minf(cruise_speed, sqrt(2.0 * AI_DECEL * brake_dist2))
 
@@ -916,217 +800,14 @@ func _intersection_speed_limit(cruise_speed: float) -> float:
 # Mêmes conditions, lues en direct : aucun décalage d'une frame sur l'arbitrage.
 func blocks_turn_at(node: int, seq: int) -> bool:
 	# Figée par SimulationCuller : ne bloque personne pendant la pause, garde son rang pour la reprise.
-	# Conduite par le joueur ou laissée là : elle ne suit plus les règles du trafic, son rang non plus.
-	if _turn_priority_node < 0 or _committed_to_stop or not is_physics_processing() or driven_by_player or _abandoned:
+	if _turn_priority_node < 0 or _committed_to_stop or not is_physics_processing():
 		return false
 	return _turn_priority_node == node and _turn_priority_is_turn and _turn_priority_seq < seq
-
-# Arrêtée (ou presque) derrière un véhicule qu'elle suit de près : elle ne peut pas passer avant lui.
-# Les autres ne lui cèdent donc pas la priorité de virage tant qu'elle est dans cet état.
-const RETENUE_VITESSE := 0.5            # m/s
-const RETENUE_ECART := 3.0              # m de place avant de devoir s'arrêter derrière le véhicule suivi
-
-func retenue_par_une_voiture() -> bool:
-	return _ai_speed < RETENUE_VITESSE and _devant != null and is_instance_valid(_devant) and _devant_ecart < RETENUE_ECART
-
-# INTERBLOCAGE PHYSIQUE AU MILIEU D'UN CARREFOUR (2026-09-21). Une fois les cycles de priorité de virage
-# supprimés, la sonde de toute la carte en a trouvé un dernier genre, au carrefour à feux (-28, -316) :
-# quatre voitures engagées dans le bloc, une par approche, chacune arrêtée derrière la suivante dans son
-# couloir d'obstacles — A suit B, B suit C, C suit D, D suit A. Aucune règle ne peut les départager, elles
-# se suivent en rond pour toujours. On remonte donc la chaîne des voitures suivies ; si elle revient à
-# soi, UNE SEULE voiture du cycle passe outre : celle de plus petit identifiant, pour que ce soit toujours
-# la même quel que soit l'ordre des revérifications. Elle se dégage, et les autres la suivent.
-# Toutes les voitures du cycle doivent être ARRÊTÉES : des voitures qui roulent l'une derrière l'autre
-# sur un anneau forment elles aussi une boucle, et celle-là n'est pas un interblocage. La voiture qui passe
-# outre ignore le véhicule traversé pendant PASSE_OUTRE_DUREE, le temps de le dépasser, au lieu de repiler
-# à chaque revérification.
-const CYCLE_SUIVI_MAX := 8
-const PASSE_OUTRE_DUREE := 4.0          # s
-
-func _cycle_de_suivi(depart: Object) -> bool:
-	var plus_petit := get_instance_id()
-	var cur: Object = depart
-	for k in CYCLE_SUIVI_MAX:
-		if cur == null or not is_instance_valid(cur) or not ("_devant" in cur):
-			return false
-		if cur == self:
-			return get_instance_id() == plus_petit
-		if float(cur.get("_ai_speed")) >= RETENUE_VITESSE:
-			return false
-		plus_petit = mini(plus_petit, cur.get_instance_id())
-		cur = cur.get("_devant")
-	return false
 
 # Utilisé par les AUTRES voitures pour savoir si celle-ci est déjà engagée
 # sur l'anneau du rond-point (priorité), pour le cédez-le-passage ci-dessus.
 func is_on_ring() -> bool:
 	return _path != null and _cur_edge >= 0 and _path.is_ring_edge(_cur_edge)
-
-# Voiture qui attend (ou s'apprête) à entrer sur un anneau : arête d'approche dont le noeud d'arrivée est
-# un noeud d'anneau. Une voiture de l'anneau ne la suit jamais : c'est elle qui cède.
-func waits_for_ring() -> bool:
-	if _path == null or _cur_edge < 0 or _path.is_ring_edge(_cur_edge):
-		return false
-	return _path.is_roundabout_node(_path.edge_other_node(_cur_edge, _from_node))
-
-# Distance, le long de l'anneau, qui sépare cette voiture du noeud `node` qu'elle s'apprête à franchir :
-# 0 si elle vient de le passer (elle occupe encore l'entrée), INF si elle n'est pas sur l'anneau ou n'y
-# arrive pas dans les deux prochaines arêtes. Sert au cédez-le-passage des entrées.
-func ring_arrival_distance(node: int) -> float:
-	if not is_on_ring():
-		return INF
-	if _from_node == node and _edge_progress <= RING_YIELD_DOWNSTREAM:
-		return 0.0
-	var fin := _path.edge_other_node(_cur_edge, _from_node)
-	var reste := _path.edge_length(_cur_edge) - _edge_progress
-	if fin == node:
-		return reste
-	if _exits_at_end():
-		return INF    # elle sort avant d'y arriver
-	var suivante := _ring_next(fin, _cur_edge)
-	if suivante >= 0 and _path.edge_other_node(suivante, fin) == node:
-		return reste + _path.edge_length(suivante)
-	return INF
-
-# Écart, le long de l'anneau, jusqu'à la voiture `o` si elle est DEVANT dans la MÊME voie (au plus deux
-# arêtes plus loin, OBSTACLE_LOOK_AHEAD au plus) ; INF sinon.
-func _ring_gap_to(o: Node3D) -> float:
-	if not o.is_on_ring():
-		return INF
-	if absf(_path.lane_offset(_cur_edge, _lane_pref()) - float(o.ring_lane())) > RING_SAME_LANE:
-		return INF
-	var o_edge: int = int(o.get("_cur_edge"))
-	var o_prog: float = float(o.get("_edge_progress"))
-	var ecart := INF
-	if o_edge == _cur_edge:
-		ecart = o_prog - _edge_progress if o_prog > _edge_progress else INF
-	elif _exits_at_end():
-		return INF    # on sort au bout de cette arête : ce qui est plus loin sur l'anneau n'est pas sur notre route
-	else:
-		var fin := _path.edge_other_node(_cur_edge, _from_node)
-		var cumul := _path.edge_length(_cur_edge) - _edge_progress
-		var e := _ring_next(fin, _cur_edge)
-		var n := fin
-		for k in 2:
-			if e < 0:
-				break
-			if e == o_edge:
-				ecart = cumul + o_prog
-				break
-			cumul += _path.edge_length(e)
-			n = _path.edge_other_node(e, n)
-			e = _ring_next(n, e)
-	return ecart if ecart <= OBSTACLE_LOOK_AHEAD else INF
-
-# Décalage latéral RÉEL de la voie visée sur l'arête courante (sert aux autres voitures de l'anneau).
-func ring_lane() -> float:
-	if _path == null or _cur_edge < 0:
-		return 0.0
-	return _path.lane_offset(_cur_edge, _lane_pref())
-
-# Arête de l'anneau qui part du noeud `node` (l'anneau est à sens unique : il n'y en a qu'une).
-func _ring_next(node: int, arrivee: int) -> int:
-	for e in _path.node_edges(node):
-		if e != arrivee and _path.is_ring_edge(e) and int(_path.edges[e]["a"]) == node:
-			return e
-	return -1
-
-# Voie visée : sur l'anneau, celle tirée à l'entrée ; ailleurs, la voie de la voiture.
-func _lane_pref() -> float:
-	if _path != null and _cur_edge >= 0 and _path.is_ring_edge(_cur_edge):
-		return _ring_lane
-	return _lateral
-
-# Ce noeud d'anneau a-t-il une sortie (une arête hors anneau qui en part) ?
-func _ring_has_exit(node: int) -> bool:
-	for e in _path.node_edges(node):
-		if not _path.is_ring_edge(e) and int(_path.edges[e]["a"]) == node:
-			return true
-	return false
-
-# Sort-on de l'anneau au bout de l'arête courante ?
-func _exits_at_end() -> bool:
-	return _ring_skip == 0 and _ring_has_exit(_path.edge_other_node(_cur_edge, _from_node))
-
-# Voie INTÉRIEURE qui va sortir : elle traverse la voie extérieure, donc elle cède à une voiture de
-# l'extérieure qui est à sa hauteur ou juste derrière sur la même arête. Jamais l'inverse.
-func _ring_merge_limit(cruise_speed: float) -> float:
-	if absf(_ring_lane - RING_INNER) > 0.01 or not _exits_at_end():
-		return cruise_speed
-	var reste := _path.edge_length(_cur_edge) - _edge_progress
-	if reste > RING_MERGE_ZONE:
-		return cruise_speed
-	_refresh_vehicle_index()
-	for idx in _nearby_indices(global_position):
-		var o := _vehicle_cache[idx] as Node3D
-		if o == self or o == null or not o.has_method("ring_lane") or not o.is_on_ring():
-			continue
-		if int(o.get("_cur_edge")) != _cur_edge or absf(float(o.ring_lane()) - _path.lane_offset(_cur_edge, RING_OUTER)) > RING_SAME_LANE:
-			continue
-		if o.retenue_par_une_voiture():
-			continue    # arrêtée derrière une autre : elle ne passera pas avant nous (cf. priorité de virage)
-		var ecart := float(o.get("_edge_progress")) - _edge_progress
-		if ecart > -RING_MERGE_BEHIND and ecart < RING_MERGE_AHEAD:
-			_keep_awake(o)
-			_diag_carrefour = "fusion_anneau"
-			_diag_carrefour_objet = o
-			var frein := reste - (_half_length + 1.0)
-			return 0.0 if frein <= 0.0 else minf(cruise_speed, sqrt(2.0 * AI_DECEL * frein))
-	return cruise_speed
-
-# Arête suivante au noeud `node`, en arrivant par `arrivee`. Hors anneau : tirage habituel. À l'entrée
-# d'un anneau : on tire combien de sorties laisser passer. Sur l'anneau : on continue tant qu'il en reste,
-# puis on sort à la suivante.
-func _choisir_arete(node: int, arrivee: int) -> int:
-	if not _path.is_roundabout_node(node):
-		return _path.pick_next_edge(node, arrivee)
-	var anneau := -1
-	var sorties: Array = []
-	for e in _path.node_edges(node):
-		if e == arrivee or (_path.is_edge_one_way(e) and int(_path.edges[e]["a"]) != node):
-			continue
-		if _path.is_ring_edge(e):
-			anneau = e
-		else:
-			sorties.append(e)
-	if anneau < 0:
-		return _path.pick_next_edge(node, arrivee)
-	if not _path.is_ring_edge(arrivee):
-		_ring_skip = _tirer_sorties(node, anneau)
-		_ring_lane = RING_INNER if randf() < 0.5 else RING_OUTER
-		return anneau
-	if sorties.is_empty():
-		return anneau
-	if _ring_skip > 0:
-		_ring_skip -= 1
-		return anneau
-	_ring_skip = -1
-	return sorties[randi() % sorties.size()]
-
-# Sorties à laisser passer, tirées à l'entrée : de 0 (la première) à toutes sauf la dernière rencontrée,
-# qui ramènerait par où l'on est venu. On compte les sorties en faisant le tour de l'anneau sur le graphe.
-func _tirer_sorties(entree: int, premiere: int) -> int:
-	var sorties := 0
-	var n := _path.edge_other_node(premiere, entree)
-	var e := premiere
-	for k in 64:
-		if n == entree:
-			break
-		for x in _path.node_edges(n):
-			if not _path.is_ring_edge(x) and int(_path.edges[x]["a"]) == n:
-				sorties += 1
-				break
-		e = _ring_next(n, e)
-		if e < 0:
-			break
-		n = _path.edge_other_node(e, n)
-	var plafond := maxi(0, sorties - 2)
-	var r := randf()
-	if plafond == 0 or r < 0.45:
-		return 0
-	if plafond == 1 or r < 0.80:
-		return 1
-	return 2
 
 # Utilisé par les voitures d'une bretelle d'insertion : celle-ci arrive-t-elle (ou vient-elle de passer) au noeud
 # `node` par une autre arête que `except_edge`, à moins de `radius` m ?

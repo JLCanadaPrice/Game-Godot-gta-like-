@@ -1391,10 +1391,7 @@ func _mini_roundabout(node_id: String) -> void:
 	ring.width = MINI_RING["width"]
 	ring.closed = true
 	ring.mesh = false
-	# DEUX VOIES (2026-09-21) : l'anneau fait 8 m entre son trait intérieur (r = 26 m) et son trait
-	# extérieur (r = 34 m), la place de deux voies de 4 m, à r = 28 et r = 32 m. Il n'en avait qu'une, au
-	# milieu. Aucun noeud ne bouge : ce sont les décalages de voie de l'axe, qui reste à r = 30 m.
-	ring.lanes = PackedFloat32Array([-2.0, 2.0])
+	ring.lanes = PackedFloat32Array([0.0])
 	var angles: Array = []
 	var legs: Array[Dictionary] = []
 	for end: Dictionary in station["ends"]:
