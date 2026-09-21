@@ -150,13 +150,6 @@ const VIEWS := [
 	["nuit_parking_allee_sol", Vector3(596.0, 1.7, -1186.0), Vector3(486.0, 1.2, -1180.0), "sol", 1.0],
 	["jour_parking_bout_est_sol", Vector3(597.0, 1.7, -1152.0), Vector3(594.0, 1.2, -1196.0), "sol", 12.0],
 	["jour_raquette_aeroport_sol", Vector3(430.0, 1.7, -1197.0), Vector3(482.0, 1.2, -1192.0), "sol", 12.0],
-	# Section F du 2026-09-21 : aerogare de nuit (vitrage allume d'un bloc, porche eclaire) et parvis
-	# de beton entre la route, la raquette, le parking et la facade.
-	["nuit_aerogare_parvis_sol", Vector3(420.0, 1.7, -1186.0), Vector3(470.0, 7.0, -1214.0), "sol", 1.0],
-	["nuit_porche_sol", Vector3(470.0, 1.7, -1199.0), Vector3(470.0, 4.2, -1214.0), "sol", 1.0],
-	["nuit_aerogare_cote_piste_sol", Vector3(520.0, 1.7, -1262.0), Vector3(430.0, 6.0, -1244.0), "sol", 1.0],
-	["jour_parvis_aerogare_sol", Vector3(375.0, 1.7, -1203.0), Vector3(560.0, 1.0, -1206.0), "sol", 12.0],
-	["jour_parvis_parking_sol", Vector3(560.0, 1.7, -1210.0), Vector3(480.0, 1.0, -1196.0), "sol", 12.0],
 	["crepuscule_artere_sol", Vector3(-1606.0, 1.7, -8.0), Vector3(-1624.0, 1.5, -80.0), "sol", 19.8],
 	# lampadaires sous un ouvrage (2026-09-19) : les 4 mâts que RoadBake refuse désormais de poser.
 	# Altitudes ABSOLUES et à hauteur d'homme — le mode "sol" ne convient pas ici, il relèverait la

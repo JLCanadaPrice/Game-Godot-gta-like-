@@ -147,7 +147,7 @@ func _apply_night(night: float) -> void:
 		if balise != _airport_on:
 			_airport_on = balise
 			for n in _airport_nodes:
-				(n as Node3D).visible = balise   # maillages ET lumières du porche (2026-09-21)
+				(n as GeometryInstance3D).visible = balise
 	if allume and _lights.is_empty():
 		_spawn_lights()
 	for l in _lights:

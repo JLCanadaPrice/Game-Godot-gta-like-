@@ -1,0 +1,14 @@
+[gd_resource type="StandardMaterial3D" format=3]
+
+; PLAFONNIERS DU PORCHE de l'aérogare (2026-09-21) : quatre panneaux de 8 x 1,6 m encastrés sous l'auvent
+; d'entrée, allumés avec le balisage (groupe airport_glow). Trois vraies lumières dirigées vers le sol les
+; accompagnent, dans le même groupe.
+;
+; shading_mode = 0 : NON ÉCLAIRÉ, c'est une source. 0 = UNSHADED, 1 = PER_PIXEL. Blanc neutre à peine chaud,
+; nettement sous 1.0 (ACES).
+
+[resource]
+resource_name = "airport_porche"
+shading_mode = 0
+albedo_color = Color(0.8, 0.78, 0.72, 1)
+disable_receive_shadows = true

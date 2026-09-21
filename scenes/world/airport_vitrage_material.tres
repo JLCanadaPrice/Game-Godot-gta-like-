@@ -1,0 +1,19 @@
+[gd_resource type="StandardMaterial3D" format=3]
+
+; VITRAGE ALLUMÉ de l'aérogare et de la vigie de Prairie Wind (2026-09-21). La nuit, TOUTES les vitres
+; bleues de l'aéroport s'allument, uniformément, sans tirage au hasard : c'est une aérogare ouverte toute la
+; nuit, pas un immeuble de bureaux. Le découpage en carreaux tirés à 28 % y faisait des « carreaux
+; bizarres », beiges, posés au hasard sur les deux façades : retiré à la demande du joueur.
+;
+; UN matériau pour tout le vitrage, dans le calque des lumières d'aéroport (groupe airport_glow) : un appel
+; de dessin la nuit, zéro le jour, allumé avec le balisage.
+;
+; shading_mode = 0 : NON ÉCLAIRÉ, c'est une surface éclairée de l'intérieur. 0 = UNSHADED, 1 = PER_PIXEL.
+; Couleur : l'éclairage intérieur vu à travers un verre teinté bleu, donc un blanc froid légèrement bleuté,
+; posé NETTEMENT SOUS 1.0 (le tonemapper ACES délave ce qui approche 1.0).
+
+[resource]
+resource_name = "airport_vitrage"
+shading_mode = 0
+albedo_color = Color(0.56, 0.66, 0.72, 1)
+disable_receive_shadows = true

@@ -126,10 +126,6 @@ const AIRPORT_MATERIALS := {
 	"vert": "res://scenes/world/airport_light_vert.tres",
 	"rouge": "res://scenes/world/airport_light_rouge.tres",
 	"bleu": "res://scenes/world/airport_light_bleu.tres",
-	# 2026-09-21 : TOUT le vitrage de l'aérogare et de la vigie, allumé uniformément la nuit, et les
-	# plafonniers du porche d'entrée
-	"vitrage": "res://scenes/world/airport_vitrage_material.tres",
-	"porche": "res://scenes/world/airport_porche_material.tres",
 }
 const LIGHT_SIZE := 0.55
 const RUNWAY_EDGE_SPACING := 60.0
@@ -204,7 +200,6 @@ func _airport() -> void:
 	var pad := _pad("n_air")
 	var top: float = pad.y
 	_begin("airport", Vector3(pad.x, top, pad.z))
-	_vitrage_uniforme = true
 	# pistes (09/27 principale au nord, secondaire au sud-est), voies de circulation, aire de trafic
 	var ra := _runway(Vector2(590, -1350), 900.0, 45.0, top, "09", "27")
 	var rb := _runway(Vector2(830, -1020), 420.0, 30.0, top, "", "")
@@ -224,11 +219,8 @@ func _airport() -> void:
 		for x in range(375, 570, 6):
 			_quad("paint", Vector3(x - 0.15, top + 1.0, z + side * 0.02), Vector3(x + 0.15, top + 1.0, z + side * 0.02), Vector3(x + 0.15, top + 10.2, z + side * 0.02), Vector3(x - 0.15, top + 10.2, z + side * 0.02), Vector3(0, 0, side), [], Color(0.75, 0.76, 0.76), false)
 	_box("paint", Vector3(470, top + 5.0, -1210), Vector3(60, 0.4, 8), Color(0.9, 0.9, 0.88), true)
-	# poteaux posés sur le parvis (2 cm sous le dessus de la raquette), pas sur un vide de 2 cm
 	for x: float in [442.0, 470.0, 498.0]:
-		_box("steel", Vector3(x, top - 0.02, -1207), Vector3(0.35, 5.02, 0.35), STEEL, true)
-	_porche(top)
-	_parvis_aerogare(top)
+		_box("steel", Vector3(x, top, -1207), Vector3(0.35, 5.0, 0.35), STEEL, true)
 	_label("PRAIRIE WIND INTERNATIONAL AIRPORT", Vector3(470, top + 8.3, -1213.8), 0.0, 0.028, Color(0.95, 0.95, 0.95), 1500.0)
 	_label("PRAIRIE WIND", Vector3(470, top + 8.3, -1244.2), PI, 0.035, Color(0.95, 0.95, 0.95), 1500.0)
 	footprints.append(_rect_footprint("building", Vector2(470, -1229), Vector2(200, 30)))
@@ -262,58 +254,7 @@ func _airport() -> void:
 	for place: Dictionary in _parking_aerogare(top):
 		_garer_sur_place(place, top)
 	_balisage_aeroport(top)
-	_vitrage_uniforme = false
 	_end("Prairie Wind International Airport", "airport")
-
-
-# PORCHE D'ENTRÉE DE L'AÉROGARE (2026-09-21) : il était noir la nuit. L'auvent est un bloc qu'on a posé
-# nous-mêmes, sans luminaire : on lui en pose, encastrés sous sa sous-face (quatre plafonniers de
-# 8 x 1,6 m, même calque que le balisage, allumés avec lui), et trois vraies lumières dirigées vers le
-# sol, sans ombre, dans le même groupe : allumées la nuit seulement. Trois lumières fixes au même endroit,
-# c'est un coût borné.
-const PORCHE_PLAFONNIERS := [447.5, 462.5, 477.5, 492.5]
-const PORCHE_LUMIERES := [452.0, 470.0, 488.0]
-
-
-func _porche(top: float) -> void:
-	var y := top + 5.0 - 0.02
-	for x: float in PORCHE_PLAFONNIERS:
-		_air_quad("porche", Vector3(x - 4.0, y, -1210.8), Vector3(x + 4.0, y, -1210.8), Vector3(x + 4.0, y, -1209.2),
-				Vector3(x - 4.0, y, -1209.2), Vector3.DOWN)
-	for x: float in PORCHE_LUMIERES:
-		var l := SpotLight3D.new()
-		l.name = "Porche_%d" % int(x)
-		l.position = Vector3(x, top + 4.85, -1210.0)
-		l.rotation = Vector3(-PI * 0.5, 0.0, 0.0)          # regarde vers le bas
-		l.spot_angle = 62.0
-		l.spot_range = 9.0
-		l.spot_attenuation = 1.0
-		l.light_energy = 2.2
-		l.light_color = Color(1.0, 0.93, 0.8)
-		l.shadow_enabled = false
-		l.visible = false
-		l.add_to_group(&"airport_glow", true)
-		place.add_child(l)
-	stats["porche_lumieres"] = PORCHE_LUMIERES.size()
-
-
-# PARVIS DE L'AÉROGARE (2026-09-21). Entre la façade côté ville, la route d'accès, sa raquette et le
-# parking, il restait 11 à 17 m de pelouse : on sortait de l'aérogare dans l'herbe, et le porche d'entrée
-# était planté dedans. Relevé au rayon avant d'écrire (sonde jetable, pas de 2 m sur x 250..660,
-# z -1216..-1120) : terrain 5,00 m, route d'accès et raquette 5,30 m, bordure de la raquette 5,45 m,
-# parking 5,28 m. Le parvis est UNE dalle de béton, au niveau du parking, donc 2 cm SOUS la chaussée :
-# elle file sous le bord de la route et sous la raquette, qui la recouvrent sans combat en z, et ce
-# sont LEURS bords qui dessinent la limite. Elle mord de 0,5 m sous la façade et sous la tour de
-# contrôle, et bute sur le bord nord du parking, au même niveau que lui.
-const PARVIS_X := Vector2(370.0, 613.5)       # pignon ouest de l'aérogare -> sous la tour de contrôle
-const PARVIS_Z := Vector2(-1214.5, -1197.0)   # sous la façade -> bord nord du parking (sous la route)
-
-
-func _parvis_aerogare(top: float) -> void:
-	var centre := Vector2((PARVIS_X.x + PARVIS_X.y) * 0.5, (PARVIS_Z.x + PARVIS_Z.y) * 0.5)
-	var taille := Vector2(PARVIS_X.y - PARVIS_X.x, PARVIS_Z.y - PARVIS_Z.x)
-	_paved(centre, taille, top - 0.02, "concrete")
-	stats["parvis_aerogare_m2"] = snappedf(taille.x * taille.y, 0.1)
 
 
 # --- pose des feux de balisage --------------------------------------------------------------------------------------
@@ -421,10 +362,15 @@ func _balisage_aeroport(top: float) -> void:
 		var mat := Vector3(float(x), top, -1244.0)
 		_box("steel", mat, Vector3(0.3, 12.0, 0.3), STEEL, false)
 		_feu(mat + Vector3(0, 12.2, 0), "blanc")
-	# --- aérogare et vigie : leur VITRAGE entier s'allume (cf. _vitrage_allume). Le bandeau de 38 feux
-	# blancs posés tous les 10 m à mi-hauteur des façades, et les 4 feux de la vigie, faisaient des points
-	# blancs isolés sur une façade noire ; retirés le 2026-09-21.
-	# --- tour de contrôle : feu d'obstacle rouge en haut du mât
+	# --- aérogare : bandeau de fenêtres allumées sur les deux grandes faces, et façade éclairée
+	for cote: float in [-1.0, 1.0]:
+		var z := -1229.0 + cote * 15.15
+		for x in range(380, 561, 10):
+			_feu(Vector3(float(x), top + 5.6, z), "blanc")
+	# --- tour de contrôle : vigie allumée et feu d'obstacle rouge en haut du mât
+	for a: float in [-4.0, 4.0]:
+		for b: float in [-4.0, 4.0]:
+			_feu(Vector3(620.0 + a, top + 36.0, -1205.0 + b), "blanc")
 	_feu(Vector3(622.0, top + 47.0, -1203.0), "rouge")
 
 
@@ -1559,10 +1505,7 @@ func _end(display_name: String, kind: String) -> void:
 # Quadrilatère a-b-c-d, face visible du côté de `normal` ; collision (surfaces porteuses) si `collide`.
 func _quad(part: String, a: Vector3, b: Vector3, c: Vector3, d: Vector3, normal: Vector3, uv: Array = [], color := Color.WHITE, collide := true) -> void:
 	if _est_vitrage(color):
-		if _vitrage_uniforme:
-			_vitrage_allume(a, b, c, d, normal)
-		else:
-			_carreau_primitif(a, b, c, d, normal)
+		_carreau_primitif(a, b, c, d, normal)
 	if not parts.has(part):
 		parts[part] = Batch.new()
 	var batch: Batch = parts[part]
@@ -1621,46 +1564,6 @@ func _est_vitrage(c: Color) -> bool:
 		if absf(c.r - v.r) < VITRAGE_TOLERANCE and absf(c.g - v.g) < VITRAGE_TOLERANCE and absf(c.b - v.b) < VITRAGE_TOLERANCE:
 			return true
 	return false
-
-
-# VITRAGE DE L'AÉROPORT, ALLUMÉ D'UN BLOC (2026-09-21). À l'aérogare, le découpage en carreaux tirés
-# au hasard donnait des « carreaux bizarres », beiges, posés au hasard sur les deux façades : c'est ce
-# que le joueur a demandé de retirer. Ici TOUTES les vitres bleues s'allument la nuit, uniformément, sans
-# tirage : le quad de vitrage lui-même, décalé d'un centimètre vers l'extérieur (devant la vitre, derrière
-# les meneaux qui sont à 2 cm), dans le calque des lumières d'aéroport, allumé avec le balisage.
-var _vitrage_uniforme := false
-const VITRAGE_DECALAGE := 0.01
-
-
-func _vitrage_allume(a: Vector3, b: Vector3, c: Vector3, d: Vector3, normal: Vector3) -> void:
-	var n := normal.normalized()
-	if n.length_squared() < 0.5:
-		return
-	var off := n * VITRAGE_DECALAGE
-	_air_quad("vitrage", a + off, b + off, c + off, d + off, n)
-	stats["vitrages_allumes_m2"] = snappedf(float(stats.get("vitrages_allumes_m2", 0.0)) + ((b - a).cross(d - a)).length(), 0.1)
-
-
-# Quad dans une « couleur » de lumière d'aéroport (même accumulateur que les feux de balisage).
-func _air_quad(couleur: String, a: Vector3, b: Vector3, c: Vector3, d: Vector3, n: Vector3) -> void:
-	if not _air_acc.has(couleur):
-		_air_acc[couleur] = [PackedVector3Array(), PackedVector3Array(), PackedInt32Array()]
-	var acc: Array = _air_acc[couleur]
-	var verts: PackedVector3Array = acc[0]
-	var normals: PackedVector3Array = acc[1]
-	var indices: PackedInt32Array = acc[2]
-	var base := verts.size()
-	for q in [a, b, c, d]:
-		verts.append(q)
-		normals.append(n)
-	# même enroulement que _quad : face visible du côté de la normale
-	if (b - a).cross(c - a).dot(n) >= 0.0:
-		indices.append_array([base, base + 2, base + 1, base, base + 3, base + 2])
-	else:
-		indices.append_array([base, base + 1, base + 2, base, base + 2, base + 3])
-	acc[0] = verts
-	acc[1] = normals
-	acc[2] = indices
 
 
 # Un quad de vitrage dessiné à la main devient un carreau, découpé au grain d'une fenêtre par

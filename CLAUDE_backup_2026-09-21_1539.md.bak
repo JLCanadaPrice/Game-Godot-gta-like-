@@ -27,9 +27,8 @@ travail imposée, les commandes exactes, les pièges déjà payés et l'état d'
   est la preuve que rien de chargé n'etait parti ; il vaut **608** depuis les chantiers du
   2026-09-20 (matériaux de balisage, de feux de véhicule, scripts et tests ajoutés), **611** depuis
   le 2026-09-21 (trois lentilles de gyrophare « au repos »), **613** depuis le test du rond-point
-  (`RoundaboutTrafficTest`, même jour), **614** depuis les lampadaires du parking de l'aérogare
-  (`generated/places/lamp_heads.tres`) et **616** depuis le vitrage et le porche de l'aérogare (deux
-  matériaux).
+  (`RoundaboutTrafficTest`, même jour) et **614** depuis les lampadaires du parking de l'aérogare
+  (`generated/places/lamp_heads.tres`).
 
 ## 2. Méthode de travail (imposée, non négociable)
 
@@ -169,7 +168,7 @@ manque en silence, ce qui est arrivé jusqu'au 2026-09-21.
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/DowntownStreetsTest.tscn
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/DowntownBuildingsTest.tscn
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/ShopBuildingsTest.tscn     # échec ANTÉRIEUR connu
-"$GODOT" --headless --path "$PROJET" --script res://scenes/world/map/tools/ProjectLoadCheck.gd   # attendu : 616 fichiers, 0 échec
+"$GODOT" --headless --path "$PROJET" --script res://scenes/world/map/tools/ProjectLoadCheck.gd   # attendu : 614 fichiers, 0 échec
 ```
 
 Outil d'inspection, hors batterie : `res://scenes/tests/VehicleSortTest.tscn` aligne les véhicules du catalogue
@@ -885,32 +884,6 @@ ne soit pas alignée au cordeau. **58 véhicules garés** au total, contre 14.
 
 Véhicules garés au total : 108 dans `places.json` (102 à l'aérogare, 3 voitures de patrouille, 3 ambulances)
 et 8 camions dans les casernes du centre-ville.
-
-### Aérogare de nuit : vitrage allumé d'un bloc, porche, parvis (2026-09-21)
-
-- **Plus de carreaux tirés au hasard à l'aérogare.** Le découpage du vitrage en carreaux allumés à 28 % y
-  faisait des « carreaux bizarres », beiges, posés au hasard sur les deux façades (photos du joueur). Dans
-  `_airport()`, `_vitrage_uniforme` détourne chaque quad de vitrage (`VITRAGES`) vers `_vitrage_allume` :
-  le quad lui-même, décalé d'1 cm vers l'extérieur (devant la vitre, derrière les meneaux à 2 cm), dans le
-  calque des lumières d'aéroport — **3 991 m² de vitrage, allumés uniformément** avec le balisage, sur un
-  seul matériau (`airport_vitrage_material.tres`, blanc froid bleuté, non éclairé). La vigie de la tour
-  en profite aussi. 152 carreaux de moins dans le compte des lieux (609 -> 457).
-- **Le bandeau de 38 feux blancs** posés tous les 10 m à mi-hauteur des façades, et les 4 feux de la vigie,
-  faisaient des points blancs isolés sur une façade noire (photo 8) : retirés, le vitrage les remplace. Le
-  feu d'obstacle rouge du mât reste. 315 -> 273 feux de balisage.
-- **Porche d'entrée** : quatre plafonniers de 8 x 1,6 m encastrés sous l'auvent
-  (`airport_porche_material.tres`) et **trois `SpotLight3D` sans ombre** dirigées vers le sol, dans le
-  groupe `airport_glow`, allumées avec le balisage. Coût borné : trois lumières fixes. `StreetLights`
-  montrait ce groupe en le traitant comme des `GeometryInstance3D` ; une lumière n'en est pas une, d'où
-  le passage à `Node3D`.
-- **Parvis de béton** entre la façade côté ville, la route d'accès, sa raquette et le parking : il restait
-  11 à 17 m de pelouse, on sortait de l'aérogare dans l'herbe et le porche était planté dedans. Relevé au
-  rayon avant d'écrire (pas de 2 m sur x 250..660, z -1216..-1120) : terrain 5,00 m, route et raquette
-  5,30 m, bordure de la raquette 5,45 m, parking 5,28 m. UNE dalle de 243,5 x 17,5 m (4 261 m²), au niveau
-  du parking, donc 2 cm SOUS la chaussée : elle file sous le bord de la route et sous la raquette, qui la
-  recouvrent sans combat en z, et ce sont leurs bords qui dessinent la limite. Elle mord de 0,5 m sous la
-  façade et sous la tour, et bute sur le parking au même niveau. Les poteaux de l'auvent descendent de 2 cm
-  pour se poser dessus.
 
 ## 10. Circulation : Echo Circle à deux voies, et les interblocages (2026-09-21)
 
