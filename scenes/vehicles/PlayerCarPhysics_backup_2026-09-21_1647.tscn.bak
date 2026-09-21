@@ -165,14 +165,12 @@ size = Vector3(4.5, 3, 6)
 [node name="car" type="RigidBody3D" unique_id=423090843]
 transform = Transform3D(1, 8.735731e-09, 1.2290154e-10, -8.735733e-09, 1, 1.6250913e-05, -1.2275957e-10, -1.6250913e-05, 1, -2.910383e-10, -0.097519636, 6.2584877e-07)
 mass = 90.0
-center_of_mass_mode = 1
-center_of_mass = Vector3(0, -0.1875, 0.2175)
 can_sleep = false
+linear_velocity = Vector3(1.3453755e-19, -1.2971817, -1.9671551e-16)
+angular_velocity = Vector3(-0.0003407097, 2.5814872e-09, -1.8314992e-07)
 script = ExtResource("1_q87ho")
 TransmissionType = 1
-LengthScale = 0.3
-AckermannPoint = -1.14
-Steer_Radius = 3.9
+AntiRollover_Debug = true
 
 [node name="DRAG_CENTRE" type="Marker3D" parent="." unique_id=1887311444]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.18738541, 0.21758671)
@@ -187,7 +185,7 @@ mesh = SubResource("10")
 
 [node name="fr" parent="." unique_id=1629905207 instance=ExtResource("2_qyqnx")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.66, 0.060000002, 1.14)
-target_position = Vector3(0, -0.81, 0)
+target_position = Vector3(0, -2.7, 0)
 script = ExtResource("3_1ixlu")
 Differed_Wheel = "fl"
 SwayBarConnection = "fl"
@@ -201,15 +199,15 @@ B_Bias = 0.8
 A_Geometry1 = 0.345
 
 [node name="geometry" type="MeshInstance3D" parent="fr" unique_id=909860731]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.00022691059, -0.44686344, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.008041231, -2.7, 0)
 material_override = SubResource("StandardMaterial3D_pj25r")
 mesh = SubResource("1")
 
 [node name="animation" type="Marker3D" parent="fr" unique_id=999243599]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.00022691059, -0.44686344, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.008041231, -1.7559129, 0)
 
 [node name="camber" type="Marker3D" parent="fr/animation" unique_id=1929042550]
-transform = Transform3D(0.99957585, 0.029121509, 0, -0.029121509, 0.99957585, 0, 0, 0, 1, 0, 0, 0)
+transform = Transform3D(0.99549407, -0.09482368, 0, 0.09482368, 0.99549407, 0, 0, 0, 1, 0, 0, 0)
 
 [node name="wheel" type="Marker3D" parent="fr/animation/camber" unique_id=1264818629]
 
@@ -237,14 +235,14 @@ editor_only = true
 transform = Transform3D(1, -4.475611e-17, 0, -4.4756215e-17, 1, 0, 0, 0, 1, 0, 0.018919244, 7.1525574e-07)
 
 [node name="velocity2" type="Marker3D" parent="fr" unique_id=1873058754]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.00022691059, -0.44686344, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.008041143, -2.7, 0)
 
 [node name="step" type="Marker3D" parent="fr/velocity2" unique_id=1234011579]
 transform = Transform3D(1, -4.475611e-17, 0, -4.4756215e-17, 1, 0, 0, 0, 1, 0, 0.01891923, -1.0967255e-05)
 
 [node name="fl" parent="." unique_id=506256807 instance=ExtResource("2_qyqnx")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.66, 0.060000002, 1.14)
-target_position = Vector3(0, -0.81, 0)
+target_position = Vector3(0, -2.7, 0)
 script = ExtResource("3_1ixlu")
 Differed_Wheel = "fr"
 SwayBarConnection = "fr"
@@ -258,15 +256,15 @@ B_Bias = 0.8
 A_Geometry1 = 0.345
 
 [node name="geometry" type="MeshInstance3D" parent="fl" unique_id=1269430171]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.00022692962, -0.44686267, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.008041231, -2.7, 0)
 material_override = SubResource("StandardMaterial3D_pj25r")
 mesh = SubResource("1")
 
 [node name="animation" type="Marker3D" parent="fl" unique_id=2066285754]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.00022692962, -0.44686267, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.008041231, -1.7559129, 0)
 
 [node name="camber" type="Marker3D" parent="fl/animation" unique_id=1892005660]
-transform = Transform3D(0.99957585, -0.02912273, 0, 0.02912273, 0.99957585, 0, 0, 0, 1, 0, 0, 0)
+transform = Transform3D(0.99549407, 0.09482368, 0, -0.09482368, 0.99549407, 0, 0, 0, 1, 0, 0, 0)
 
 [node name="wheel" type="Marker3D" parent="fl/animation/camber" unique_id=2130046827]
 
@@ -294,14 +292,14 @@ editor_only = true
 transform = Transform3D(1, -4.475611e-17, 0, -4.4756215e-17, 1, 0, 0, 0, 1, 0, 0.018919244, 7.1525574e-07)
 
 [node name="velocity2" type="Marker3D" parent="fl" unique_id=836218616]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.00022692962, -0.44686267, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.008041143, -2.7, 0)
 
 [node name="step" type="Marker3D" parent="fl/velocity2" unique_id=1208182517]
 transform = Transform3D(1, -4.475611e-17, 0, -4.4756215e-17, 1, 0, 0, 0, 1, 0, 0.01891923, -1.0967255e-05)
 
 [node name="rr" parent="." unique_id=1777169365 instance=ExtResource("2_qyqnx")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.66, 0.060000002, -1.14)
-target_position = Vector3(0, -0.81, 0)
+target_position = Vector3(0, -2.7, 0)
 script = ExtResource("3_1ixlu")
 SwayBarConnection = "rl"
 S_MaxCompression = 0.15
@@ -311,15 +309,15 @@ HB_Bias = 1.0
 A_Geometry1 = 0.345
 
 [node name="geometry" type="MeshInstance3D" parent="rr" unique_id=1430843966]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.3150601e-06, -0.46364293, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.008041231, -2.7, 0)
 material_override = SubResource("StandardMaterial3D_pj25r")
 mesh = SubResource("1")
 
 [node name="animation" type="Marker3D" parent="rr" unique_id=768017091]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.3150601e-06, -0.46364293, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.008041231, -1.7559129, 0)
 
 [node name="camber" type="Marker3D" parent="rr/animation" unique_id=423003340]
-transform = Transform3D(0.99999756, 0.0022172788, 0, -0.0022172788, 0.99999756, 0, 0, 0, 1, 0, 0, 0)
+transform = Transform3D(0.99549407, -0.09482368, 0, 0.09482368, 0.99549407, 0, 0, 0, 1, 0, 0, 0)
 
 [node name="wheel" type="Marker3D" parent="rr/animation/camber" unique_id=1072160920]
 
@@ -347,14 +345,14 @@ editor_only = true
 transform = Transform3D(1, -4.475611e-17, 0, -4.4756215e-17, 1, 0, 0, 0, 1, 0, 0.01895164, 7.1525574e-07)
 
 [node name="velocity2" type="Marker3D" parent="rr" unique_id=986157889]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.3150601e-06, -0.46364293, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.008041143, -2.6999998, 0)
 
 [node name="step" type="Marker3D" parent="rr/velocity2" unique_id=196405362]
 transform = Transform3D(1, -4.475611e-17, 0, -4.4756215e-17, 1, 0, 0, 0, 1, 0, 0.018951654, -1.0967255e-05)
 
 [node name="rl" parent="." unique_id=354583177 instance=ExtResource("2_qyqnx")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.66, 0.060000002, -1.14)
-target_position = Vector3(0, -0.81, 0)
+target_position = Vector3(0, -2.7, 0)
 script = ExtResource("3_1ixlu")
 SwayBarConnection = "rr"
 S_MaxCompression = 0.15
@@ -364,15 +362,15 @@ HB_Bias = 1.0
 A_Geometry1 = 0.345
 
 [node name="geometry" type="MeshInstance3D" parent="rl" unique_id=1188032878]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.3166756e-06, -0.4636421, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.008041231, -2.7, 0)
 material_override = SubResource("StandardMaterial3D_pj25r")
 mesh = SubResource("1")
 
 [node name="animation" type="Marker3D" parent="rl" unique_id=1656048167]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.3166756e-06, -0.4636421, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.008041231, -1.7559129, 0)
 
 [node name="camber" type="Marker3D" parent="rl/animation" unique_id=132216118]
-transform = Transform3D(0.99999756, -0.0022186404, 0, 0.0022186404, 0.99999756, 0, 0, 0, 1, 0, 0, 0)
+transform = Transform3D(0.99549407, 0.09482368, 0, -0.09482368, 0.99549407, 0, 0, 0, 1, 0, 0, 0)
 
 [node name="wheel" type="Marker3D" parent="rl/animation/camber" unique_id=1843054207]
 
@@ -400,7 +398,7 @@ editor_only = true
 transform = Transform3D(1, -4.475611e-17, 0, -4.4756215e-17, 1, 0, 0, 0, 1, 0, 0.01895164, 7.1525574e-07)
 
 [node name="velocity2" type="Marker3D" parent="rl" unique_id=401061574]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.3166756e-06, -0.4636421, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.008041143, -2.6999998, 0)
 
 [node name="step" type="Marker3D" parent="rl/velocity2" unique_id=1942438956]
 transform = Transform3D(1, -4.475611e-17, 0, -4.4756215e-17, 1, 0, 0, 0, 1, 0, 0.018951178, -1.0967255e-05)

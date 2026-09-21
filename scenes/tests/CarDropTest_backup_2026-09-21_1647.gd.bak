@@ -13,8 +13,6 @@ const DURATION := 8.0
 const SETTLE_LIN_EPS := 0.05
 const SETTLE_ANG_EPS := 0.05
 const SETTLE_HOLD := 0.5
-const FINAL_UP_DOT_OK := 0.99 # 8° au plus
-const MAX_DRIFT_OK := 0.5 # m
 
 # Isolation du diagnostic "boucle d'assistance au braquage" (car.gd:
 # steer = ... - velocity.x*assist + rvelocity.y*assistAngular, active dès que
@@ -84,14 +82,4 @@ func _physics_process(delta: float) -> void:
 		print("DROP_TEST_END final_y=%.4f final_drift=%.4f settle_time=%s up_dot=%.4f rotation_deg=%s" % [
 			y, drift, ("%.3f" % _settle_time) if _settle_time > 0.0 else "none",
 			up_dot, car.rotation_degrees])
-		# Verdict (depuis le 2026-09-21, cf. CarDrivingTest) : retombée sur ses roues, posée, sans
-		# glisser au loin.
-		var fails := []
-		if up_dot < FINAL_UP_DOT_OK:
-			fails.append("pas retombée sur ses roues (up_dot=%.4f)" % up_dot)
-		if _settle_time < 0.0:
-			fails.append("jamais posée en %.0f s" % DURATION)
-		if drift > MAX_DRIFT_OK:
-			fails.append("dérive de %.2f m" % drift)
-		print("CAR_DROP_RESULT %s" % ("OK" if fails.is_empty() else "FAIL : " + " ; ".join(fails)))
 		get_tree().quit()

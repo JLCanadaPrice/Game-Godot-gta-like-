@@ -29,7 +29,7 @@ travail imposée, les commandes exactes, les pièges déjà payés et l'état d'
   le 2026-09-21 (trois lentilles de gyrophare « au repos »), **613** depuis le test du rond-point
   (`RoundaboutTrafficTest`, même jour), **614** depuis les lampadaires du parking de l'aérogare
   (`generated/places/lamp_heads.tres`), **616** depuis le vitrage et le porche de l'aérogare (deux
-  matériaux), **617** depuis `LampGlass.gd` et **619** depuis `WheelSpinTest` (2026-09-21 au soir).
+  matériaux) et **617** depuis `LampGlass.gd`.
 
 ## 2. Méthode de travail (imposée, non négociable)
 
@@ -141,16 +141,10 @@ lumière la nuit.
 ## 5. Batterie de tests headless
 
 Les tests sont des **scènes** (sauf `ProjectLoadCheck`, qui est un script). Chacun imprime une
-ligne `<NOM>_RESULT OK` ou `FAIL`. **`CarDrivingTest` et `CarDropTest` n'en rendaient pas** jusqu'au
-2026-09-21 : ils n'imprimaient que des chiffres (`DRIVE_TEST_END`, `DROP_TEST_END`), et un script de
-batterie qui ne cherchait qu'une ligne `RESULT` a manqué en silence que la voiture finissait sur le
-toit. Depuis, ils impriment aussi `CAR_DRIVING_RESULT` et `CAR_DROP_RESULT` (critères en tête de
-chaque script), APRÈS leurs lignes de chiffres, dont les champs d'origine restent (`DRIVE_TEST_END`
-y gagne `brake_from`, `stop_time`, `stop_dist`, et `final_speed` passe à 5 décimales). Lire les
-chiffres reste utile : temps et distance d'arrêt, `final_drift` et `settle_time` de la chute.
-Après un arrêt sec, la voiture recule encore de ~5 cm/s en décroissant (le tangage se relâche et le
-modèle du pack n'a AUCUNE résistance au roulement) : `final_speed` sort donc juste sous 0,05, c'est
-attendu.
+ligne `<NOM>_RESULT OK` ou `FAIL`, **sauf `CarDrivingTest` et `CarDropTest`** : ces deux-là sont des
+sondes qui impriment des chiffres (`DRIVE_TEST_END`, `DROP_TEST_END`) et ne rendent aucun verdict.
+Il faut donc LIRE leurs chiffres ; un script de batterie qui ne cherche qu'une ligne `RESULT` les
+manque en silence, ce qui est arrivé jusqu'au 2026-09-21.
 
 ```bash
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/MapRoadsTest.tscn          # rubans, croisements, pentes
@@ -169,14 +163,13 @@ attendu.
 "$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/RoundaboutTrafficTest.tscn  # 5 min de circulation à Echo Circle, cf. §10
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/NoclipTest.tscn            # noclip, aléa connu aussi
 "$GODOT" --headless --path "$PROJET" --fixed-fps 60 --quit-after 300 res://scenes/tests/VehicleCatalogTest.tscn  # catalogue des véhicules, 20 000 tirages
-"$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/CarDrivingTest.tscn  # accélération, virage, freinage : CAR_DRIVING_RESULT
-"$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/CarDropTest.tscn     # chute de 10 m : CAR_DROP_RESULT
+"$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/CarDrivingTest.tscn  # sonde, PAS de ligne RESULT
+"$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/CarDropTest.tscn     # sonde, PAS de ligne RESULT
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/CarKerbTest.tscn          # bordures : le joueur monte, l'IA non
-"$GODOT" --headless --path "$PROJET" res://scenes/tests/WheelSpinTest.tscn        # roues des 72 modèles : axe, sens, rayon, stroboscope, pivot
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/DowntownStreetsTest.tscn
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/DowntownBuildingsTest.tscn
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/ShopBuildingsTest.tscn     # échec ANTÉRIEUR connu
-"$GODOT" --headless --path "$PROJET" --script res://scenes/world/map/tools/ProjectLoadCheck.gd   # attendu : 619 fichiers, 0 échec
+"$GODOT" --headless --path "$PROJET" --script res://scenes/world/map/tools/ProjectLoadCheck.gd   # attendu : 617 fichiers, 0 échec
 ```
 
 Outil d'inspection, hors batterie : `res://scenes/tests/VehicleSortTest.tscn` aligne les véhicules du catalogue
@@ -309,48 +302,9 @@ sans le plafond de 800x450 du §6). Une vue peut imposer sa propre heure par un 
   `CharacterBody3D` arcade : c'est le modèle des 252 voitures de la circulation ET ce que le joueur
   conduit quand il prend une voiture dans la rue. `PlayerCarPhysics` (`PlayerCarController.gd` sur le
   cœur `assets/car_physics`) est un `RigidBody3D` dont les quatre roues sont des **RayCast3D** : il n'y
-  a aucun collisionneur de roue. Son origine repose à **sol + 0,6785 m** (mesuré le 2026-09-21), bas de
-  carrosserie à 0,13 m, pneus au sol. **CORRECTION du 2026-09-21 : cette note disait « sa coque flotte
-  2,23 m au-dessus du sol, son origine reposant à sol + 2,566 m (…) toute sonde doit la lâcher à sol +
-  2,57 m ». C'était vrai de la voiture CASSÉE, pas une propriété du modèle** : ses rayons de roue étaient
-  restés à 2,7 m au lieu de 0,81 (cf. le piège « le pack VitaVehicle compte en pieds » plus bas). Ne pas
-  reposer une voiture de ce pack à 2,57 m. Elle n'est placée dans aucune scène de jeu : seules les deux
-  sondes l'instancient.
-- **LES ROUES : QUATRE DÉFAUTS SOUS UN SEUL SYMPTÔME** (2026-09-21 au soir). Le joueur voyait les roues de
-  « toutes les voitures » tourner « vers le haut au lieu de rouler vers l'avant ». `Car._update_visuals`
-  faisait tourner chaque roue autour du X LOCAL de son noeud, dans le même sens, avec un rayon fixe de
-  0,34 m. Relevé sur les 72 modèles posés comme en jeu, avec transformations composées à la main (hors de
-  l'arbre, `global_transform` rend l'identité et une première sonde a tout mesuré faux) :
-  1. le X local tombe bien sur l'essieu partout, mais sur les **six modèles d'origine** (`normalcar1/2`,
-     `sportscar`, `sportscar2`, `suv`, `taxi`) il pointe vers +X de la voiture : leurs **18 roues roulaient
-     vraiment à l'envers** ;
-  2. la roue avant droite de `normalcar2` a son **pivot à 0,32 m du centre** de la roue, dans son plan : elle
-     décrivait un cercle et montait dans la carrosserie ;
-  3. les rayons réels vont de **0,234 à 0,721 m** (le blindé SWAT) ;
-  4. et surtout l'**EFFET STROBOSCOPIQUE**, qui touche vraiment toutes les voitures : à 12 m/s et 60 images/s
-     une roue de 0,30 m tourne de 38° par image, et sa jante octogonale ne se distingue d'elle-même qu'à 45°
-     près : l'oeil la voit RECULER de 7° par image. Le sens était pourtant juste sur les 66 autres modèles :
-     mesuré roue par roue (le sommet du pneu avance), et vu à la pastille sur la berline city et le coupé
-     lowpoly.
-  `Car._mesurer_roue` donne maintenant à chaque roue, une fois par modèle : son axe et son sens (le haut du
-  pneu va vers -Z quand la vitesse est positive, déterminant compris), son rayon, son centre (on tourne
-  autour de lui), et un pas maximal par image de 45 % de la période de SA jante, mesurée sur ses sommets
-  (8 branches pour 226 roues, 10 pour 44, 12 pour 22). Au-delà de quelques m/s la roue tourne un peu moins
-  vite que la voiture ne roule, mais toujours dans le bon sens, et c'est ce que l'oeil lit. **Ce plafond vaut
-  par image AFFICHÉE, pas par pas physique** : `_update_visuals` tourne dans `_physics_process` à 60 Hz fixes,
-  et à 30 images/s deux pas de 20° font 40° à l'écran — le stroboscope reviendrait justement sur l'UHD 750.
-  Chaque roue compte ce qu'elle a déjà tourné depuis la dernière image affichée (`Engine.get_process_frames`).
-  `WheelSpinTest` vérifie les six points sur les 292 roues, dont le cumul à 15 images/s (il échoue sur un
-  plafond par pas physique : 81° par image pour une demi-période de 22,5°). Les séquences de contrôle
-  (pastille rouge en haut du pneu, trois images) se font avec une scène jetable.
-  **`PlayerCarPhysics` n'est pas concernée par ce correctif** : ses roues sont tournées par `wheel.gd`
-  (`rotate_x(deg_to_rad(wv))`, `wv` positif quand la roue avance vers le +Z de cette voiture), et elles
-  roulent dans le bon sens. Relevé sur la vraie simulation APRÈS `f2fe587`, le correctif de son
-  retournement sur le toit (cf. « le pack VitaVehicle compte en pieds » plus bas), qui a refait ses poses
-  de roue : en ligne droite jusqu'à 13,8 m/s, le haut du pneu va dans le sens de la marche sur les quatre
-  roues, 198 pas physiques sur 198, axe latéral. Elles tournent en revanche de 48° par pas physique (64° à
-  l'avant au démarrage), et leur jante n'a pas été mesurée : si cette voiture entre un jour en jeu,
-  vérifier l'effet stroboscopique comme pour `Car.gd`.
+  a aucun collisionneur de roue, et sa coque flotte **2,23 m au-dessus du sol**, son origine reposant à
+  **sol + 2,566 m** (mesuré). Posée plus bas, la suspension part en butée et catapulte la voiture à 5 m :
+  toute sonde qui instancie cette voiture doit la lâcher à sol + 2,57 m, jamais « juste au-dessus du sol ».
 - **`move_and_slide()` ne monte AUCUNE marche verticale**, si basse soit-elle. Les bordures de trottoir
   de la carte font **0,150 m** mesurés sur la collision cuite, en marche franche (la montée tient entre
   deux relevés distants de 2 cm), sur trimesh pour les artères et sur piles de boîtes au centre-ville.
@@ -365,40 +319,6 @@ sans le plafond de 800x450 du §6). Une vue peut imposer sa propre heure par un 
 - **Un `CharacterBody3D` inerte n'est jamais repoussé** : c'est lui qui résout ses pénétrations dans
   `move_and_slide()`. Une sonde qui pose un corps sans l'animer et regarde si un train le pousse mesure
   zéro, quelle que soit la collision d'en face.
-- **Le pack VitaVehicle (`assets/car_physics`) compte en PIEDS, et il a été écrit pour GodotPhysics.**
-  Payé le 2026-09-21 : `PlayerCarPhysics` finissait sur le toit dans ses deux sondes. Trois causes
-  empilées, trouvées dans cet ordre et mesurées une à une :
-  1. **Une mise à l'échelle faite à moitié.** 1 unité du pack = 0,30592 m (README du pack ; son projet
-     tourne à `default_gravity = 32.035`, soit 9,8 m/s²). La voiture avait été réduite à 0,3 (coque,
-     maillage, position des roues, `S_MaxCompression`, `A_Geometry1`), mais PAS ses rayons de roue
-     (2,7 au lieu de 0,81), son pneu (rayon 0,944 au lieu de 0,283), `AckermannPoint` (-3,8 au lieu de
-     -1,14) ni `Steer_Radius` (13 au lieu de 3,9). Centre de gravité à 2,4 m au-dessus des pneus pour
-     une voie de 1,32 m : anti-tonneau coupé, elle se couchait sur le flanc EN LIGNE DROITE. Et le
-     modèle de pneu, dont les seuils sont écrits en pieds, recevait des charges en mètres : il voyait
-     3,27 fois moins de charge qu'à la conception (14,7 au lieu de 48 par tick), d'où un patinage
-     permanent (125 m/s en surface de pneu pour 1,4 m/s au sol).
-     **La masse de 90 n'y était pour rien** : c'est la convention du pack (`Weight/10`, la même dans
-     `base car.tscn`), et raideur et amortissement ne dépendent pas de l'unité de longueur. Passer la
-     masse à 900 « répare » les sondes en posant la voiture sur ses butées (compression 0,18 pour 0,15
-     de course) : fausse piste. Correction : `LengthScale = 0.3` sur la voiture (le modèle de pneu
-     calcule en unités du pack, `car.gd` et `wheel.gd` convertissent aux frontières), et ces quatre
-     longueurs ramenées à l'échelle.
-  2. **Jolt n'est pas GodotPhysics.** GodotPhysics met le centre de gravité à l'origine de la forme de
-     collision, Jolt au vrai centroïde de la coque : 20 cm plus haut, 32 cm plus en arrière, stabilité
-     statique 0,96 au lieu de 1,35. Une fois le pneu réparé, elle basculait en virage avant de glisser.
-     Correction : `center_of_mass_mode = Custom`, (0 ; -0,1875 ; 0,2175), l'origine de sa
-     `CollisionShape`.
-  3. **Un filtre qui retardait l'amortisseur.** Le lissage de la vitesse verticale ajouté dans
-     `wheel.gd`, où l'oscillation d'une caisse instable avait été prise pour du bruit de mesure, la
-     renvoyait en l'air à 61 % de sa vitesse d'impact sur la chute de 10 m. Retiré.
-  L'anti-tonneau (`_anti_rollover_correction`) et le limiteur à 6 m/s en virage
-  (`_cornering_speed_governor`), ajoutés par des sessions précédentes contre le symptôme, sont
-  **coupés** (code laissé, `false` par défaut) : ils ne se déclenchent plus — mêmes chiffres au
-  dix-millième allumés ou éteints — et l'anti-tonneau est lui-même instable (Kd·dt/I = 14,8).
-  Règle générale : **devant un moteur physique importé, vérifier ses unités et le moteur physique pour
-  lequel il a été écrit AVANT de toucher à ses réglages.** Reste en unités du pack : les scripts de
-  `misc/` (fumée, traces, sons ; pas branchés) lisent `w_size` — utiliser `w_radius` pour placer quoi
-  que ce soit au rayon de la roue.
 
 ## 7. État d'avancement
 
@@ -422,14 +342,15 @@ débogage sur `V`.
   bâtiments de la carte) ;
 - **concessionnaire enrichi** ;
 - **bug : 0 voiture exposée** chez le concessionnaire ;
-- ~~**bug : `PlayerCarPhysics` finit SUR LE TOIT**~~ **CORRIGÉ le 2026-09-21** (cause : §6, « le pack
-  VitaVehicle compte en pieds »). Avant : `CarDrivingTest` `min_up_dot = -0,9977`, `final_speed =
-  11,99` ; `CarDropTest` `up_dot = -0,9999` et 20,39 m de dérive (mêmes chiffres sur `0344b79`, donc
-  antérieur aux chantiers d'éclairage). Le premier suspect, `mass = 90.00`, était faux : voir §6.
-  Après : `CarDrivingTest` `min_up_dot = 0,9969` (roulis max 4,5° en virage), arrêtée en 1,317 s sur
-  8,14 m depuis 11,23 m/s ; `CarDropTest` retombée à plat (`up_dot = 1,0000`), 9 mm de dérive, posée
-  en 2,57 s. Rappel : ce `RigidBody3D` n'est placé dans aucune scène de jeu (les 252 voitures de la
-  circulation et la voiture prise dans la rue sont des `Car.gd` arcade) ;
+- **bug : `PlayerCarPhysics` finit SUR LE TOIT** dans ses deux sondes, et c'est ANTÉRIEUR — mesuré le
+  2026-09-21, chiffres identiques au centième sur `0344b79`, donc sans rapport avec les chantiers en
+  cours. `CarDrivingTest` (posée à plat à la hauteur de repos documentée, 2,57 m) finit
+  `min_up_dot = -0,9977` et `final_speed = 11,99` après sa phase de freinage, au lieu de s'arrêter ;
+  `CarDropTest` finit `up_dot = -0,9999`, `rotation_deg = (0,000 ; 52,85 ; -179,12)` et **20,39 m de
+  dérive**. Les deux sondes annoncent `mass = 90.00` : une voiture de 90 kg pour une suspension
+  réglée sur une caisse lourde est le premier suspect. Ça ne se voit pas forcément en jeu — les 252
+  voitures de la circulation et la voiture prise dans la rue sont des `Car.gd` arcade, pas ce
+  `RigidBody3D` — mais c'est bien lui qu'on conduit en `PlayerCarPhysics` ;
 - **chantier « relier tous les bâtiments à la route »** (cf. ci-dessous).
 
 ### Chantier à prévoir : relier les bâtiments à la route
@@ -437,15 +358,6 @@ débogage sur `V`.
 Les lieux et les bâtiments sont posés sur la pelouse sans rien qui les raccorde à la chaussée : on tombe
 régulièrement sur 2 à 3 m d'herbe entre une dalle et le trottoir, et sur des dalles voisines séparées par une
 bande d'herbe. Le commissariat et l'hôpital ont été traités les 2026-09-19 (`d818e1e`, `ca797e8`), le reste non.
-
-**L'hôpital a été repris le 2026-09-21 au soir** : le joueur voyait encore de l'herbe entre les murs et les
-parkings. Les lisières avaient été posées contre la BOÎTE du modèle (48 x 47 m), or le rez-de-chaussée de
-`Business_Hospital` est en RETRAIT sous les étages (arcades, surplomb, auvent) : l'herbe courait sous le
-surplomb jusqu'au pied des vrais murs, et derrière le bâtiment elle montait jusqu'au mur. Aucun balayage vu du
-ciel ne pouvait le voir, le toit le cache ; il a fallu tirer les rayons à 0,3 m du sol et faire le tour au sol.
-Réponse : UNE dalle de béton sur toute l'emprise du modèle et une bande de 1,5 m derrière, butant sur l'enrobé
-des parkings sans le chevaucher. **Leçon pour la suite du chantier : une liaison posée contre la boîte d'un
-modèle ne garantit rien au pied de ses murs — regarder le rez-de-chaussée, ou paver sous l'emprise.**
 
 **Recensement du 2026-09-19**, mesuré et non estimé : pour chaque bâtiment on part de son centre et on marche vers
 l'extérieur dans les quatre directions d'axe, au pas de 1 m jusqu'à 50 m, en retenant la direction qui atteint une
@@ -747,17 +659,8 @@ Trois façons d'allumer, selon ce qu'est le véhicule (`_genre_urgence`) :
   double éclat par phase, huit temps de 0,125 s. Le **segment blanc du milieu reste tel quel**, jamais
   allumé ; un segment rouge pile au milieu (SWAT APC 01) reste éteint aussi, pour la symétrie. Rampe
   éteinte, la moitié droite garde une lentille BLEUE au repos.
-- **POMPIERS** : **ALTERNANCE d'un vrai camion américain** (refait le 2026-09-21 au soir : la première
-  version allumait tout en même temps sur le mot « synchronisées », que le joueur a précisé ensuite). Les
-  rouges et les blancs alternent, et sur chaque rampe la gauche et la droite alternent aussi : quatre
-  quarts de seconde, rouges de GAUCHE, rouges de DROITE, blancs de GAUCHE, blancs de DROITE, double éclat
-  dans chaque quart (seize temps de 1/16 s, `POMPIERS_TEMPS_N`). Tous les feux servent, jamais tous
-  ensemble. Le rouge pile au milieu de la rampe avant s'allume dans les deux quarts rouges. Relevé feu par
-  feu : rampe avant rouge / blanc / ROUGE / blanc / rouge, plus une paire de rouges et une paire de blancs
-  sur les flancs du toit, soit cinq calques `pomp_rouge_g/_d/_m` et `pomp_blanc_g/_d`. `VehicleLightsTest`
-  vérifie sur un cycle : jamais rouge ET blanc, jamais gauche ET droite, jamais tout, chaque calque allumé.
-  Pour la capture, `--gyro=0`, `2`, `4`, `6` figent les quatre quarts (`gyro_force` tombe maintenant au
-  premier quart d'un temps, pour que l'horloge à seize temps du camion tombe sur un temps allumé).
+- **POMPIERS** : **tous** les feux, rouges en rouge et blancs en blanc, toutes les rampes, tous les
+  segments, **synchronisés** (`GYRO_SYNCHRO`).
 - **AMBULANCE et fourgon d'urgence** : le **« sapin de Noël »** — tous les feux, rouges et blancs, chacun
   à son rythme. Les feux JAUNES de la caisse passent au BLANC, allumés comme éteints (calque
   `sapin_repos` quand la rampe est coupée). Pour ne pas payer un matériau par feu, les feux sont
@@ -770,19 +673,6 @@ Trois façons d'allumer, selon ce qu'est le véhicule (`_genre_urgence`) :
 allumés (non éclairés), les lentilles rouge, bleue et blanche **au repos** (éclairées, donc sombres la
 nuit), plus l'éteint gris et l'ambre historiques. Un calque par modèle, par groupe et par couleur ;
 l'état du moment change le POINTEUR de matériau du calque, jamais le matériau.
-
-**LA MOITIÉ BLEUE DISPARAISSAIT EN JEU (corrigé le 2026-09-21 au soir).** Un calque, c'est UN `MultiMesh` par
-modèle et par famille. Les voitures de police ÉTEINTES passaient par le calque `urg_bleu` des voitures
-allumées, et après elles : dès qu'une voiture éteinte du même modèle était à portée — une des voitures de
-patrouille garées devant le Central Precinct —, `_poser_repos` réaffectait le calque à ELLE, et la voiture que
-le joueur venait d'allumer avec R perdait sa moitié bleue. Le rouge, que personne ne réaffecte, restait.
-**Les captures ne pouvaient pas le voir** : `--gyros-allumes` allume TOUS les véhicules d'urgence, donc aucune
-voiture éteinte. Les rampes éteintes ont maintenant leur calque, `urg_bleu_repos` (même géométrie) ;
-`MapShotsTest --gyro-seul` n'allume que le véhicule d'urgence le plus proche de la caméra, comme en jeu ; et
-`VehicleLightsTest` pose le cas mixte (une berline allumée, l'autre éteinte) et lit QUELS véhicules sont dans
-quel calque (`VehicleLights.racines_posees`) — les transformations d'un `MultiMesh` ne se relisent pas en
-headless, le serveur de rendu factice les rend à zéro. Règle : **deux états d'un même modèle ne partagent
-jamais un calque**.
 
 **Ils éclairent le décor** : bassin borné de 3 `OmniLight3D` sur la même horloge, joueur prioritaire.
 Rouge ou bleu pour la police, rouge pour les pompiers, rouge ou blanc pour le sapin — le **blanc à

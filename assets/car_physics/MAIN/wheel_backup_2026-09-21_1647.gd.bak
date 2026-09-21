@@ -62,13 +62,7 @@ extends RayCast3D
 @onready var car = get_parent()
 
 var dist = 0.0
-# `w_size` reste le rayon du pneu EN UNITÉS DU PACK (1 unité = 0,30592 m) : le modèle de pneu, la
-# transmission (inertie `w_weight` = w_size²) et la boîte automatique de car.gd sont réglés dessus.
-# `w_radius` est le même rayon en unités DU MONDE (w_size × car.LengthScale) : c'est lui qui pose la
-# roue dessinée sur le sol. Un script de misc/ (fumée, traces, sons) qui place quelque chose au rayon
-# de la roue doit lire `w_radius`, pas `w_size`.
 var w_size = 1.0
-var w_radius = 1.0
 var w_size_read = 1.0
 var w_weight_read = 0.0
 var w_weight = 0.0
@@ -101,17 +95,26 @@ var skvol_d = 0.0
 var velocity = Vector3(0,0,0)
 var velocity2 = Vector3(0,0,0)
 
-# LISSAGE DE LA VITESSE VERTICALE RETIRÉ LE 2026-09-21 (conclusion antérieure fausse).
-# Une session précédente avait vu la vitesse verticale changer de signe à chaque tick (+0,66 puis
-# -0,65 m/s) et l'avait prise pour du BRUIT DE MESURE, qu'elle filtrait avant la suspension
-# (lerp 0,3). Ce n'était pas du bruit à filtrer, mais le symptôme d'une caisse instable, dont le centre
-# de gravité reposait 2,4 m au-dessus des pneus parce que les rayons de roue n'avaient pas été ramenés
-# à l'échelle (cf. PlayerCarPhysics.tscn et CLAUDE.md) : échelle corrigée, la vitesse brute ne bascule
-# plus et la voiture se pose en 1,03 s sans aucun filtre. Le filtre, lui, RETARDAIT l'amortisseur : sur
-# la chute de 10 m, il continuait de pousser alors que la caisse remontait déjà, la renvoyait en
-# l'air à 61 % de sa vitesse d'impact (+7,8 m/s après -12,7 m/s), et elle retombait sur le toit.
-# Vitesse brute, comme dans le pack d'origine : même chute (CarDropTest), roulis max 0,1°, posée en
-# 2,57 s, 9 mm de dérive.
+# Cause confirmee du bercement/roulis persistant (jamais amorti) : "velocity"
+# est une vitesse verticale estimee par difference de position finie
+# (marqueur $velocity/step), donc bruitee d'un tick a l'autre. Cette
+# composante verticale ("linearz" dans VitaVehicleSimulation.suspension())
+# alternait de signe quasiment chaque frame physique (mesure : +0.66 puis
+# -0.65 m/s d'une frame a l'autre, sans amortissement dans le temps), pour
+# une compression "j" quasi stable (~0.043-0.056) -> le terme
+# d'amortissement (linearz*damping2, ~2.5-2.8) devenait alors comparable au
+# terme de ressort (j*elasticity2, ~2.4-3.0) et le faisait parfois dépasser
+# vers le negatif. Le clamp final "if suspforce<0: suspforce=0" (deja
+# present, physiquement correct en soi -- un ressort ne peut pas "tirer")
+# transformait alors ce bruit de mesure en bascule complete 0 <-> pleine
+# force a chaque frame (confirme par instrumentation directe : roue fr,
+# ~0N a une frame, ~5.5-6.3N a la suivante, en continu). Lisse ici la
+# vitesse verticale AVANT de la transmettre au calcul de suspension, pour
+# eliminer ce bruit de derivation numerique sans changer le modele
+# physique lui-meme (le ressort/amortisseur reste inchange, seule
+# l'estimation de vitesse d'entree est filtree).
+var _velocity_y_smooth = 0.0
+const VELOCITY_Y_SMOOTH_FACTOR = 0.3
 var compress = 0.0
 var compensate = 0.0
 var axle_position = 0.0
@@ -240,11 +243,7 @@ func _physics_process(_delta):
 	$velocity.position = Vector3(0,0,0)
 	
 	
-	# Échelle des longueurs (mètres du monde par unité du pack), cf. car.gd : `LengthScale`.
-	var u: float = car.LengthScale
-
 	w_size = ((abs(int(TyreSettings["Width (mm)"]))*((abs(int(TyreSettings["Aspect Ratio"]))*2.0)/100.0) + abs(int(TyreSettings["Rim Size (in)"]))*25.4)*0.003269)/2.0
-	w_radius = w_size*u
 	w_weight = pow(w_size,2.0)
 	
 	w_size_read = w_size
@@ -262,15 +261,8 @@ func _physics_process(_delta):
 	
 	velocity = -$velocity/step.position*60.0
 	velocity2 = -$velocity2/step.position*60.0
-	# Le modèle de pneu ci-dessous est écrit dans les unités du pack : ses seuils absolus (1.0 sur une
-	# force, 1.0 sur `ok`, `grip` sur `offset`, /50 sur la vitesse, ABS en unités/s) n'ont de sens que
-	# là. On lui passe donc les vitesses en unités du pack, la charge aussi (plus bas), et on reconvertit
-	# ses forces en unités du monde avant de les appliquer. La suspension, elle, n'a besoin d'aucune
-	# conversion : raideur (impulsion par longueur) et amortissement (impulsion par vitesse) ne
-	# dépendent pas de l'unité de longueur, et la masse ne change pas.
-	var v_pack: Vector3 = velocity/u
-	var v2_pack: Vector3 = velocity2/u
-
+	_velocity_y_smooth = lerpf(_velocity_y_smooth, velocity.y, VELOCITY_Y_SMOOTH_FACTOR)
+	
 	$velocity.rotation = Vector3(0,0,0)
 	$velocity2.rotation = Vector3(0,0,0)
 	
@@ -308,7 +300,7 @@ func _physics_process(_delta):
 
 	var tyre_stiffness2 = abs(int(TyreSettings["Width (mm)"]))/(abs(int(TyreSettings["Aspect Ratio"]))/1.5)
 
-	var deviding = (Vector2(v_pack.x,v_pack.z).length()/50.0 +0.5)*CompoundSettings["DeformFactor"]
+	var deviding = (Vector2(velocity.x,velocity.z).length()/50.0 +0.5)*CompoundSettings["DeformFactor"]
 
 	deviding /= ground_stiffness +fore_stiffness*CompoundSettings["ForeStiffness"]
 	if deviding<1.0:
@@ -381,27 +373,27 @@ func _physics_process(_delta):
 		if "heat_rate" in get_collider():
 			heat_rate = get_collider().get("heat_rate")
 		if ground_bump_up:
-			ground_bump -= randf_range(ground_bump_frequency/ground_bump_frequency_random,ground_bump_frequency*ground_bump_frequency_random)*(v_pack.length()/1000.0)
+			ground_bump -= randf_range(ground_bump_frequency/ground_bump_frequency_random,ground_bump_frequency*ground_bump_frequency_random)*(velocity.length()/1000.0)
 			if ground_bump<0.0:
 				ground_bump = 0.0
 				ground_bump_up = false
 		else:         
-			ground_bump += randf_range(ground_bump_frequency/ground_bump_frequency_random,ground_bump_frequency*ground_bump_frequency_random)*(v_pack.length()/1000.0)
+			ground_bump += randf_range(ground_bump_frequency/ground_bump_frequency_random,ground_bump_frequency*ground_bump_frequency_random)*(velocity.length()/1000.0)
 			if ground_bump>1.0:
 				ground_bump = 1.0
 				ground_bump_up = true
 
-		var suspforce = VitaVehicleSimulation.suspension(self,S_MaxCompression,A_InclineArea,A_ImpactForce,S_RestLength, elasticity,damping,damping_rebound, velocity.y,abs(cast_to.y),global_translation,get_collision_point(),car.mass,ground_bump,ground_bump_height)
+		var suspforce = VitaVehicleSimulation.suspension(self,S_MaxCompression,A_InclineArea,A_ImpactForce,S_RestLength, elasticity,damping,damping_rebound, _velocity_y_smooth,abs(cast_to.y),global_translation,get_collision_point(),car.mass,ground_bump,ground_bump_height)
 		compress = suspforce
 
 		# FRICTION
-		var grip = (suspforce/u*tyre_maxgrip)*(ground_friction +fore_friction*CompoundSettings["ForeFriction"])
+		var grip = (suspforce*tyre_maxgrip)*(ground_friction +fore_friction*CompoundSettings["ForeFriction"])
 		stress = grip
 		var rigidity = 0.67
 
-		var distw = v2_pack.z - wv*w_size
+		var distw = velocity2.z - wv*w_size
 		wv += (wheelpower*(1.0-(1.0/tyre_stiffness)))
-		var disty = v2_pack.z - wv*w_size
+		var disty = velocity2.z - wv*w_size
 
 		offset = disty/w_size
 		if offset>grip:
@@ -409,9 +401,9 @@ func _physics_process(_delta):
 		elif offset<-grip:
 			offset = -grip
 
-		var distx = v2_pack.x
+		var distx = velocity2.x
 
-		var compensate2 = suspforce/u
+		var compensate2 = suspforce
 #		var grav_incline = $geometry.global_transform.basis.orthonormalized().xform_inv(Vector3(0,1,0)).x
 		var grav_incline = ($geometry.global_transform.basis.orthonormalized().transposed() * (Vector3(0,1,0))).x
 #		var grav_incline2 = $geometry.global_transform.basis.orthonormalized().xform_inv(Vector3(0,1,0)).z
@@ -458,7 +450,7 @@ func _physics_process(_delta):
 			var forcey = -disty/(slip +1.0)
 			var forcex = -distx/(slip +1.0)
 
-			if abs(disty) /(tyre_stiffness/3.0)>(car.ABS[0]/grip)*(ground_friction*ground_friction) and car.ABS[3] and abs(v_pack.z)>car.ABS[2] and ContactABS:
+			if abs(disty) /(tyre_stiffness/3.0)>(car.ABS[0]/grip)*(ground_friction*ground_friction) and car.ABS[3] and abs(velocity.z)>car.ABS[2] and ContactABS:
 				car.abspump = car.ABS[1]
 				if abs(distx) /(tyre_stiffness/3.0)>(car.ABS[5]/grip)*(ground_friction*ground_friction):
 					car.abspump = car.ABS[6]
@@ -500,7 +492,7 @@ func _physics_process(_delta):
 			
 			wv += (wheelpower*(1.0/tyre_stiffness))
 
-			rollvol = v_pack.length()*grip
+			rollvol = velocity.length()*grip
 
 			sl = slip_sk-tyre_stiffness
 			if sl<0.0:
@@ -527,24 +519,24 @@ func _physics_process(_delta):
 	# FORCE
 	if is_colliding():
 		hitposition = get_collision_point()
-		directional_force.y = VitaVehicleSimulation.suspension(self,S_MaxCompression,A_InclineArea,A_ImpactForce,S_RestLength, elasticity,damping,damping_rebound, velocity.y,abs(cast_to.y),global_translation,get_collision_point(),car.mass,ground_bump,ground_bump_height)
+		directional_force.y = VitaVehicleSimulation.suspension(self,S_MaxCompression,A_InclineArea,A_ImpactForce,S_RestLength, elasticity,damping,damping_rebound, _velocity_y_smooth,abs(cast_to.y),global_translation,get_collision_point(),car.mass,ground_bump,ground_bump_height)
 
 		# FRICTION
-		var grip = (directional_force.y/u*tyre_maxgrip)*(ground_friction +fore_friction*CompoundSettings["ForeFriction"])
+		var grip = (directional_force.y*tyre_maxgrip)*(ground_friction +fore_friction*CompoundSettings["ForeFriction"])
 		var rigidity = 0.67
 		var r = 1.0-rigidity
 		
 		var patch_hardness = 1.0
 		
 		
-		var disty = v2_pack.z - (wv*w_size)/(drag +1.0)
+		var disty = velocity2.z - (wv*w_size)/(drag +1.0)
 		if not Differed_Wheel == "":
 			var d_w = car.get_node(Differed_Wheel)
-			disty = v2_pack.z - ((wv*(1.0-get_parent().locked) +d_w.wv_diff*get_parent().locked)*w_size)/(drag +1)
+			disty = velocity2.z - ((wv*(1.0-get_parent().locked) +d_w.wv_diff*get_parent().locked)*w_size)/(drag +1)
 		
-		var distx = v2_pack.x
+		var distx = velocity2.x
 		
-		var compensate2 = directional_force.y/u
+		var compensate2 = directional_force.y
 #		var grav_incline = $geometry.global_transform.basis.orthonormalized().xform_inv(Vector3(0,1,0)).x
 		var grav_incline = ($geometry.global_transform.basis.orthonormalized().transposed() * (Vector3(0,1,0))).x
 		
@@ -591,15 +583,15 @@ func _physics_process(_delta):
 			forcex /= (smoothx*(rigidity) +(1.0-rigidity))
 			forcey /= (smoothy*(rigidity) +(1.0-rigidity))
 				
-			directional_force.x = forcex*u
-			directional_force.z = forcey*u
+			directional_force.x = forcex
+			directional_force.z = forcey
 	else:
 		$geometry.position = cast_to
 
 	output_wv = wv
 	$animation/camber/wheel.rotate_x(deg_to_rad(wv))
 
-	$geometry.position.y += w_radius
+	$geometry.position.y += w_size
 
 
 
@@ -629,11 +621,11 @@ func _physics_process(_delta):
 
 
 	if str(Solidify_Axles) == "":
-		g = ($geometry.position.y+(abs(cast_to.y) -A_Geometry1))/(abs(translation.x)+A_Geometry3 +u)
+		g = ($geometry.position.y+(abs(cast_to.y) -A_Geometry1))/(abs(translation.x)+A_Geometry3 +1.0)
 		g /= abs(g) +1.0
 		cambered = (g*90.0) -A_Geometry4
 	else:
-		g = ($geometry.position.y - get_node(Solidify_Axles).axle_position)/(abs(translation.x) +u)
+		g = ($geometry.position.y - get_node(Solidify_Axles).axle_position)/(abs(translation.x) +1.0)
 		g /= abs(g) +1.0
 		cambered = (g*90.0)
 	

@@ -51,23 +51,6 @@ extends RigidBody3D
 # chassis
 @export var Weight = 900.0 # kg
 
-# Échelle des longueurs : mètres du monde par unité du pack.
-# VitaVehicle compte en « pieds » : 1 unité = 0,30592 m (README du pack, et le 0.30592 de `gforce`
-# plus bas), et son projet d'origine tourne avec `default_gravity = 32.035`, soit 9,8 m/s². La masse
-# (`Weight/10`), la raideur et l'amortissement des suspensions ne dépendent pas de l'unité de
-# longueur : ils restent tels quels. Ce qui en dépend — le modèle de pneu (wheel.gd) et les seuils de
-# vitesse de la boîte automatique et de l'assistance de braquage (ici) — reçoit ses vitesses et ses
-# charges converties en unités du pack. 1.0 = voiture du pack telle quelle (`base car.tscn`) ;
-# 0.3 = PlayerCarPhysics, dont la géométrie a été réduite à 0,3 pour vivre en mètres.
-#
-# Centre de gravité : le pack a été écrit pour GodotPhysics, qui place le centre de gravité d'un corps
-# à l'ORIGINE de sa forme de collision. Ce projet tourne sous Jolt, qui prend le vrai centroïde de la
-# coque : sur PlayerCarPhysics, 20 cm plus haut et 32 cm plus en arrière, assez pour qu'elle bascule en
-# virage avant de glisser (stabilité statique 0,96 au lieu de 1,35). Une voiture de ce pack doit donc
-# imposer `center_of_mass_mode = Custom` à l'origine de sa CollisionShape ; c'est fait dans
-# PlayerCarPhysics.tscn, (0 ; -0,1875 ; 0,2175).
-@export var LengthScale = 1.0
-
 # body
 @export var LiftAngle = 0.1
 @export var DragCoefficient = 0.25
@@ -282,22 +265,15 @@ var steering_angles = []
 var max_steering_angle = 0.0
 var assistance_factor = 0.0
 
-# --- ANTI-TONNEAU (couple de rappel actif) — DÉSACTIVÉ LE 2026-09-21 ---
-# Ce bloc reposait sur un constat FAUX : « ce modele de suspension (4 raycasts independants + barre
-# anti-roulis faible) ne se remet jamais d'un roulis important ». Le modèle du pack n'y était pour
-# rien. PlayerCarPhysics avait été réduit à l'échelle 0,3 sans ses rayons de roue (restés à 2,7 m au
-# lieu de 0,81) ni son pneu (0,944 au lieu de 0,283) : son centre de gravité reposait 2,4 m au-dessus
-# des pneus, sur une voie de 1,32 m. Mesuré : sans ce bloc, la voiture d'avant correction se couchait
-# sur le flanc EN PLEINE LIGNE DROITE (t = 3,98 s, roulis 91°). Ce couple masquait la cause sans la
-# traiter, et il est lui-même instable dès qu'il agit fort : Kd·dt/I = 20000 / 60 / 22,5 = 14,8 alors
-# qu'un amortissement explicite n'est stable que sous 2 (I = inertie en roulis mesurée, 22,5).
-# Il redresse en outre vers la verticale du MONDE : dans une pente de plus de 5,7° (TiltFloor 0,995),
-# il luttait contre le terrain. Une fois l'échelle et le centre de gravité corrigés (cf. LengthScale
-# plus haut), il ne se déclenche plus dans aucune des deux sondes : mêmes chiffres au dix-millième,
-# allumé ou éteint. Laissé en place mais coupé ; ne pas le rallumer pour « stabiliser » la voiture,
-# chercher la cause.
+# --- ANTI-TONNEAU (couple de rappel actif) ---
+# Constat de debug (harnais de chute + harnais de conduite headless, session
+# dediee) : ce modele de suspension (4 raycasts independants + barre
+# anti-roulis faible) ne se remet jamais d'un roulis important. A hauteur de
+# chute realiste (~3m, rampe/trottoir) ou lors d'un virage a fond suivi d'un
+# freinage, la caisse part carrement en TONNEAU (bascule >90°, confirme par
+# mesure directe du vecteur "up" du chassis : up_dot passe negatif).
 #
-# Historique (session précédente) — Detection : deux pistes essayees.
+# Detection : deux pistes essayees.
 # 1) Le declencheur d'origine (une roue durablement a charge quasi nulle,
 #    mesure sur le test de chute) fonctionne pour un impact vertical, mais
 #    se met a rester eleve en PERMANENCE des qu'on freine ou accelere en
@@ -329,7 +305,7 @@ var assistance_factor = 0.0
 # couple maximal autorise croit lui aussi avec la severite (mineur pour une
 # inclinaison legere, bien plus fort pour un vrai tonneau en cours) : conduite
 # normale = intervention nulle, tonneau reel = reponse decisive.
-@export var AntiRollover_Enabled := false
+@export var AntiRollover_Enabled := true
 # Durci radicalement (derniere tentative, cf. tonneau complet observe en
 # virage+freinage avec les valeurs precedentes) : intervient plus tot
 # (TiltFloor plus proche de 1.0), atteint la severite max plus tot
@@ -390,18 +366,13 @@ func _anti_rollover_correction(_delta: float) -> void:
 		print("ANTIROLL severity=%.4f up_dot=%.4f max_torque=%.1f torque=%s" % [
 			severity, up_dot_now, max_torque, corrective_torque])
 
-# LIMITEUR EN VIRAGE — DÉSACTIVÉ LE 2026-09-21, pour la même raison que l'anti-tonneau ci-dessus :
-# il bridait la voiture à 6 m/s (21,6 km/h) dans tout virage braqué à plus de 30 %, pour que
-# l'anti-tonneau garde une chance de rattraper une caisse dont le centre de gravité était à 2,4 m.
-# Cause corrigée (échelle), il n'a plus d'objet. Laissé en place mais coupé.
-#
-# Historique (session précédente) : Deuxieme ligne de defense (derniere tentative, pragmatique plutot
-# que physiquement pure) : reduit de force la vitesse horizontale des lors que
+# Deuxieme ligne de defense (derniere tentative, pragmatique plutot que
+# physiquement pure) : reduit de force la vitesse horizontale des lors que
 # le braquage est significatif ET que la vitesse depasse un seuil -> moins
 # de transfert de charge lateral a dissiper, donc moins de risque de
 # depasser ce que l'anti-tonneau peut encore rattraper. Freinage plafonne
 # par frame (pas un arret instantane) pour rester jouable.
-@export var CorneringGovernor_Enabled := false
+@export var CorneringGovernor_Enabled := true
 @export var CorneringSteerThreshold := 0.3   # fraction de braquage a partir de laquelle ca s'active
 @export var CorneringSpeedLimit := 6.0       # m/s au-dela duquel ca freine en virage serre
 @export var CorneringGovernor_MaxDecel := 15.0   # m/s^2 max applique par ce freinage
@@ -601,7 +572,7 @@ func controls():
 			if assistance_factor>0.0:
 				var maxsteer = 1.0/(going*(SteerAmountDecay/assistance_factor) +1.0)
 				
-				var assist_commence = (linear_velocity.length()/LengthScale)/10.0
+				var assist_commence = linear_velocity.length()/10.0
 				if assist_commence>1.0:
 					assist_commence = 1.0
 				
@@ -727,7 +698,7 @@ func transmission():
 						actualgear = -1
 				else:
 					sassistdel = 60
-			elif (linear_velocity.length()/LengthScale)<5:
+			elif linear_velocity.length()<5:
 				if not gas and gear == 1 or not brake and gear == -1:
 					sassistdel = 60
 					actualgear = 0
@@ -740,13 +711,13 @@ func transmission():
 				else:
 					clutchin = false
 				if not gear == -1:
-					if gear<len(GearRatios) and (linear_velocity.length()/LengthScale)>assistshiftspeed:
+					if gear<len(GearRatios) and linear_velocity.length()>assistshiftspeed:
 						sassistdel = GearAssistant[0]/2.0
 						sassiststep = -4
 
 						clutchin = true
 						gasrestricted = true
-					if gear>1 and (linear_velocity.length()/LengthScale)<assistdownshiftspeed:
+					if gear>1 and linear_velocity.length()<assistdownshiftspeed:
 						sassistdel = GearAssistant[0]/2.0
 						sassiststep = -2
 
@@ -804,7 +775,7 @@ func transmission():
 						actualgear = -1
 				else:
 					sassistdel = 60
-			elif (linear_velocity.length()/LengthScale)<5:
+			elif linear_velocity.length()<5:
 				if not gas and gear == 1 or not brake and gear == -1:
 					sassistdel = 60
 					actualgear = 0
@@ -861,7 +832,7 @@ func transmission():
 						actualgear = -1
 				else:
 					sassistdel = 60
-			elif (linear_velocity.length()/LengthScale)<5:
+			elif linear_velocity.length()<5:
 				if not gas and gear == 1 or not brake and gear == -1:
 					sassistdel = 60
 					actualgear = 0
@@ -915,15 +886,15 @@ func transmission():
 						actualgear = -1
 				else:
 					sassistdel = 60
-			elif (linear_velocity.length()/LengthScale)<5:
+			elif linear_velocity.length()<5:
 				if not gas and gear == 1 or not brake and gear == -1:
 					sassistdel = 60
 					actualgear = 0
 			if sassiststep == 0:
 				if not gear == -1:
-					if gear<len(GearRatios) and (linear_velocity.length()/LengthScale)>assistshiftspeed:
+					if gear<len(GearRatios) and linear_velocity.length()>assistshiftspeed:
 						actualgear += 1
-					if gear>1 and (linear_velocity.length()/LengthScale)<assistdownshiftspeed:
+					if gear>1 and linear_velocity.length()<assistdownshiftspeed:
 						actualgear -= 1
 
 		gear = actualgear
@@ -1054,7 +1025,7 @@ func aero():
 	var torq = global_transform.basis.orthonormalized().transposed() * (Vector3(1,0,0))
 	
 #	apply_torque_impulse(global_transform.basis.orthonormalized().xform( Vector3(((-veloc.length()*0.3)*LiftAngle),0,0)  ) )
-	apply_torque_impulse(global_transform.basis.orthonormalized() * ( Vector3(((-veloc.length()*0.3)*LiftAngle*LengthScale),0,0)  ) )
+	apply_torque_impulse(global_transform.basis.orthonormalized() * ( Vector3(((-veloc.length()*0.3)*LiftAngle),0,0)  ) )
 	
 	var vx = veloc.x*0.15
 	var vy = veloc.z*0.15
@@ -1108,7 +1079,7 @@ func _physics_process(delta):
 			Debug_Mode = true
 	
 #	velocity = global_transform.basis.orthonormalized().xform_inv(linear_velocity)
-	velocity = global_transform.basis.orthonormalized().transposed() * (linear_velocity)/LengthScale
+	velocity = global_transform.basis.orthonormalized().transposed() * (linear_velocity)
 #	rvelocity = global_transform.basis.orthonormalized().xform_inv(angular_velocity)
 	rvelocity = global_transform.basis.orthonormalized().transposed() * (angular_velocity)
 
@@ -1116,7 +1087,7 @@ func _physics_process(delta):
 		mass = Weight/10.0
 	aero()
 	
-	gforce = (linear_velocity - pastvelocity)/LengthScale*((0.30592/9.806)*60.0)
+	gforce = (linear_velocity - pastvelocity)*((0.30592/9.806)*60.0)
 	pastvelocity = linear_velocity
 	
 #	gforce = global_transform.basis.orthonormalized().xform_inv(gforce)
