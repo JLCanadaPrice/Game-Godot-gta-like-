@@ -18,19 +18,6 @@ var _mv := PackedVector3Array()
 var _mn := PackedVector3Array()
 var _mc := PackedColorArray()
 var _mi := PackedInt32Array()
-var _exclus: Array = []                  # préfixes de noms de maillages écartés pour le modèle en cours (cf. EXCLUS)
-var _boite_exclue := AABB()              # boîte des maillages écartés : la boîte du modèle continue de les englober
-var _boite_exclue_vide := true
-
-# Maillages du .glb à NE PAS fusionner, par modèle (préfixe du nom du noeud).
-# Business_ParkingStructure (2026-09-21) : light_006 ne contient que les « cônes de lumière » opaques que le joueur
-# voyait comme de grandes formes blanches (photos 05 et 06) — 16 prismes blancs de 13,4 x 3,3 m pendus sous les
-# plafonniers, 4 par niveau, et un sous l'auvent de l'entrée : 298 triangles, relevés pièce par pièce. Les
-# boîtiers des plafonniers ne sont PAS dans light_006 mais dans base_072 (0a0d10, dessous 727254) : ils restent.
-# La BOÎTE du modèle, elle, garde les parties écartées : le centre-ville pose chaque bâtiment au centre de sa boîte,
-# et le cône de l'auvent dépassait de 0,39 m devant la façade — le retirer de la boîte faisait glisser les trois
-# parkings du centre-ville de 0,195 m (vu aux fenêtres allumées, dont le tirage dépend de la position).
-const EXCLUS := {"Business_ParkingStructure": ["light_"]}
 
 
 func _init() -> void:
@@ -85,8 +72,6 @@ func get_model(name: String, with_trimesh := false) -> Dictionary:
 func _bake(name: String) -> void:
 	var entry: Dictionary = catalog[name]
 	var inst: Node = (load(entry["path"]) as PackedScene).instantiate()
-	_exclus = EXCLUS.get(name, [])
-	_boite_exclue_vide = true
 	_mv = PackedVector3Array()
 	_mn = PackedVector3Array()
 	_mc = PackedColorArray()
@@ -96,8 +81,6 @@ func _bake(name: String) -> void:
 	var aabb := AABB(_mv[0], Vector3.ZERO)
 	for v in _mv:
 		aabb = aabb.expand(v)
-	if not _boite_exclue_vide:
-		aabb = aabb.merge(_boite_exclue)
 	var arrays := []
 	arrays.resize(Mesh.ARRAY_MAX)
 	arrays[Mesh.ARRAY_VERTEX] = _mv
@@ -116,11 +99,7 @@ func _collect(node: Node, parent: Transform3D) -> void:
 	var xform := parent
 	if node is Node3D:
 		xform = parent * (node as Node3D).transform
-	if node is MeshInstance3D and (node as MeshInstance3D).mesh != null and _exclu(String(node.name)):
-		var b := xform * (node as MeshInstance3D).mesh.get_aabb()
-		_boite_exclue = b if _boite_exclue_vide else _boite_exclue.merge(b)
-		_boite_exclue_vide = false
-	elif node is MeshInstance3D and (node as MeshInstance3D).mesh != null:
+	if node is MeshInstance3D and (node as MeshInstance3D).mesh != null:
 		var mesh := (node as MeshInstance3D).mesh
 		var mirrored := xform.basis.determinant() < 0.0
 		var normal_basis := xform.basis.inverse().transposed()
@@ -157,10 +136,3 @@ func _collect(node: Node, parent: Transform3D) -> void:
 					_mi.append(first + indices[t + 2])
 	for child in node.get_children():
 		_collect(child, xform)
-
-
-func _exclu(nom: String) -> bool:
-	for prefixe: String in _exclus:
-		if nom.begins_with(prefixe):
-			return true
-	return false

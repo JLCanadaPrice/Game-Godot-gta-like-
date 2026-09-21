@@ -62,16 +62,6 @@ const VIEWS := [
 	["hopital_nord_sol", Vector3(-322.0, 1.7, 200.0), Vector3(-280.0, 0.5, 192.0), "", 12.0],
 	["hopital_nord_est_sol", Vector3(-238.0, 1.7, 200.0), Vector3(-280.0, 0.5, 192.0), "", 12.0],
 	["hopital_sud_ouest_sol", Vector3(-318.0, 1.7, 139.0), Vector3(-300.0, 0.5, 150.0), "", 12.0],
-	# Parkings a etages du centre-ville (lowrise_389 Business_ParkingStructure, 2026-09-21) : l'entree sous l'auvent
-	# (photo 05) et un plateau (photo 06), pour chacun des trois exemplaires. Positions calculees depuis la
-	# transformation de chaque exemplaire dans downtown/generated/Buildings.tscn (repere du modele : entree en +Z,
-	# plateaux a 0,35 / 4,95 / 9,50 m au-dessus de son origine, posee a 0,2 m).
-	["parking_centre_1_entree", Vector3(-849.84, 1.9, -386.4), Vector3(-855.34, 3.2, -383.9), "", 12.0],
-	["parking_centre_1_niveau1", Vector3(-870.34, 6.85, -363.9), Vector3(-870.34, 6.35, -403.9), "", 12.0],
-	["parking_centre_2_entree", Vector3(-275.84, 1.9, 28.18), Vector3(-281.34, 3.2, 30.68), "", 12.0],
-	["parking_centre_2_sol", Vector3(-296.34, 2.25, 50.68), Vector3(-296.34, 1.75, 10.68), "", 12.0],
-	["parking_centre_3_entree", Vector3(-773.04, 1.9, 49.66), Vector3(-770.54, 3.4, 55.16), "", 12.0],
-	["parking_centre_3_niveau2", Vector3(-750.54, 11.4, 70.16), Vector3(-790.54, 10.9, 70.16), "", 12.0],
 	["lieu_commissariat", Vector3(-690, 6, 115), Vector3(-713, 6, 158)],
 	["lieu_liberty_motors", Vector3(40, 10, -440), Vector3(15, 2, -395)],
 	["lieu_casino", Vector3(-520, 45, -300), Vector3(-586, 30, -365)],

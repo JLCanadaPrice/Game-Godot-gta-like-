@@ -1157,28 +1157,3 @@ Trois pièges de mesure, payés pendant ce chantier :
 - **Regarder au-delà du rond-point.** Le point 3 ne se voyait pas depuis l'anneau : la file de la branche
   ouest venait d'un carrefour à 130 m. La sonde qui l'a trouvé remonte chaque file jusqu'à sa TÊTE, sur
   toute la carte, puis suit la chaîne d'attente de la tête jusqu'à un cycle.
-
-## 11. Parking à étages (Business_ParkingStructure) — chantier du 2026-09-21
-
-Le modèle `assets/building_pack_everythinglibrary/Business/Business_ParkingStructure.glb` est posé 3 fois au
-centre-ville (blocs 0, 72 et 77) et le sera une fois à l'aéroport. Anatomie RELEVÉE sur ses sommets (repère du
-modèle : origine au sol, entrée côté +Z) :
-
-- **5 plateaux** praticables, dessus à **0,35 / 4,95 / 9,50 / 14,05 / 18,60 m** (4,60 puis 4,55 m d'un plancher à
-  l'autre). Chaque étage est UNE pièce de 28 triangles : dalle de 0,40 m et muret de rive de 1,93 m d'un seul tenant ;
-  intérieur x -21,76..21,76, z -9,75..9,80 ; muret de bout de 1,34 m d'épaisseur (x 21,76..23,10).
-- Une rangée de **5 poteaux** au milieu (z ±0,54 ; x = 0, ±10, ±16), des montants de façade, **4 tours d'angle
-  pleines** et une tour arrière pleine ; aux deux bouts, deux montants découpent trois travées (z ±2,46..3,54).
-- La **« cage vitrée »** est une tour (x ±5,52, z 7,48..11,87) que chaque plateau traverse : une pièce de 11 x 2,3 m
-  par niveau, fermée côté parking. Au rez-de-chaussée un passage de 7,7 m la traverse : c'est l'entrée des voitures,
-  avec une rampe d'accès de 0,36 m sur 1,35 m.
-- Enroulement des faces : la convention de Godot (faces avant en sens horaire), vérifié triangle par triangle.
-
-**Étape 1 — les cônes.** `light_006` ne contient que les « cônes de lumière » opaques (photos 05 et 06) : 16 prismes
-blancs de 13,4 x 3,3 m pendus sous les plafonniers, 4 par niveau, et un sous l'auvent, soit 298 triangles. Les
-BOÎTIERS des plafonniers sont dans `base_072` et restent. `BuildingModels.EXCLUS` écarte les maillages `light_*` de ce
-modèle à la fusion. **Piège payé en le faisant** : la boîte du modèle doit continuer d'englober les pièces écartées.
-Le centre-ville pose chaque bâtiment au CENTRE DE SA BOÎTE, et le cône de l'auvent dépassait de 0,39 m devant la
-façade : le retirer de la boîte faisait glisser les trois parkings de 0,195 m. C'est le tirage des fenêtres
-allumées, qui dépend de la position, qui l'a trahi (31 133 -> 31 135 carreaux). Contrôle qui décide : après la
-cuisson, `downtown/generated/buildings.json` et les cellules `windowglow_*` sont identiques octet pour octet.
