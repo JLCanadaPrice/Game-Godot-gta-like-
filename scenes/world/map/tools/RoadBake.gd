@@ -92,12 +92,12 @@ const LAMP_HEADS := {
 	"lamp_single": [Vector3(1.229, 6.205, 0.004)],
 	"lamp_double": [Vector3(1.268, 6.145, 0.005), Vector3(-1.268, 6.145, 0.005)],
 }
-# Boîte émissive posée sur chaque luminaire la nuit. Volontairement un peu plus grande que le
-# luminaire mesuré (0.391 x 0.258 x 0.386 pour lamp_1) pour déborder du capot et rester lisible
-# de loin, mais pas au point de faire un cube visible de près.
-const LAMP_GLOW_SIZE := Vector3(0.46, 0.30, 0.44)
-const LAMP_GLOW_RANGE := 650.0      # même portée que les mâts : un halo sans son mât serait absurde
+# La nuit, c'est le VERRE du luminaire qui s'allume (LampGlass) : une copie de ses triangles, fusionnée par
+# cellule. Jusqu'au 2026-09-21 c'était une boîte de 0,46 x 0,30 x 0,44 m posée autour de la tête, qui
+# débordait du capot en un gros hexagone jaune (photo du joueur).
+const LAMP_GLOW_RANGE := 650.0      # même portée que les mâts : un verre allumé sans son mât serait absurde
 const GLOW_MATERIAL := "res://scenes/world/lamp_glow_material.tres"
+const LampGlass := preload("res://scenes/world/map/tools/LampGlass.gd")
 const TrafficGraph := preload("res://scenes/world/map/MapTrafficGraph.gd")
 const RailPathRes := preload("res://scenes/world/map/MapRailPath.gd")
 const LampHeadsRes := preload("res://scenes/world/map/MapLampHeads.gd")
@@ -1143,50 +1143,11 @@ func _lamp(part: String, base: Vector3, arm: Vector3, owner = null) -> void:
 	stats["lampadaires"] = int(stats.get("lampadaires", 0)) + 1
 	# Position monde de chaque luminaire : elle n'est nulle part ailleurs, les mâts étant fusionnés
 	# en un seul maillage par cellule. Sans cette liste, StreetLights n'aurait aucun point où poser
-	# ses lumières, et la cuisson n'aurait aucun point où poser ses halos.
+	# ses lumières.
 	for offset: Vector3 in LAMP_HEADS[part]:
 		var head := t * offset
 		lamp_heads.append(head)
 		lamp_aims.append((head - Vector3(base.x, head.y, base.z)).normalized())
-		if not g.has("lamp_glow"):
-			g["lamp_glow"] = []
-		(g["lamp_glow"] as Array).append(head)
-
-
-# Halos d'une cellule fusionnés en un seul maillage : une boîte par luminaire, 12 triangles.
-# On fusionne plutôt que d'instancier parce qu'un MultiMesh cuit sans rendu perd ses positions
-# (même raison que pour les mâts, cf. la boucle d'écriture des cellules), et parce qu'un maillage
-# fusionné par cellule donne un appel de dessin par cellule au lieu d'un par lampadaire.
-func _glow_mesh(heads: Array) -> ArrayMesh:
-	var verts := PackedVector3Array()
-	var normals := PackedVector3Array()
-	var indices := PackedInt32Array()
-	var h := LAMP_GLOW_SIZE * 0.5
-	# 6 faces indépendantes : une normale franche par face, pas de sommet partagé entre deux faces
-	var faces := [
-		[Vector3(0, 0, 1), Vector3(-h.x, -h.y, h.z), Vector3(h.x, -h.y, h.z), Vector3(h.x, h.y, h.z), Vector3(-h.x, h.y, h.z)],
-		[Vector3(0, 0, -1), Vector3(h.x, -h.y, -h.z), Vector3(-h.x, -h.y, -h.z), Vector3(-h.x, h.y, -h.z), Vector3(h.x, h.y, -h.z)],
-		[Vector3(1, 0, 0), Vector3(h.x, -h.y, h.z), Vector3(h.x, -h.y, -h.z), Vector3(h.x, h.y, -h.z), Vector3(h.x, h.y, h.z)],
-		[Vector3(-1, 0, 0), Vector3(-h.x, -h.y, -h.z), Vector3(-h.x, -h.y, h.z), Vector3(-h.x, h.y, h.z), Vector3(-h.x, h.y, -h.z)],
-		[Vector3(0, 1, 0), Vector3(-h.x, h.y, h.z), Vector3(h.x, h.y, h.z), Vector3(h.x, h.y, -h.z), Vector3(-h.x, h.y, -h.z)],
-		[Vector3(0, -1, 0), Vector3(-h.x, -h.y, -h.z), Vector3(h.x, -h.y, -h.z), Vector3(h.x, -h.y, h.z), Vector3(-h.x, -h.y, h.z)],
-	]
-	for head: Vector3 in heads:
-		for face: Array in faces:
-			var base := verts.size()
-			for k in range(1, 5):
-				verts.append(head + (face[k] as Vector3))
-				normals.append(face[0])
-			indices.append_array([base, base + 1, base + 2, base, base + 2, base + 3])
-	var arrays := []
-	arrays.resize(Mesh.ARRAY_MAX)
-	arrays[Mesh.ARRAY_VERTEX] = verts
-	arrays[Mesh.ARRAY_NORMAL] = normals
-	arrays[Mesh.ARRAY_INDEX] = indices
-	var mesh := ArrayMesh.new()
-	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
-	mesh.surface_set_material(0, load(GLOW_MATERIAL))
-	return mesh
 
 
 # Tracé de la voie ferrée pour les trains (chantier des trains, étape 1). L'axe est relevé sur la ligne cuite par
@@ -1736,13 +1697,19 @@ func _write_scene() -> void:
 				pole.shape = pole_shape
 				pole.position = (transforms[i] as Transform3D).origin + Vector3(0, 3.0, 0)
 				body.add_child(pole)
-		if g.has("lamp_glow"):
-			# Halos des luminaires de la cellule, fusionnés en UN maillage : allumés la nuit,
-			# cachés le jour. Un maillage par cellule, donc un appel de dessin par cellule visible
-			# la nuit, et zéro le jour. Le matériau est partagé par toute la carte et c'est
-			# DayNightCycle qui en fait varier l'émission ; ne pas le dupliquer par cellule, sinon
-			# chaque cellule redeviendrait un appel que rien ne peut regrouper (cf. LampPoleLayer).
-			var glow := _glow_mesh(g["lamp_glow"])
+		var poses_verre: Array = []
+		for part in ["lamp_single", "lamp_double"]:
+			if g.has(part):
+				var chemin_modele: String = LAMP_SINGLE if part == "lamp_single" else LAMP_DOUBLE
+				poses_verre.append([LampGlass.verre(lamp_meshes[part], chemin_modele), g[part]])
+		var glow: ArrayMesh = LampGlass.maillage(poses_verre, load(GLOW_MATERIAL)) if not poses_verre.is_empty() else null
+		if glow != null:
+			# Verre des luminaires de la cellule, fusionné en UN maillage : allumé la nuit, caché le
+			# jour. Un maillage par cellule, donc un appel de dessin par cellule visible la nuit, et
+			# zéro le jour. Le matériau est partagé par toute la carte et c'est StreetLights qui en
+			# fait varier la couleur ; ne pas le dupliquer par cellule, sinon chaque cellule
+			# redeviendrait un appel que rien ne peut regrouper (cf. LampPoleLayer).
+			stats["triangles_verre"] = int(stats.get("triangles_verre", 0)) + glow.surface_get_array_len(0) / 3
 			var glow_path := OUT.path_join("lamp_glow_%02d_%02d.res" % [key.x + 10, key.y + 10])
 			ResourceSaver.save(glow, glow_path)
 			var gi := MeshInstance3D.new()

@@ -889,8 +889,8 @@ const PARKING_MARGE_ROUTE := 3.0
 const LAMPE_DOUBLE := "res://assets/modular_roads/lamp_2.glb"
 const LAMPE_DOUBLE_TETES := [Vector3(1.268, 6.145, 0.005), Vector3(-1.268, 6.145, 0.005)]   # relevées par RoadBake
 const LAMPE_PORTEE := 650.0
-const HALO := Vector3(0.46, 0.30, 0.44)                  # mêmes halos que RoadBake (LAMP_GLOW_SIZE)
 const GLOW_MATERIAL := "res://scenes/world/lamp_glow_material.tres"
+const LampGlass := preload("res://scenes/world/map/tools/LampGlass.gd")
 
 
 func _parking_aerogare(top: float) -> Array:
@@ -917,9 +917,9 @@ func _parking_aerogare(top: float) -> Array:
 
 
 # Lampadaires d'un lieu : maillage du modèle fusionné pour tous (un appel de dessin), un poteau de
-# collision chacun (nommé comme ceux de RoadBake, que DayNightTest reconnaît), un halo par tête dans le
-# groupe lamp_glow (caché le jour, montré la nuit par StreetLights), et les têtes ajoutées au fichier que
-# StreetLights lit pour poser ses vraies lumières.
+# collision chacun (nommé comme ceux de RoadBake, que DayNightTest reconnaît), leur VERRE allumé dans le
+# groupe lamp_glow (caché le jour, montré la nuit par StreetLights, cf. LampGlass), et les têtes ajoutées au
+# fichier que StreetLights lit pour poser ses vraies lumières.
 func _lampadaires(chemin: String, tetes: Array, transforms: Array, nom: String) -> void:
 	var inst: Node = (load(chemin) as PackedScene).instantiate()
 	var source: Mesh = (inst.find_children("*", "MeshInstance3D", true, false)[0] as MeshInstance3D).mesh
@@ -933,7 +933,6 @@ func _lampadaires(chemin: String, tetes: Array, transforms: Array, nom: String) 
 	var n := PackedVector3Array()
 	var u := PackedVector2Array()
 	var idx := PackedInt32Array()
-	var halos: Array = []
 	for i in transforms.size():
 		var t: Transform3D = transforms[i]
 		var base := v.size()
@@ -953,7 +952,6 @@ func _lampadaires(chemin: String, tetes: Array, transforms: Array, nom: String) 
 		body.add_child(pole)
 		for o: Vector3 in tetes:
 			var tete := t * o
-			halos.append(tete)
 			lamp_heads.append(tete)
 			lamp_aims.append((tete - Vector3(t.origin.x, tete.y, t.origin.z)).normalized())
 	var arrays := []
@@ -974,40 +972,16 @@ func _lampadaires(chemin: String, tetes: Array, transforms: Array, nom: String) 
 	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	mi.visibility_range_end = LAMPE_PORTEE
 	place.add_child(mi)
-	_halos(halos, nom)
+	_verre_allume(LampGlass.verre(source, chemin), transforms, nom)
 	stats["lampadaires"] = int(stats.get("lampadaires", 0)) + transforms.size()
 
 
-# Halos des têtes : une petite boîte non éclairée par tête, fusionnées, sur le matériau PARTAGÉ des
-# halos de la ville, dans le groupe lamp_glow.
-func _halos(tetes: Array, nom: String) -> void:
-	var v := PackedVector3Array()
-	var n := PackedVector3Array()
-	var idx := PackedInt32Array()
-	var h := HALO * 0.5
-	var faces := [
-		[Vector3(0, 0, 1), Vector3(-h.x, -h.y, h.z), Vector3(h.x, -h.y, h.z), Vector3(h.x, h.y, h.z), Vector3(-h.x, h.y, h.z)],
-		[Vector3(0, 0, -1), Vector3(h.x, -h.y, -h.z), Vector3(-h.x, -h.y, -h.z), Vector3(-h.x, h.y, -h.z), Vector3(h.x, h.y, -h.z)],
-		[Vector3(1, 0, 0), Vector3(h.x, -h.y, h.z), Vector3(h.x, -h.y, -h.z), Vector3(h.x, h.y, -h.z), Vector3(h.x, h.y, h.z)],
-		[Vector3(-1, 0, 0), Vector3(-h.x, -h.y, -h.z), Vector3(-h.x, -h.y, h.z), Vector3(-h.x, h.y, h.z), Vector3(-h.x, h.y, -h.z)],
-		[Vector3(0, 1, 0), Vector3(-h.x, h.y, h.z), Vector3(h.x, h.y, h.z), Vector3(h.x, h.y, -h.z), Vector3(-h.x, h.y, -h.z)],
-		[Vector3(0, -1, 0), Vector3(-h.x, -h.y, -h.z), Vector3(h.x, -h.y, -h.z), Vector3(h.x, -h.y, h.z), Vector3(-h.x, -h.y, h.z)],
-	]
-	for tete: Vector3 in tetes:
-		for face: Array in faces:
-			var b := v.size()
-			for k in range(1, 5):
-				v.append(tete + (face[k] as Vector3))
-				n.append(face[0])
-			idx.append_array([b, b + 1, b + 2, b, b + 2, b + 3])
-	var arrays := []
-	arrays.resize(Mesh.ARRAY_MAX)
-	arrays[Mesh.ARRAY_VERTEX] = v
-	arrays[Mesh.ARRAY_NORMAL] = n
-	arrays[Mesh.ARRAY_INDEX] = idx
-	var mesh := ArrayMesh.new()
-	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
-	mesh.surface_set_material(0, load(GLOW_MATERIAL))
+# Verre allumé des lampadaires d'un lieu : copie des triangles du verre du modèle (LampGlass), fusionnée,
+# sur le matériau PARTAGÉ des lampadaires de la ville, dans le groupe lamp_glow.
+func _verre_allume(verre: Dictionary, transforms: Array, nom: String) -> void:
+	var mesh := LampGlass.maillage([[verre, transforms]], load(GLOW_MATERIAL))
+	if mesh == null:
+		return
 	var chemin_res := OUT.path_join("%s_%s_halos.res" % [String(place.get_meta("place_id")), nom.to_lower()])
 	ResourceSaver.save(mesh, chemin_res)
 	var mi := MeshInstance3D.new()

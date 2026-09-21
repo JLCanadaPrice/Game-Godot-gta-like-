@@ -1,0 +1,22 @@
+[gd_resource type="StandardMaterial3D" format=3]
+
+; Matériau UNIQUE des halos de lampadaire, partagé par la carte (RoadBake) et par le centre-ville
+; (DowntownFurnitureBake). Un seul matériau pour les 1375 halos : c'est la condition pour que le
+; moteur regroupe les maillages de halo, exactement comme pour les mâts (cf. LampPoleLayer, où une
+; copie par poteau avait fabriqué 378 appels de dessin).
+;
+; NON ÉCLAIRÉ, shading_mode = 0 : un halo est une source, pas une surface qui reçoit la lumière ;
+; ça évite qu'il s'assombrisse quand le soleil se couche, au moment précis où il doit s'allumer.
+; StreetLights fait varier albedo_color entre le gris éteint et le jaune sodium allumé, et cache
+; carrément les maillages le jour, donc le halo ne coûte rien entre le lever et le coucher.
+;
+; ATTENTION AU CHIFFRE : dans BaseMaterial3D.ShadingMode, 0 = UNSHADED, 1 = PER_PIXEL et
+; 2 = PER_VERTEX. Ce fichier a porté 2 du 2026-09-19 au 2026-09-19 en croyant dire « non éclairé » :
+; les halos étaient donc ombrés par une scène de nuit sans lumière, et sortaient presque noirs.
+; C'est 0 qu'il faut. DayNightTest refuse désormais tout autre mode.
+
+[resource]
+resource_name = "lamp_glow"
+shading_mode = 0
+albedo_color = Color(1, 0.88, 0.62, 1)
+disable_receive_shadows = true

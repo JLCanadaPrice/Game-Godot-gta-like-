@@ -1,0 +1,988 @@
+# Repères pour Claude Code
+
+Fiche écrite pour être lue au début de chaque session : le contexte du projet, la méthode de
+travail imposée, les commandes exactes, les pièges déjà payés et l'état d'avancement.
+
+## 1. Le projet
+
+- Jeu **open world mafia** façon *Tulsa King*, vue à la troisième personne, en **3D**.
+- Moteur **Godot 4.7.2** (Forward+, D3D12 sous Windows), tout le code en **GDScript**.
+- Dépôt GitHub `JLCanadaPrice/Game-Godot-gta-like-`, branche de travail **`carte-3d`**.
+- Tag de retour : `avant-chantier-routes`.
+- Le projet vit sur un **disque externe dont la lettre change selon le PC** (actuellement `D:`,
+  il a déjà été `E:`). Vérifier les chemins avant de relancer une commande d'une autre session.
+- Git refuse le dépôt pour cause de propriétaire douteux : préfixer **toutes** les commandes par
+  `git -c safe.directory=<chemin du dépôt>`.
+- Binaire Godot : `<disque>:/p-recree/Godot_v4.7.2-stable/Godot_v4.7.2-stable_win64_console.exe`
+  (la variante `_console` écrit sur la sortie standard, c'est celle qu'il faut pour les tests).
+- `README.md` décrit un état très ancien du projet (sol gris de test) : ne pas s'y fier.
+- **L'historique a été réécrit le 2026-09-19** (`git filter-repo`) pour sortir 16 dossiers de
+  sources d'assets brutes — `.fbx`, `.obj`, `.blend`, planches de textures d'origine, tous déjà
+  ignorés par Godot via `.gdignore` et jamais chargés. Le dépôt est passé de **564 à 278 Mo**,
+  l'arbre de travail de **2,19 Go à 987 Mo**. Ces sources vivent maintenant dans un **dépôt privé
+  séparé** (`D:/p-recree/sources-brutes`, arborescence identique) : privé parce que plusieurs packs
+  sont à licence NON VÉRIFIÉE. Conséquences pratiques : tous les SHA d'avant le 2026-09-19 sont
+  périmés, et **ne jamais recommiter une source brute dans ce dépôt-ci** — si un pack doit être
+  retravaillé, le copier hors du projet. Le compte de `ProjectLoadCheck` n'avait pas bougé (584) ce jour-là, ce qui
+  est la preuve que rien de chargé n'etait parti ; il vaut **608** depuis les chantiers du
+  2026-09-20 (matériaux de balisage, de feux de véhicule, scripts et tests ajoutés), **611** depuis
+  le 2026-09-21 (trois lentilles de gyrophare « au repos »), **613** depuis le test du rond-point
+  (`RoundaboutTrafficTest`, même jour), **614** depuis les lampadaires du parking de l'aérogare
+  (`generated/places/lamp_heads.tres`) et **616** depuis le vitrage et le porche de l'aérogare (deux
+  matériaux).
+
+## 2. Méthode de travail (imposée, non négociable)
+
+- **Mesurer depuis les vertices du maillage cuit**, jamais depuis une valeur théorique, une
+  constante ou un nom de fichier. Les outils de `scenes/world/map/tools/` en lecture seule
+  (`RampAudit`, `RampPoints`, `RampSteps`, `RampDrive`, `PlacesRangeAudit`) sont faits pour ça et
+  doivent être rejoués après chaque correction.
+- **Sauvegarde `.bak` datée avant chaque modification** :
+  `<Nom>_backup_<AAAA-MM-JJ_HHMM>.<ext>.bak`. **Jamais de copie `.tscn` ou `.gd`** sous un nom que
+  Godot va scanner : ça duplique l'UID et Godot charge la mauvaise scène. Ces `.bak` sont suivis
+  par git.
+- **Chaîne de cuisson COMPLÈTE, dans l'ordre documenté, sans sauter une seule étape** (§4). Sauter
+  `DistrictsBake`/`PlacesBake` fait perdre le nivellement des parcelles et casse `MapDistrictsTest` ;
+  sauter `VegetationBake` laisse une carte qui n'est pas celle que la chaîne produit.
+- **Tests headless après chaque étape** (§5), **un commit séparé par étape**.
+- **Captures au niveau du sol**, à hauteur d'homme ou de conduite, jamais vues du ciel : c'est
+  comme ça que le jeu se joue. Les images restent hors du dépôt, seuls les chiffres vont dans le
+  message de commit.
+- **Si un test casse : corriger la cause, jamais contourner.** Si un échec est antérieur à la
+  modification, le prouver (rejouer le test sur `HEAD~1`) et le dire.
+- Ne jamais utiliser `git stash` sur `scenes/world/map/generated` : une cuisson non commitée y a
+  déjà été perdue. Copier le dossier ailleurs si besoin.
+
+## 3. Seuil de performance
+
+- **Machine de référence : Intel UHD 750** (PC d'école). Les FPS de la machine de travail ne
+  disent rien ; les compteurs de rendu de `MapShotsTest` (appels de dessin, objets, primitives)
+  sont la mesure comparable.
+- **+10 % d'appels de dessin au maximum** sur les **6 vues de référence** :
+  `echangeur_nord_ouest`, `carrefour_willow_lake`, `rond_point_echo`, `losange_aeroport`,
+  `quartier_bluffview_survol`, `lieu_echo_circle`.
+- Pour tout ce qui touche au ferroviaire, budget complémentaire de **+30 appels de dessin** sur les
+  **6 vues ferroviaires** : `voie_ferree_pont_riviere`, `voie_ferree_passage_niveau`,
+  `voie_ferree_viaduc_est`, `voie_ferree_sur_voie_express`, `voie_ferree_portail_est`,
+  `voie_ferree_heurtoir_ouest`. (Les trains n'apparaissent dans aucune des 6 vues de référence :
+  sans ce budget-là, le seuil serait respecté sans rien prouver.)
+- La mesure « avant » doit être refaite **sur la machine du jour**, code non modifié, avant la
+  modification — pas reprise d'une session ou d'un commentaire.
+
+- **Depuis le cycle jour/nuit, toute vue doit être mesurée DE JOUR ET DE NUIT.** Les 12 vues ci-dessous sont toutes
+  diurnes : de jour les halos de lampadaire sont cachés et les vraies lumières éteintes, donc elles ne prouvent
+  rien sur le coût nocturne. `MapShotsTest --heure=1` rejoue les mêmes vues de nuit ; les vues `nuit_*` au sol
+  servent aux captures.
+- **Les appels de dessin ne mesurent PAS le coût des lumières.** Une `OmniLight3D` ou une `SpotLight3D` n'ajoute
+  aucun appel de dessin : elle ajoute du travail dans la passe d'ombrage. Mesuré le 2026-09-19 : 0 et 1 540 vraies
+  lumières donnent exactement le même nombre d'appels. Pour comparer des approches d'éclairage, il faut le temps
+  GPU, et **la machine de développement ne sait pas le mesurer** : elle rend la scène en ~1,8 ms, les lumières y
+  sont noyées dans le bruit, et trois métriques s'y sont contredites (cf. §9). La seule mesure valable est
+  `RenderPerfTest` sur l'UHD 750, qui accepte maintenant `--heure=`, `--bassin=` et `--toutes-lampes`.
+
+Référence relevée le 2026-09-18 en 800x450 (après le chantier de Northgate Rise) :
+
+| vue de référence | appels | | vue ferroviaire | appels |
+|---|---|---|---|---|
+| echangeur_nord_ouest | 347 | | pont_riviere | 397 |
+| carrefour_willow_lake | 395 | | passage_niveau | 258 |
+| rond_point_echo | 661 | | viaduc_est | 385 |
+| losange_aeroport | 395 | | sur_voie_express | 407 |
+| quartier_bluffview_survol | 267 | | portail_est | 201 |
+| lieu_echo_circle | 596 | | heurtoir_ouest | 154 |
+
+Référence relevée le **2026-09-19** en 800x450, après le cycle jour/nuit, sur la machine du jour. Le jour est
+mesuré à **12 h** et la nuit à **1 h**. La colonne « avant » est la mesure du même jour, code non modifié :
+
+| vue de référence | avant | jour 12 h | nuit 1 h | | vue ferroviaire | avant | jour | nuit |
+|---|---|---|---|---|---|---|---|---|
+| echangeur_nord_ouest | 354 | 333 | 259 | | pont_riviere | 406 | 404 | 342 |
+| carrefour_willow_lake | 402 | 352 | 175 | | passage_niveau | 268 | 266 | 209 |
+| rond_point_echo | 664 | 610 | 454 | | viaduc_est | 396 | 366 | 300 |
+| losange_aeroport | 400 | 351 | 252 | | sur_voie_express | 418 | 415 | 357 |
+| quartier_bluffview_survol | 274 | 268 | 213 | | portail_est | 199 | 179 | 89 |
+| lieu_echo_circle | 592 | 554 | 433 | | heurtoir_ouest | 161 | 152 | 61 |
+
+**La nuit coûte MOINS cher que le jour partout**, de 22 à 56 % d'appels en moins, et le jour lui-même a baissé.
+Ce n'est pas une surprise mais une conséquence voulue : `DayNightCycle` **coupe les ombres du soleil la nuit**
+(la lune n'en projette pas), et la passe d'ombre directionnelle est le plus gros poste d'appels de dessin de la
+scène. La baisse de jour vient du soleil qui culmine maintenant à 62° au lieu des 45° du soleil fixe d'avant :
+la cascade d'ombres attrape moins d'objets.
+
+## 4. Chaîne de cuisson (ordre exact)
+
+`GODOT` = le binaire console, `PROJET` = la racine du dépôt.
+
+```bash
+GODOT="D:/p-recree/Godot_v4.7.2-stable/Godot_v4.7.2-stable_win64_console.exe"; PROJET="D:/p-recree/test/test"
+"$GODOT" --headless --path "$PROJET" --script res://scenes/world/map/tools/RoadBake.gd
+"$GODOT" --headless --path "$PROJET" --script res://scenes/world/map/tools/DistrictsBake.gd
+"$GODOT" --headless --path "$PROJET" --script res://scenes/world/map/tools/PlacesBake.gd
+"$GODOT" --headless --path "$PROJET" --script res://scenes/world/map/tools/VegetationBake.gd
+"$GODOT" --headless --path "$PROJET" --script res://scenes/world/map/tools/MapBackgroundBake.gd
+"$GODOT" --headless --path "$PROJET" --script res://scenes/world/map/tools/TerrainBake.gd -- --from-heights
+"$GODOT" --headless --path "$PROJET" --import
+```
+
+La passe `--import` finale n'est pas facultative : `MapBackgroundBake` réécrit
+`map_background.png` et, sans réimport, le jeu affiche « Failed loading resource ».
+
+Autres cuissons, plus rares, hors de cette chaîne : `RoadTexturesBake`, `TerrainTexturesBake`,
+`BuildingCatalogBake`, `TrainsBake` (fusionne les caisses du pack de trains en un maillage chacune dans
+`generated/trains/`, à relancer seulement si le pack change), `DowntownFurnitureBake` (mobilier du centre-ville :
+lampadaires, arbres, bancs, camions de caserne, **et les halos de lampadaire du cycle jour/nuit**). Vérifications
+sans effet de bord : `MapSpecCheck`, `RoadNetworkPreview`, `ProjectLoadCheck`.
+
+**Toucher aux lampadaires impose DEUX cuissons hors chaîne** : `RoadBake` écrit les luminaires de la carte
+(`generated/roads/lamp_heads.tres`) et `DowntownFurnitureBake` ceux du centre-ville
+(`downtown/generated/lamp_heads.tres`). Oublier la seconde laisse 906 lampadaires sur 1 371 sans halo et sans
+lumière la nuit.
+
+## 5. Batterie de tests headless
+
+Les tests sont des **scènes** (sauf `ProjectLoadCheck`, qui est un script). Chacun imprime une
+ligne `<NOM>_RESULT OK` ou `FAIL`, **sauf `CarDrivingTest` et `CarDropTest`** : ces deux-là sont des
+sondes qui impriment des chiffres (`DRIVE_TEST_END`, `DROP_TEST_END`) et ne rendent aucun verdict.
+Il faut donc LIRE leurs chiffres ; un script de batterie qui ne cherche qu'une ligne `RESULT` les
+manque en silence, ce qui est arrivé jusqu'au 2026-09-21.
+
+```bash
+"$GODOT" --headless --path "$PROJET" res://scenes/tests/MapRoadsTest.tscn          # rubans, croisements, pentes
+"$GODOT" --headless --path "$PROJET" res://scenes/tests/MapRailTest.tscn           # tracé de la voie, gabarit, trottoirs
+"$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/MapTrainsTest.tscn  # cantons, vagues, passages à niveau, collision des caisses
+"$GODOT" --headless --path "$PROJET" res://scenes/tests/MapDistrictsTest.tscn      # parcelles nivelées, emprises
+"$GODOT" --headless --path "$PROJET" res://scenes/tests/MapPlacesTest.tscn         # entrées à moins de 15 m d'une route, rien sur la chaussée
+"$GODOT" --headless --path "$PROJET" res://scenes/tests/MapTerrainTest.tscn        # tuiles, rivière, trous
+"$GODOT" --headless --path "$PROJET" res://scenes/tests/MapVegetationTest.tscn     # arbres, troncs, portées
+"$GODOT" --headless --path "$PROJET" res://scenes/tests/MapExplorationTest.tscn    # la carte reste parcourable
+"$GODOT" --headless --path "$PROJET" res://scenes/tests/MapGateTest.tscn           # portail et bosquet de Hollow Creek
+"$GODOT" --headless --path "$PROJET" res://scenes/tests/SimulationCullingTest.tscn # gel hors champ
+"$GODOT" --headless --path "$PROJET" res://scenes/tests/DayNightTest.tscn         # cycle jour/nuit, halos, luminaires
+"$GODOT" --headless --path "$PROJET" res://scenes/tests/VehicleLightsTest.tscn    # freins, gyrophares, véhicules garés
+"$GODOT" --headless --path "$PROJET" res://scenes/tests/WorldTrafficSmokeTest.tscn # trafic (aléa connu, cf. §6)
+"$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/RoundaboutTrafficTest.tscn  # 5 min de circulation à Echo Circle, cf. §10
+"$GODOT" --headless --path "$PROJET" res://scenes/tests/NoclipTest.tscn            # noclip, aléa connu aussi
+"$GODOT" --headless --path "$PROJET" --fixed-fps 60 --quit-after 300 res://scenes/tests/VehicleCatalogTest.tscn  # catalogue des véhicules, 20 000 tirages
+"$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/CarDrivingTest.tscn  # sonde, PAS de ligne RESULT
+"$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/CarDropTest.tscn     # sonde, PAS de ligne RESULT
+"$GODOT" --headless --path "$PROJET" res://scenes/tests/CarKerbTest.tscn          # bordures : le joueur monte, l'IA non
+"$GODOT" --headless --path "$PROJET" res://scenes/tests/DowntownStreetsTest.tscn
+"$GODOT" --headless --path "$PROJET" res://scenes/tests/DowntownBuildingsTest.tscn
+"$GODOT" --headless --path "$PROJET" res://scenes/tests/ShopBuildingsTest.tscn     # échec ANTÉRIEUR connu
+"$GODOT" --headless --path "$PROJET" --script res://scenes/world/map/tools/ProjectLoadCheck.gd   # attendu : 616 fichiers, 0 échec
+```
+
+Outil d'inspection, hors batterie : `res://scenes/tests/VehicleSortTest.tscn` aligne les véhicules du catalogue
+sur une grille plate, nom de fichier affiché au-dessus, caméra libre (ZQSD, souris, Espace/Ctrl, Maj). Sert à
+trier le parc ; un civil à poids nul y est écrit en rouge avec la mention « RETIRÉ DE LA CIRCULATION ».
+**Jetable : référencée nulle part, ni dans `World.tscn` ni sur la carte.**
+
+Retirer un véhicule de la circulation, de façon réversible : mettre son `traffic_weight` à 0 dans son
+`resources/vehicle_models/<id>.tres`. Pour le sortir carrément du catalogue (et donc du tirage, de la scène de tri
+et du futur système de police), le déplacer dans `resources/vehicle_models/retires/` — `VehicleCatalog._load()`
+balaie le dossier avec `DirAccess.get_files()`, qui n'est pas récursif. Voir le `LISEZMOI.txt` de ce sous-dossier.
+
+Captures et compteurs de rendu (fenêtré, pas headless : le rendu compte) :
+
+```bash
+"$GODOT" --path "$PROJET" --resolution 800x450 res://scenes/tests/MapShotsTest.tscn -- --out=<dossier> --views=vue1,vue2
+```
+
+`MapShotsTest` accepte aussi `--heure=<0..24>` (fige le cycle jour/nuit à cette heure, indispensable pour mesurer de
+nuit), `--bassin=<n>` (taille du bassin de vraies lumières de lampadaire), `--toutes-lampes` (une vraie lumière par
+luminaire : mesure de l'option écartée, jamais un réglage de jeu) et `--sans-image` (mesure sans `get_image()`, donc
+sans le plafond de 800x450 du §6). Une vue peut imposer sa propre heure par un 5e champ : c'est ce que font les vues
+`nuit_*`, `crepuscule_*` et `aube_*`.
+
+## 6. Pièges connus (tous déjà payés)
+
+- **`_own()` ne descend pas dans une scène instanciée** (`PlacesBake.gd`, fin de fichier) : les
+  enfants d'un modèle FBX n'ont pas de propriétaire, ne sont donc pas enregistrés dans la scène
+  cuite, et **tout réglage posé dessus est perdu** — les `visibility_range_end` ressortaient à 0,
+  donc jamais coupés (47 maillages de chantier encore dessinés à 1,1 km). Faire descendre `_own()`
+  partout a été essayé et **rejeté par la mesure** : `Places.tscn` passait de 66 ko à 2,9 Mo et
+  chaque maillage était stocké en double. La bonne réponse : fusionner le modèle en un maillage,
+  l'enregistrer en `.res` dans `generated/places/`, poser un `MeshInstance3D` par exemplaire et
+  régler la portée dessus (cf. `_fbx_model`). `_prop()` a encore le même défaut.
+- **`WorldTrafficSmokeTest` et `NoclipTest` ont un aléa** : le premier signale parfois « 1 paires
+  avec véhicule long », le second a lâché une fois sur trois sur « voiture à portée » (la voiture
+  du trafic n'était pas encore arrivée). Avant d'accuser une modification, rejouer le test deux
+  fois, puis le rejouer sur `HEAD~1`.
+- **Le GPU décroche en capture** (`0x887A0005`, `DXGI_ERROR_DEVICE_REMOVED` pendant `get_image()`).
+  Ne jamais capturer au-dessus de **800x450**, et si une vue tombe quand même, la reprendre seule
+  en **640x360** : les compteurs restent comparables entre les deux résolutions, pas les images.
+  Le premier lancement d'une session prend plusieurs minutes (compilation du cache de shaders).
+- **Un objet posé près d'un point de contrôle de `MapGateTest` casse le test** : le test y pose le joueur et le
+  fait marcher 10 m. Une ambulance garée à 3 m du point « parvis du St. Anselm Medical Center » (-290, 137) l'a
+  bloqué au bout de 1,4 m. Même règle que pour la végétation : **rien de solide à moins de 12 m d'un point de
+  contrôle**. Les 43 points sont listés dans `MapGateTest.gd`.
+- **`_fbx_model()` de `PlacesBake` fusionnait avec le transform LOCAL de chaque maillage**, pas avec son transform
+  relatif à la racine. Sans conséquence sur les FBX du chantier, dont la hiérarchie est plate, mais un `.glb` dont
+  les maillages sont sous un nœud mis à l'échelle sortait à une taille délirante — une ambulance de 225 m de long.
+  Corrigé le 2026-09-18 ; le nombre de triangles des modèles déjà posés n'a pas bougé.
+- **Le tonemapper ACES délave ce qui est posé à `albedo` 1.0, et un compteur de pixels par ratio de
+  canaux ment alors.** Payé le 2026-09-20 sur les feux de freinage : un rouge posé à 1.0 ressort à
+  **(184, 121, 82)**, un saumon dont le rapport rouge/vert ne vaut que 1,52. Le test de détection
+  `r > g × 1,8` ne matchait jamais, et j'ai conclu pendant des heures que le calque « ne produisait
+  aucun fragment » alors qu'il se dessinait parfaitement depuis le début. Deux règles :
+  **poser les couleurs émissives nettement sous 1.0** (0,62 pour un rouge qui doit rester rouge —
+  mesuré, il ressort à (178, 1, 3)) ; et surtout **REGARDER L'IMAGE avant de conclure d'un
+  compteur**. Un seuil sert à localiser, jamais à prouver qu'un rendu marche ou ne marche pas.
+  Quand tous les contrôles de structure sont bons (noeud dans l'arbre, visible, bonne
+  transformation, bon matériau, bonne géométrie) et que « ça ne marche toujours pas », c'est
+  l'instrument de mesure qu'il faut suspecter.
+- **20 modèles de véhicules sur 72 n'ont AUCUNE optique séparable** : ne pas les rechercher, c'est
+  mesuré. Le pack `lowpoly_cars_free` en entier (`lowpoly_armor/coupe/fenyr/ghini/italia/jeep/
+  kamaro/lamb/mobil/police/rally/van`, `normalcar1`, `normalcar2`, `sportscar`, `sportscar2`,
+  `suv`, `taxi`) n'utilise que des gris `#2e2e2e` et `#424242` à l'avant comme à l'arrière : rien
+  n'y distingue un phare d'un pare-chocs. S'y ajoutent, dans la famille `city_*`, le bus et
+  l'autocar (pas de verre clair `#cfeaf3` à l'avant), l'ambulance, le camion-poubelle, le
+  `city_truck_02` et le `city_stepvan_01` (pas de rouge d'optique `#782225` à l'arrière, seulement
+  de la livrée ou de la carrosserie). Élargir les listes de couleurs de `VehicleLightParts`
+  rallumerait de la tôle : c'est l'erreur déjà payée une fois, où la voiture de police sortait avec
+  46 triangles de phare au lieu de 8, jusque sur l'axe de la calandre. Couverture réelle :
+  **50 modèles sur 72 ont des phares, 48 des feux arrière, 9 des 11 véhicules d'urgence un
+  gyrophare.**
+- **UN ATLAS DE PALETTE NE DIT PAS SON SENS DE V, ET SE TROMPER INVERSE TOUT.** Le pack lowpoly_city
+  peint ses 71 bâtiments avec une palette de **4 x 4 texels de couleurs plates**. Échantillonnée en
+  `1 - v`, elle donne des murs vert vif et des fenêtres blanches ; échantillonnée en `v`, des murs
+  gris foncé et des fenêtres bleues. Les deux lectures sont « plausibles » sur le papier. Ce qui a
+  tranché, le 2026-09-20, c'est **une image** : trois bâtiments du pack rendus en plein jour, murs
+  gris et fenêtres bleues en grille. La bonne convention est `v` DIRECT, sans inversion. Règle
+  générale : devant un atlas, ne jamais conclure d'un échantillonnage sans avoir regardé le rendu.
+- **INVENTAIRE CORRIGÉ : LES FENÊTRES DU PACK lowpoly_city SONT SÉPARABLES, AU TEXEL DE PALETTE.**
+  L'inventaire du 2026-09-19 écrivait le contraire, noir sur blanc : « Pack lowpoly_city (71 bâtiments
+  du centre-ville) : UNE seule surface `base_Material` sur un atlas de palette. Les fenêtres n'y sont
+  pas séparables, ces bâtiments restent éteints. » **C'ÉTAIT FAUX**, et ça a laissé 71 bâtiments du
+  centre-ville éteints pour rien pendant une journée.
+  Ce qui est vrai, mesuré le 2026-09-20 : la palette fait **4 x 4 texels de couleurs plates**, chaque
+  triangle en vise un, et il suffit de lire lequel. Murs `#404040`, **vitrages `#68C0FF` et
+  `#23A3FF`**, encadrements `#808080`. La règle d'extraction par atlas est dans `BuildingWindows`
+  (`_by_atlas`), et le cuiseur du centre-ville lui passe la palette pour la famille `pack`.
+  **NE PAS RECONCLURE « NON SÉPARABLE » SUR CE PACK.** Et, plus largement : une seule surface et un
+  seul matériau ne veulent pas dire une seule matière. Tant qu'un modèle a des UV et une texture,
+  la séparation peut se faire au texel — l'épuiser AVANT d'écrire qu'un modèle n'a rien d'isolable.
+  Les vrais cas non séparables de ce projet, eux, sont vérifiés à l'image et nommés : `Mk3` (son seul
+  candidat dessine un treillis sur toute la façade) et `Scraper001` (28 triangles, aucune fenêtre
+  modélisée, aucun atlas — remplacé par un `Mk6` le 2026-09-20).
+- **Une voiture à l'arrêt a `_ai_speed` nul, donc ses feux de freinage s'allument.** `brake_lights_on`
+  rendait vrai sous `BRAKE_STOP_SPEED` — correct pour une voiture de la circulation qui s'arrête à un
+  feu, absurde pour les 22 véhicules GARÉS des lieux, qui auraient eu leurs feux allumés jour et nuit.
+  D'où `Car.is_parked()`, qui coupe feux de freinage ET feux de position.
+- **`LoopSpawner` plafonnait la circulation en comptant TOUT le groupe `vehicle`.** C'était juste tant
+  que lui seul en posait. Depuis les véhicules garés (22) et les blocs d'arrêt des passages à niveau
+  (2 par fermeture), le plafond `max_active` mangeait autant de voitures de circulation. Il ne compte
+  plus que SES PROPRES ENFANTS, comme `_recycle` le faisait déjà.
+  **CORRECTION du 2026-09-21 : c'était FAUX pour le mode `proximity`**, le seul qu'utilisent les deux
+  spawners de `World.tscn` — `_process_proximity` comptait toujours `get_nodes_in_group(kind).size()`, la
+  correction n'avait été faite que dans l'autre branche. La circulation plafonnait donc à 252 MOINS les
+  véhicules garés : 186 voitures au lieu de 252, et 136 une fois le parking de l'aérogare agrandi (section
+  E). C'est `RoundaboutTrafficTest` qui l'a trahi, faute de trafic (16 à 20 sorties au lieu de 30 à 48).
+  Les deux branches passent maintenant par `_actifs()`.
+- **`ShopBuildingsTest` échoue depuis avant ces chantiers** : ne pas l'imputer à la modification du
+  jour, ne pas le « réparer » au passage.
+- **Geler la circulation pour une capture demande `PROCESS_MODE_DISABLED`, pas
+  `set_physics_process(false)`.** Payé le 2026-09-21 sur `--cadrer=frein` : `SimulationCuller`
+  réveille les véhicules proches du joueur à chaque passage et leur REND leur `_physics_process`.
+  Entre le cadrage et le déclenchement il s'écoule ~250 images (~4 s) : le sujet repartait, relevé
+  à **17,51 m au lieu des 7,49 m** du cadrage, son feu était repassé au vert et il ne freinait plus.
+  Résultat, des captures de freinage sans la moindre flaque — et l'illusion que la fonction ne
+  marchait pas, alors que la voiture était simplement partie. Deux enseignements qui valent au-delà
+  de ce cas : un relevé pris AU CADRAGE ne vaut rien, il faut le prendre AU DÉCLENCHEMENT (d'où
+  `MAP_SHOT_OEIL` et `MAP_SHOT_LUMIERE`, qui impriment la position de la caméra et des vraies
+  lumières à l'image capturée) ; et le bassin de vraies lumières est réaffecté à chaque image aux
+  véhicules les plus proches de la CAMÉRA, donc il ne se pose sur le sujet qu'une fois la caméra
+  déplacée.
+- **Le mode `"sol"` de `MapShotsTest` élève aussi le point visé** : un point visé au-dessus d'un
+  bâtiment accroche son toit et retourne la caméra vers le ciel. Pour une caméra devant un immeuble,
+  relever la hauteur du sol et écrire des altitudes absolues.
+- Les `.tscn` cuits changent textuellement à chaque cuisson (identifiants de sous-ressources tirés
+  au hasard) : un `git status` « modifié » ne prouve pas un changement de contenu.
+- **Il y a DEUX voitures dans ce jeu, et elles ne réagissent pas pareil au décor.** `Car.gd` est un
+  `CharacterBody3D` arcade : c'est le modèle des 252 voitures de la circulation ET ce que le joueur
+  conduit quand il prend une voiture dans la rue. `PlayerCarPhysics` (`PlayerCarController.gd` sur le
+  cœur `assets/car_physics`) est un `RigidBody3D` dont les quatre roues sont des **RayCast3D** : il n'y
+  a aucun collisionneur de roue, et sa coque flotte **2,23 m au-dessus du sol**, son origine reposant à
+  **sol + 2,566 m** (mesuré). Posée plus bas, la suspension part en butée et catapulte la voiture à 5 m :
+  toute sonde qui instancie cette voiture doit la lâcher à sol + 2,57 m, jamais « juste au-dessus du sol ».
+- **`move_and_slide()` ne monte AUCUNE marche verticale**, si basse soit-elle. Les bordures de trottoir
+  de la carte font **0,150 m** mesurés sur la collision cuite, en marche franche (la montée tient entre
+  deux relevés distants de 2 cm), sur trimesh pour les artères et sur piles de boîtes au centre-ville.
+  D'où `Car._try_step_up`, réservé au joueur. `scenes/world/CurbRamp.gd` était la réponse précédente :
+  il ne reconnaissait que des `StaticBody3D` nommés `*Walk*` portant une seule `BoxShape3D` — la
+  disposition du monde d'essai d'origine — et **il n'était attaché à aucun nœud de `World.tscn`**, donc
+  il ne tournait plus du tout. **Supprimé le 2026-09-19** (avec son `.uid`) ; il ne reste que dans
+  l'historique git et dans `World_backup_avant_integration.tscn.bak`. Ne pas le ressusciter.
+- **Les autoloads ne sont pas enregistrés en mode `--script`** : une sonde qui instancie
+  `PlayerCarPhysics` échoue sur « Identifier not found: VitaVehicleSimulation ». La lancer comme
+  **scène**, pas comme script.
+- **Un `CharacterBody3D` inerte n'est jamais repoussé** : c'est lui qui résout ses pénétrations dans
+  `move_and_slide()`. Une sonde qui pose un corps sans l'animer et regarde si un train le pousse mesure
+  zéro, quelle que soit la collision d'en face.
+
+## 7. État d'avancement
+
+**Fait** — la carte 3D est le gros du travail accompli : modèle de terrain et rivière, réseau
+routier complet (autoroutes, échangeurs, bretelles, artères, anneau et rond-point Echo Circle,
+113 carrefours du centre-ville, 114 culs-de-sac en bulbe, glissières, marquage, trottoirs),
+voie ferrée de 4,5 km avec ses ouvrages, quartiers et 1 196 bâtiments, 12 lieux (aéroport, motel,
+ranch, planque, hôtel, hôpital, commissariat, casino, concessionnaire Liberty Motors, Greenfield,
+Echo Circle, chantier de Northgate Rise), végétation (20 297 arbres), trafic routier sur
+`CircuitPath` avec feux, cédez-le-passage et suivi de véhicule, PNJ sur `PathGraph`, gel de
+simulation hors champ (`SimulationCuller`), centre-ville et intérieurs d'appartements, noclip de
+débogage sur `V`.
+
+**Reste à faire** (liste du joueur, par ordre d'importance qu'il donnera lui-même) :
+
+- **combat** ;
+- **gangs rivaux** ;
+- **labo de drogue** (les modèles sont dans `assets/drug_lab`) ;
+- **porte d'entrepôt** ;
+- **appartements reliés à la carte** (les intérieurs existent, ils ne sont pas raccordés aux
+  bâtiments de la carte) ;
+- **concessionnaire enrichi** ;
+- **bug : 0 voiture exposée** chez le concessionnaire ;
+- **bug : `PlayerCarPhysics` finit SUR LE TOIT** dans ses deux sondes, et c'est ANTÉRIEUR — mesuré le
+  2026-09-21, chiffres identiques au centième sur `0344b79`, donc sans rapport avec les chantiers en
+  cours. `CarDrivingTest` (posée à plat à la hauteur de repos documentée, 2,57 m) finit
+  `min_up_dot = -0,9977` et `final_speed = 11,99` après sa phase de freinage, au lieu de s'arrêter ;
+  `CarDropTest` finit `up_dot = -0,9999`, `rotation_deg = (0,000 ; 52,85 ; -179,12)` et **20,39 m de
+  dérive**. Les deux sondes annoncent `mass = 90.00` : une voiture de 90 kg pour une suspension
+  réglée sur une caisse lourde est le premier suspect. Ça ne se voit pas forcément en jeu — les 252
+  voitures de la circulation et la voiture prise dans la rue sont des `Car.gd` arcade, pas ce
+  `RigidBody3D` — mais c'est bien lui qu'on conduit en `PlayerCarPhysics` ;
+- **chantier « relier tous les bâtiments à la route »** (cf. ci-dessous).
+
+### Chantier à prévoir : relier les bâtiments à la route
+
+Les lieux et les bâtiments sont posés sur la pelouse sans rien qui les raccorde à la chaussée : on tombe
+régulièrement sur 2 à 3 m d'herbe entre une dalle et le trottoir, et sur des dalles voisines séparées par une
+bande d'herbe. Le commissariat et l'hôpital ont été traités les 2026-09-19 (`d818e1e`, `ca797e8`), le reste non.
+
+**Recensement du 2026-09-19**, mesuré et non estimé : pour chaque bâtiment on part de son centre et on marche vers
+l'extérieur dans les quatre directions d'axe, au pas de 1 m jusqu'à 50 m, en retenant la direction qui atteint une
+chaussée ou un trottoir en traversant le moins d'herbe.
+
+| ensemble | bâtiments | reliés sans herbe | **coupés par de l'herbe** | sans route à moins de 50 m |
+|---|---|---|---|---|
+| quartiers (`buildings/lots.json`) | 1 196 | 486 | **682** | 28 |
+| centre-ville (`downtown/generated/buildings.json`) | 441 | 441 | 0 | 0 |
+| **total** | **1 637** | 927 | **682 (41,7 %)** | 28 |
+
+Épaisseur d'herbe à traverser : **médiane 8 m, maximum 34 m**. Le centre-ville est indemne parce que l'intérieur
+de ses îlots est déjà dur (sol à +0,200 m) ; le problème est entièrement dans les quartiers.
+
+Ce qu'il faut savoir avant de s'y mettre, tiré des deux sites déjà faits :
+
+- Altitudes de référence, relevées au rayon : **pelouse d'îlot -0,050 m, dalle de lieu +0,020 m, chaussée
+  +0,050 m, trottoir +0,200 m**. Poser une liaison au même dessus que la dalle qu'elle rejoint (`y + 0,05` dans
+  `PlacesBake`) ne crée aucune marche ; la seule marche restante est celle de 7 cm que les dalles avaient déjà
+  sur la pelouse.
+- **Découper en bandes étroites fabrique le défaut qu'on corrige.** Au commissariat, trois bandes (parvis vers
+  trottoir, allée, cheminement) ont laissé un îlot d'herbe de 10 x 10,5 m enclavé entre elles. Mieux vaut peu de
+  grands rectangles qui se touchent sur toute leur longueur, et faire mordre chaque liaison de 0,5 m sur la dalle
+  qu'elle rejoint.
+- Le contrôle qui décide est le **cheminement** : échantillonner la polyligne rue -> entrée tous les 0,25 m et
+  exiger zéro case d'herbe. Un balayage de la façade au pas de 1 m sert à débusquer les poches enclavées.
+
+### Parc de véhicules
+
+Le catalogue est `resources/vehicle_models/*.tres` (un `VehicleModelData` par modèle), lu par
+`VehicleCatalog` et appliqué par `Car._setup_model()`. **72 modèles, 214 variantes de couleur** :
+61 civils, 5 police, 3 urgence, 3 SWAT. Toute la famille `city_*` est à l'échelle **1,65**, mesurée
+et non supposée : à cette échelle une berline du pack fait 2,02 m de large contre 2,111 m pour une
+voiture du jeu.
+
+`VehicleCatalog.AMBIENT_ROLES` (`civil`, `police`, `emergency`) est ce que tire la circulation de
+fond. Le `role` dit ce que le véhicule EST — c'est par lui que le futur système de police ira
+chercher ses voitures — et sa présence dans le trafic se règle par son **poids**, pas en le
+déguisant en civil. Poids des véhicules rares : police sedan et SUV 0,10, police van 0,05, police
+truck 0,03, ambulance 0,08, fourgon d'urgence 0,05, camion de pompiers 0,04, soit **1,4 % du
+trafic**.
+
+**SWAT** : rôle `swat`, poids 0, jamais tiré par la circulation. `VehicleCatalogTest` échoue si un
+SWAT reçoit un poids. Ils sont prêts pour les missions et le futur système police.
+
+**Hélicoptères** (`Veh_Air_Ambulance_Helicopter`, `Veh_Police_Helicopter`, `Veh_SWAT_Helicopter`) :
+**hors catalogue pour l'instant**, et c'est volontaire. Ils sont utilisables plus tard — 10,62 ×
+1,69 × 3,38 m à l'échelle 1,65, 726 à 876 triangles, un seul matériau, et surtout `Rotor_Main` et
+`Rotor_Tail` sont des **nœuds séparés donc animables** (celui de la police a en plus un
+`Search_Light`). Mais ils n'ont **aucune roue** : `Car.gd` est un véhicule terrestre et
+`VehicleCatalogTest` exige au moins 3 roues dont exactement 2 avant. Les mettre au catalogue
+casserait le test. Il faudra **un contrôleur de vol distinct**, et exempter le rôle `aircraft`
+(déjà en réserve dans l'enum de `VehicleModelData`) des contrôles de roues.
+
+Retirer un véhicule de la circulation, de façon réversible : voir la note de la §5 sur
+`traffic_weight` et `resources/vehicle_models/retires/`.
+
+## 8. Chantier en cours : trains en mouvement
+
+Étapes 1 à 4 construites et commitées le 2026-09-18 ; **l'étape 5 (optimisation) reste à faire**, le
+joueur voulant d'abord essayer en jeu.
+
+Modèles retenus, et eux seuls (pack `assets/Modular Train Pack-zip`, **pas encore commité**,
+3,0 Mo, sans fichier de licence, importé le 2026-09-18) : `HighSpeed_Front`, `HighSpeed_Wagon`,
+`CargoTrain_Front`, `CargoTrain_Wagon`, `CargoTrain_Container`, `CargoTrain_CoalContainer`. Les
+`Locomotive_*` ne sont pas utilisés. Aucun de ces matériaux n'a de texture (couleurs unies,
+toutes opaques, `emission` activée par l'import à neutraliser) : chaque caisse peut donc être
+cuite en une seule surface à couleurs de sommets, soit **un appel de dessin par caisse**, et les
+wagons d'un même type se dessinent en `MultiMeshInstance3D`.
+
+Voie mesurée : 1 124 points au pas de 4,00 m, **4 492 m**, rayon minimal **191,4 m**, pente
+maximale **3,00 %**, altitudes de 0,70 à 18,92 m, **voie unique avec deux culs-de-sac** à
+(2168, 15,40, 195) et (-2170, 0,70, 800), **3 ouvrages** où le train passe au-dessus d'une route
+en tranchée (dégagement 5,80 m), **rien au-dessus de la voie** nulle part, et **2 passages à
+niveau** seulement : `art_a7_n:0` en (-389,4 ; 252,2) et `art_a8:0` en (-113,3 ; 274,5), artères
+de 10,5 m, ligne d'arrêt à 8,9 m de l'axe.
+
+Les cinq étapes, une par commit :
+
+1. `rail_path.tres` cuit par `RoadBake` + `MapRailTest`. **fait** (`bbf8938`)
+2. Modèles fusionnés en `.res`, `RailPath.gd`, `Train.gd`, une rame grande vitesse. **fait** (`cc05177`)
+3. Cantons (280 m), plusieurs trains, sens unique par vague, terminus. **fait** (`d3d9df6`)
+4. Passages à niveau : blocs d'arrêt invisibles du groupe `vehicle` + barrières en décor. **fait**
+5. `SimulationCuller`, `MultiMesh`, mesure de perf sur les 12 vues. **à faire**
+
+Compositions arrêtées : **1 + 4** pour la grande vitesse (60,48 m, 90 km/h), **1 + 14 panachés**
+pour le fret (155,56 m, 55 km/h, 73 176 triangles). Repli prévu si l'UHD 750 souffre : 1 + 10.
+Pack de trains commité à l'étape 1 avec ses `.import` et un `LICENSE_ATTRIBUTION.txt` qui le classe
+en licence NON VÉRIFIÉE.
+
+Ce que l'étape 5 devra savoir :
+
+- **Un appel de dessin par caisse** pour l'instant : 5 pour une rame grande vitesse, 15 pour un fret.
+  C'est le `MultiMesh` de l'étape 5 qui doit ramener ça à un appel par type de caisse.
+- **Gel en deux temps** : un gel strict au-delà de 50 m ferait qu'un train attendu à un passage à
+  niveau, à 240 m et hors écran, n'arriverait jamais. Le gel doit laisser avancer l'abscisse du train
+  (`Train.head`) et ne couper que l'écriture des transformations de caisses (`Train._place`).
+- **Effet de bord connu des blocs d'arrêt** : `LoopSpawner._process_proximity` compte
+  `get_nodes_in_group("vehicle")` pour son plafond `max_active`. Pendant une fermeture, les 2 blocs du
+  passage gonflent ce compte, donc une ou deux voitures de moins apparaissent pendant ~20 s. Corrigeable
+  d'une ligne dans `LoopSpawner` si ça gêne ; laissé tel quel pour ne toucher à rien du trafic.
+- **Piétons aux passages à niveau** : les 4 traversées de trottoir de la carte sont toutes sur les
+  2 passages à niveau (mesuré par `MapRailTest`), aucune ailleurs. Les barrières n'arrêtent pas les
+  PNJ : il n'y a pas encore de version piétonne des blocs d'arrêt.
+
+Réserve à ne pas oublier à l'étape 5 : un gel strict au-delà de 50 m ferait qu'un train attendu à
+un passage à niveau, à 240 m et hors écran, **n'arriverait jamais**. Le gel doit laisser avancer
+l'abscisse du train et ne couper que l'écriture des transformations de wagons.
+
+## 9. Cycle jour/nuit et éclairage des lampadaires
+
+Construit le 2026-09-19. Deux nœuds dans `World.tscn`, volontairement séparés parce qu'ils n'ont ni le même rôle
+ni le même coût :
+
+- **`DayNight`** (`scenes/world/DayNightCycle.gd`) : l'heure, la course du soleil, le ciel, le brouillard,
+  l'ambiante. N'allume rien lui-même ; il publie `hour_changed(heure, facteur_nuit)`.
+- **`StreetLights`** (`scenes/world/StreetLights.gd`) : écoute, et allume.
+
+**Durée : 48 minutes réelles pour 24 h de jeu** (2 min par heure de jeu, la durée de GTA V). Jour utile 6 h-20 h
+soit 28 min, nuit noire 21 h-5 h soit 16 min. Le « facteur nuit » vaut 0 en plein jour, 1 en pleine nuit et
+interpole entre 5-7 h et 19-21 h : c'est lui qui fond les lampadaires, pas un interrupteur.
+
+**Touche `N`** : +1 h. **`Maj+N`** : -1 h. **`Ctrl+N`** : fige ou relance le cycle. Une horloge s'affiche en haut
+à droite pendant 2,5 s après chaque changement, et en permanence quand le cycle est figé.
+
+### Comment les 1 371 lampadaires s'allument sans coûter
+
+**Il y a 1 371 mâts et 1 534 luminaires** (les doubles en portent deux) : 505 mâts / 628 luminaires sur la carte
+(`RoadBake`), 866 mâts / 906 luminaires au centre-ville (`DowntownFurnitureBake`). Les chiffres de 1 375 / 1 540
+qu'on lit plus haut dans les mesures du 2026-09-19 étaient exacts ce jour-là : `RoadBake` a depuis refusé 4 mâts
+faute de dégagement (cf. l'anomalie corrigée en fin de chapitre), ce qui retire 4 mâts et 6 luminaires.
+
+Deux mécanismes, et c'est la séparation qui tient le budget :
+
+1. **Les halos, partout.** Une petite boîte non éclairée sur chaque luminaire, **fusionnée avec les autres en un
+   maillage par cellule** (carte) ou par bloc (centre-ville) : 96 maillages, 18 480 triangles pour toute la carte.
+   Cachés le jour (0 appel de dessin), visibles la nuit (**1 appel par cellule visible**). Les 1 534 halos
+   partagent **UN SEUL matériau** (`scenes/world/lamp_glow_material.tres`) : c'est la condition pour que le moteur
+   les regroupe, exactement la leçon déjà payée sur les mâts (cf. `LampPoleLayer`, où une copie de matériau par
+   poteau avait fabriqué 378 appels). `DayNightTest` échoue si un deuxième matériau apparaît.
+2. **Les vraies lumières, seulement près du joueur.** Un bassin de **16 `SpotLight3D` sans ombre** suit la caméra
+   et se pose sur les 16 luminaires les plus proches, réaffecté toutes les 0,25 s ou dès que la caméra a bougé de
+   4 m. Cône de 55° et portée 17 m, calés sur la géométrie mesurée (luminaire à 6,2 m, artère de 10,5 m) : la
+   flaque couvre la chaussée et ses deux trottoirs.
+
+**Le réglage se change sans recompiler** : `pool` sur le nœud `StreetLights`. À 0, il ne reste que les halos — la
+rue garde ses lampadaires visibles mais perd ses flaques de lumière au sol (comparaison au sol faite, la
+différence est nette). C'est le bouton à baisser en premier si l'UHD 750 souffre.
+
+### Pourquoi pas une vraie lumière par lampadaire, et pourquoi je ne peux pas le chiffrer ici
+
+L'option a été construite et mesurée (`--toutes-lampes` : 1 540 `SpotLight3D`). **Trois métriques ont été
+essayées, aucune ne départage les options sur la machine de développement :**
+
+1. **Appels de dessin** : identiques à l'unité près entre 0, 8, 16, 32, 64 et 1 540 lumières. Normal, et c'est
+   une leçon à retenir : une lumière ponctuelle n'ajoute aucun appel de dessin, elle ajoute du travail dans la
+   passe d'ombrage. Le seuil du §3 ne mesure donc PAS le coût de l'éclairage.
+2. **`viewport_get_measured_render_time_gpu`, 800x450** : « 0 lumière » ressortait plus lent que 1 540, et b32
+   plus rapide que b16. Incohérent.
+3. **Même compteur en 1920x1080 sans capture, médiane sur 60 images** : b8, b32 et b64 donnaient 0,66 ms au
+   centième près, et « 0 lumière » restait la plus lente. Toujours incohérent.
+4. **Temps d'image à l'horloge, 1920x1080, vsync coupée, médiane sur 120 images** : 1 540 lumières ressortait
+   *plus rapide* que 0 sur une vue. L'écart entre les options est sous le bruit.
+
+Cause : cette machine rend la scène en ~1,8 ms quand l'UHD 750 met 30 à 100 ms (chiffres de `CityRenderOptimizer`).
+Le GPU n'est jamais le goulot ici, donc le coût des lumières ne sort pas. **Ne pas recommencer à chercher une
+cinquième métrique sur cette machine.** `RenderPerfTest` accepte désormais `--heure=`, `--bassin=` et
+`--toutes-lampes` : c'est là, et sur l'UHD 750, que la comparaison se fait.
+
+Le choix du bassin borné ne repose donc pas sur un écart mesuré ici, mais sur le fait que **son pire cas est borné
+par construction** : 16 lumières quoi qu'il arrive, où que soit le joueur. Le coût de l'option à 1 540 est, lui,
+non borné et non mesuré — ce qui est exactement la raison de ne pas l'embarquer.
+
+### Ce que ça rend possible plus tard
+
+Les **phares de véhicules** et les **gyrophares** se posent sur la même architecture, sans rien réinventer :
+le `hour_changed` donne l'allumage automatique au crépuscule, les halos non éclairés à matériau partagé donnent
+les feux de tous les véhicules lointains pour un appel de dessin par lot, et un bassin de vraies lumières borné
+donne les phares du joueur et des quelques voitures les plus proches. Le seul piège connu : un gyrophare qui
+clignote a besoin d'un matériau qui change, donc **il faut un matériau partagé par état** (bleu allumé, rouge
+allumé, éteint) et faire clignoter tout le monde en phase, jamais un matériau par véhicule.
+
+### Anomalie antérieure révélée par ce chantier, et corrigée
+
+**5 luminaires (3 mâts) de la carte étaient plantés sous un tablier routier**, tête à 0,005 à 0,493 m de
+l'ouvrage, en (-697,1 / -694,6 ; 0,84 ; -776,1), (-720,6 / -718,3 ; 0,84 ; -635,8) et (53,3 ; 7,38 ; 791,6). Ces
+mâts existaient depuis le chantier des routes ; le cycle jour/nuit n'a fait que les révéler, en demandant pour la
+première fois OÙ sont les luminaires.
+
+**C'est réglé, et le contrôle a changé de place.** `RoadBake` exige maintenant `Network.CLEARANCE` au-dessus du
+pied avant de poser un mât et en **refuse 4** (`"lampadaires_refuses": 4` dans sa sortie), d'où 505 mâts au lieu
+de 509 et 628 luminaires au lieu de 634. Le comptage vit désormais dans **`MapRoadsTest`**, qui le mesure sur les
+triangles des chaussées cuites au lieu d'un rayon : `MAP_ROADS_LAMPES ... 0 mât(s) sous un ouvrage`. `DayNightTest`
+ne garde que ses propres bornes de dégagement (5,9 - 7,2 m sous le luminaire).
+
+**Son rayon de dégagement ne regarde que la couche 1, le monde statique** — leçon payée le 2026-09-21. Une
+berline garée pile sous le luminaire du parking de l'aérogare renvoyait 4,75 m au lieu de 6,2 et le test accusait
+un mât enterré alors qu'il mesurait un toit de voiture. Toute sonde qui mesure le SOL doit exclure la couche 3
+(les véhicules, `Car.tscn` `collision_layer = 4`).
+
+### Fenêtres allumées : les huit cas signalés le 2026-09-20, et ce qu'ils étaient
+
+Le joueur a listé huit bâtiments mal ou pas éclairés. Ce n'était pas un défaut mais **quatre défauts
+différents**, et un seul touchait vraiment l'extraction :
+
+| cas signalé | ce que c'était | corrigé ? |
+|---|---|---|
+| lowrise building, midrise building | les **71 bâtiments du pack lowpoly_city**, une seule surface sur un atlas de palette. On avait conclu « pas séparable » : c'était faux, les vitrages visent les texels `#68C0FF` et `#23A3FF` | **oui**, règle d'atlas — 218 à 268 carreaux par modèle, contre 0 |
+| midrise industrial, TraditionalSkyscraper | trois modèles vitrent leur façade avec **UN SEUL QUAD** : `Industrial_TraditionalSkyscraper_alt02`, `Industrial_ModernSkyscraper_alt06`, `Industrial_WideOfficeBuilding_alt04` n'avaient que **4 carreaux**, un par façade. Le tirage à 28 % allumait donc une FAÇADE ENTIÈRE d'un coup | **oui**, re-maillage au grain d'une travée — 4 carreaux deviennent 336 à 608, de 2,2 x 2,9 m |
+| Central Precinct, St. Anselm, Ashford Grand Hotel | leurs modèles ont un vitrage tout à fait ordinaire (56, 130 et 735 carreaux). La cause n'était pas dans les modèles : **`PlacesBake` n'appelait jamais `BuildingWindows`** | **oui**, 389 carreaux allumés sur les 12 lieux |
+| core_002_Scraper001 | `Scraper001` est une **boîte de 28 triangles**, 33 x 153 x 33 m, une seule surface `Material`, aucune fenêtre modélisée et aucun atlas où en chercher | **NON, et ce n'est pas corrigeable** par extraction. Il est posé UNE seule fois. Le remplacer par une tour de la série Mk (qui, elles, ont un vitrage) est un changement d'une ligne de données, à décider |
+
+Deux constats de la même passe, à ne pas refaire :
+
+- **Mk3 est confirmé non séparable.** Son seul candidat sérieux, `Material.002`, est 100 % vertical
+  sur toute la hauteur — mais rendu en rouge il dessine un **treillis triangulé sur toute la façade**,
+  pas un bandeau vitré. Ne pas y revenir sans une nouvelle image.
+- **`Industrial_Warehouse_alt01` n'a aucun matériau de vitrage** (`Mat_Standard`, `Mat_Refl`). Un
+  entrepôt sans fenêtre est un entrepôt sans fenêtre.
+
+Et un défaut trouvé à l'image pendant la correction : les panneaux de mur-rideau des tours à
+facettes, allumés d'un bloc, fabriquaient des **nappes blanches de plusieurs dizaines de mètres
+flottant entre les immeubles**. La première réponse — ne plus allumer un carreau trop grand qu'on ne
+sait pas retailler — a été **RETIRÉE le 2026-09-20 au soir** : elle éteignait bien plus que les
+nappes (un modèle est tombé de 42 carreaux à 6). Voir la sous-section suivante.
+
+### Balisage de l'aéroport (Prairie Wind International)
+
+315 feux, posés selon le balisage réel (OACI annexe 14 / FAA) : **bords de piste blancs** espacés de
+60 m, **seuils verts** et **fins de piste rouges** en barres de part et d'autre (dans la vraie vie
+c'est le même feu bidirectionnel, vert d'un côté et rouge de l'autre ; on ne sait pas faire un feu
+directionnel à ce prix, les deux barres sont donc à 3 m l'une de l'autre, vert à l'extérieur),
+**PAPI** de 4 feux moitié blancs moitié rouges à côté de chaque seuil, **bords de voie de circulation
+bleus**, projecteurs blancs sur l'aire de trafic, bandeau de l'aérogare et vigie de la tour allumés,
+feu d'obstacle rouge en haut du mât.
+
+Deux écarts au réel, assumés et dits :
+
+- **Le jaune de la zone de prudence.** En vrai les 600 derniers mètres (ou le dernier tiers) des
+  bords de piste sont jaunes. Sur une piste de 900 m ce tiers fait 300 m à chaque bout, soit les deux
+  tiers de la piste en jaune : ça se lit comme une erreur. Le jaune ne couvre donc que les 300
+  derniers mètres du seuil 09, celui par lequel on se pose.
+- **La rampe d'approche** court jusqu'à 900 m avant le seuil en vrai. Le plateau de l'aéroport
+  s'arrête à 70 m à l'ouest : on pose donc des barres tant que le terrain reste au niveau de la piste
+  (`APPROACH_TOLERANCE`), **mesuré à chaque barre**, et on s'arrête là où il décroche. Six barres
+  tiennent, soit 120 m.
+
+Un feu réel fait 0,30 m et ne ferait plus un pixel au-delà de 200 m : ils font **0,55 m** ici, assumé,
+pour que la piste reste lisible depuis l'aérogare et depuis l'air.
+
+Le balisage **ne se fond pas au crépuscule, il s'allume** : un balisage de piste est commandé par un
+interrupteur. `StreetLights` montre ou cache le groupe `airport_glow` au passage de `AIRPORT_ON_AT`.
+Un matériau par couleur, partagé, donc **un appel de dessin par couleur visible**, zéro le jour.
+
+### Feux arrière : deux niveaux, et le sol éclairé
+
+- **La nuit, tout véhicule qui roule porte ses feux rouges en permanence** (matériau `vehicle_tail`,
+  albedo 0,30) ; **dès qu'il freine il passe au rouge vif** (`vehicle_brake`, albedo 0,62). Deux
+  matériaux sur la MÊME géométrie d'optique, et deux listes **disjointes** : les poser ensemble ferait
+  un combat en z.
+- **Le freinage éclaire le sol** : un bassin borné de 4 `SpotLight3D` rouges dirigés vers l'arrière et
+  vers le bas, **le joueur d'abord**.
+- Une **voiture garée** n'allume rien : `Car.is_parked()` coupe les deux.
+- Le défaut corrigé : quand le joueur conduisait, `brake_lights_on()` ne regardait que la VITESSE.
+  Les feux ne s'allumaient donc qu'une fois la voiture presque arrêtée, et appuyer sur S en roulant
+  ne faisait rien, ni de jour ni de nuit. La pédale est maintenant relevée là où elle est lue.
+
+### Gyrophares
+
+**Éteints par défaut.** Ils s'allumeront sur événement ; le déclencheur est prêt
+(`VehicleLights.set_gyro()`, `toggle_gyro()`, `allumer_urgences()`), le système d'événements ne l'est
+pas. Le joueur qui conduit un véhicule d'urgence bascule avec **R**.
+
+**Chaque feu dans SA couleur, feu par feu** (refait le 2026-09-21 sur la description du joueur, photos à
+l'appui). La première version coupait la rampe en une moitié gauche et une moitié droite, sans regarder
+la couleur de chaque segment : le segment BLANC du milieu d'une rampe de police s'allumait à moitié
+rouge et à moitié bleu, et le camion de pompiers allumait en rouge ses segments blancs de gauche et en
+blanc ses segments rouges de droite. `VehicleLightParts.feux_urgence` rend maintenant les feux UN PAR UN
+(composante connexe de triangles d'une même couleur de palette : rouge `#782225`, blanc `#cfeaf3`,
+jaune `#eba335`), avec leur position sur la caisse. Inventaire relevé feu par feu sur les 11 véhicules :
+
+| véhicule | feux d'urgence modélisés |
+|---|---|
+| police berline, SUV, fourgon, camion ; SWAT APC 02 | rampe de toit rouge / BLANC / rouge |
+| SWAT APC 01 | rampe à cinq segments rouge / blanc / rouge / blanc / rouge |
+| camion de pompiers | la même rampe à cinq segments, plus deux feux de cabine rouge + blanc : 5 rouges, 4 blancs, aucun ambre |
+| ambulance | rampe de cabine rouge / blanc / rouge, et 15 feux rouges et JAUNES sur les flancs et la face arrière de la caisse |
+| fourgon d'urgence | rampe rouge / blanc / rouge |
+| SWAT tank, lowpoly_police | aucun |
+
+Le rouge de livrée `#ad3e2a` (bande de l'ambulance, caisse du camion) est exclu : ce n'est pas un feu.
+
+Trois façons d'allumer, selon ce qu'est le véhicule (`_genre_urgence`) :
+
+- **POLICE et SWAT** : les feux rouges de la moitié gauche de la rampe s'allument en ROUGE, ceux de la
+  moitié droite en BLEU, et les deux moitiés **alternent** (bleu allumé + rouge éteint, puis l'inverse),
+  double éclat par phase, huit temps de 0,125 s. Le **segment blanc du milieu reste tel quel**, jamais
+  allumé ; un segment rouge pile au milieu (SWAT APC 01) reste éteint aussi, pour la symétrie. Rampe
+  éteinte, la moitié droite garde une lentille BLEUE au repos.
+- **POMPIERS** : **tous** les feux, rouges en rouge et blancs en blanc, toutes les rampes, tous les
+  segments, **synchronisés** (`GYRO_SYNCHRO`).
+- **AMBULANCE et fourgon d'urgence** : le **« sapin de Noël »** — tous les feux, rouges et blancs, chacun
+  à son rythme. Les feux JAUNES de la caisse passent au BLANC, allumés comme éteints (calque
+  `sapin_repos` quand la rampe est coupée). Pour ne pas payer un matériau par feu, les feux sont
+  répartis en **4 groupes de phase** (ordre avant → arrière puis gauche → droite, donc deux voisins ne
+  sont jamais dans le même groupe), chacun avec sa période : 0,46 / 0,58 / 0,71 / 0,83 s, déphasés de
+  0 / 0,31 / 0,17 / 0,52 s. Des déphasages de quelques centièmes faisaient partir les quatre groupes
+  allumés ensemble au premier instant, vu à l'image.
+
+**Huit matériaux pour toute la ville, un par état, jamais un par véhicule** : rouge, bleu, blanc
+allumés (non éclairés), les lentilles rouge, bleue et blanche **au repos** (éclairées, donc sombres la
+nuit), plus l'éteint gris et l'ambre historiques. Un calque par modèle, par groupe et par couleur ;
+l'état du moment change le POINTEUR de matériau du calque, jamais le matériau.
+
+**Ils éclairent le décor** : bassin borné de 3 `OmniLight3D` sur la même horloge, joueur prioritaire.
+Rouge ou bleu pour la police, rouge pour les pompiers, rouge ou blanc pour le sapin — le **blanc à
+35 % de l'énergie** du rouge : à énergie égale il noyait tout le sol autour de l'ambulance.
+
+### Véhicules garés conduisibles
+
+Les 22 véhicules en stationnement des lieux — 3 voitures de patrouille au Central Precinct,
+3 ambulances au St. Anselm, 8 camions dans les 4 casernes, 8 voitures au parking de l'aéroport —
+étaient **cuits en décor** : leur maillage était fusionné dans celui du lieu, leur collision était une
+boîte du lieu. Une voiture de police devant le commissariat était un morceau de bâtiment.
+
+Les cuissons écrivent maintenant une **fiche** par véhicule (`places.json` clé `parked`,
+`downtown/generated/parked.json`) et `ParkedVehicles` instancie une **vraie `Car`** au lancement :
+même scène, même catalogue, même zone d'interaction, donc **on monte dedans comme dans n'importe
+quelle voiture de la rue**. Le rôle du catalogue suit avec — la voiture de patrouille a donc son
+gyrophare, éteint par défaut.
+
+Elles ne roulent pas (aucun `setup()`, donc aucun trajet) et `Car.park()` les met dans l'état
+« laissée là », le seul qui laisse la gravité les poser au sol quand elles n'ont pas de trajet. Elles
+ne disparaissent pas : le compte à rebours d'abandon n'est armé que lorsque le joueur les quitte.
+
+### Recenser les fenêtres allumées : la méthode, et les chiffres
+
+**Vérifier sur trois modèles ne suffit pas.** La correction du 2026-09-20 au matin avait été validée
+sur trois cas représentatifs et déclarée finie ; plusieurs familles de bâtiments restaient noires. La
+vérification qui vaut est un **recensement de toute la population**, lu sur le monde CUIT :
+
+1. charger tous les maillages de carreaux (`buildings/window_glow_*.res` pour la carte,
+   `buildings/windowglow*.res` pour le centre-ville — **attention, `windowglowsky_*` est un préfixe
+   distinct, l'oublier fait ressortir toutes les tours à zéro**) ;
+2. **parcourir les CARREAUX, pas les bâtiments**, et donner chaque barycentre au bâtiment dont
+   l'emprise est la plus PROCHE (distance à la boîte, 0 si dedans) — la carte par
+   `buildings/lots.json`, le centre-ville par `downtown/generated/buildings.json` ;
+3. sortir la liste des bâtiments à zéro carreau, **groupée par modèle**, et la lire.
+
+**Le point 2 a une histoire.** La première version testait la CONTENANCE avec une marge fixe autour
+de l'emprise, et le résultat dépendait de la marge : **89 bâtiments noirs à 1,5 m, 83 à 6 m**. La
+cause est réelle et pas un arrondi — le vitrage de certains modèles déborde l'emprise notée dans
+`lots.json`, l'auvent d'une station-service par exemple, si bien que `Business_GasStation` et
+`Industrial_Warehouse_alt03` ressortaient noirs alors qu'ils ont 12 carreaux chacun (mesuré :
+1,5 à 8,3 m² l'unité). Le **plus proche** ne dépend d'aucun réglage, et c'est cette version-là qui
+donne les chiffres ci-dessous. Un recensement dont le résultat bouge avec un seuil n'est pas un
+recensement.
+
+Chiffres relevés ainsi, sur 1 637 bâtiments posés. **Les trois colonnes sont mesurées avec LE MÊME
+instrument**, en rejouant la sonde sur les mondes cuits de `0344b79` et de `470ed6d` (worktree déjà
+importé, `git checkout <commit> -- scenes/world/*/generated` suffit, la sonde ne lit que des `.res`
+et des `.json`) :
+
+| | `0344b79` | `470ed6d` | ce commit |
+|---|---|---|---|
+| triangles de carreaux allumés | 47 668 | 83 146 | **127 580** |
+| bâtiments avec ≥ 1 fenêtre | 1 413 | 1 508 | **1 548** |
+| bâtiments sans aucune lumière | 224 | 129 | **89** |
+| modèles distincts concernés | 39 | 19 | **12** |
+| lieux avec fenêtres | 0 | 7 | **10** sur 12 |
+
+**Les 89 qui restent ne sont pas corrigeables et il ne faut pas essayer.** Les 12 modèles, avec leur
+compte : `SmallIndustrialStructure_alt01` (14), `alt05` (13), `IndustrialBuilding_alt02` (12),
+`alt07` (11), `StorageFacility` (8), `Warehouse_alt01` (7 + 6 au centre-ville), `Warehouse_alt02` (6),
+`Farm_MetalWindmill` (6), `Farm_Barn` (4), `Mk3` (1), `Historical_Bandstand` (1). Aucun n'a de
+matériau de vitrage (`Mat_Standard`, `Mat_Refl`). Peindre des fenêtres qui n'existent pas est
+explicitement refusé.
+
+De la même passe : `Industrial_TraditionalSkyscraper_alt07` n'a de vitrage que sur **deux façades sur
+quatre** dans le modèle (560 carreaux, tous sur ±X). Ce n'est pas un défaut d'extraction, c'est
+l'asset. Vérifié aussi que toutes ses normales pointent vers l'extérieur — l'hypothèse « carreau
+poussé dans le mur » a été testée et écartée.
+
+### Un recensement par emprise ne voit pas un étage noir
+
+Payé le 2026-09-21 sur les **dix `building_02x3`** du centre-ville (le pack empilé sur trois étages) :
+le recensement ci-dessus les donnait « allumés », et ils l'étaient — mais seulement jusqu'à 40 m. Le
+troisième étage était noir partout. `DowntownBuildingsBake._pack_panes` écrivait `y = sommet` (sommet
+de la pièce dans SON repère) au lieu de `y += sommet` : le troisième étage repartait de 18,87 m au lieu
+de 40,29 m, ses carreaux étaient cuits À L'INTÉRIEUR du deuxième, et le deuxième portait des carreaux
+décalés de 2,55 m. Un `x2` n'était pas touché (sa deuxième pièce part bien du sommet de la base).
+
+Deux enseignements :
+
+- **Le recensement contrôle maintenant aussi la HAUTEUR** : pour chaque bâtiment, jusqu'où montent ses
+  carreaux allumés, et chaque exemplaire est comparé au meilleur exemplaire de SON modèle — la hauteur
+  d'un modèle compte son toit, donc un ratio bas identique sur tous les exemplaires est une propriété du
+  modèle, pas un défaut. Après correction : les 20 immeubles empilés montent à 95-97 % de leur hauteur.
+  Les 19 exemplaires qui restent 25 points sous le meilleur de leur modèle (maisons, `Townhouse`,
+  `Restaurant`) tombent tous sur un palier d'étage entier : c'est le tirage à 28 % qui n'a allumé aucune
+  des rares fenêtres de leur dernier niveau, pas une erreur de pose.
+- **Une vue de contrôle doit être vérifiée elle-même.** La première capture de l'immeuble 114, prise de
+  l'ouest, montrait un bloc uni sans fenêtre de jour comme de nuit — c'était `midrise_113`, un bureau
+  de 29 m posé juste devant. Couper les silhouettes HLOD (`MapShotsTest --sans-hlod`, ajouté pour ça)
+  n'y changeait rien, et c'est la liste des emprises le long de la ligne de visée qui l'a montré.
+
+### La portée des carreaux doit suivre celle du bâtiment
+
+Symptôme à connaître : **un bâtiment qui reste visible alors que ses fenêtres ont disparu** est un
+écart de portée, pas un défaut d'extraction. Relevé le 2026-09-20 sur le monde cuit :
+
+- **Centre-ville, aucun écart.** `WindowGlow` est à **650 m**, exactement le `hlod_distance` de
+  `DowntownHLOD` : au-delà, le bâtiment lui-même cède la place à sa silhouette fusionnée, donc les
+  deux s'éteignent ensemble. Les gratte-ciels marqués `no_hlod` gardent leur maillage à toute
+  distance et portent un `WindowGlowSky` à **4 000 m**. `core_003_Mk1` et `midrise_182` sont dans ce
+  cas : leur noirceur venait du taux d'allumage, pas de la portée.
+- **Carte, écart réel mais invisible.** `DistrictsBake.WINDOW_GLOW_RANGE` est **fixe à 1 100 m**
+  alors que la portée d'un modèle est proportionnelle à sa taille (`RANGE` par usage, `office`
+  1 100) et monte jusqu'à **1 165,21 m** : **33 couples modèle-cellule sur 557** dépassent 1 100.
+  Bande concernée : 65 m, à une distance où un carreau de 2,6 m fait moins d'un pixel. Constaté et
+  laissé tel quel ; si un jour on y touche, la bonne valeur est le maximum de `ranges` de la
+  cellule, pas une constante.
+
+### Trois corrections de l'extraction, le 2026-09-20 au soir
+
+1. **UN CARREAU TROP GRAND EST SUBDIVISÉ, PLUS JAMAIS JETÉ.** La version du matin retaillait en
+   grille sur la boîte 2D et n'allumait pas ce qu'elle ne savait pas retailler (carreau non plan, ou
+   qui ne remplit pas sa boîte). Ça marchait sur un quad bien carré et ça éteignait tout le reste.
+   Maintenant on **découpe les triangles du modèle** sur la grille de travées de 2,6 x 3,2 m. Aucune
+   contrainte de planéité ni de rectangle, **aucun débordement possible** puisqu'on ne fait que
+   redécouper ce qui existe, et une nappe de mur-rideau devient une grille de fenêtres.
+
+   **DEUX MANIÈRES DE DÉCOUPER, ET LA PREMIÈRE A ÉTÉ REJETÉE PAR L'IMAGE** (2026-09-21). La version
+   du 20 au soir coupait chaque triangle au milieu de son plus long côté jusqu'au grain d'une travée,
+   puis rangeait chaque morceau dans la case de son **barycentre**. Tous les comptes étaient bons —
+   107 372 carreaux posés, 13 modèles noirs, les tours allumées — et pourtant, au sol devant une tour
+   à mur-rideau, les fenêtres sortaient en **taches irrégulières** : des L, des drapeaux, des découpes
+   en dents de scie. Un morceau dont le barycentre tombe dans une case déborde dans la voisine, et le
+   contour d'une case est donc la réunion de morceaux qui dépassent. **Aucun compteur ne pouvait le
+   dire ; il a fallu recadrer sur la façade et regarder.** La version qui tient rogne chaque triangle
+   contre les quatre plans de sa case (Sutherland-Hodgman, mené en 3D pour que les carreaux non plans
+   passent aussi) et re-triangule le morceau gardé : les carreaux sont alors de vrais rectangles.
+   Coût mesuré : 107 372 -> 110 982 carreaux posés au centre-ville, les triangles en proportion.
+2. **AU MOINS UNE FENÊTRE ALLUMÉE par bâtiment qui a des carreaux.** Une maison de 7 carreaux a
+   0,72^7 = 10 % de chances de ressortir entièrement noire : 41 maisons de la carte l'étaient, et
+   c'était la cause n°1 du recensement. Le carreau retenu est celui de clé de tirage maximale, donc
+   stable d'une cuisson à l'autre comme tout le reste.
+3. **LES LIEUX BÂTIS EN PRIMITIVES ONT AUSSI DES FENÊTRES.** Le motel, le chantier, Echo Circle,
+   Liberty Motors et l'aérogare ne sont pas des modèles : ils sont dessinés en `_box` et `_quad`, donc
+   `BuildingWindows` n'avait rien à y extraire. Leurs vitrages sont les quads peints d'une couleur de
+   `VITRAGES` ; `PlacesBake._quad` les reconnaît à la couleur au moment où il les dessine et en fait
+   des carreaux, découpés au même grain que les autres.
+
+**Le taux d'allumage se règle en ligne de commande** : les trois cuiseurs de fenêtres acceptent
+`--fraction=<0..1>`, ce qui permet de cuire la ville à plusieurs taux et de comparer les images
+depuis le même point sans toucher au code. Mesuré le 2026-09-20 : **28 %, 40 % et 55 % coûtent
+exactement le même nombre d'appels de dessin** (487, 488, 488 sur la silhouette depuis le quai) —
+les carreaux sont fusionnés dans les mêmes maillages de cellule, le taux ne change que des triangles.
+Le choix est donc purement visuel.
+
+### Une lumière de véhicule n'éclaire pas son propre véhicule
+
+Le gyrophare projetait bien son rouge sur les murs et le sol, **mais la rampe elle-même restait
+grise**. Ce n'était ni le matériau (bon), ni la géométrie (bonne : 11 triangles à 0,92 m sur le toit),
+ni la visibilité (le calque était posé, visible, avec le matériau rouge). La rampe de ces modèles est
+une bande PLATE peinte sur le toit, et l'OmniLight du gyrophare, posée juste au-dessus, **inondait ce
+toit de rouge** : la bande s'y noyait.
+
+La réponse est celle qui servait déjà aux mâts de lampadaire : les carrosseries sont sur le calque
+visuel 3 (`Car.DECAL_EXCLUDE_LAYERS = 4`), on retire donc ce bit du `light_cull_mask` des gyrophares
+et des feux de freinage. La lumière éclaire le décor et pas le véhicule qui la porte, et la rampe
+ressort. **Règle générale : une lumière portée par un véhicule ne doit jamais éclairer les
+carrosseries.**
+
+### Les deux repères opposés d'une voiture
+
+Payé le 2026-09-20 : **l'avant d'une VOITURE est `-basis.z`** (`Car._drive_physics` : `var fwd :=
+-global_transform.basis.z`), mais **l'avant d'un MODÈLE est son `+Z`**, et le catalogue lui applique
+`model_yaw_deg = 180` pour aligner les deux. Les deux repères sont donc opposés. Mesurer un recul sur
+le mauvais des deux donne un résultat de signe inverse — c'est arrivé sur la flaque de freinage, où
+le test a d'abord annoncé « la lumière est devant la voiture » alors que le code était juste.
+
+La flaque de freinage part maintenant de la **demi-longueur réelle de la caisse**, relevée à
+l'extraction (`Parts.caisse`) et remise à l'échelle du catalogue, plus 0,55 m : elle tombe derrière la
+poupe et non plus sous la voiture, où la plaçait un recul de 0,25 m pris depuis le CENTRE du véhicule.
+Et elle ne sort que la nuit : un vrai feu de freinage n'éclaire pas la chaussée en plein soleil.
+
+### Se garer sur le marquage
+
+`PlacesBake._parking` **rend maintenant la liste des places qu'il dessine** : centre de chaque place
+(l'intervalle entre deux traits, 2,8 m de large et 5,2 m de profondeur, centre à 1,4 m du trait) et
+direction du nez. Les voitures du parking de l'aérogare sont posées sur ces places, une par place, au
+lieu de coordonnées écrites à la main qui tombaient à côté du marquage.
+
+Le tirage est **stable et dérivé de la position de la place**, comme celui des fenêtres : une place
+garde sa voiture, son angle et son décalage d'une cuisson à l'autre. Une place sur trois reste vide,
+et chaque voiture prend quelques degrés de travers et un peu d'avance ou de recul, pour que la rangée
+ne soit pas alignée au cordeau. **58 véhicules garés** au total, contre 14.
+
+### Parking de l'aérogare refait comme un vrai (2026-09-21)
+
+`_parking_aerogare` remplace l'appel direct à `_parking` pour Prairie Wind :
+
+- **Plus rien sur la raquette de la route** (le « petit rond-point » au bout de l'accès). Les deux rangées de
+  bord couraient sur toute la longueur du parking, jusque sur la raquette : trois voitures bleues y étaient
+  garées. `_rangee` ne dessine ni n'occupe plus une place dont le centre est à moins de 3 m d'une chaussée ou
+  d'une raquette (même emprise que `_near_road`), ni ses traits : 2 places retirées. C'était aussi un défaut
+  de CIRCULATION : la sonde de toute la carte de la section D a trouvé une voiture de la circulation arrêtée
+  pour de bon derrière l'une d'elles, en faisant demi-tour sur la raquette.
+- **Une double rangée face à face au milieu**, nez contre un îlot de 2 m (bordure de 0,15 m, que la voiture du
+  joueur franchit comme un trottoir), qui NE fait PAS toute la longueur : 102 m sur 126, soit **12 m d'allée à
+  chaque bout** pour faire le tour. Deux allées de 11,95 m entre les rangées de bord et la double rangée.
+- **154 places, 102 voitures** : même tirage stable qu'avant (une place garde sa voiture d'une cuisson à
+  l'autre), une place sur trois vide.
+- **Sens variés** : une partie des voitures est garée en marche arrière, nez vers l'allée — **49 sur 102**
+  mesurées. Le seuil vise 40 %, mais ce tirage partage des bits avec celui des places vides.
+- **4 lampadaires doubles (le `lamp_2` des terre-pleins de la carte) sur l'îlot, et nulle part ailleurs** :
+  aucune voiture n'y roule. Crosses en travers, une tête au-dessus de chaque rangée : 8 luminaires, écrits
+  dans `generated/places/lamp_heads.tres`, que `StreetLights` (bassin de vraies lumières) et `DayNightTest`
+  lisent avec ceux de la carte et du centre-ville. Poteaux de collision nommés `LampsDouble_airport_<i>`,
+  comme ceux de `RoadBake`, pour que `DayNightTest` retrouve leur pied.
+- **Deux modèles du tirage n'existaient pas** : `Veh_Microcar_01_Yellow` et `Veh_Minivan_01_White` au lieu de
+  `Veh_Microcar_Yellow` et `Veh_Minivan_White`. `_garer_sur_place` sortait sans rien dire, donc un tirage sur
+  sept laissait sa place vide en silence (87 voitures au lieu de 102 sur le nouveau parking). Corrigé.
+
+Véhicules garés au total : 108 dans `places.json` (102 à l'aérogare, 3 voitures de patrouille, 3 ambulances)
+et 8 camions dans les casernes du centre-ville.
+
+### Aérogare de nuit : vitrage allumé d'un bloc, porche, parvis (2026-09-21)
+
+- **Plus de carreaux tirés au hasard à l'aérogare.** Le découpage du vitrage en carreaux allumés à 28 % y
+  faisait des « carreaux bizarres », beiges, posés au hasard sur les deux façades (photos du joueur). Dans
+  `_airport()`, `_vitrage_uniforme` détourne chaque quad de vitrage (`VITRAGES`) vers `_vitrage_allume` :
+  le quad lui-même, décalé d'1 cm vers l'extérieur (devant la vitre, derrière les meneaux à 2 cm), dans le
+  calque des lumières d'aéroport — **3 991 m² de vitrage, allumés uniformément** avec le balisage, sur un
+  seul matériau (`airport_vitrage_material.tres`, blanc froid bleuté, non éclairé). La vigie de la tour
+  en profite aussi. 152 carreaux de moins dans le compte des lieux (609 -> 457).
+- **Le bandeau de 38 feux blancs** posés tous les 10 m à mi-hauteur des façades, et les 4 feux de la vigie,
+  faisaient des points blancs isolés sur une façade noire (photo 8) : retirés, le vitrage les remplace. Le
+  feu d'obstacle rouge du mât reste. 315 -> 273 feux de balisage.
+- **Porche d'entrée** : quatre plafonniers de 8 x 1,6 m encastrés sous l'auvent
+  (`airport_porche_material.tres`) et **trois `SpotLight3D` sans ombre** dirigées vers le sol, dans le
+  groupe `airport_glow`, allumées avec le balisage. Coût borné : trois lumières fixes. `StreetLights`
+  montrait ce groupe en le traitant comme des `GeometryInstance3D` ; une lumière n'en est pas une, d'où
+  le passage à `Node3D`.
+- **Parvis de béton** entre la façade côté ville, la route d'accès, sa raquette et le parking : il restait
+  11 à 17 m de pelouse, on sortait de l'aérogare dans l'herbe et le porche était planté dedans. Relevé au
+  rayon avant d'écrire (pas de 2 m sur x 250..660, z -1216..-1120) : terrain 5,00 m, route et raquette
+  5,30 m, bordure de la raquette 5,45 m, parking 5,28 m. UNE dalle de 243,5 x 17,5 m (4 261 m²), au niveau
+  du parking, donc 2 cm SOUS la chaussée : elle file sous le bord de la route et sous la raquette, qui la
+  recouvrent sans combat en z, et ce sont leurs bords qui dessinent la limite. Elle mord de 0,5 m sous la
+  façade et sous la tour, et bute sur le parking au même niveau. Les poteaux de l'auvent descendent de 2 cm
+  pour se poser dessus.
+
+## 10. Circulation : Echo Circle à deux voies, et les interblocages (2026-09-21)
+
+Le joueur a vu une file figée sur l'anneau. Une sonde jetable a laissé rouler la circulation et relevé,
+pour chaque voiture arrêtée, ce qui la retenait (lu sur `Car.diag_raison`, cf. plus bas). **Quatre
+interblocages**, chacun permanent une fois formé, et les deux derniers **ANTÉRIEURS** au chantier :
+
+1. **Entrée contre anneau.** La voiture qui attendait à une entrée cédait à toute voiture de l'anneau à
+   moins de 14 m du point d'entrée, même arrêtée, même déjà passée ; et la voiture de l'anneau cherchait
+   ses obstacles dans un couloir DROIT de 22 m le long de son cap. Sur un cercle de 30 m, ce couloir file
+   tangent, vers l'extérieur, là où attendent les voitures des entrées : elle freinait pour une voiture
+   qui n'était pas sur sa route. Reproduit en 47 s de jeu. Correction : sur l'anneau, `Car` ne suit que
+   les voitures de l'anneau dans SA voie, mesurées LE LONG DU GRAPHE (`_ring_gap_to`), et ignore les
+   voitures qui attendent à une entrée ; à l'entrée, on ne cède qu'aux voitures qui ARRIVENT sur ce point
+   (`ring_arrival_distance`, 18 m en amont) ou qui l'occupent encore.
+2. **Priorité de virage cédée à la voiture de derrière**, au bout de chaque branche (bretelle de sortie,
+   bretelle d'entrée et artère s'y rejoignent, sans feu) : la voiture de TÊTE cédait sa priorité de virage
+   à la voiture qui la SUIVAIT, inscrite plus tôt au même noeud, et celle-ci la suivait.
+3. **Cycles de priorité de virage, sur toute la carte.** Au carrefour à feux (-100, -316), la voiture
+   engagée dans le bloc cédait à une voiture qui attendait DERRIÈRE ELLE sur une autre approche ; au bout de
+   la branche ouest, A cédait à B, bloquée derrière C, qui cédait à D, bloquée derrière A. Règle : **une
+   voiture arrêtée derrière une autre ne réclame plus sa priorité** (`retenue_par_une_voiture`), elle la
+   retrouve dès que la voie devant elle se libère ; elle subsume la règle du point 2.
+4. **Suivi en rond au milieu d'un carrefour**, apparu une fois le point 3 corrigé, au carrefour à feux
+   (-28, -316) : quatre voitures engagées dans le bloc, une par approche, chacune arrêtée derrière la
+   suivante dans son couloir d'obstacles. On remonte la chaîne des voitures suivies (`_cycle_de_suivi`) ;
+   si elle revient à soi et que TOUTES sont arrêtées, une seule passe outre — la plus petite
+   `get_instance_id()`, pour que ce soit toujours la même — pendant 4 s, et les autres la suivent.
+
+**Antériorité prouvée** : la même sonde, rejouée sur le monde de `0344b79` (worktree déjà importé, `Car.gd`
+d'avant le chantier), relève au bout de 270 s **104 voitures figées depuis 40 s ou plus, en 21 files** :
+36 au carrefour (-28, -316), les autres aux entrées d'Echo Circle, aux deux bouts de ses branches, en
+(222, -313), (-100, 116), (-28, -244)… Le rond-point n'était que l'endroit où le joueur l'a vu.
+
+**DEUX VOIES.** L'anneau fait 8 m entre son trait intérieur (r = 26 m) et son trait extérieur (r = 34 m) :
+la place de deux voies de 4 m. Le graphe n'en avait qu'une, au milieu, à r = 30 m. `RoadNetwork` donne
+maintenant aux arêtes de l'anneau les voies `[-2, +2]` : **intérieure à r = 28 m, extérieure à r = 32 m**.
+Aucun noeud ne bouge ; ce sont les trajectoires qui passent de r = 30 à r = 28 ou 32. La voie est tirée à
+l'entrée, moitié-moitié (Echo Circle n'a que deux branches : tout le monde va « en face », et les deux voies
+sont permises pour ça) ; en sortant, la voie intérieure traverse l'extérieure, donc elle CÈDE à une voiture
+de l'extérieure à sa hauteur ou juste derrière (`_ring_merge_limit`), jamais l'inverse — sauf si celle-ci
+est elle-même arrêtée derrière une autre (point 3). Le nombre de sorties à laisser passer est tiré à
+l'entrée aussi, jamais celle par laquelle on est arrivé : plus de demi-tour sur l'anneau.
+
+| noeud | rôle | position (inchangée) | voie unique avant | intérieure après | extérieure après |
+|---|---|---|---|---|---|
+| 247 | entrée est (NE) | (137,52 ; -327,94) | idem | (135,69 ; -327,14) | (139,36 ; -328,74) |
+| 248 | sortie ouest (NO) | (82,81 ; -328,68) | idem | (84,62 ; -327,83) | (81,00 ; -329,52) |
+| 249 | entrée ouest (SO) | (82,81 ; -303,32) | idem | (84,62 ; -304,17) | (81,00 ; -302,48) |
+| 250 | sortie est (SE) | (136,84 ; -302,59) | idem | (135,05 ; -303,49) | (138,63 ; -301,70) |
+
+**`RoundaboutTrafficTest`** (dans la batterie) : 5 min de vraie circulation, joueur sur l'îlot ; échoue si
+3 voitures de la zone sont figées 40 s, si moins de 20 voitures sortent de l'anneau, ou si une voie ne sert
+jamais. Il ne remplace pas la simulation longue, qui se fait avec la sonde de toute la carte (30 min de jeu,
+gel coupé).
+
+**Simulation longue, résultat** : 30 min de jeu sur toute la carte, gel coupé, 186 voitures en
+circulation (le plafond de `LoopSpawner` mangeait alors les voitures garées, cf. §6) : **aucune file de
+voitures en circulation figée 40 s**, sauf UNE, derrière une voiture GARÉE sur la raquette de l'aérogare
+(476,6 ; -1194,1), arrêtée là 1 078 s — c'est ce qui a fait retirer ces voitures de la raquette (parking
+de l'aérogare, §9).
+
+Trois pièges de mesure, payés pendant ce chantier :
+
+- **Une sonde de circulation doit neutraliser `SimulationCuller`.** Il fige ce qui est à plus de 50 m du
+  joueur ET hors de sa vue. Une première sonde posait le joueur à 54 m du centre : une partie de l'anneau
+  était gelée, et la sonde comptait du GEL comme du blocage. D'où `--sans-gel` (logique de circulation
+  seule) et `--joueur-centre`, et le joueur sur l'îlot dans le test.
+- **Une sonde ne doit pas refaire les règles de `Car` : elle doit les LIRE.** Tant qu'elle reconstruisait
+  « qui attend qui » avec les anciennes règles, elle décrivait encore l'ancien interblocage après la
+  correction. `Car` expose maintenant `diag_raison` (« suit », « cede_anneau », « fusion_anneau »,
+  « insertion », « priorite_virage », « feu ») et `diag_objet`, sans effet sur la conduite.
+- **Regarder au-delà du rond-point.** Le point 3 ne se voyait pas depuis l'anneau : la file de la branche
+  ouest venait d'un carrefour à 130 m. La sonde qui l'a trouvé remonte chaque file jusqu'à sa TÊTE, sur
+  toute la carte, puis suit la chaîne d'attente de la tête jusqu'à un cycle.

@@ -6,8 +6,9 @@ extends Node3D
 #  - l'heure avance et le facteur nuit suit les charnières (sinon rien d'autre n'a de sens) ;
 #  - le soleil est au-dessus de l'horizon à midi et en dessous à minuit, et SES OMBRES SONT COUPÉES
 #    la nuit : c'est le poste GPU qui paie les halos, une régression là passerait inaperçue à l'œil ;
-#  - les halos sont cachés le jour et visibles la nuit, sur TOUTES les cellules ;
-#  - les 1540 halos partagent UN SEUL matériau : dès qu'une copie apparaît, chaque cellule redevient
+#  - le verre allumé des luminaires (les « halos ») est caché le jour et visible la nuit, sur TOUTES les
+#    cellules, et CHAQUE luminaire cuit en a (recensement complet, cf. _verre_par_luminaire) ;
+#  - tout ce verre partage UN SEUL matériau : dès qu'une copie apparaît, chaque cellule redevient
 #    un appel de dessin que rien ne regroupe (c'est exactement la régression payée sur les mâts, cf.
 #    LampPoleLayer) ;
 #  - les luminaires cuits tombent bien en haut d'un mât, pas dans le vide ni sous terre ;
@@ -235,6 +236,61 @@ func _halos(cycle: Node) -> void:
 		_fautes.append("matériau de halo éclairé : il doit être en SHADING_MODE_UNSHADED, sinon il noircit la nuit")
 	print("DAY_NIGHT_HALOS %d maillages, %d triangles, %d matériau(x) ; jour %d visibles, nuit %d visibles"
 			% [halos.size(), triangles, materiaux.size(), visibles_jour, visibles_nuit])
+	_verre_par_luminaire(halos)
+
+
+# VERRE ALLUMÉ, LUMINAIRE PAR LUMINAIRE (2026-09-21). Depuis que c'est le verre du modèle qui s'allume, et
+# non plus une boîte posée sur la tête, rien ne garantit plus par construction qu'un luminaire a sa lumière :
+# un modèle dont l'extraction ne trouverait rien laisserait ses lampadaires noirs, et aucun autre contrôle ne
+# broncherait. On vérifie donc TOUTE la population : chaque luminaire cuit (carte, centre-ville, lieux) doit
+# avoir un sommet de verre allumé à moins de VERRE_MAX de sa position notée ; le test imprime le pire écart
+# relevé sur toute la population.
+const VERRE_MAX := 0.4
+
+func _verre_par_luminaire(halos: Array) -> void:
+	var grille := {}
+	for h in halos:
+		var mi := h as MeshInstance3D
+		var xf := mi.global_transform
+		for s in mi.mesh.get_surface_count():
+			var vs: PackedVector3Array = mi.mesh.surface_get_arrays(s)[Mesh.ARRAY_VERTEX]
+			for v in vs:
+				var p := xf * v
+				var cle := Vector3i(floori(p.x), floori(p.y), floori(p.z))
+				# un PackedVector3Array est une VALEUR : on le relit, on ajoute, on le réécrit
+				var case_: PackedVector3Array = grille.get(cle, PackedVector3Array())
+				case_.append(p)
+				grille[cle] = case_
+	var total := 0
+	var sans := 0
+	var exemple := ""
+	var pire := 0.0                     # plus grande distance tête -> verre le plus proche
+	for chemin in [MAP_HEADS, DOWNTOWN_HEADS, PLACES_HEADS]:
+		if not ResourceLoader.exists(chemin):
+			continue
+		var res: MapLampHeads = load(chemin)
+		for head: Vector3 in res.heads:
+			total += 1
+			var c := Vector3i(floori(head.x), floori(head.y), floori(head.z))
+			var proche := INF
+			for dx in range(-1, 2):
+				for dy in range(-1, 2):
+					for dz in range(-1, 2):
+						for p: Vector3 in grille.get(c + Vector3i(dx, dy, dz), PackedVector3Array()):
+							proche = minf(proche, p.distance_to(head))
+			if proche < VERRE_MAX:
+				pire = maxf(pire, proche)
+			else:
+				sans += 1
+				if exemple == "":
+					exemple = "premier : %s (%.1f, %.1f, %.1f)" % [chemin.get_file(), head.x, head.y, head.z]
+	print("DAY_NIGHT_VERRE %d luminaires, %d sans verre allumé à moins de %.1f m (pire écart relevé %.3f m) %s"
+			% [total, sans, VERRE_MAX, pire, exemple])
+	if total == 0:
+		_fautes.append("aucun luminaire cuit pour le recensement du verre")
+	elif sans > 0:
+		_fautes.append("%d luminaire(s) sur %d sans verre allumé : leur modèle n'a rien donné à l'extraction (LampGlass) %s"
+				% [sans, total, exemple])
 
 
 # --- les luminaires cuits ------------------------------------------------------------------------

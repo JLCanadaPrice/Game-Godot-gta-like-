@@ -1,9 +1,11 @@
 [gd_resource type="StandardMaterial3D" format=3]
 
-; Matériau UNIQUE des halos de lampadaire, partagé par la carte (RoadBake) et par le centre-ville
-; (DowntownFurnitureBake). Un seul matériau pour les 1375 halos : c'est la condition pour que le
-; moteur regroupe les maillages de halo, exactement comme pour les mâts (cf. LampPoleLayer, où une
-; copie par poteau avait fabriqué 378 appels de dessin).
+; Matériau UNIQUE du VERRE ALLUMÉ des lampadaires, partagé par la carte (RoadBake), le centre-ville
+; (DowntownFurnitureBake) et les lieux (PlacesBake). Depuis le 2026-09-21 ce sont les triangles du verre
+; des modèles eux-mêmes qui s'allument (LampGlass) ; avant, une boîte « halo » posée sur chaque tête.
+; Un seul matériau pour tous les luminaires : c'est la condition pour que le moteur regroupe les
+; maillages, exactement comme pour les mâts (cf. LampPoleLayer, où une copie par poteau avait fabriqué
+; 378 appels de dessin).
 ;
 ; NON ÉCLAIRÉ, shading_mode = 0 : un halo est une source, pas une surface qui reçoit la lumière ;
 ; ça évite qu'il s'assombrisse quand le soleil se couche, au moment précis où il doit s'allumer.

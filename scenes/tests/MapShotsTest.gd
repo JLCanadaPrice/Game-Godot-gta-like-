@@ -157,6 +157,14 @@ const VIEWS := [
 	["nuit_aerogare_cote_piste_sol", Vector3(520.0, 1.7, -1262.0), Vector3(430.0, 6.0, -1244.0), "sol", 1.0],
 	["jour_parvis_aerogare_sol", Vector3(375.0, 1.7, -1203.0), Vector3(560.0, 1.0, -1206.0), "sol", 12.0],
 	["jour_parvis_parking_sol", Vector3(560.0, 1.7, -1210.0), Vector3(480.0, 1.0, -1196.0), "sol", 12.0],
+	# Section G du 2026-09-21 : le VERRE des lampadaires allume, de pres, un modele par vue : lamp_1 de
+	# trottoir d'artere, lamp_2 de terre-plein (celui de la photo du joueur), lamp_single du centre-ville.
+	["nuit_lampe_trottoir_pres", Vector3(-1622.0, 1.7, -6.0), Vector3(-1618.6, 6.1, -13.7), "sol", 1.0],
+	["nuit_lampe_terre_plein_pres", Vector3(-316.5, 1.7, 724.0), Vector3(-323.3, 6.0, 716.7), "sol", 1.0],
+	["nuit_lampe_centre_pres", Vector3(-865.0, 1.7, -176.0), Vector3(-873.0, 6.1, -179.0), "sol", 1.0],
+	# et une file de lamp_1 qui s'eloigne de 20 a 120 m, a hauteur d'homme : c'est la que le rebord du capot
+	# masquait la plaque de verre
+	["nuit_lampes_rue_loin", Vector3(-1624.0, 1.7, 60.0), Vector3(-1624.0, 4.0, -60.0), "sol", 1.0],
 	["crepuscule_artere_sol", Vector3(-1606.0, 1.7, -8.0), Vector3(-1624.0, 1.5, -80.0), "sol", 19.8],
 	# lampadaires sous un ouvrage (2026-09-19) : les 4 mâts que RoadBake refuse désormais de poser.
 	# Altitudes ABSOLUES et à hauteur d'homme — le mode "sol" ne convient pas ici, il relèverait la

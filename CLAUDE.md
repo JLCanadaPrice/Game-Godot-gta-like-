@@ -28,8 +28,8 @@ travail imposée, les commandes exactes, les pièges déjà payés et l'état d'
   2026-09-20 (matériaux de balisage, de feux de véhicule, scripts et tests ajoutés), **611** depuis
   le 2026-09-21 (trois lentilles de gyrophare « au repos »), **613** depuis le test du rond-point
   (`RoundaboutTrafficTest`, même jour), **614** depuis les lampadaires du parking de l'aérogare
-  (`generated/places/lamp_heads.tres`) et **616** depuis le vitrage et le porche de l'aérogare (deux
-  matériaux).
+  (`generated/places/lamp_heads.tres`), **616** depuis le vitrage et le porche de l'aérogare (deux
+  matériaux) et **617** depuis `LampGlass.gd`.
 
 ## 2. Méthode de travail (imposée, non négociable)
 
@@ -169,7 +169,7 @@ manque en silence, ce qui est arrivé jusqu'au 2026-09-21.
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/DowntownStreetsTest.tscn
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/DowntownBuildingsTest.tscn
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/ShopBuildingsTest.tscn     # échec ANTÉRIEUR connu
-"$GODOT" --headless --path "$PROJET" --script res://scenes/world/map/tools/ProjectLoadCheck.gd   # attendu : 616 fichiers, 0 échec
+"$GODOT" --headless --path "$PROJET" --script res://scenes/world/map/tools/ProjectLoadCheck.gd   # attendu : 617 fichiers, 0 échec
 ```
 
 Outil d'inspection, hors batterie : `res://scenes/tests/VehicleSortTest.tscn` aligne les véhicules du catalogue
@@ -492,12 +492,14 @@ faute de dégagement (cf. l'anomalie corrigée en fin de chapitre), ce qui retir
 
 Deux mécanismes, et c'est la séparation qui tient le budget :
 
-1. **Les halos, partout.** Une petite boîte non éclairée sur chaque luminaire, **fusionnée avec les autres en un
-   maillage par cellule** (carte) ou par bloc (centre-ville) : 96 maillages, 18 480 triangles pour toute la carte.
-   Cachés le jour (0 appel de dessin), visibles la nuit (**1 appel par cellule visible**). Les 1 534 halos
-   partagent **UN SEUL matériau** (`scenes/world/lamp_glow_material.tres`) : c'est la condition pour que le moteur
-   les regroupe, exactement la leçon déjà payée sur les mâts (cf. `LampPoleLayer`, où une copie de matériau par
-   poteau avait fabriqué 378 appels). `DayNightTest` échoue si un deuxième matériau apparaît.
+1. **Le verre des luminaires, partout** (jusqu'au 2026-09-21 : une boîte « halo » posée sur chaque tête, cf.
+   « Le verre des lampadaires » plus bas). Une copie des triangles du verre de chaque modèle, non éclairée,
+   **fusionnée avec les autres en un maillage par cellule** (carte) ou par bloc (centre-ville) : 97 maillages,
+   28 488 triangles pour toute la carte. Cachés le jour (0 appel de dessin), visibles la nuit (**1 appel par
+   cellule visible**). Les 1 542 luminaires partagent **UN SEUL matériau** (`scenes/world/lamp_glow_material.tres`) :
+   c'est la condition pour que le moteur les regroupe, exactement la leçon déjà payée sur les mâts (cf.
+   `LampPoleLayer`, où une copie de matériau par poteau avait fabriqué 378 appels). `DayNightTest` échoue si un
+   deuxième matériau apparaît, et si UN SEUL luminaire n'a pas son verre allumé.
 2. **Les vraies lumières, seulement près du joueur.** Un bassin de **16 `SpotLight3D` sans ombre** suit la caméra
    et se pose sur les 16 luminaires les plus proches, réaffecté toutes les 0,25 s ou dès que la caméra a bougé de
    4 m. Cône de 55° et portée 17 m, calés sur la géométrie mesurée (luminaire à 6,2 m, artère de 10,5 m) : la
@@ -886,6 +888,39 @@ ne soit pas alignée au cordeau. **58 véhicules garés** au total, contre 14.
 Véhicules garés au total : 108 dans `places.json` (102 à l'aérogare, 3 voitures de patrouille, 3 ambulances)
 et 8 camions dans les casernes du centre-ville.
 
+### Le verre des lampadaires (2026-09-21)
+
+Chaque luminaire portait la nuit une **boîte « halo »** de 0,46 x 0,30 x 0,44 m (0,34 x 0,26 x 0,40 au
+centre-ville) posée sur la tête. Ses faces étaient de plus enroulées à l'envers (relu dans l'ancien
+`_glow_mesh` : sommets dans l'ordre trigonométrique vus de l'extérieur, donc face avant tournée vers
+l'intérieur) : on voyait de l'extérieur les faces du FOND de la boîte, autour de la tête qui en masquait le
+centre — ce qui explique le gros contour jaune creux de la photo du joueur.
+**C'est maintenant la géométrie de la lampe elle-même qui s'allume** (`scenes/world/map/tools/LampGlass.gd`,
+appelé par `RoadBake`, `DowntownFurnitureBake` et `PlacesBake`), même méthode que les optiques des véhicules :
+les triangles qui SONT le verre, repérés par la couleur qu'ils échantillonnent et leur position dans la tête,
+recopiés 6 mm devant l'original sur le matériau partagé.
+
+| modèle | où | verre | triangles par tête |
+|---|---|---|---|
+| `modular_roads/lamp_1` | trottoirs, anneaux, culs-de-sac | plaque #efd094/#efce94 sous la tête, face vers le bas, 6,134 m | 6 + 16 de rebord |
+| `modular_roads/lamp_2` | terre-pleins, îlot du parking de l'aérogare | idem, 6,051 m, une plaque par crosse | 6 + 16 de rebord |
+| `lowpoly_city/lamp_single`, `lamp_double` | centre-ville | diffuseur #ffd800 sous la crosse, fond et quatre pans | 16 |
+
+**« L'intérieur de la tête » compte aussi.** Sur les modèles de la carte, la plaque est en RETRAIT de 5,8 cm
+dans le capot : au-delà d'une trentaine de mètres, vue sous une dizaine de degrés, le rebord la masque et le
+lampadaire paraît éteint (vu à l'image, pas supposé). On allume donc aussi les **parois intérieures du rebord**,
+comme le réflecteur d'une vraie tête : règle de POSITION (entre le bas du capot et la plaque, sous l'emprise
+de la plaque, tournées vers son axe), puisque le rebord a la couleur du capot. Vérifié triangle par triangle :
+16 par tête, exactement les parois relevées à la sonde. Au sol, une file de lampadaires reste lisible jusqu'à
+une cinquantaine de mètres ; au-delà, c'est la flaque des vraies lumières qui porte. Vu d'en haut, une tête
+de la carte est sombre, comme une vraie tête cobra.
+
+**Piège payé en l'écrivant : un `PackedVector3Array` est une VALEUR.**
+`(dico["v"] as PackedVector3Array).append(p)` ajoute dans une COPIE et laisse le dictionnaire vide, sans
+erreur. La première cuisson n'a donc produit aucun verre, et `RoadBake`, qui n'écrit un maillage que s'il y a
+du verre, a laissé les anciens halos en place sur le disque. Le recensement de `DayNightTest` avait le même
+défaut dans sa grille de recherche. Toujours relire le tableau dans une variable, ajouter, puis réécrire.
+
 ### Aérogare de nuit : vitrage allumé d'un bloc, porche, parvis (2026-09-21)
 
 - **Plus de carreaux tirés au hasard à l'aérogare.** Le découpage du vitrage en carreaux allumés à 28 % y
@@ -971,7 +1006,8 @@ gel coupé).
 circulation (le plafond de `LoopSpawner` mangeait alors les voitures garées, cf. §6) : **aucune file de
 voitures en circulation figée 40 s**, sauf UNE, derrière une voiture GARÉE sur la raquette de l'aérogare
 (476,6 ; -1194,1), arrêtée là 1 078 s — c'est ce qui a fait retirer ces voitures de la raquette (parking
-de l'aérogare, §9).
+de l'aérogare, §9). **Rejouée après les sections E (raquette dégagée) et la correction de `LoopSpawner`**,
+cette fois avec les **252 voitures** en circulation : 30 min de jeu, **aucune file figée, pire arrêt 34 s**.
 
 Trois pièges de mesure, payés pendant ce chantier :
 
