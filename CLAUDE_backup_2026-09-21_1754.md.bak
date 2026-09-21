@@ -29,7 +29,7 @@ travail imposée, les commandes exactes, les pièges déjà payés et l'état d'
   le 2026-09-21 (trois lentilles de gyrophare « au repos »), **613** depuis le test du rond-point
   (`RoundaboutTrafficTest`, même jour), **614** depuis les lampadaires du parking de l'aérogare
   (`generated/places/lamp_heads.tres`), **616** depuis le vitrage et le porche de l'aérogare (deux
-  matériaux), **617** depuis `LampGlass.gd` et **619** depuis `WheelSpinTest` (2026-09-21 au soir).
+  matériaux) et **617** depuis `LampGlass.gd`.
 
 ## 2. Méthode de travail (imposée, non négociable)
 
@@ -166,11 +166,10 @@ manque en silence, ce qui est arrivé jusqu'au 2026-09-21.
 "$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/CarDrivingTest.tscn  # sonde, PAS de ligne RESULT
 "$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/CarDropTest.tscn     # sonde, PAS de ligne RESULT
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/CarKerbTest.tscn          # bordures : le joueur monte, l'IA non
-"$GODOT" --headless --path "$PROJET" res://scenes/tests/WheelSpinTest.tscn        # roues des 72 modèles : axe, sens, rayon, stroboscope, pivot
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/DowntownStreetsTest.tscn
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/DowntownBuildingsTest.tscn
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/ShopBuildingsTest.tscn     # échec ANTÉRIEUR connu
-"$GODOT" --headless --path "$PROJET" --script res://scenes/world/map/tools/ProjectLoadCheck.gd   # attendu : 619 fichiers, 0 échec
+"$GODOT" --headless --path "$PROJET" --script res://scenes/world/map/tools/ProjectLoadCheck.gd   # attendu : 617 fichiers, 0 échec
 ```
 
 Outil d'inspection, hors batterie : `res://scenes/tests/VehicleSortTest.tscn` aligne les véhicules du catalogue
@@ -306,34 +305,6 @@ sans le plafond de 800x450 du §6). Une vue peut imposer sa propre heure par un 
   a aucun collisionneur de roue, et sa coque flotte **2,23 m au-dessus du sol**, son origine reposant à
   **sol + 2,566 m** (mesuré). Posée plus bas, la suspension part en butée et catapulte la voiture à 5 m :
   toute sonde qui instancie cette voiture doit la lâcher à sol + 2,57 m, jamais « juste au-dessus du sol ».
-- **LES ROUES : QUATRE DÉFAUTS SOUS UN SEUL SYMPTÔME** (2026-09-21 au soir). Le joueur voyait les roues de
-  « toutes les voitures » tourner « vers le haut au lieu de rouler vers l'avant ». `Car._update_visuals`
-  faisait tourner chaque roue autour du X LOCAL de son noeud, dans le même sens, avec un rayon fixe de
-  0,34 m. Relevé sur les 72 modèles posés comme en jeu, avec transformations composées à la main (hors de
-  l'arbre, `global_transform` rend l'identité et une première sonde a tout mesuré faux) :
-  1. le X local tombe bien sur l'essieu partout, mais sur les **six modèles d'origine** (`normalcar1/2`,
-     `sportscar`, `sportscar2`, `suv`, `taxi`) il pointe vers +X de la voiture : leurs **18 roues roulaient
-     vraiment à l'envers** ;
-  2. la roue avant droite de `normalcar2` a son **pivot à 0,32 m du centre** de la roue, dans son plan : elle
-     décrivait un cercle et montait dans la carrosserie ;
-  3. les rayons réels vont de **0,234 à 0,721 m** (le blindé SWAT) ;
-  4. et surtout l'**EFFET STROBOSCOPIQUE**, qui touche vraiment toutes les voitures : à 12 m/s et 60 images/s
-     une roue de 0,30 m tourne de 38° par image, et sa jante octogonale ne se distingue d'elle-même qu'à 45°
-     près : l'oeil la voit RECULER de 7° par image. Le sens était pourtant juste sur les 66 autres modèles :
-     mesuré roue par roue (le sommet du pneu avance), et vu à la pastille sur la berline city et le coupé
-     lowpoly.
-  `Car._mesurer_roue` donne maintenant à chaque roue, une fois par modèle : son axe et son sens (le haut du
-  pneu va vers -Z quand la vitesse est positive, déterminant compris), son rayon, son centre (on tourne
-  autour de lui), et un pas maximal par image de 45 % de la période de SA jante, mesurée sur ses sommets
-  (8 branches pour 226 roues, 10 pour 44, 12 pour 22). Au-delà de quelques m/s la roue tourne un peu moins
-  vite que la voiture ne roule, mais toujours dans le bon sens, et c'est ce que l'oeil lit. **Ce plafond vaut
-  par image AFFICHÉE, pas par pas physique** : `_update_visuals` tourne dans `_physics_process` à 60 Hz fixes,
-  et à 30 images/s deux pas de 20° font 40° à l'écran — le stroboscope reviendrait justement sur l'UHD 750.
-  Chaque roue compte ce qu'elle a déjà tourné depuis la dernière image affichée (`Engine.get_process_frames`).
-  `WheelSpinTest` vérifie les six points sur les 292 roues, dont le cumul à 15 images/s (il échoue sur un
-  plafond par pas physique : 81° par image pour une demi-période de 22,5°). Les séquences de contrôle (pastille rouge en haut du pneu, trois
-  images) se font avec une scène jetable ; `PlayerCarPhysics` (roues de `wheel.gd`, `rotate_x(+wv)` vers son
-  +Z) roule dans le bon sens et n'a pas été touchée — elle n'est d'ailleurs instanciée que par ses deux sondes.
 - **`move_and_slide()` ne monte AUCUNE marche verticale**, si basse soit-elle. Les bordures de trottoir
   de la carte font **0,150 m** mesurés sur la collision cuite, en marche franche (la montée tient entre
   deux relevés distants de 2 cm), sur trimesh pour les artères et sur piles de boîtes au centre-ville.

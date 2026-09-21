@@ -55,10 +55,7 @@ const VehicleCatalog := preload("res://scripts/data/VehicleCatalog.gd")
 # peaufiner par modèle dans resources/vehicle_models/*.tres.
 @export var model_y_offset := -0.45
 @export var debug_hitbox := false         # imprime la taille de boîte ajustée par modèle
-# Axe de roulement par défaut (repère local de la roue). Depuis le 2026-09-21 il n'est plus appliqué tel quel :
-# chaque roue reçoit SON axe, relevé sur la géométrie posée (cf. _mesurer_roue), parce que le X local ne tombe
-# pas dans le même sens d'un pack à l'autre. Ne sert plus que de repli pour une roue sans maillage.
-@export var wheel_spin_axis := Vector3(1, 0, 0)
+@export var wheel_spin_axis := Vector3(1, 0, 0)   # axe de roulement d'une roue (repère local roue)
 # Axe de braquage des roues avant. IMPORTANT : exprimé dans le repère de la
 # CAISSE (pas de la roue) -> (0,1,0) = verticale voiture = pivot de direction.
 # Appliqué en pré-multiplication dans _update_visuals pour que le braquage se
@@ -240,14 +237,7 @@ var model_path := ""                  # modèle réellement chargé (tirage de c
 var _wheels: Array[Node3D] = []
 var _wheels_front: Array[Node3D] = []
 var _wheel_rest: Dictionary = {}
-var _wheel_axis: Dictionary = {}      # roue -> axe de roulement dans SON repère local (cf. _mesurer_roue)
-var _wheel_radius: Dictionary = {}    # roue -> rayon RÉEL, en mètres dans le repère de la voiture
-var _wheel_angle: Dictionary = {}     # roue -> angle de roulement cumulé
-var _wheel_pas_max: Dictionary = {}   # roue -> plus grand pas angulaire par image AFFICHÉE (cf. _mesurer_roue)
-var _wheel_pas_image: Dictionary = {} # roue -> angle déjà parcouru depuis la dernière image affichée
-var _roues_image := -1                # image affichée (Engine.get_process_frames) du dernier pas de roue
-var _wheel_centre: Dictionary = {}    # roue -> centre géométrique, dans SON repère local (pivot de rotation)
-var _wheel_rest_origin: Dictionary = {}   # roue -> position de repos du noeud
+var _wheel_spin := 0.0
 var _steer_visual := 0.0
 var _ride_height := RIDE_HEIGHT       # recalculé selon la boîte ajustée au modèle
 var _half_length := 2.0               # demi-longueur (axe -Z avant) de la caisse, recalculée au modèle réel ; 2.0 = moitié de la boîte par défaut de Car.tscn (size.z=4)
@@ -334,8 +324,6 @@ func _setup_model() -> void:
 			continue
 		_wheels.append(w3)
 		_wheel_rest[w3] = w3.transform.basis
-		_wheel_rest_origin[w3] = w3.transform.origin
-		_mesurer_roue(w3)
 		var wn := String(w3.name).to_lower()
 		var front_by_name := wn.contains("front") or wn.contains("_f") or wn.contains("fl") or wn.contains("fr")
 		var front_by_pos := w3.position.z > 0.0   # +Z local = avant (modèle tourné de 180°)
@@ -1269,38 +1257,19 @@ func get_drive_speed() -> float:
 
 func _update_visuals(delta: float, fwd_speed: float, steer_target: float) -> void:
 	if not _wheels.is_empty():
+		_wheel_spin = fmod(_wheel_spin + (fwd_speed / WHEEL_RADIUS) * delta, TAU)
 		_steer_visual = lerpf(_steer_visual, steer_target * MAX_STEER_RAD, clampf(delta * 10.0, 0.0, 1.0))
+		var spin_b := Basis(wheel_spin_axis.normalized(), _wheel_spin)
+		# spin_b : dans le repère roue (post-multiplié via rest).
 		# steer_b : dans le repère caisse (pré-multiplié) -> rotation garantie
 		#           autour de la verticale, la roue pivote gauche/droite.
 		var steer_b := Basis(wheel_steer_axis.normalized(), _steer_visual)
-		# LE PLAFOND VAUT PAR IMAGE AFFICHÉE, PAS PAR PAS PHYSIQUE. _update_visuals tourne dans _physics_process,
-		# à 60 Hz fixes ; sous 60 images/s — l'UHD 750 de référence rend une image en 30 à 100 ms — plusieurs pas
-		# physiques s'enchaînent entre deux images affichées et leurs rotations s'additionnent : deux pas de 20°
-		# font 40° à l'écran, au-delà de la demi-période d'une jante octogonale, et la roue repart à l'envers. On
-		# compte donc ce que chaque roue a déjà tourné depuis la dernière image affichée.
-		var image := Engine.get_process_frames()
-		if image != _roues_image:
-			_roues_image = image
-			_wheel_pas_image.clear()
 		for w in _wheels:
-			# chaque roue roule autour de SON axe, à SA vitesse angulaire (v / rayon réel) : le haut du pneu
-			# va vers l'avant quand la voiture avance (cf. _mesurer_roue)
-			var r: float = _wheel_radius.get(w, WHEEL_RADIUS)
-			var pas_max: float = _wheel_pas_max.get(w, ROUE_PAS_DEFAUT)
-			var deja: float = _wheel_pas_image.get(w, 0.0)
-			var pas := clampf((fwd_speed / r) * delta, -pas_max - deja, pas_max - deja)
-			_wheel_pas_image[w] = deja + pas
-			var angle: float = fmod(float(_wheel_angle.get(w, 0.0)) + pas, TAU)
-			_wheel_angle[w] = angle
-			# spin_b : dans le repère roue (post-multiplié via rest).
-			var spin_b := Basis(_wheel_axis.get(w, wheel_spin_axis.normalized()), angle)
 			var rest: Basis = _wheel_rest[w]
-			var b := (steer_b * rest * spin_b) if w in _wheels_front else (rest * spin_b)
-			# rotation autour du CENTRE de la roue, pas de l'origine de son noeud : certains modèles ont le
-			# pivot ailleurs (cf. _mesurer_roue), et la roue tournait alors en excentrique
-			var c: Vector3 = _wheel_centre.get(w, Vector3.ZERO)
-			var o: Vector3 = _wheel_rest_origin.get(w, w.transform.origin)
-			w.transform = Transform3D(b, o + rest * c - b * c)
+			if w in _wheels_front:
+				w.transform.basis = steer_b * rest * spin_b
+			else:
+				w.transform.basis = rest * spin_b
 
 	# tilt de carrosserie : revient à zéro
 	_tilt_pitch = lerpf(_tilt_pitch, 0.0, clampf(delta * 6.0, 0.0, 1.0))
@@ -1309,160 +1278,6 @@ func _update_visuals(delta: float, fwd_speed: float, steer_target: float) -> voi
 		_model.rotation.x = _tilt_pitch
 		_model.rotation.z = _tilt_roll
 		_model.rotation.y = deg_to_rad(model_yaw_deg)
-
-# ROUES QUI ROULENT À L'ENDROIT (2026-09-21). Toutes les roues tournaient autour du X LOCAL de leur noeud,
-# dans le même sens, quel que soit le modèle. Relevé sur les 72 modèles du catalogue posés comme ici
-# (sonde jetable) : le X local tombe bien sur l'essieu partout, mais pas dans le même SENS d'un pack à
-# l'autre — sur les six modèles d'origine du jeu (normalcar1, normalcar2, sportscar, sportscar2, suv, taxi),
-# il pointe vers +X de la voiture au lieu de -X, et leurs 18 roues roulaient À L'ENVERS : le haut du pneu
-# partait vers l'arrière quand la voiture avançait. La roue avant droite de normalcar2 a en plus son pivot à
-# 0,32 m du centre de la roue : elle décrivait un cercle et montait dans la carrosserie. Et la vitesse angulaire
-# était calculée sur un rayon fixe de 0,34 m, quand les roues posées font de 0,234 à 0,721 m (blindé SWAT).
-# Chaque roue reçoit donc, une fois, à la pose du modèle :
-#  - SON axe : l'axe local qui tombe sur l'essieu (le X de la voiture), orienté pour qu'une vitesse POSITIVE
-#    fasse avancer le haut du pneu vers l'avant de la voiture (-Z) — le signe du déterminant compte, une roue
-#    posée en miroir tourne en sens inverse de son axe ;
-#  - SON rayon : la moitié de la hauteur de ses maillages dans le repère de la voiture, échelle comprise ;
-#  - SON centre : le milieu de ses maillages, autour duquel elle tourne (et non l'origine de son noeud) ;
-#  - SON plus grand pas par image affichée. EFFET STROBOSCOPIQUE, vu à l'image : à 12 m/s et 60 images/s, une roue de
-#    0,30 m tourne de 38° par image ; sa jante octogonale ne se distingue d'elle-même qu'à 45° près, et l'oeil
-#    la voit donc RECULER de 7° par image. Toute roue dont le pas par image dépasse la moitié de sa période
-#    de symétrie paraît tourner à l'envers ou s'arrêter. On mesure la symétrie de chaque jante sur ses
-#    sommets (la plus petite fréquence angulaire qui ressort, cf. _symetrie_roue) et on plafonne le pas à
-#    45 % de sa période : au-delà de quelques m/s la roue tourne un peu moins vite que la voiture ne roule,
-#    mais toujours DANS LE BON SENS — c'est ce que l'oeil lit.
-const ROUE_PAS_DEFAUT := 0.35         # rad par image (20°), pour une roue sans maillage mesurable
-# Mesures par modèle et par roue, faites UNE fois : toutes les voitures d'un même modèle ont les mêmes roues,
-# et la mesure de symétrie parcourt tous les sommets de la roue.
-static var _mesures_roues := {}
-
-func _mesurer_roue(w: Node3D) -> void:
-	var cle := "%s|%s" % [model_path, String(_model.get_path_to(w))]
-	if _mesures_roues.has(cle):
-		var m: Array = _mesures_roues[cle]
-		_wheel_axis[w] = m[0]
-		_wheel_radius[w] = m[1]
-		_wheel_pas_max[w] = m[2]
-		_wheel_centre[w] = m[4]
-		return
-	var b := _base_dans_voiture(w)
-	var meilleur := wheel_spin_axis.normalized()
-	var alignement := -1.0
-	for e: Vector3 in [Vector3(1, 0, 0), Vector3(0, 1, 0), Vector3(0, 0, 1)]:
-		var a := absf((b * e).normalized().x)
-		if a > alignement:
-			alignement = a
-			meilleur = e
-	var axe_voiture := (b * meilleur).normalized() * signf(b.determinant())
-	# rotation d'un petit angle positif autour de l'axe : le sommet (+Y) se déplace selon axe x Y
-	if axe_voiture.cross(Vector3.UP).dot(Vector3(0, 0, -1)) < 0.0:
-		meilleur = -meilleur
-	_wheel_axis[w] = meilleur
-	# rayon réel : demi-hauteur des maillages de la roue dans le repère de la voiture
-	var haut := -INF
-	var bas := INF
-	var meshes := w.find_children("*", "MeshInstance3D", true, false)
-	if w is MeshInstance3D:
-		meshes.append(w)
-	for mi_n in meshes:
-		var mi := mi_n as MeshInstance3D
-		if mi.mesh == null:
-			continue
-		var xf := _xf_dans_voiture(mi)
-		var aabb := mi.mesh.get_aabb()
-		for k in 8:
-			var y := (xf * aabb.get_endpoint(k)).y
-			haut = maxf(haut, y)
-			bas = minf(bas, y)
-	if haut > bas:
-		_wheel_radius[w] = maxf((haut - bas) * 0.5, 0.05)
-	# CENTRE GÉOMÉTRIQUE, dans le repère local de la roue : milieu de la boîte de ses maillages. Le pivot du
-	# noeud n'y est pas toujours — mesuré sur normalcar2, la roue avant droite a son origine décalée, et elle
-	# tournait en excentrique. On tourne autour de ce centre (cf. _update_visuals), et la symétrie se lit
-	# autour de lui aussi.
-	var inv_w := _xf_dans_voiture(w).affine_inverse()
-	var lmin := Vector3(INF, INF, INF)
-	var lmax := Vector3(-INF, -INF, -INF)
-	for mi_n in meshes:
-		var mi := mi_n as MeshInstance3D
-		if mi.mesh == null:
-			continue
-		var xf_l := inv_w * _xf_dans_voiture(mi)
-		var bx := mi.mesh.get_aabb()
-		for k in 8:
-			var q := xf_l * bx.get_endpoint(k)
-			lmin = lmin.min(q)
-			lmax = lmax.max(q)
-	_wheel_centre[w] = (lmin + lmax) * 0.5 if lmax.x >= lmin.x else Vector3.ZERO
-	var n_sym := _symetrie_roue(w, meilleur, _wheel_centre[w])
-	_wheel_pas_max[w] = 0.45 * TAU / float(n_sym) if n_sym > 1 else PI * 0.5
-	_mesures_roues[cle] = [_wheel_axis[w], _wheel_radius.get(w, WHEEL_RADIUS), _wheel_pas_max[w], n_sym, _wheel_centre[w]]
-
-
-# Mesures d'une roue (axe local, rayon, pas maximal par image, ordre de symétrie, centre local), pour les tests.
-func mesure_roue(w: Node3D) -> Array:
-	return _mesures_roues.get("%s|%s" % [model_path, String(_model.get_path_to(w))], [])
-
-
-# Ordre de symétrie de rotation d'une roue autour de son axe `axe` (repère local) : les sommets de ses
-# maillages, projetés sur le disque, en angle ; la plus petite fréquence k (3 à 24) dont la composante de
-# Fourier ressort est la période de la jante (un motif à N branches n'a de composantes qu'aux multiples de
-# N). 1 si rien ne ressort (roue lisse : aucun motif à confondre).
-func _symetrie_roue(w: Node3D, axe: Vector3, centre: Vector3) -> int:
-	var inv := _xf_dans_voiture(w).affine_inverse()
-	var i_axe := 0 if absf(axe.x) > 0.5 else (1 if absf(axe.y) > 0.5 else 2)
-	var i_u := (i_axe + 1) % 3
-	var i_v := (i_axe + 2) % 3
-	var angles := PackedFloat32Array()
-	var rayons := PackedFloat32Array()
-	var r_max := 0.0
-	var meshes := w.find_children("*", "MeshInstance3D", true, false)
-	if w is MeshInstance3D:
-		meshes.append(w)
-	for mi_n in meshes:
-		var mi := mi_n as MeshInstance3D
-		if mi.mesh == null:
-			continue
-		var xf := inv * _xf_dans_voiture(mi)
-		for s in mi.mesh.get_surface_count():
-			for v: Vector3 in mi.mesh.surface_get_arrays(s)[Mesh.ARRAY_VERTEX]:
-				var l := xf * v - centre
-				var r := Vector2(l[i_u], l[i_v]).length()
-				angles.append(atan2(l[i_v], l[i_u]))
-				rayons.append(r)
-				r_max = maxf(r_max, r)
-	if angles.is_empty() or r_max <= 0.0:
-		return 1
-	for k in range(3, 25):
-		var c := 0.0
-		var sn := 0.0
-		var n := 0
-		for i in angles.size():
-			if rayons[i] < r_max * 0.15:
-				continue
-			c += cos(k * angles[i])
-			sn += sin(k * angles[i])
-			n += 1
-		if n > 0 and sqrt(c * c + sn * sn) / float(n) >= 0.3:
-			return k
-	return 1
-
-
-# Transformation d'un noeud du modèle dans le repère de la voiture, composée à la main : ne dépend pas de
-# l'arbre (le modèle vient d'être ajouté, et le basculement de caisse est nul à la pose).
-func _xf_dans_voiture(n: Node) -> Transform3D:
-	var t := Transform3D.IDENTITY
-	var cur: Node = n
-	while cur != null and cur != self:
-		if cur is Node3D:
-			t = (cur as Node3D).transform * t
-		cur = cur.get_parent()
-	return t
-
-
-func _base_dans_voiture(n: Node) -> Basis:
-	return _xf_dans_voiture(n).basis
-
 
 func start_drive() -> void:
 	driven_by_player = true
