@@ -714,20 +714,6 @@ func _hospital_esplanade(top: float) -> void:
 		_stripe(Vector2(x, 134.5), Vector2(0, 1), 19.0, 0.10, top + 0.012, joint)
 	for z: float in [131.0, 137.0]:
 		_stripe(Vector2(-280, z), Vector2(1, 0), 50.0, 0.10, top + 0.012, joint)
-	# SOUS LE BÂTIMENT ET DERRIÈRE (2026-09-21 au soir). Le joueur voyait encore de l'herbe entre les murs et les
-	# parkings. Les dalles ci-dessus s'arrêtent à la BOÎTE du modèle (48 x 47 m), or son rez-de-chaussée est en
-	# RETRAIT sous les étages : arcades, surplomb, auvent de l'entrée ouest. Vu au sol depuis chaque parking :
-	# l'herbe courait sous le surplomb, jusqu'au pied des vrais murs, sur les côtés ouest, est et sud ; et
-	# derrière, au nord, elle montait jusqu'au mur. Relevé sur les sommets du modèle posé : boîte x -303,76 à
-	# -256,24, z 144,49 à 191,51 ; les lisières s'arrêtaient à x -304 et -256,5. Plutôt que de chercher le
-	# contour du rez-de-chaussée pour y coller des bandes (le découpage en bandes fabrique le défaut qu'on
-	# corrige), UNE dalle sur toute l'emprise, qui mord de 0,5 m sur les lisières et l'esplanade, et une bande
-	# de 1,5 m derrière le bâtiment, d'un bord extérieur des parkings latéraux à l'autre : le site est un
-	# rectangle dur de z 125 à 193,5. Comme les liaisons ci-dessus, le béton BUTE sur l'enrobé des parkings
-	# (z 192) sans le chevaucher — deux surfaces différentes au même dessus se battraient en z — et ne mord
-	# que sur du béton : la dalle du bâtiment descend jusqu'à z 192,5, sous la bande.
-	_paved(Vector2(-280, 168.25), Vector2(49.0, 48.5), top, "concrete", Color(), false, 0.0)
-	_paved(Vector2(-280, 192.75), Vector2(78.0, 1.5), top, "concrete", Color(), false, 0.0)
 	# Passage piéton du trottoir vers l'entrée, en face des portes (x -280).
 	var b := -283.0
 	while b <= -277.0:

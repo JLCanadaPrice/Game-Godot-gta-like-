@@ -55,13 +55,6 @@ const VIEWS := [
 	["lieu_echo_circle", Vector3(160, 12, -280), Vector3(110, 6, -316)],
 	["lieu_hotel", Vector3(-880, 8, -470), Vector3(-925, 25, -424)],
 	["lieu_hopital", Vector3(-250, 10, 110), Vector3(-280, 8, 168)],
-	# Tour de St. Anselm au sol (2026-09-21 au soir) : depuis chaque parking, le pied des murs. Altitudes
-	# ABSOLUES : le mode "sol" eleverait le point vise sur le toit du batiment.
-	["hopital_ouest_sol", Vector3(-313.0, 1.7, 196.0), Vector3(-303.0, 0.5, 170.0), "", 12.0],
-	["hopital_est_sol", Vector3(-247.0, 1.7, 196.0), Vector3(-257.0, 0.5, 170.0), "", 12.0],
-	["hopital_nord_sol", Vector3(-322.0, 1.7, 200.0), Vector3(-280.0, 0.5, 192.0), "", 12.0],
-	["hopital_nord_est_sol", Vector3(-238.0, 1.7, 200.0), Vector3(-280.0, 0.5, 192.0), "", 12.0],
-	["hopital_sud_ouest_sol", Vector3(-318.0, 1.7, 139.0), Vector3(-300.0, 0.5, 150.0), "", 12.0],
 	["lieu_commissariat", Vector3(-690, 6, 115), Vector3(-713, 6, 158)],
 	["lieu_liberty_motors", Vector3(40, 10, -440), Vector3(15, 2, -395)],
 	["lieu_casino", Vector3(-520, 45, -300), Vector3(-586, 30, -365)],
