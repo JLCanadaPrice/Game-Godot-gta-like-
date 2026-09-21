@@ -78,23 +78,14 @@ const GYRO_DROITE := [false, false, false, false, true, false, true, false]
 #    allumé + bleu éteint), double éclat par phase. Le segment BLANC du milieu reste tel quel : il ne
 #    s'allume jamais. Un segment rouge pile au milieu (rampe à cinq segments du SWAT APC 01) reste
 #    éteint aussi, pour que la rampe reste symétrique : rouge à un bout, bleu à l'autre.
-#  - POMPIERS : TOUS les feux servent, rouges en rouge et blancs en blanc, mais jamais tous ensemble :
-#    ALTERNANCE d'un vrai camion américain (cf. POMPIERS_TEMPS_N).
+#  - POMPIERS : TOUS les feux s'allument, rouges en rouge et blancs en blanc, toutes les rampes, tous
+#    les segments, ET ENSEMBLE — synchronisés sur GYRO_SYNCHRO.
 #  - AMBULANCE (et fourgon d'urgence) : le « SAPIN DE NOËL ». Tous les feux, rouges et blancs, chacun
 #    à son rythme, ce qui donne un scintillement désordonné. Les feux JAUNES de la caisse passent au
 #    BLANC, allumés comme éteints. Pour ne pas payer un matériau par feu, les feux sont répartis en
 #    SAPIN_GROUPES groupes de phase, chacun avec sa période : un calque par groupe et par couleur, les
 #    matériaux restant ceux des états (rouge, blanc, et leurs lentilles au repos) partagés par la ville.
-# POMPIERS, refait le 2026-09-21 au soir. La première version allumait tout en même temps — « synchronisées »,
-# avait dit le joueur, qui voulait dire autre chose. Ce qu'il veut, c'est l'ALTERNANCE d'un vrai camion
-# américain : les rouges et les blancs alternent (rouges allumés, blancs éteints, puis l'inverse), et sur
-# chaque rampe la gauche et la droite alternent aussi. D'où quatre quarts de seconde : rouges de GAUCHE,
-# rouges de DROITE, blancs de GAUCHE, blancs de DROITE, avec un double éclat dans chaque quart (seize temps
-# de 1/16 s, les temps impairs éteints). Tous les feux servent, jamais tous en même temps. Le feu rouge
-# pile au milieu de la rampe avant (le camion en a un) s'allume dans les deux quarts rouges : il n'est ni à
-# gauche ni à droite, et le laisser éteint en ferait le seul feu inutilisé.
-const POMPIERS_TEMPS_N := 16
-const POMPIERS_FAMILLES := ["pomp_rouge_g", "pomp_rouge_d", "pomp_rouge_m", "pomp_blanc_g", "pomp_blanc_d", "pomp_blanc_m"]
+const GYRO_SYNCHRO := [true, false, true, false, false, false, false, false]
 const SAPIN_GROUPES := 4
 const SAPIN_PERIODES := [0.46, 0.58, 0.71, 0.83]      # s : quatre rythmes qui ne tombent jamais en phase
 # Déphasages larges : avec des décalages de quelques centièmes, les quatre groupes partaient ALLUMÉS
@@ -631,10 +622,7 @@ func _familles_urgence(genre: String, feux: Array) -> Dictionary:
 					# MÊME géométrie, calque des voitures ÉTEINTES (cf. _poser_repos)
 					_ajouter(out, "urg_bleu_repos", f)
 		elif genre == "pompiers":
-			# un calque par couleur ET par côté ; le milieu de la rampe à part (cf. POMPIERS_TEMPS_N)
-			var fx := float(f["fx"])
-			var cote := "m" if absf(fx) < RAMPE_MILIEU else ("g" if fx < 0.0 else "d")
-			nom = "pomp_%s_%s" % ["rouge" if couleur == "rouge" else "blanc", cote]
+			nom = "urg_rouge" if couleur == "rouge" else "urg_blanc"
 		elif genre == "sapin":
 			# chaque feu dans un groupe de phase ; ordre stable (avant -> arrière, gauche -> droite),
 			# donc deux feux voisins ne sont jamais dans le même groupe
@@ -674,12 +662,9 @@ func _poser_urgence(cle: String, racines: Array, temps: int, tg: float) -> void:
 			_etat(cle, racines, "urg_rouge", GYRO_ROUGE if GYRO_GAUCHE[temps] else GYRO_ROUGE_REPOS)
 			_etat(cle, racines, "urg_bleu", GYRO_BLEU if GYRO_DROITE[temps] else GYRO_BLEU_REPOS)
 		"pompiers":
-			for fam: String in POMPIERS_FAMILLES:
-				var on := pompiers_allume(fam, tg)
-				if fam.begins_with("pomp_rouge"):
-					_etat(cle, racines, fam, GYRO_ROUGE if on else GYRO_ROUGE_REPOS)
-				else:
-					_etat(cle, racines, fam, GYRO_BLANC if on else GYRO_BLANC_REPOS)
+			var on: bool = GYRO_SYNCHRO[temps]
+			_etat(cle, racines, "urg_rouge", GYRO_ROUGE if on else GYRO_ROUGE_REPOS)
+			_etat(cle, racines, "urg_blanc", GYRO_BLANC if on else GYRO_BLANC_REPOS)
 		"sapin":
 			for g in SAPIN_GROUPES:
 				var on := sapin_allume(g, tg)
@@ -712,40 +697,10 @@ func sapin_allume(g: int, t: float) -> bool:
 	return fmod(t + float(SAPIN_DEPHASAGES[g % SAPIN_DEPHASAGES.size()]), periode) < periode * 0.5
 
 
-# Temps (0..15) de l'horloge du camion de pompiers à l'instant `t`.
-func pompiers_temps(t: float) -> int:
-	return clampi(int(fmod(t, GYRO_PERIODE) / (GYRO_PERIODE / POMPIERS_TEMPS_N)), 0, POMPIERS_TEMPS_N - 1)
-
-
-# Le calque `fam` du camion de pompiers est-il allumé à l'instant `t` ? Quarts de seconde : 0 rouges de
-# gauche, 1 rouges de droite, 2 blancs de gauche, 3 blancs de droite ; temps impairs éteints (double éclat).
-func pompiers_allume(fam: String, t: float) -> bool:
-	var k := pompiers_temps(t)
-	if k % 2 == 1:
-		return false
-	var quart := k / 4
-	match fam:
-		"pomp_rouge_g":
-			return quart == 0
-		"pomp_rouge_d":
-			return quart == 1
-		"pomp_rouge_m":
-			return quart <= 1
-		"pomp_blanc_g":
-			return quart == 2
-		"pomp_blanc_d":
-			return quart == 3
-		"pomp_blanc_m":
-			return quart >= 2
-	return false
-
-
-# Horloge des gyrophares, en secondes. `gyro_force` la fige sur un des huit temps, pour la capture : au
-# PREMIER QUART du temps, pas au milieu, pour que l'horloge à seize temps du camion de pompiers tombe elle
-# aussi sur un temps allumé (le temps 2k de seize, au lieu du 2k+1, toujours éteint).
+# Horloge des gyrophares, en secondes. `gyro_force` la fige au milieu d'un des huit temps, pour la capture.
 func _temps_gyro() -> float:
 	if gyro_force >= 0:
-		return (float(gyro_force) + 0.25) * GYRO_PERIODE / GYRO_TEMPS_N
+		return (float(gyro_force) + 0.5) * GYRO_PERIODE / GYRO_TEMPS_N
 	return Time.get_ticks_msec() * 0.001
 
 
@@ -870,9 +825,7 @@ func _eclairer_gyros(candidats: Array, temps: int) -> void:
 				allume = GYRO_GAUCHE[temps] or GYRO_DROITE[temps]
 				couleur = GYRO_ROUGE if GYRO_GAUCHE[temps] else GYRO_BLEU
 			"pompiers":
-				var tp := pompiers_temps(_temps_gyro())
-				allume = tp % 2 == 0
-				couleur = GYRO_ROUGE if tp < POMPIERS_TEMPS_N / 2 else GYRO_BLANC
+				allume = GYRO_SYNCHRO[temps]
 			"sapin":
 				var tg := _temps_gyro()
 				allume = sapin_allume(0, tg) or sapin_allume(2, tg)

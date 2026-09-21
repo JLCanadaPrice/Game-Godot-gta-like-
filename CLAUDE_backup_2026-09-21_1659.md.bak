@@ -659,17 +659,8 @@ Trois façons d'allumer, selon ce qu'est le véhicule (`_genre_urgence`) :
   double éclat par phase, huit temps de 0,125 s. Le **segment blanc du milieu reste tel quel**, jamais
   allumé ; un segment rouge pile au milieu (SWAT APC 01) reste éteint aussi, pour la symétrie. Rampe
   éteinte, la moitié droite garde une lentille BLEUE au repos.
-- **POMPIERS** : **ALTERNANCE d'un vrai camion américain** (refait le 2026-09-21 au soir : la première
-  version allumait tout en même temps sur le mot « synchronisées », que le joueur a précisé ensuite). Les
-  rouges et les blancs alternent, et sur chaque rampe la gauche et la droite alternent aussi : quatre
-  quarts de seconde, rouges de GAUCHE, rouges de DROITE, blancs de GAUCHE, blancs de DROITE, double éclat
-  dans chaque quart (seize temps de 1/16 s, `POMPIERS_TEMPS_N`). Tous les feux servent, jamais tous
-  ensemble. Le rouge pile au milieu de la rampe avant s'allume dans les deux quarts rouges. Relevé feu par
-  feu : rampe avant rouge / blanc / ROUGE / blanc / rouge, plus une paire de rouges et une paire de blancs
-  sur les flancs du toit, soit cinq calques `pomp_rouge_g/_d/_m` et `pomp_blanc_g/_d`. `VehicleLightsTest`
-  vérifie sur un cycle : jamais rouge ET blanc, jamais gauche ET droite, jamais tout, chaque calque allumé.
-  Pour la capture, `--gyro=0`, `2`, `4`, `6` figent les quatre quarts (`gyro_force` tombe maintenant au
-  premier quart d'un temps, pour que l'horloge à seize temps du camion tombe sur un temps allumé).
+- **POMPIERS** : **tous** les feux, rouges en rouge et blancs en blanc, toutes les rampes, tous les
+  segments, **synchronisés** (`GYRO_SYNCHRO`).
 - **AMBULANCE et fourgon d'urgence** : le **« sapin de Noël »** — tous les feux, rouges et blancs, chacun
   à son rythme. Les feux JAUNES de la caisse passent au BLANC, allumés comme éteints (calque
   `sapin_repos` quand la rampe est coupée). Pour ne pas payer un matériau par feu, les feux sont

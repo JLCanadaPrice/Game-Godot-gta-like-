@@ -11,8 +11,7 @@ extends Node3D
 #    les quatorze véhicules des lieux ;
 #  - GYROPHARES : éteints par défaut, bascule par l'API, et chaque feu dans SA couleur selon ce qu'est
 #    le véhicule (2026-09-21) : POLICE rouge à gauche, bleu à droite, les deux moitiés ALTERNENT, le
-#    blanc du milieu jamais allumé ; POMPIERS : ALTERNANCE, les rouges et les blancs jamais ensemble, la
-#    gauche et la droite jamais ensemble, tous les feux servent et jamais tous à la fois ; AMBULANCE
+#    blanc du milieu jamais allumé ; POMPIERS tous les feux rouges ET blancs, synchronisés ; AMBULANCE
 #    « sapin de Noël » : au moins trois groupes de phase qui ne battent pas ensemble, et ses feux jaunes
 #    passés au blanc ; et le CAS MIXTE du jeu : une voiture de police allumée à côté d'une voiture du même
 #    modèle éteinte, chacune dans SON calque (la moitié bleue disparaissait, 2026-09-21) ;
@@ -252,48 +251,8 @@ func _gyro_motif() -> void:
 		if float(pol["urg_rouge"]["fx_max"]) > -0.1 or float(pol["urg_bleu"]["fx_min"]) < 0.1:
 			_fautes.append("police : un calque allume deborde sur le segment blanc du milieu")
 	var pom: Dictionary = plans["pompiers"]
-	for fam in ["pomp_rouge_g", "pomp_rouge_d", "pomp_blanc_g", "pomp_blanc_d"]:
-		if not pom.has(fam):
-			_fautes.append("pompiers : calque %s absent (rouges et blancs, gauche et droite), obtenu %s" % [fam, str(pom.keys())])
-	for fam in pom:
-		if String(fam).ends_with("_g") and float(pom[fam]["fx_max"]) >= 0.0:
-			_fautes.append("pompiers : un feu de GAUCHE a droite de l'axe dans %s" % fam)
-		if String(fam).ends_with("_d") and float(pom[fam]["fx_min"]) <= 0.0:
-			_fautes.append("pompiers : un feu de DROITE a gauche de l'axe dans %s" % fam)
-	# l'alternance, temps par temps sur un cycle : jamais rouge ET blanc, jamais gauche ET droite, jamais
-	# tout, et chaque calque du camion allumé au moins une fois
-	var n_temps: int = vl.get("POMPIERS_TEMPS_N")
-	var deja := {}
-	var melanges := 0
-	var cotes := 0
-	var tout := 0
-	for k in n_temps:
-		var t := (k + 0.5) / float(n_temps)
-		var rouge := false
-		var blanc := false
-		var gauche := false
-		var droite := false
-		var allumes := 0
-		for fam in pom:
-			if not bool(vl.call("pompiers_allume", fam, t)):
-				continue
-			allumes += 1
-			deja[fam] = true
-			rouge = rouge or String(fam).begins_with("pomp_rouge")
-			blanc = blanc or String(fam).begins_with("pomp_blanc")
-			gauche = gauche or String(fam).ends_with("_g")
-			droite = droite or String(fam).ends_with("_d")
-		melanges += 1 if rouge and blanc else 0
-		cotes += 1 if gauche and droite else 0
-		tout += 1 if allumes == pom.size() else 0
-	if melanges > 0:
-		_fautes.append("pompiers : rouges et blancs allumes ensemble sur %d temps, ils doivent ALTERNER" % melanges)
-	if cotes > 0:
-		_fautes.append("pompiers : gauche et droite allumees ensemble sur %d temps, elles doivent ALTERNER" % cotes)
-	if tout > 0:
-		_fautes.append("pompiers : tous les feux allumes au meme instant sur %d temps" % tout)
-	if deja.size() != pom.size():
-		_fautes.append("pompiers : %d calque(s) jamais allume(s) sur un cycle" % (pom.size() - deja.size()))
+	if not (pom.has("urg_rouge") and pom.has("urg_blanc")):
+		_fautes.append("pompiers : il faut les feux ROUGES et les feux BLANCS, obtenu %s" % str(pom.keys()))
 	var sap: Dictionary = plans["sapin"]
 	var groupes := 0
 	for k in 4:
@@ -316,8 +275,8 @@ func _gyro_motif() -> void:
 			pire = minf(pire, diff / 100.0)
 	if pire < 0.25:
 		_fautes.append("sapin de Noel : deux groupes battent presque ensemble (%.0f %% d'instants differents seulement)" % (pire * 100.0))
-	print("VEHICLE_LIGHTS_GYRO police %d/%d eclats, %d chevauchement, %s ; pompiers %s, alternance : %d temps rouge+blanc, %d temps gauche+droite, %d temps tout allume ; sapin %d groupes, %s, groupes les plus proches differents %.0f %% du temps"
-			% [ng, nd, ensemble, str(pol.keys()), str(pom.keys()), melanges, cotes, tout, groupes, "jaunes -> blanc" if sap.has("sapin_repos") else "JAUNES RESTES JAUNES", pire * 100.0])
+	print("VEHICLE_LIGHTS_GYRO police %d/%d eclats, %d chevauchement, %s ; pompiers %s ; sapin %d groupes, %s, groupes les plus proches differents %.0f %% du temps"
+			% [ng, nd, ensemble, str(pol.keys()), str(pom.keys()), groupes, "jaunes -> blanc" if sap.has("sapin_repos") else "JAUNES RESTES JAUNES", pire * 100.0])
 
 
 # --- allumage des gyrophares ----------------------------------------------------------------------
