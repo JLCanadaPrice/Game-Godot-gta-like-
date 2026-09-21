@@ -700,29 +700,6 @@ quatre** dans le modèle (560 carreaux, tous sur ±X). Ce n'est pas un défaut d
 l'asset. Vérifié aussi que toutes ses normales pointent vers l'extérieur — l'hypothèse « carreau
 poussé dans le mur » a été testée et écartée.
 
-### Un recensement par emprise ne voit pas un étage noir
-
-Payé le 2026-09-21 sur les **dix `building_02x3`** du centre-ville (le pack empilé sur trois étages) :
-le recensement ci-dessus les donnait « allumés », et ils l'étaient — mais seulement jusqu'à 40 m. Le
-troisième étage était noir partout. `DowntownBuildingsBake._pack_panes` écrivait `y = sommet` (sommet
-de la pièce dans SON repère) au lieu de `y += sommet` : le troisième étage repartait de 18,87 m au lieu
-de 40,29 m, ses carreaux étaient cuits À L'INTÉRIEUR du deuxième, et le deuxième portait des carreaux
-décalés de 2,55 m. Un `x2` n'était pas touché (sa deuxième pièce part bien du sommet de la base).
-
-Deux enseignements :
-
-- **Le recensement contrôle maintenant aussi la HAUTEUR** : pour chaque bâtiment, jusqu'où montent ses
-  carreaux allumés, et chaque exemplaire est comparé au meilleur exemplaire de SON modèle — la hauteur
-  d'un modèle compte son toit, donc un ratio bas identique sur tous les exemplaires est une propriété du
-  modèle, pas un défaut. Après correction : les 20 immeubles empilés montent à 95-97 % de leur hauteur.
-  Les 19 exemplaires qui restent 25 points sous le meilleur de leur modèle (maisons, `Townhouse`,
-  `Restaurant`) tombent tous sur un palier d'étage entier : c'est le tirage à 28 % qui n'a allumé aucune
-  des rares fenêtres de leur dernier niveau, pas une erreur de pose.
-- **Une vue de contrôle doit être vérifiée elle-même.** La première capture de l'immeuble 114, prise de
-  l'ouest, montrait un bloc uni sans fenêtre de jour comme de nuit — c'était `midrise_113`, un bureau
-  de 29 m posé juste devant. Couper les silhouettes HLOD (`MapShotsTest --sans-hlod`, ajouté pour ça)
-  n'y changeait rien, et c'est la liste des emprises le long de la ligne de visée qui l'a montré.
-
 ### La portée des carreaux doit suivre celle du bâtiment
 
 Symptôme à connaître : **un bâtiment qui reste visible alors que ses fenêtres ont disparu** est un

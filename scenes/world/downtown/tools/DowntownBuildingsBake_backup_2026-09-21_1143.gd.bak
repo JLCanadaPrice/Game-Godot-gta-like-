@@ -289,14 +289,6 @@ func _window_panes(family: String, name: String) -> Array:
 
 # Carreaux d'un modèle du pack, étage par étage, avec le MÊME décalage vertical que _glb_model :
 # chaque pièce est posée au sommet de la précédente.
-#
-# Le décalage se CUMULE. Corrigé le 2026-09-21 : on écrivait `y = sommet`, le sommet de la pièce DANS
-# SON PROPRE REPÈRE, au lieu de `y += sommet`. Sans effet sur un x2 (la deuxième pièce part bien du
-# sommet de la base), mais sur un x3 le troisième étage repartait de 18,87 m au lieu de 40,29 m : ses
-# carreaux étaient cuits À L'INTÉRIEUR du deuxième, le dernier étage des dix building_02x3 du
-# centre-ville restait noir, et le deuxième portait des carreaux décalés de 2,55 m. Le recensement
-# par emprise ne pouvait pas le voir — il vérifie qu'un bâtiment a des fenêtres, pas qu'elles montent
-# jusqu'en haut. C'est une capture au sol, de nuit, qui l'a montré.
 func _pack_panes(name: String) -> Array:
 	var parts := name.split("x")
 	var base: String = parts[0]
@@ -323,7 +315,7 @@ func _pack_panes(name: String) -> Array:
 			for v in tris:
 				decales.append(v + Vector3(0, y, 0))
 			out.append({"tris": decales, "n": pane["n"]})
-		y += sommet
+		y = sommet
 	return out
 
 
