@@ -114,20 +114,16 @@ const SPOT_AVANCE := 0.15                # m devant le nez, pour ne pas éclaire
 const CALQUE_CARROSSERIE := 4
 const MASQUE_HORS_VEHICULE := 0xFFFFFFFF & ~CALQUE_CARROSSERIE
 
-# UNE SOURCE PAR FEU, gauche et droite, comme les phares (2026-09-21). La flaque venait d'une seule
-# source posée sur l'axe de la voiture : on voyait UNE tache ronde derrière le véhicule, pas les deux
-# feux qui l'éclairent. Chaque source est posée au centre RÉEL de son optique, relevé sur les
-# triangles de feu extraits du modèle ; le bassin compte donc DEUX lumières par véhicule servi.
-@export var bassin_frein := 4            # véhicules servis, soit 8 SpotLight3D
-const FREIN_ANGLE := 44.0
-const FREIN_RANGE := 8.0
-const FREIN_ENERGY := 2.0                # par source : deux sources par véhicule
+@export var bassin_frein := 4
+const FREIN_ANGLE := 48.0
+const FREIN_RANGE := 9.0
+const FREIN_ENERGY := 3.0
 const FREIN_COLOR := Color(1.00, 0.10, 0.06)
-const FREIN_DERRIERE_FEU := 0.12         # m derrière l'optique, dans le repère du modèle
-# La flaque doit tomber DERRIERE la voiture, pas dessous : les sources partent maintenant des
-# optiques elles-memes, qui sont sur la poupe. (Le 2026-09-20, une source unique partait de l'ORIGINE
-# du vehicule, reculee de la demi-longueur de caisse plus 0,55 m.)
-const FREIN_HAUTEUR := 0.75              # m, hauteur d'un feu type, pour un modele sans optique extraite
+# La flaque doit tomber DERRIERE la voiture, pas dessous. FREIN_RECUL valait 0,25 m, mesure depuis
+# l'ORIGINE du vehicule, c'est-a-dire son centre : la lumiere etait donc sous la caisse. On part
+# maintenant de la demi-longueur reelle du modele, relevee a l'extraction, plus une marge.
+const FREIN_MARGE := 0.55                # m au-dela de la poupe
+const FREIN_HAUTEUR := 0.75              # m, hauteur du feu arriere
 const FREIN_PLONGEE := 0.75              # le cône regarde vers l'arrière ET vers le bas
 
 var _night := 0.0
@@ -380,9 +376,6 @@ func _calque(cle: String, racine: Node3D, fam: String) -> MultiMeshInstance3D:
 		# demi-longueur de la CAISSE (roues exclues), pour poser la flaque de freinage derriere la
 		# poupe et non sous la voiture. Relevee une fois, avec le reste de l'extraction.
 		entree["demi_long"] = (Parts.caisse(racine)["aabb"] as AABB).size.z * 0.5
-		# centre de CHAQUE feu arrière, gauche puis droite, dans le repère du modèle : c'est là que se
-		# posent les deux sources de la flaque de freinage
-		entree["feux_cotes"] = _centres_cotes(parts["feux"]["v"], Parts.caisse(racine)["aabb"])
 		_par_modele[cle] = entree
 	return _par_modele[cle][fam]
 
@@ -476,7 +469,7 @@ func _eclairer_freins(candidats: Array) -> void:
 			l.visible = false
 		return
 	if _spots_frein.is_empty():
-		for i in bassin_frein * 2:
+		for i in bassin_frein:
 			var l := SpotLight3D.new()
 			l.name = "Frein_%d" % i
 			l.spot_angle = FREIN_ANGLE
@@ -496,53 +489,21 @@ func _eclairer_freins(candidats: Array) -> void:
 		if pa != pb:
 			return pa
 		return a[0] < b[0])
-	for i in _spots_frein.size():
-		var k := i / 2
-		var cote := i % 2
-		var l := _spots_frein[i]
+	for k in _spots_frein.size():
 		if k >= candidats.size():
-			l.visible = false
+			_spots_frein[k].visible = false
 			continue
 		var racine: Node3D = candidats[k][2]
-		var cle: String = candidats[k][3] if candidats[k].size() > 3 else ""
 		var xf := racine.global_transform
 		# l'avant du modèle est son +Z : la poupe est donc en -Z, et le cône regarde vers l'arrière
 		var arriere := -xf.basis.z.normalized()
-		var local := _feu_local(cle, cote)
-		var pos := xf * (local + Vector3(0, 0, -FREIN_DERRIERE_FEU))
+		var recul: float = _demi_longueur(candidats[k][3] if candidats[k].size() > 3 else "") * xf.basis.z.length() + FREIN_MARGE
+		var pos := xf.origin + arriere * recul + Vector3(0, FREIN_HAUTEUR, 0)
+		var l := _spots_frein[k]
 		l.visible = true
 		l.light_energy = FREIN_ENERGY * _night
 		l.global_position = pos
 		l.look_at(pos + arriere + Vector3(0, -FREIN_PLONGEE, 0), Vector3.UP)
-
-
-# Centres des feux arrière gauche et droit d'un modèle, dans son repère, relevés sur les triangles de
-# feu extraits : [gauche, droite], chacun null si ce côté n'a pas d'optique.
-func _centres_cotes(v: PackedVector3Array, boite: AABB) -> Array:
-	var somme := [Vector3.ZERO, Vector3.ZERO]
-	var nb := [0, 0]
-	for t in v.size() / 3:
-		var c := (v[t * 3] + v[t * 3 + 1] + v[t * 3 + 2]) / 3.0
-		var s := 0 if c.x < boite.get_center().x else 1
-		somme[s] += c
-		nb[s] += 1
-	return [(somme[0] / float(nb[0])) if nb[0] > 0 else null, (somme[1] / float(nb[1])) if nb[1] > 0 else null]
-
-
-# Position d'un feu arrière (0 gauche, 1 droite) dans le repère du modèle. Si ce côté n'a pas d'optique
-# extraite, on prend le symétrique de l'autre ; si aucun n'en a, un feu type au bas de la poupe, écarté
-# de l'axe comme les phares.
-func _feu_local(cle: String, cote: int) -> Vector3:
-	var e = _par_modele.get(cle)
-	if e != null and e.has("feux_cotes"):
-		var cotes: Array = e["feux_cotes"]
-		if cotes[cote] != null:
-			return cotes[cote]
-		var autre = cotes[1 - cote]
-		if autre != null:
-			return Vector3(-(autre as Vector3).x, (autre as Vector3).y, (autre as Vector3).z)
-	var demi := _demi_longueur(cle)
-	return Vector3(0.62 * (-1.0 if cote == 0 else 1.0), FREIN_HAUTEUR, -demi)
 
 
 # --- gyrophares : allumage, couleurs, éclairage du décor -------------------------------------------------------------

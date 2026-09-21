@@ -122,33 +122,21 @@ func _flaque_de_frein() -> void:
 		car.queue_free()
 		cam.queue_free()
 		return
-	# DEUX flaques, une par feu (2026-09-21) : une source unique sur l'axe ne montrait qu'une tache.
+	var l: SpotLight3D = spots[0]
+	# distance derriere l'origine, le long de l'axe de la voiture
 	# CONVENTION, verifiee dans Car.gd : l'AVANT d'une voiture est -basis.z (var fwd := -basis.z), donc
 	# sa POUPE est +basis.z. Le modele, lui, porte un lacet de 180° (model_yaw_deg), si bien que son
 	# propre +Z est l'avant : les deux reperes sont opposes. Mesurer le recul sur le mauvais des deux
 	# donne un resultat de signe inverse, ce qui est arrive une fois ici.
 	var xf: Transform3D = car.global_transform
 	var arriere: Vector3 = xf.basis.z.normalized()
-	var cote: Vector3 = xf.basis.x.normalized()
+	var recul: float = (l.global_position - xf.origin).dot(arriere)
 	var demi := 2.08   # demi-longueur mesuree d'une berline du pack a l'echelle 1,65
-	if spots.size() != 2:
-		_fautes.append("%d flaque(s) de freinage sur une voiture qui freine, il en faut 2 (une par feu)" % spots.size())
-	var reculs := PackedFloat32Array()
-	var lateraux := PackedFloat32Array()
-	for l: SpotLight3D in spots:
-		var rel: Vector3 = l.global_position - xf.origin
-		reculs.append(rel.dot(arriere))
-		lateraux.append(rel.dot(cote))
-		if rel.dot(arriere) < demi - 0.05:
-			_fautes.append("une flaque de freinage part de %.2f m de l'origine, soit SOUS la voiture (poupe a %.2f m)" % [rel.dot(arriere), demi])
-		if l.light_cull_mask & 4 != 0:
-			_fautes.append("la flaque de freinage eclaire la carrosserie : le calque 3 doit etre exclu")
-	if lateraux.size() == 2 and (lateraux[0] * lateraux[1] >= 0.0 or minf(absf(lateraux[0]), absf(lateraux[1])) < 0.3):
-		_fautes.append("les deux flaques ne sont pas de part et d'autre de l'axe (%.2f m et %.2f m)" % [lateraux[0], lateraux[1]])
-	var l: SpotLight3D = spots[0]
-	var recul: float = reculs[0]
-	print("VEHICLE_LIGHTS_FLAQUE %d flaque(s), recul %s m (poupe a %.2f m), lateral %s m, masque %d"
-			% [spots.size(), str(reculs), demi, str(lateraux), l.light_cull_mask])
+	if recul < demi:
+		_fautes.append("la flaque de freinage est a %.2f m de l'origine, soit SOUS la voiture (poupe a %.2f m)" % [recul, demi])
+	if l.light_cull_mask & 4 != 0:
+		_fautes.append("la flaque de freinage eclaire la carrosserie : le calque 3 doit etre exclu")
+	print("VEHICLE_LIGHTS_FLAQUE %d flaque(s), recul %.2f m (poupe a %.2f m), masque %d" % [spots.size(), recul, demi, l.light_cull_mask])
 	car.queue_free()
 	cam.queue_free()
 
