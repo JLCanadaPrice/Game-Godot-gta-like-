@@ -78,3 +78,510 @@ static func planchers(mesh: Mesh) -> PackedFloat32Array:
 			out.append(y)
 	out.sort()
 	return out
+
+
+# --- géométrie : triangles à couleurs de sommet, dans le repère du modèle -------------------------------------------------
+
+# Maillage modifiable : sommets, normales, couleurs, indices, au format du maillage fusionné de BuildingModels (une
+# surface, couleurs de sommet, enroulement horaire vu de la normale).
+class Maillage:
+	var v := PackedVector3Array()
+	var n := PackedVector3Array()
+	var c := PackedColorArray()
+	var i := PackedInt32Array()
+
+	static func depuis(mesh: Mesh) -> Maillage:
+		var m := Maillage.new()
+		var a := mesh.surface_get_arrays(0)
+		m.v = a[Mesh.ARRAY_VERTEX]
+		m.n = a[Mesh.ARRAY_NORMAL]
+		m.c = a[Mesh.ARRAY_COLOR] if a[Mesh.ARRAY_COLOR] != null else PackedColorArray()
+		if m.c.is_empty():
+			m.c.resize(m.v.size())
+			m.c.fill(Color.WHITE)
+		m.i = a[Mesh.ARRAY_INDEX]
+		return m
+
+	# Triangle orienté comme Godot l'attend (horaire vu du côté de `normale`).
+	func tri(p0: Vector3, p1: Vector3, p2: Vector3, normale: Vector3, c0: Color, c1: Color, c2: Color) -> void:
+		var base := v.size()
+		var inverse := (p1 - p0).cross(p2 - p0).dot(normale) > 0.0
+		v.append_array(PackedVector3Array([p0, p2, p1] if inverse else [p0, p1, p2]))
+		c.append_array(PackedColorArray([c0, c2, c1] if inverse else [c0, c1, c2]))
+		for k in 3:
+			n.append(normale)
+		i.append_array(PackedInt32Array([base, base + 1, base + 2]))
+
+	func quad(a: Vector3, b: Vector3, cc: Vector3, d: Vector3, normale: Vector3, couleur: Color) -> void:
+		tri(a, b, cc, normale, couleur, couleur, couleur)
+		tri(a, cc, d, normale, couleur, couleur, couleur)
+
+	# Boîte alignée sur les axes, faces tournées vers l'extérieur. `sans` : faces à omettre ("-y", "+x", ...).
+	func boite(mn: Vector3, mx: Vector3, couleur: Color, sans: Array = []) -> void:
+		var faces := {
+			"+x": [Vector3(mx.x, mn.y, mn.z), Vector3(mx.x, mn.y, mx.z), Vector3(mx.x, mx.y, mx.z), Vector3(mx.x, mx.y, mn.z), Vector3.RIGHT],
+			"-x": [Vector3(mn.x, mn.y, mx.z), Vector3(mn.x, mn.y, mn.z), Vector3(mn.x, mx.y, mn.z), Vector3(mn.x, mx.y, mx.z), Vector3.LEFT],
+			"+y": [Vector3(mn.x, mx.y, mn.z), Vector3(mx.x, mx.y, mn.z), Vector3(mx.x, mx.y, mx.z), Vector3(mn.x, mx.y, mx.z), Vector3.UP],
+			"-y": [Vector3(mn.x, mn.y, mx.z), Vector3(mx.x, mn.y, mx.z), Vector3(mx.x, mn.y, mn.z), Vector3(mn.x, mn.y, mn.z), Vector3.DOWN],
+			"+z": [Vector3(mx.x, mn.y, mx.z), Vector3(mn.x, mn.y, mx.z), Vector3(mn.x, mx.y, mx.z), Vector3(mx.x, mx.y, mx.z), Vector3.BACK],
+			"-z": [Vector3(mn.x, mn.y, mn.z), Vector3(mx.x, mn.y, mn.z), Vector3(mx.x, mx.y, mn.z), Vector3(mn.x, mx.y, mn.z), Vector3.FORWARD],
+		}
+		for cle in faces:
+			if cle in sans:
+				continue
+			var f: Array = faces[cle]
+			quad(f[0], f[1], f[2], f[3], f[4], couleur)
+
+	# DÉCOUPE : retire un rectangle des faces planes perpendiculaires à `axe` ("x", "y" ou "z") dont la coordonnée
+	# est dans [a_min, a_max]. `rect` est dans les deux autres coordonnées : (x, z) pour "y", (z, y) pour "x", (x, y)
+	# pour "z". Chaque triangle touché est remplacé par ses morceaux HORS du rectangle — le triangle moins le
+	# rectangle se découpe en au plus quatre polygones convexes (à gauche, à droite, puis devant et derrière dans la
+	# bande du milieu), chacun rogné par Sutherland-Hodgman et retriangulé en éventail dans le même sens. Couleurs
+	# interpolées le long des arêtes. Rend le nombre de triangles touchés : une cote relevée qui ne toucherait rien
+	# est une cote fausse, et l'appelant échoue.
+	func decouper(axe: String, a_min: float, a_max: float, rect: Rect2) -> int:
+		var k_axe := {"x": 0, "y": 1, "z": 2}[axe] as int
+		var k_u := {"x": 2, "y": 0, "z": 0}[axe] as int
+		var k_v := {"x": 1, "y": 2, "z": 1}[axe] as int
+		var u0 := rect.position.x
+		var u1 := rect.end.x
+		var v0 := rect.position.y
+		var v1 := rect.end.y
+		var nv := PackedVector3Array()
+		var nn := PackedVector3Array()
+		var nc := PackedColorArray()
+		var ni := PackedInt32Array()
+		var touches := 0
+		for t in range(0, i.size() - 2, 3):
+			var p := [v[i[t]], v[i[t + 1]], v[i[t + 2]]]
+			var cols := [c[i[t]], c[i[t + 1]], c[i[t + 2]]]
+			var normale: Vector3 = n[i[t]]
+			var plan := absf((p[0] as Vector3)[k_axe] - (p[1] as Vector3)[k_axe]) < 0.005 and absf((p[0] as Vector3)[k_axe] - (p[2] as Vector3)[k_axe]) < 0.005
+			var dedans := plan and (p[0] as Vector3)[k_axe] >= a_min and (p[0] as Vector3)[k_axe] <= a_max
+			var pu := [(p[0] as Vector3)[k_u], (p[1] as Vector3)[k_u], (p[2] as Vector3)[k_u]]
+			var pv := [(p[0] as Vector3)[k_v], (p[1] as Vector3)[k_v], (p[2] as Vector3)[k_v]]
+			if dedans:
+				dedans = maxf(pu[0], maxf(pu[1], pu[2])) > u0 + 0.0001 and minf(pu[0], minf(pu[1], pu[2])) < u1 - 0.0001 \
+						and maxf(pv[0], maxf(pv[1], pv[2])) > v0 + 0.0001 and minf(pv[0], minf(pv[1], pv[2])) < v1 - 0.0001
+			if not dedans:
+				var b := nv.size()
+				for s in 3:
+					nv.append(p[s])
+					nn.append(n[i[t + s]])
+					nc.append(cols[s])
+				ni.append_array(PackedInt32Array([b, b + 1, b + 2]))
+				continue
+			touches += 1
+			var poly := [[p[0], cols[0]], [p[1], cols[1]], [p[2], cols[2]]]
+			var morceaux := [
+				Maillage._rogner(poly, k_u, u0, -1.0),
+				Maillage._rogner(poly, k_u, u1, 1.0),
+				Maillage._rogner(Maillage._rogner(Maillage._rogner(poly, k_u, u0, 1.0), k_u, u1, -1.0), k_v, v0, -1.0),
+				Maillage._rogner(Maillage._rogner(Maillage._rogner(poly, k_u, u0, 1.0), k_u, u1, -1.0), k_v, v1, 1.0),
+			]
+			for m: Array in morceaux:
+				for s in range(1, m.size() - 1):
+					var q0: Vector3 = m[0][0]
+					var q1: Vector3 = m[s][0]
+					var q2: Vector3 = m[s + 1][0]
+					if (q1 - q0).cross(q2 - q0).length_squared() < 1e-10:
+						continue
+					var b := nv.size()
+					nv.append_array(PackedVector3Array([q0, q1, q2]))
+					nc.append_array(PackedColorArray([m[0][1], m[s][1], m[s + 1][1]]))
+					for r in 3:
+						nn.append(normale)
+					ni.append_array(PackedInt32Array([b, b + 1, b + 2]))
+		v = nv
+		n = nn
+		c = nc
+		i = ni
+		return touches
+
+	# Sutherland-Hodgman sur un demi-plan : garde les points dont la coordonnée `k` est du côté `signe` de `seuil`
+	# (signe -1 : coordonnée <= seuil ; +1 : >= seuil). Points : [position, couleur].
+	static func _rogner(poly: Array, k: int, seuil: float, signe: float) -> Array:
+		var out: Array = []
+		if poly.size() < 3:
+			return out
+		for s in poly.size():
+			var a: Array = poly[s]
+			var b: Array = poly[(s + 1) % poly.size()]
+			var da := ((a[0] as Vector3)[k] - seuil) * signe
+			var db := ((b[0] as Vector3)[k] - seuil) * signe
+			if da >= 0.0:
+				out.append(a)
+			if (da >= 0.0) != (db >= 0.0):
+				var tt := da / (da - db)
+				out.append([(a[0] as Vector3).lerp(b[0], tt), (a[1] as Color).lerp(b[1], tt)])
+		return out
+
+	# Couleur d'une face : celle du premier triangle horizontal (axe "y") ou vertical trouvé au point `p`, pour que
+	# les faces ajoutées (bords de trémie, joues de travée) prennent la teinte de la pièce qu'elles prolongent.
+	func couleur_pres(p: Vector3, axe: String) -> Color:
+		var k := {"x": 0, "y": 1, "z": 2}[axe] as int
+		var meilleur := Color(0.3, 0.3, 0.3)
+		var d_min := INF
+		for t in range(0, i.size() - 2, 3):
+			var q := v[i[t]]
+			if absf(q[k] - p[k]) > 0.01:
+				continue
+			var cen := (q + v[i[t + 1]] + v[i[t + 2]]) / 3.0
+			var d := cen.distance_to(p)
+			if d < d_min:
+				d_min = d
+				meilleur = c[i[t]]
+		return meilleur
+
+	func ajouter(autre: Maillage) -> void:
+		var b := v.size()
+		v.append_array(autre.v)
+		n.append_array(autre.n)
+		c.append_array(autre.c)
+		for k in autre.i:
+			i.append(b + k)
+
+	func vers_mesh(materiau: Material, nom: String, lods := true) -> Mesh:
+		var arrays := []
+		arrays.resize(Mesh.ARRAY_MAX)
+		arrays[Mesh.ARRAY_VERTEX] = v
+		arrays[Mesh.ARRAY_NORMAL] = n
+		arrays[Mesh.ARRAY_COLOR] = c
+		arrays[Mesh.ARRAY_INDEX] = i
+		var importer := ImporterMesh.new()
+		importer.add_surface(Mesh.PRIMITIVE_TRIANGLES, arrays, [], {}, materiau, nom)
+		if lods:
+			importer.generate_lods(25.0, 60.0, [])
+		return importer.get_mesh()
+
+	# Faces de collision (trois sommets par triangle), dans l'enroulement du maillage.
+	func faces() -> PackedVector3Array:
+		var out := PackedVector3Array()
+		for k in i:
+			out.append(v[k])
+		return out
+
+
+# --- le parking praticable : cotes relevées sur le modèle --------------------------------------------------------------
+
+const RIVE_BOUT_INT := 21.76               # face intérieure du muret de bout est (x)
+const RIVE_BOUT_EXT := 23.10               # face extérieure (x)
+const RIVE_HAUT := 1.95                    # hauteur du muret au-dessus du plancher (6,88 - 4,93 ; 2,31 - 0,36)
+const TRAVEE_SUD := Vector2(-7.70, -3.54)  # travée sud du bout est (z) : entre la tour d'angle et le montant
+const MONTANT_X := Vector2(22.12, 22.99)   # montant qui borde la travée au nord (x), plein de 0 à 18,99 m
+const TOUR_ANGLE_X := 24.18                # face est de la tour d'angle, pour z < -7,70
+const TOUR_VITREE_Z := 7.48                # face de la tour vitrée côté parking : un plan SANS épaisseur
+const PASSAGE_OUEST_X := -3.87             # joue ouest du passage d'entrée du rez (plan x = -3,87, y 0..4,58)
+
+# Escalier (dans la pièce de la tour vitrée, x -5,52..5,52, z 7,48..9,80) : deux volées de 13 contremarches de part et
+# d'autre d'un palier, giron 0,28 m (32° pour 4,57 m entre planchers). Rampe de collision INVISIBLE par les nez de
+# marches : le joueur la monte comme une pente, les marches ne sont que visuelles.
+const GIRON := 0.28
+const DEMI_MARCHES := 13
+const ESC_X0 := -4.2                       # première contremarche de la volée A (vers +x)
+const ESC_PIED := -4.48                    # pied de la rampe A, et arrivée de la rampe B à l'étage (= bord de trémie)
+const ESC_PALIER := Vector2(-0.84, 0.64)   # palier intermédiaire (x)
+const ESC_A := Vector2(7.60, 8.60)         # volée A (z)
+const ESC_B := Vector2(8.70, 9.70)         # volée B (z)
+const ESC_MUR := Vector2(8.60, 8.70)       # mur d'échiffre entre les volées (z)
+const ESC_TREMIE := Rect2(-4.48, 7.55, 5.12, 2.25)   # trémie dans la dalle du dessus : x -4,48..0,64, z 7,55..9,80
+const ESC_PORTE := Vector2(-5.52, -4.2)    # porte dans la face de la tour (x), 2,2 m de haut
+const ESC_PORTE_H := 2.2
+const BETON_ESCALIER := Color(0.46, 0.46, 0.44)
+const GARDE_CORPS := Color(0.30, 0.31, 0.33)
+
+
+# Dessous des dalles, relevés comme les planchers (faces tournées vers le bas de plus de 500 m²) : le plus haut sous
+# chaque plancher, à moins de 0,5 m.
+static func dessous(mesh: Mesh, sols: PackedFloat32Array) -> PackedFloat32Array:
+	var aires := {}
+	var a := mesh.surface_get_arrays(0)
+	var v: PackedVector3Array = a[Mesh.ARRAY_VERTEX]
+	var n: PackedVector3Array = a[Mesh.ARRAY_NORMAL]
+	var idx: PackedInt32Array = a[Mesh.ARRAY_INDEX]
+	for t in range(0, idx.size() - 2, 3):
+		var nn := (n[idx[t]] + n[idx[t + 1]] + n[idx[t + 2]]).normalized()
+		if nn.y > -0.99:
+			continue
+		var p0 := v[idx[t]]
+		var y := snappedf((p0.y + v[idx[t + 1]].y + v[idx[t + 2]].y) / 3.0, 0.01)
+		aires[y] = float(aires.get(y, 0.0)) + (v[idx[t + 1]] - p0).cross(v[idx[t + 2]] - p0).length() * 0.5
+	var out := PackedFloat32Array()
+	for s in sols:
+		var meilleur := s - 0.37
+		for y in aires:
+			if float(aires[y]) > 500.0 and y < s and y > s - 0.5:
+				meilleur = y
+		out.append(meilleur)
+	return out
+
+
+# Le parking rendu praticable, dans son repère : maillage (la fusion du modèle, découpé et complété, un seul
+# matériau) et triangles de collision (le modèle découpé, les escaliers, leurs rampes invisibles).
+# `escaliers` : nombre d'étages desservis par l'escalier (1 = rez -> niveau 1) ;
+# `travees` : plateaux dont la travée sud du bout est est ouverte (raccord à la rampe extérieure).
+static func praticable(mesh: Mesh, materiau: Material, nom: String, escaliers: int, travees: Array) -> Dictionary:
+	var sols := planchers(mesh)
+	var bas := dessous(mesh, sols)
+	var m := Maillage.depuis(mesh)
+	var col := Maillage.new()      # collision seule (rampes invisibles)
+	var stats := {"planchers": sols, "dessous": bas, "decoupes": {}}
+	var fautes: Array[String] = []
+	for k in escaliers:
+		_porte(m, sols[k], stats, fautes)
+		if k == 0:
+			_compte(stats, fautes, "joue ouest du passage", m.decouper("x", PASSAGE_OUEST_X - 0.01, PASSAGE_OUEST_X + 0.01,
+					Rect2(TOUR_VITREE_Z, -0.01, 11.87 - TOUR_VITREE_Z, 4.60)))
+		_tremie(m, sols[k + 1], bas[k + 1], stats, fautes)
+		_escalier(m, col, sols[k], sols[k + 1], k == escaliers - 1)
+	if escaliers > 0:
+		_porte(m, sols[escaliers], stats, fautes)
+	for k: int in travees:
+		_travee(m, sols[k], stats, fautes)
+	var faces := m.faces()
+	faces.append_array(col.faces())
+	return {"mesh": m.vers_mesh(materiau, nom), "faces": faces, "stats": stats, "fautes": fautes, "planchers": sols}
+
+
+static func _compte(stats: Dictionary, fautes: Array[String], quoi: String, touches: int) -> void:
+	stats["decoupes"][quoi] = int(stats["decoupes"].get(quoi, 0)) + touches
+	if touches == 0:
+		fautes.append("découpe « %s » : aucun triangle touché, la cote relevée ne correspond plus au modèle" % quoi)
+
+
+# Porte dans la face de la tour vitrée côté parking, au niveau `y`.
+static func _porte(m: Maillage, y: float, stats: Dictionary, fautes: Array[String]) -> void:
+	_compte(stats, fautes, "porte de la tour", m.decouper("z", TOUR_VITREE_Z - 0.01, TOUR_VITREE_Z + 0.01,
+			Rect2(ESC_PORTE.x, y, ESC_PORTE.y - ESC_PORTE.x, ESC_PORTE_H)))
+
+
+# Trémie dans la dalle du plancher `y` (dessous `yb`) : dessus, dessous et, au niveau 1, plafond du passage d'entrée
+# (4,58 m) retirés sur ESC_TREMIE ; quatre chants de dalle ajoutés, à la teinte de la dalle.
+static func _tremie(m: Maillage, y: float, yb: float, stats: Dictionary, fautes: Array[String]) -> void:
+	var r := ESC_TREMIE
+	var teinte := m.couleur_pres(Vector3(r.position.x - 1.0, y, r.get_center().y), "y")
+	_compte(stats, fautes, "trémie", m.decouper("y", yb - 0.01, y + 0.01, r))
+	var x0 := r.position.x
+	var x1 := r.end.x
+	var z0 := r.position.y
+	var z1 := r.end.y
+	m.quad(Vector3(x0, yb, z0), Vector3(x0, yb, z1), Vector3(x0, y, z1), Vector3(x0, y, z0), Vector3.RIGHT, teinte)
+	m.quad(Vector3(x1, yb, z0), Vector3(x1, yb, z1), Vector3(x1, y, z1), Vector3(x1, y, z0), Vector3.LEFT, teinte)
+	m.quad(Vector3(x0, yb, z0), Vector3(x1, yb, z0), Vector3(x1, y, z0), Vector3(x0, y, z0), Vector3.BACK, teinte)
+	m.quad(Vector3(x0, yb, z1), Vector3(x1, yb, z1), Vector3(x1, y, z1), Vector3(x0, y, z1), Vector3.FORWARD, teinte)
+
+
+# Travée sud du bout est ouverte au plancher `y` : muret retiré (faces extérieure, intérieure et dessus) entre la tour
+# d'angle et le montant ; sol prolongé jusqu'au bord ; joue nord du muret coupé, de part et d'autre du montant (la
+# joue sud est la face de la tour d'angle).
+static func _travee(m: Maillage, y: float, stats: Dictionary, fautes: Array[String]) -> void:
+	var tz := TRAVEE_SUD
+	var sol := m.couleur_pres(Vector3(RIVE_BOUT_INT - 1.0, y, tz.x * 0.5 + tz.y * 0.5), "y")
+	var muret := m.couleur_pres(Vector3(RIVE_BOUT_EXT, y + 1.0, tz.x * 0.5 + tz.y * 0.5), "x")
+	_compte(stats, fautes, "muret de bout (face ext.)", m.decouper("x", RIVE_BOUT_EXT - 0.01, RIVE_BOUT_EXT + 0.01, Rect2(tz.x, y, tz.y - tz.x, RIVE_HAUT + 0.02)))
+	_compte(stats, fautes, "muret de bout (face int.)", m.decouper("x", RIVE_BOUT_INT - 0.01, RIVE_BOUT_INT + 0.01, Rect2(tz.x, y - 0.02, tz.y - tz.x, RIVE_HAUT + 0.04)))
+	_compte(stats, fautes, "muret de bout (dessus)", m.decouper("y", y + RIVE_HAUT - 0.02, y + RIVE_HAUT + 0.02, Rect2(RIVE_BOUT_INT, tz.x, RIVE_BOUT_EXT - RIVE_BOUT_INT, tz.y - tz.x)))
+	m.quad(Vector3(RIVE_BOUT_INT, y, tz.x), Vector3(RIVE_BOUT_EXT, y, tz.x), Vector3(RIVE_BOUT_EXT, y, tz.y), Vector3(RIVE_BOUT_INT, y, tz.y), Vector3.UP, sol)
+	for xs: Vector2 in [Vector2(RIVE_BOUT_INT, MONTANT_X.x), Vector2(MONTANT_X.y, RIVE_BOUT_EXT)]:
+		m.quad(Vector3(xs.x, y, tz.y), Vector3(xs.y, y, tz.y), Vector3(xs.y, y + RIVE_HAUT, tz.y), Vector3(xs.x, y + RIVE_HAUT, tz.y), Vector3.FORWARD, muret)
+
+
+# Escalier du plancher y0 au plancher y1, dans la tour vitrée. Visuel (marches pleines, palier, mur d'échiffre,
+# garde-corps) dans `m`, avec collision ; rampes invisibles par les nez de marches dans `col`.
+static func _escalier(m: Maillage, col: Maillage, y0: float, y1: float, dernier: bool) -> void:
+	var r := (y1 - y0) / float(2 * DEMI_MARCHES)
+	var ya := y0 + r * DEMI_MARCHES              # palier
+	# volée A : marches pleines posées sur le plancher
+	for k in range(1, DEMI_MARCHES):
+		var xa := ESC_X0 + float(k - 1) * GIRON
+		m.boite(Vector3(xa, y0, ESC_A.x), Vector3(xa + GIRON, y0 + r * k, ESC_A.y), BETON_ESCALIER)
+	# palier, dalle de 0,15 m (au rez, le passage des voitures passe dessous)
+	m.boite(Vector3(ESC_PALIER.x, ya - 0.15, ESC_A.x), Vector3(ESC_PALIER.y, ya, ESC_B.y), BETON_ESCALIER)
+	# volée B : marches portées, sous-face en escalier ; la 13e affleure le plancher du dessus (bord de trémie)
+	for k in range(1, DEMI_MARCHES + 1):
+		var xb := ESC_PALIER.x - float(k) * GIRON
+		m.boite(Vector3(xb, ya + r * k - r - 0.15, ESC_B.x), Vector3(xb + GIRON, ya + r * k, ESC_B.y), BETON_ESCALIER)
+	# mur d'échiffre entre les volées, garde-corps au bout du palier, écran côté vitrage (le muret de façade est derrière)
+	var haut := y1 + (1.0 if dernier else 0.0)
+	m.boite(Vector3(ESC_X0, y0, ESC_MUR.x), Vector3(ESC_PALIER.x, haut, ESC_MUR.y), BETON_ESCALIER)
+	m.boite(Vector3(ESC_PALIER.y, ya, ESC_A.x), Vector3(ESC_PALIER.y + 0.06, ya + 1.0, ESC_B.y), GARDE_CORPS)
+	m.boite(Vector3(ESC_PIED, y0 + RIVE_HAUT, ESC_B.y + 0.02), Vector3(ESC_PALIER.y, y1 + 1.0, ESC_B.y + 0.10), GARDE_CORPS)
+	# rampes invisibles PAR LES NEZ DE MARCHES : A du pied (plancher) au palier, palier, B du palier au plancher du
+	# dessus. Le nez d'une marche de B est son bord EST (on monte vers -x) : la ligne des nez part du palier un giron
+	# à l'est de la première marche (-0,56) et atteint le plancher au nez de la 13e (-4,2), dont le dessus affleure
+	# jusqu'au bord de trémie. Posée de -0,84 à -4,48, elle passait une contremarche SOUS chaque nez et le pied
+	# d'une capsule butait sur la première marche (vu par ParkingStructureTest).
+	var nez_b := ESC_PALIER.x + GIRON
+	col.quad(Vector3(ESC_PIED, y0, ESC_A.x), Vector3(ESC_PALIER.x, ya, ESC_A.x), Vector3(ESC_PALIER.x, ya, ESC_A.y), Vector3(ESC_PIED, y0, ESC_A.y), Vector3.UP, Color.WHITE)
+	col.quad(Vector3(ESC_PALIER.x, ya, ESC_A.x), Vector3(ESC_PALIER.y, ya, ESC_A.x), Vector3(ESC_PALIER.y, ya, ESC_B.y), Vector3(ESC_PALIER.x, ya, ESC_B.y), Vector3.UP, Color.WHITE)
+	col.quad(Vector3(nez_b, ya, ESC_B.x), Vector3(ESC_X0, y1, ESC_B.x), Vector3(ESC_X0, y1, ESC_B.y), Vector3(nez_b, ya, ESC_B.y), Vector3.UP, Color.WHITE)
+	col.quad(Vector3(ESC_X0, y1, ESC_B.x), Vector3(ESC_PIED, y1, ESC_B.x), Vector3(ESC_PIED, y1, ESC_B.y), Vector3(ESC_X0, y1, ESC_B.y), Vector3.UP, Color.WHITE)
+
+
+# --- rampe extérieure en hélice (exemplaire de l'aéroport) -------------------------------------------------------------
+#
+# Pourquoi dehors : 4,57 m d'un plancher à l'autre exigent au moins 38,1 m de rampe à 12 %, dans une dalle de 42 m ;
+# ses deux bouts tomberaient contre les murs de bout, sans place pour y entrer ni en sortir en tournant (mesuré avec le
+# rayon de braquage du joueur, 5,5 m à basse vitesse, et même pas avec celui d'une vraie voiture). Dehors, une hélice
+# tient la pente sur 300° de tour : paliers plats de 60° devant la travée sud du bout est, à chaque niveau ; rampes
+# de 300° entre deux paliers, raccordées en douceur sur 20° (pente qui monte et redescend linéairement). Même le
+# bord INTÉRIEUR, le plus raide, reste sous 12 % : 4,57 m sur 280° utiles à 8 m de l'axe = 11,7 %.
+#
+# Angles en degrés, mesurés de +x vers +z autour de HELICE_C ; on MONTE dans le sens des angles croissants.
+const HELICE_C := Vector2(37.2, -5.62)     # centre : aligné sur la travée sud, à 13 m de la tour d'angle
+const R_INT := 8.0
+const R_EXT := 12.5
+const PARAPET := 0.3
+const PARAPET_H := 1.1
+const EPAIS := 0.3
+const PAS := 3.0
+const PALIER_DEMI := 30.0
+const RACCORD := 20.0
+const ENTREE_DEBUT := 110.0                # rampe d'entrée depuis le sol du site, jusqu'au palier du rez (150°)
+const BETON := Color(0.58, 0.58, 0.55)
+const JUPE_H := 2.5                        # sous cette hauteur, le dessous de la voie est fermé jusqu'au sol
+const POTEAUX := [25.0, 135.0, 240.0, 300.0]   # hors du palier (150..210) et de l'approche de la bouche (60..110)
+const BETON_SOUS := Color(0.42, 0.42, 0.40)
+const ENROBE := Color(0.24, 0.24, 0.25)
+
+
+# Hauteur de la voie à l'angle `phi`, sur les paliers 0..n (plancher k centré sur 180 + 360 k).
+static func hauteur(phi: float, sols: PackedFloat32Array) -> float:
+	if phi < 180.0 - PALIER_DEMI:
+		var u := clampf((phi - ENTREE_DEBUT) / (180.0 - PALIER_DEMI - ENTREE_DEBUT), 0.0, 1.0)
+		return sols[0] * (u * u * (3.0 - 2.0 * u))
+	var k := floori((phi - (180.0 - PALIER_DEMI)) / 360.0)
+	if k >= sols.size() - 1:
+		return sols[sols.size() - 1]
+	var debut := 180.0 + PALIER_DEMI + 360.0 * k      # fin du palier k
+	if phi <= debut:
+		return sols[k]
+	var longueur := 360.0 - 2.0 * PALIER_DEMI
+	var u2 := phi - debut
+	var montee := sols[k + 1] - sols[k]
+	var m0 := montee / (longueur - RACCORD)
+	if u2 >= longueur:
+		return sols[k + 1]
+	if u2 <= RACCORD:
+		return sols[k] + m0 * u2 * u2 / (2.0 * RACCORD)
+	if u2 >= longueur - RACCORD:
+		return sols[k + 1] - m0 * (longueur - u2) * (longueur - u2) / (2.0 * RACCORD)
+	return sols[k] + m0 * (u2 - RACCORD * 0.5)
+
+
+static func point(phi: float, r: float, y: float) -> Vector3:
+	var a := deg_to_rad(phi)
+	return Vector3(HELICE_C.x + r * cos(a), y, HELICE_C.y + r * sin(a))
+
+
+# L'hélice, jusqu'au palier du plancher `jusqu_a`, en quads [a, b, c, d, normale, couleur, collision] dans le repère du
+# parking. Plus : le parvis de chaque palier jusqu'au bâtiment, ses garde-corps, le noyau, les poteaux, la jupe qui
+# ferme le dessous du premier tour, le mur de bout. Et l'axe de la voie (pour les sondes de conduite).
+static func helice(sols: PackedFloat32Array, jusqu_a: int) -> Dictionary:
+	var quads: Array = []
+	var fin := 180.0 + PALIER_DEMI + 360.0 * jusqu_a
+	var sous_sols := sols.slice(0, jusqu_a + 1)
+	var phi := ENTREE_DEBUT
+	while phi < fin - 0.001:
+		var p2 := minf(phi + PAS, fin)
+		var h1 := hauteur(phi, sous_sols)
+		var h2 := hauteur(p2, sous_sols)
+		# dessus (enrobé), dessous
+		quads.append([point(phi, R_INT, h1), point(phi, R_EXT, h1), point(p2, R_EXT, h2), point(p2, R_INT, h2), Vector3.UP, ENROBE, true])
+		quads.append([point(phi, R_INT, h1 - EPAIS), point(phi, R_EXT, h1 - EPAIS), point(p2, R_EXT, h2 - EPAIS), point(p2, R_INT, h2 - EPAIS), Vector3.DOWN, BETON_SOUS, true])
+		var milieu := fmod(phi + PAS * 0.5, 360.0)
+		var au_palier := milieu > 180.0 - PALIER_DEMI and milieu < 180.0 + PALIER_DEMI and phi >= 180.0 - PALIER_DEMI - 0.001
+		var dehors := Vector3(cos(deg_to_rad(phi + PAS * 0.5)), 0, sin(deg_to_rad(phi + PAS * 0.5)))
+		if not au_palier:
+			# parapet extérieur : face intérieure, dessus, face extérieure (jusqu'au sous-face de la dalle)
+			quads.append([point(phi, R_EXT, h1), point(p2, R_EXT, h2), point(p2, R_EXT, h2 + PARAPET_H), point(phi, R_EXT, h1 + PARAPET_H), -dehors, BETON, true])
+			quads.append([point(phi, R_EXT, h1 + PARAPET_H), point(p2, R_EXT, h2 + PARAPET_H), point(p2, R_EXT + PARAPET, h2 + PARAPET_H), point(phi, R_EXT + PARAPET, h1 + PARAPET_H), Vector3.UP, BETON, false])
+			# jupe jusqu'au sol là où le dessous de la voie est trop bas pour qu'une voiture y passe (JUPE_H) :
+			# ailleurs, la face s'arrête sous la dalle — sinon la jupe du premier tour enfermait la bouche de la
+			# rampe d'entrée, et une voiture qui redescendait restait prisonnière sous le premier tour (vu par
+			# ParkingStructureTest)
+			var bas1 := 0.0 if h1 - EPAIS < JUPE_H else h1 - EPAIS
+			var bas2 := 0.0 if h2 - EPAIS < JUPE_H else h2 - EPAIS
+			quads.append([point(phi, R_EXT + PARAPET, bas1), point(p2, R_EXT + PARAPET, bas2), point(p2, R_EXT + PARAPET, h2 + PARAPET_H), point(phi, R_EXT + PARAPET, h1 + PARAPET_H), dehors, BETON, true])
+		else:
+			# au palier, le chant de la dalle côté parvis
+			quads.append([point(phi, R_EXT, h1 - EPAIS), point(p2, R_EXT, h2 - EPAIS), point(p2, R_EXT, h2), point(phi, R_EXT, h1), dehors, BETON_SOUS, false])
+		phi = p2
+	# noyau : cylindre plein du sol au-dessus du dernier palier
+	var haut_noyau := sols[jusqu_a] + PARAPET_H
+	var a := ENTREE_DEBUT - 360.0
+	while a < ENTREE_DEBUT - 0.001:
+		var a2 := a + PAS * 2.0
+		var d := Vector3(cos(deg_to_rad(a + PAS)), 0, sin(deg_to_rad(a + PAS)))
+		quads.append([point(a, R_INT, 0.0), point(a2, R_INT, 0.0), point(a2, R_INT, haut_noyau), point(a, R_INT, haut_noyau), d, BETON, true])
+		var cen := Vector3(HELICE_C.x, haut_noyau, HELICE_C.y)
+		quads.append([cen, point(a, R_INT, haut_noyau), point(a2, R_INT, haut_noyau), cen, Vector3.UP, BETON, false])
+		a = a2
+	# poteaux sous le bord extérieur (hors du côté bâtiment)
+	for ang: float in POTEAUX:
+		var c := point(ang, R_EXT + PARAPET + 0.25, 0.0)
+		for q in _boite_quads(Vector3(c.x - 0.25, 0.0, c.z - 0.25), Vector3(c.x + 0.25, sols[jusqu_a] + PARAPET_H, c.z + 0.25), BETON):
+			quads.append(q)
+	# mur de bout, en travers de la voie, au bout du dernier palier
+	var hf := hauteur(fin, sous_sols)
+	var dir_fin := Vector3(-sin(deg_to_rad(fin)), 0, cos(deg_to_rad(fin)))
+	quads.append([point(fin, R_INT, hf), point(fin, R_EXT, hf), point(fin, R_EXT, hf + PARAPET_H), point(fin, R_INT, hf + PARAPET_H), -dir_fin, BETON, true])
+	# parvis entre chaque palier et le bâtiment, garde-corps à ses deux bouts
+	for k in jusqu_a + 1:
+		for q in _parvis(sols[k]):
+			quads.append(q)
+	# axe de la voie, pour les sondes : du sol (entrée) au dernier palier
+	var axe := PackedVector3Array()
+	var ph := ENTREE_DEBUT
+	while ph <= fin + 0.001:
+		axe.append(point(ph, (R_INT + R_EXT) * 0.5, hauteur(ph, sous_sols)))
+		ph += PAS
+	return {"quads": quads, "axe": axe, "pente_max_bord_int": _pente_max(sous_sols, R_INT)}
+
+
+# Parvis d'un palier : entre l'arc extérieur du palier (R_EXT, 150..210°) et le bâtiment — la face du muret de bout
+# (x = 23,10) au droit de la travée, la tour d'angle (x = 24,18) au-delà de z = -7,70. Plat, à la hauteur du plancher.
+static func _parvis(y: float) -> Array:
+	var out: Array = []
+	var phi := 180.0 - PALIER_DEMI
+	while phi < 180.0 + PALIER_DEMI - 0.001:
+		var p2 := phi + PAS
+		var e1 := point(phi, R_EXT, y)
+		var e2 := point(p2, R_EXT, y)
+		var b1 := Vector3(_face_batiment(e1.z), y, e1.z)
+		var b2 := Vector3(_face_batiment(e2.z), y, e2.z)
+		out.append([b1, e1, e2, b2, Vector3.UP, ENROBE, true])
+		out.append([b1 - Vector3(0, EPAIS, 0), e1 - Vector3(0, EPAIS, 0), e2 - Vector3(0, EPAIS, 0), b2 - Vector3(0, EPAIS, 0), Vector3.DOWN, BETON_SOUS, true])
+		phi = p2
+	for ang: float in [180.0 - PALIER_DEMI, 180.0 + PALIER_DEMI]:
+		var e := point(ang, R_EXT + PARAPET, y)
+		var x0 := _face_batiment(e.z)
+		for q in _boite_quads(Vector3(x0, y - EPAIS, e.z - 0.1), Vector3(e.x, y + PARAPET_H, e.z + 0.1), BETON):
+			out.append(q)
+	return out
+
+
+static func _face_batiment(z: float) -> float:
+	return TOUR_ANGLE_X if z < TRAVEE_SUD.x else RIVE_BOUT_EXT
+
+
+static func _boite_quads(mn: Vector3, mx: Vector3, couleur: Color) -> Array:
+	return [
+		[Vector3(mx.x, mn.y, mn.z), Vector3(mx.x, mn.y, mx.z), Vector3(mx.x, mx.y, mx.z), Vector3(mx.x, mx.y, mn.z), Vector3.RIGHT, couleur, true],
+		[Vector3(mn.x, mn.y, mx.z), Vector3(mn.x, mn.y, mn.z), Vector3(mn.x, mx.y, mn.z), Vector3(mn.x, mx.y, mx.z), Vector3.LEFT, couleur, true],
+		[Vector3(mx.x, mn.y, mx.z), Vector3(mn.x, mn.y, mx.z), Vector3(mn.x, mx.y, mx.z), Vector3(mx.x, mx.y, mx.z), Vector3.BACK, couleur, true],
+		[Vector3(mn.x, mn.y, mn.z), Vector3(mx.x, mn.y, mn.z), Vector3(mx.x, mx.y, mn.z), Vector3(mn.x, mx.y, mn.z), Vector3.FORWARD, couleur, true],
+		[Vector3(mn.x, mx.y, mn.z), Vector3(mx.x, mx.y, mn.z), Vector3(mx.x, mx.y, mx.z), Vector3(mn.x, mx.y, mx.z), Vector3.UP, couleur, false],
+	]
+
+
+# Pente la plus forte de la voie au rayon `r`, mesurée sur la fonction de hauteur par pas de 0,5°.
+static func _pente_max(sols: PackedFloat32Array, r: float) -> float:
+	var pire := 0.0
+	var phi := ENTREE_DEBUT
+	var fin := 180.0 + PALIER_DEMI + 360.0 * (sols.size() - 1)
+	while phi < fin:
+		var dh := absf(hauteur(phi + 0.5, sols) - hauteur(phi, sols))
+		pire = maxf(pire, dh / (deg_to_rad(0.5) * r))
+		phi += 0.5
+	return pire

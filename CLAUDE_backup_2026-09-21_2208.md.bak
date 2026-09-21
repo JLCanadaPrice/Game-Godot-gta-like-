@@ -174,7 +174,7 @@ attendu.
 "$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/CarDropTest.tscn     # chute de 10 m : CAR_DROP_RESULT
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/CarKerbTest.tscn          # bordures : le joueur monte, l'IA non
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/WheelSpinTest.tscn        # roues des 72 modèles : axe, sens, rayon, stroboscope, pivot, braquage
-"$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/ParkingStructureTest.tscn  # parkings à étages : plateaux, escalier, hélice, cf. §11
+"$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/ParkingStructureTest.tscn  # parkings à étages : chaque plateau praticable, cf. §11
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/DowntownStreetsTest.tscn
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/DowntownBuildingsTest.tscn
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/ShopBuildingsTest.tscn     # échec ANTÉRIEUR connu
@@ -305,11 +305,6 @@ sans le plafond de 800x450 du §6). Une vue peut imposer sa propre heure par un 
 - **Le mode `"sol"` de `MapShotsTest` élève aussi le point visé** : un point visé au-dessus d'un
   bâtiment accroche son toit et retourne la caméra vers le ciel. Pour une caméra devant un immeuble,
   relever la hauteur du sol et écrire des altitudes absolues.
-- **Une capture prise avec la caméra DU JOUEUR doit rendre la souris libre.** `Player._ready` capture la souris, et
-  tant qu'elle est capturée tout mouvement de souris sur la fenêtre de capture tourne la caméra — en conduite aussi.
-  Payé le 2026-09-21 sur la séquence de l'hélice : des vues de travers et plongeantes, prises d'abord pour un défaut de
-  la caméra de conduite. `Input.mouse_mode = MOUSE_MODE_VISIBLE` après l'instanciation du monde : le gestionnaire du
-  joueur ne lit la souris qu'en mode capturé. (`MapShotsTest` n'est pas concerné : il rend avec sa propre caméra.)
 - Les `.tscn` cuits changent textuellement à chaque cuisson (identifiants de sous-ressources tirés
   au hasard) : un `git status` « modifié » ne prouve pas un changement de contenu.
 - **Il y a DEUX voitures dans ce jeu, et elles ne réagissent pas pareil au décor.** `Car.gd` est un
@@ -1225,50 +1220,3 @@ bord de la chaussée qui dessine la limite, sans herbe ; allée d'enrobé de la 
 exacte versée dans celle du lieu. `ParkingStructureTest` vérifie l'emprise (+0,5 m) : 0 point de chaussée, 0 noeud
 ni arête du graphe de circulation, 0 noeud du PedGraph ou du Circuit — `MapPlacesTest` ne regarde les graphes qu'à
 90 m du centre d'un lieu, et ce parking est à 165 m de celui de l'aéroport. Vues au sol `parking_aeroport_*`.
-
-**Étape 5 — le premier niveau praticable : rampe, escalier, sortie de voiture** (`ParkingStructureKit.praticable` et
-`helice`, appelés par `PlacesBake._parking_etages` et `DowntownBuildingsBake._parking_praticable`). Le maillage du
-parking est découpé et complété à la cuisson (`Maillage.decouper` : soustraction de rectangles alignés sur les axes,
-Sutherland-Hodgman) ; chaque découpe compte ses triangles touchés, et **zéro est une faute** : la cote relevée ne
-correspond plus au modèle.
-
-- **Pourquoi une rampe EXTÉRIEURE.** À 12 %, 4,57 m d'un plancher à l'autre demandent au moins 38,1 m de rampe, dans
-  une dalle de 43,5 m entre murs de bout : ses deux bouts tomberaient contre les murs, sans la place d'y entrer ni d'en
-  sortir en tournant, même au rayon de 5,5 m. Dehors, une **hélice** : centre dans l'axe de la travée sud du bout est
-  (repère du modèle (37,2 ; -5,62), à 13 m de la tour d'angle), voie de 4,5 m entre r = 8 et 12,5 m, parapet de
-  0,3 x 1,1 m, dalle de 0,3 m ; à chaque niveau un **palier plat de 60°** devant la travée ; entre deux paliers,
-  **300° de rampe** raccordés sur 20° ; une rampe d'entrée de 40° depuis le béton du site jusqu'au palier du rez. On
-  monte dans le sens des angles croissants. Pente relevée sur la COLLISION, un rayon tous les 0,25 m : **11,7 % au bord
-  intérieur, 11,0 % à l'axe, 8,0 % au bord extérieur, aucun ressaut (0,000 m)**. Dessous fermé jusqu'au sol là où il
-  passe à moins de 2,5 m (`JUPE_H`), noyau plein au centre, 4 poteaux hors du palier et de l'approche de la bouche.
-  Deux défauts trouvés par le test en conduisant : la jupe du premier tour **enfermait la bouche** de la rampe
-  d'entrée (la voiture qui redescendait restait prisonnière dessous), et deux poteaux étaient plantés sur l'approche.
-- **Travée ouverte** : au rez et au niveau 1, le muret de la travée sud du bout est (z -7,70..-3,54) est découpé et
-  le sol prolongé jusqu'au bord ; on y entre à angle droit depuis le palier (virage à gauche en montant).
-- **Escalier dans la cage vitrée**, dans les QUATRE exemplaires (les trois du centre-ville partagent
-  `downtown/generated/buildings/parking_praticable.res`) : deux volées de 13 contremarches de 0,176 m, giron 0,28 m
-  (32°), de part et d'autre d'un palier ; mur d'échiffre, garde-corps, écran côté vitrage ; porte de 1,32 x 2,2 m
-  découpée dans la face de la tour à chaque niveau desservi ; trémie de 5,12 x 2,25 m dans la dalle du dessus (et,
-  au niveau 1, dans le plafond du passage d'entrée). Collision : **rampes invisibles par les nez de marches**.
-  **Défaut payé** : la rampe de la volée B partait du bord du palier au lieu du NEZ de la première marche, un giron plus
-  à l'est (on monte vers -x, le nez d'une marche de B est son bord EST) : chaque nez dépassait la rampe d'une
-  contremarche. La capsule butait sur la première marche ; le vrai joueur passait quand même, grâce à `StepClimb`
-  (0,4 m) — un contrôle fait avec le seul vrai joueur ne l'aurait pas vu.
-- **Centre-ville : l'escalier, pas de rampe.** Aucun des trois n'a la place d'une rampe à un bout (voisins à moins de
-  8 m). La circulation IA n'entre dans aucun parking : aucune arête du graphe n'y mène.
-- **Sortir d'une voiture ailleurs que sur le sol plat.** `Player._exit_vehicle` posait le joueur à **y = 1,3 fixe**
-  (code du premier commit, monde plat d'essai). Au niveau 1, et partout où la carte est plus haute — le plateau de
-  l'aéroport est à 5,3 m —, c'était SOUS le sol : rejoué avec l'ancien code, `ParkingStructureTest` relève un pied à
-  **-10,75 m**, en chute libre. Il sort maintenant à la hauteur de la voiture (origine + 0,85 m).
-- `ParkingStructureTest` : l'escalier monté du rez au niveau 1 dans les quatre parkings (capsule au centre-ville,
-  VRAI joueur à l'aéroport) ; l'hélice montée puis redescendue par la voiture conduite comme au clavier
-  (`move_forward` / `move_left` / `move_right`, poursuite d'un tracé) **avec le vrai joueur au volant**, qui en sort
-  au niveau 1 (pied à 10,21 m pour un plancher à 10,21) puis sur le béton du site (5,28 pour 5,28).
-- **Limite visuelle connue** : les faces de la tour vitrée n'ont qu'un côté. Depuis la cage d'escalier on voit le
-  parking et la rue au travers, comme du verre ; depuis le parking, la face est opaque.
-- Vues au sol `parking_aeroport_rampe_*`, `_travee_niveau1`, `_porte_rez`, `_escalier`, `_escalier_haut`,
-  `parking_centre_3_escalier*`.
-
-**Reste à faire** (après validation du premier niveau par le joueur) : les niveaux 2 à 4 et le toit (hélice et
-escalier), l'éclairage intérieur de nuit (plafonniers de `base_072` sur matériau partagé, bassin borné de vraies
-lumières), les voitures garées à chaque niveau sur des places marquées.

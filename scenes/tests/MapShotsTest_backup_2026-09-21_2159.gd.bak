@@ -78,18 +78,6 @@ const VIEWS := [
 	["parking_aeroport_allee", Vector3(405.0, 7.0, -1193.0), Vector3(405.0, 6.3, -1176.0), "", 12.0],
 	["parking_aeroport_ouest", Vector3(345.0, 7.0, -1192.0), Vector3(385.0, 7.0, -1166.0), "", 12.0],
 	["parking_aeroport_survol", Vector3(470.0, 60.0, -1235.0), Vector3(395.0, 5.0, -1165.0), "", 12.0],
-	# Etape 5 du parking a etages (rampe en helice, escalier) : repere du modele -> monde = (405 - x, 5,28 + y,
-	# -1167,2 - z). Helice : centre (367,8 ; -1161,58), voie de r 8 a 12,5, palier du rez a 5,64, du niveau 1 a 10,21.
-	["parking_aeroport_rampe_bouche", Vector3(360.03, 6.98, -1175.31), Vector3(375.65, 6.78, -1168.17), "", 12.0],
-	["parking_aeroport_rampe_sol", Vector3(378.05, 7.34, -1161.58), Vector3(371.31, 7.13, -1151.95), "", 12.0],
-	["parking_aeroport_rampe_haut", Vector3(378.05, 11.91, -1161.58), Vector3(375.65, 9.48, -1168.17), "", 12.0],
-	["parking_aeroport_travee_niveau1", Vector3(376.0, 11.91, -1161.58), Vector3(390.0, 11.18, -1161.58), "", 12.0],
-	# escalier : au pied de la volee A, dans la cage (vers le palier) ; en haut de la volee B, au niveau 1, vers le bas
-	["parking_aeroport_porte_rez", Vector3(409.86, 7.34, -1167.2), Vector3(409.86, 6.68, -1174.68), "", 12.0],
-	["parking_aeroport_escalier", Vector3(410.1, 7.34, -1175.3), Vector3(405.84, 7.93, -1175.3), "", 12.0],
-	["parking_aeroport_escalier_haut", Vector3(410.2, 11.91, -1176.4), Vector3(405.84, 8.93, -1176.4), "", 12.0],
-	["parking_centre_3_escalier", Vector3(-765.44, 2.26, 59.06), Vector3(-769.7, 2.85, 59.06), "", 12.0],
-	["parking_centre_3_escalier_haut", Vector3(-765.34, 6.83, 57.96), Vector3(-769.7, 3.85, 57.96), "", 12.0],
 	["lieu_commissariat", Vector3(-690, 6, 115), Vector3(-713, 6, 158)],
 	["lieu_liberty_motors", Vector3(40, 10, -440), Vector3(15, 2, -395)],
 	["lieu_casino", Vector3(-520, 45, -300), Vector3(-586, 30, -365)],

@@ -273,9 +273,8 @@ func _airport() -> void:
 # entre x 300 et 457 ; raquette n_air en (470, -1195), bord à 9,5 m ; deux noeuds du graphe de circulation dans la
 # zone, tous deux sur la raquette ; aucun noeud piéton. Façade (+Z du modèle, l'entrée sous l'auvent) tournée vers
 # la route (lacet de 180°) ; le bout est du modèle, où se raccordera la rampe, du côté ouest du site.
-#  - le parking rendu praticable (ParkingStructureKit.praticable) : escalier dans la tour vitrée, travée sud du bout
-#    est ouverte à chaque niveau desservi par la rampe ; sa collision exacte, versée dans celle du lieu ;
-#  - la rampe extérieure en hélice (ParkingStructureKit.helice) : dans le béton du lieu, collision comprise ;
+#  - le parking : le maillage fusionné (sans ses cônes, BuildingModels.EXCLUS) et sa collision EXACTE
+#    (ParkingStructureKit.collision), versée dans celle du lieu ;
 #  - béton tout autour, au niveau du parking de l'aérogare (dessus du site - 0,02) : il file 2 cm SOUS la route, dont
 #    le bord sud va de z -1194,4 (x 350) à -1190,1 (x 432) — c'est le bord de la chaussée qui dessine la limite, sans
 #    herbe entre les deux ;
@@ -286,8 +285,6 @@ const PARKING_ETAGES_ORIGINE := Vector2(405.0, -1167.2)
 const PARKING_ETAGES_LACET := PI
 const PARKING_ETAGES_BETON := Rect2(352.0, -1196.0, 80.0, 51.0)
 const PARKING_ETAGES_ALLEE := Rect2(400.0, -1196.0, 10.0, 17.65)
-const PARKING_ETAGES_ESCALIERS := 1        # étages desservis par l'escalier (1 : rez -> niveau 1)
-const PARKING_ETAGES_HELICE := 1           # dernier palier desservi par la rampe en hélice (1 : niveau 1)
 const ParkingKit := preload("res://scenes/world/map/tools/ParkingStructureKit.gd")
 
 
@@ -295,39 +292,18 @@ func _parking_etages(top: float) -> void:
 	var y := top - 0.02
 	var info := models.get_model(PARKING_ETAGES)
 	var xf := Transform3D(Basis(Vector3.UP, PARKING_ETAGES_LACET), Vector3(PARKING_ETAGES_ORIGINE.x, y, PARKING_ETAGES_ORIGINE.y))
-	var travees: Array = []
-	for k in PARKING_ETAGES_HELICE + 1:
-		travees.append(k)
-	var p := ParkingKit.praticable(info["mesh"], models.material, PARKING_ETAGES, PARKING_ETAGES_ESCALIERS, travees)
-	for f: String in p["fautes"]:
-		push_error("PARKING_ETAGES %s" % f)
-	var chemin := OUT.path_join("%s_parking_etages.res" % String(place.get_meta("place_id")))
-	ResourceSaver.save(p["mesh"], chemin)
 	var mi := MeshInstance3D.new()
 	mi.name = "%s_%d" % [PARKING_ETAGES, place.get_child_count()]
-	mi.mesh = load(chemin)
+	mi.mesh = info["mesh"]
 	mi.transform = xf
 	mi.visibility_range_end = 2500.0
 	place.add_child(mi)
-	for q: Vector3 in p["faces"]:
+	var forme := ParkingKit.collision(info["mesh"])
+	for q: Vector3 in forme.get_faces():
 		faces.append(xf * q)
 	stats["modèles"] += 1
-	stats["triangles"] += (p["mesh"] as Mesh).surface_get_array_index_len(0) / 3
-	stats["parking_etages"] = {"collision": (p["faces"] as PackedVector3Array).size() / 3, "decoupes": p["stats"]["decoupes"], "fautes": p["fautes"].size()}
-	if PARKING_ETAGES_HELICE >= 0:
-		var h := ParkingKit.helice(p["planchers"], PARKING_ETAGES_HELICE)
-		for q: Array in h["quads"]:
-			_quad("paint", xf * (q[0] as Vector3), xf * (q[1] as Vector3), xf * (q[2] as Vector3), xf * (q[3] as Vector3),
-					xf.basis * (q[4] as Vector3), [], q[5], q[6])
-		var c := xf * Vector3(ParkingKit.HELICE_C.x, 0.0, ParkingKit.HELICE_C.y)
-		var d := 2.0 * (ParkingKit.R_EXT + ParkingKit.PARAPET + 0.5)
-		footprints.append(_rect_footprint("building", Vector2(c.x, c.z), Vector2(d, d)))
-		stats["parking_etages"]["helice_quads"] = h["quads"].size()
-		stats["parking_etages"]["helice_pente_max_bord_int"] = snappedf(h["pente_max_bord_int"], 0.0001)
-		var axe := PackedVector3Array()
-		for pt: Vector3 in h["axe"]:
-			axe.append(xf * pt)
-		place.set_meta("parking_helice_axe", axe)
+	stats["triangles"] += int(info["triangles"])
+	stats["parking_etages_collision"] = forme.get_meta("triangles")
 	var panes := models.windows_of(PARKING_ETAGES)
 	if not panes.is_empty():
 		stats["carreaux_allumés"] += Windows.emit(panes, xf, _window_acc[0], _window_acc[1], _window_acc[2])

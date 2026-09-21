@@ -15,17 +15,6 @@ extends Node3D
 #     raccords), arrive en haut, puis redescend en marche arrière. À mi-pente, son modèle a l'assiette de la pente
 #     (nez levé en montée) et ses roues touchent la pente : écart entre le bas de chaque roue et la pente sous 8 cm.
 #     La boîte de collision restant horizontale, l'essieu arrière flottait avant à 0,27 m.
-#  4. ESCALIER : dans chacun des quatre parkings, un piéton monte du rez au niveau 1 par l'escalier de la tour vitrée
-#     (porte, volée A, palier, volée B, arrivée, porte du niveau 1) et finit posé sur le plancher du niveau 1. À
-#     l'aéroport, c'est le VRAI joueur (Player.tscn), piloté comme au clavier (move_forward, corps tourné vers le
-#     repère suivant) ; ailleurs, sa capsule.
-#  5. HÉLICE (aéroport) : la voiture du joueur, conduite comme au clavier (move_forward / move_left / move_right,
-#     poursuite d'un tracé), sort du rez par la travée, tourne sur le palier, monte l'hélice, entre au niveau 1 ; puis
-#     repart du niveau 1, redescend toute l'hélice et ressort sur le béton du site. Pente de la voie relevée sur la
-#     COLLISION (rayons tous les 0,25 m sur les bords et l'axe) : 12 % au plus, aucun ressaut de plus de 2 cm.
-#     C'est le VRAI joueur de l'escalier qui monte dans la voiture (Player._enter_vehicle) et qui en SORT au niveau 1
-#     puis sur le béton (Player._exit_vehicle) : il doit s'y retrouver debout, pied à 10 cm du plancher au plus. Il
-#     était posé à y = 1,3 fixe, donc sous le sol partout où la carte est plus haute.
 #
 # Les plateaux sont relevés sur le maillage cuit (ParkingStructureKit.planchers), pas recopiés d'une constante.
 #
@@ -36,7 +25,6 @@ const CENTRE_VILLE := "res://scenes/world/downtown/generated/Buildings.tscn"
 const LIEUX := "res://scenes/world/map/generated/Places.tscn"
 const MONDE := "res://scenes/world/World.tscn"
 const Network := preload("res://scenes/world/map/tools/RoadNetwork.gd")
-const JOUEUR := preload("res://scenes/player/Player.tscn")
 const CAR := preload("res://scenes/vehicles/Car.tscn")
 const BERLINE := "res://assets/vehicle_models_extra/city_vehicles_UNVERIFIED_LICENSE/Sedans/Veh_Sedan_01_Blue.glb"
 const GRAVITE := 9.8
@@ -65,18 +53,6 @@ var _rampe_mi := {}          # relevé à mi-pente
 var _rampe_haut := -1.0      # temps d'arrivée en haut
 var _rampe_bas := -1.0       # temps de retour en bas
 var _rampe_y_max := -INF
-var _parkings: Array = []    # [noeud porteur de la transformation, maillage, planchers]
-var _aeroport: MeshInstance3D
-var _grimpeurs: Array = []   # [corps, repères (monde), indice, plancher d'arrivée (monde), libellé, vrai joueur ?]
-var _t_escalier := 0.0
-var _trace: PackedVector3Array
-var _k_trace := 0
-var _sens := "montee"
-var _t_helice := 0.0
-var _helice_bilan := {}
-var _immobile := 0.0
-var _joueur: CharacterBody3D  # le vrai joueur (Player.tscn), celui de l'escalier de l'aéroport
-var _t_sortie := 0.0
 const TEMOIN_Z := 3000.0
 const RAMPE_X := 30.0
 const PENTE := 0.12
@@ -122,11 +98,9 @@ func _ready() -> void:
 	else:
 		parkings.append([aeroport, aeroport.mesh])
 		_emprise_aeroport(aeroport)
-	_aeroport = aeroport
 	for e: Array in parkings:
 		var b: Node3D = e[0]
 		var planchers := Kit.planchers(e[1])
-		_parkings.append([b, e[1], planchers])
 		print("PARKING %s en %s : planchers %s" % [b.name, str(b.global_position.snapped(Vector3.ONE * 0.01)), str(planchers)])
 		if planchers.size() != 5:
 			_fautes.append("%s : %d plateaux releves au lieu de 5" % [b.name, planchers.size()])
@@ -258,12 +232,6 @@ func _physics_process(delta: float) -> void:
 			_braquage(delta)
 		"rampe":
 			_montee(delta)
-		"escalier":
-			_escalier(delta)
-		"helice":
-			_helice(delta)
-		"sortie":
-			_sortie(delta)
 
 
 func _braquage(delta: float) -> void:
@@ -308,280 +276,7 @@ func _montee(delta: float) -> void:
 		if p.z > TEMOIN_Z + 3.0:
 			_rampe_bas = _t_phase
 	if _rampe_bas > 0.0 or _t_phase > 30.0:
-		_pilote.set("_drive_speed", 0.0)
-		_debut_escalier()
-
-
-# --- 4. escalier ----------------------------------------------------------------------------------------------------
-
-# Repères de la montée, dans le repère du modèle (cf. ParkingStructureKit, constantes ESC_*) : devant la porte côté
-# parking, zone de départ, pied de la volée A, haut de la volée A, palier, haut de la volée B, arrivée, porte du niveau 1.
-func _reperes_escalier(y0: float, y1: float) -> Array:
-	var ya := (y0 + y1) * 0.5
-	# sur le palier, on passe de la volée A à la volée B au bout du mur d'échiffre, pas en diagonale à travers lui
-	return [Vector3(-4.86, y0, 6.2), Vector3(-4.86, y0, 8.1), Vector3(-4.3, y0, 8.1), Vector3(-1.1, ya, 8.1),
-			Vector3(0.0, ya, 8.1), Vector3(0.0, ya, 9.25), Vector3(-1.1, ya, 9.25), Vector3(-4.95, y1, 9.25),
-			Vector3(-4.95, y1, 8.1), Vector3(-4.86, y1, 6.2)]
-
-
-func _debut_escalier() -> void:
-	_phase = "escalier"
-	_t_escalier = 0.0
-	for e: Array in _parkings:
-		var b: Node3D = e[0]
-		var sols: PackedFloat32Array = e[2]
-		var reperes: Array = []
-		for r: Vector3 in _reperes_escalier(sols[0], sols[1]):
-			reperes.append(b.global_transform * r)
-		var depart: Vector3 = reperes[0] + Vector3(0, 1.0, 0)
-		var vrai := b == _aeroport
-		var corps: CharacterBody3D
-		if vrai:
-			corps = JOUEUR.instantiate() as CharacterBody3D
-			add_child(corps)
-			corps.global_position = depart
-			_joueur = corps
-		else:
-			corps = _pieton(depart)
-		_grimpeurs.append([corps, reperes, 1, (b.global_transform * Vector3(0, sols[1], 0)).y, String(b.name), vrai])
-
-
-func _escalier(delta: float) -> void:
-	_t_escalier += delta
-	var fini := true
-	var avance_joueur := false
-	for g: Array in _grimpeurs:
-		var corps: CharacterBody3D = g[0]
-		var reperes: Array = g[1]
-		var k: int = g[2]
-		if k >= reperes.size():
-			if not g[5]:
-				corps.velocity = Vector3(0, corps.velocity.y - GRAVITE * delta, 0) if not corps.is_on_floor() else Vector3.ZERO
-				corps.move_and_slide()
-			continue
-		fini = false
-		var cible: Vector3 = reperes[k]
-		var d := Vector3(cible.x - corps.global_position.x, 0, cible.z - corps.global_position.z)
-		if d.length() < 0.3:
-			g[2] = k + 1
-			continue
-		if g[5]:
-			# vrai joueur : corps tourné vers le repère, touche « avancer » (Player.gd marche selon l'orientation du corps)
-			corps.global_rotation.y = atan2(-d.x, -d.z)
-			avance_joueur = true
-		else:
-			var v := d.normalized() * 2.5
-			corps.velocity.x = v.x
-			corps.velocity.z = v.z
-			corps.velocity.y = 0.0 if corps.is_on_floor() else corps.velocity.y - GRAVITE * delta
-			corps.move_and_slide()
-	if avance_joueur:
-		Input.action_press("move_forward")
-	else:
-		Input.action_release("move_forward")
-	if fini and _t_escalier > 1.0 or _t_escalier > 40.0:
-		Input.action_release("move_forward")
-		for g: Array in _grimpeurs:
-			var corps: CharacterBody3D = g[0]
-			var pied := corps.global_position.y - 0.9
-			var arrive: bool = int(g[2]) >= (g[1] as Array).size()
-			print("PARKING_ESCALIER %s : %s, pied a %.2f m pour le plancher du niveau 1 a %.2f (%s) en %.1f s"
-					% [g[4], "vrai joueur" if g[5] else "capsule", pied, g[3], "arrive" if arrive else "BLOQUE au repere %d" % g[2], _t_escalier])
-			if not arrive or absf(pied - float(g[3])) > 0.1:
-				_fautes.append("escalier de %s : %s au repere %d, pied a %.2f pour %.2f" % [g[4], "vrai joueur" if g[5] else "pieton", g[2], pied, g[3]])
-		_debut_helice()
-
-
-# --- 5. hélice ------------------------------------------------------------------------------------------------------
-
-func _debut_helice() -> void:
-	if _aeroport == null:
 		_bilan()
-		return
-	_pente_helice()
-	_phase = "helice"
-	_sens = "montee"
-	_pilote.set("is_player_owned", true)   # sinon stop_drive() l'efface 25 s après la sortie du joueur
-	_preparer_trace(_trace_montee())
-	if _joueur != null:
-		_joueur.call("_enter_vehicle", _pilote)
-
-
-func _preparer_trace(pts: PackedVector3Array) -> void:
-	_trace = pts
-	_k_trace = 0
-	_t_helice = 0.0
-	_immobile = 0.0
-	var d := _trace[1] - _trace[0]
-	_pilote.set("_drive_speed", 0.0)
-	_pilote.set("velocity", Vector3.ZERO)
-	_pilote.global_position = _trace[0] + Vector3(0, 0.8, 0)
-	_pilote.global_rotation = Vector3(0, atan2(-d.x, -d.z), 0)
-
-
-# Trace de la montée, repère du modèle puis monde : dans le rez vers la travée, virage à gauche sur le palier, axe de
-# la voie jusqu'au palier du niveau 1, virage à gauche dans la travée, dans le niveau 1.
-func _trace_montee() -> PackedVector3Array:
-	var sols: PackedFloat32Array = Kit.planchers(_aeroport.mesh)
-	var y0: float = sols[0]
-	var y1: float = sols[1]
-	var z := Kit.TRAVEE_SUD.x * 0.5 + Kit.TRAVEE_SUD.y * 0.5
-	var pts: Array = [Vector3(10, y0, z), Vector3(16, y0, z), Vector3(21.5, y0, z)]
-	var rc := (Kit.R_INT + Kit.R_EXT) * 0.5
-	var c1 := Vector2(23.5, z - 5.5)
-	for k in range(0, 91, 10):
-		var b := deg_to_rad(90.0 - k)
-		pts.append(Vector3(c1.x + 5.5 * cos(b), y0, c1.y + 5.5 * sin(b)))
-	var phi := 215.0
-	while phi <= 505.0:
-		pts.append(Kit.point(phi, rc, Kit.hauteur(phi, sols.slice(0, 2))))
-		phi += 5.0
-	var entree := Kit.point(507.5, rc, y1)
-	var c2 := Vector2(entree.x - 5.5, entree.z)
-	for k in range(0, 91, 10):
-		var b := deg_to_rad(-float(k))
-		pts.append(Vector3(c2.x + 5.5 * cos(b), y1, c2.y + 5.5 * sin(b)))
-	pts.append(Vector3(19.0, y1, z))
-	pts.append(Vector3(12.0, y1, z))
-	return _monde(pts)
-
-
-# Trace de la descente : du niveau 1 vers la travée, virage à droite sur le palier, axe de la voie en descendant
-# jusqu'au bas de la rampe d'entrée, puis sur le béton du site.
-func _trace_descente() -> PackedVector3Array:
-	var sols: PackedFloat32Array = Kit.planchers(_aeroport.mesh)
-	var y1: float = sols[1]
-	var z := Kit.TRAVEE_SUD.x * 0.5 + Kit.TRAVEE_SUD.y * 0.5
-	var pts: Array = [Vector3(10, y1, z), Vector3(16, y1, z), Vector3(21.5, y1, z)]
-	var rc := (Kit.R_INT + Kit.R_EXT) * 0.5
-	var c1 := Vector2(23.5, z + 5.5)
-	for k in range(0, 91, 10):
-		var b := deg_to_rad(-90.0 + k)
-		pts.append(Vector3(c1.x + 5.5 * cos(b), y1, c1.y + 5.5 * sin(b)))
-	var phi := 505.0
-	while phi >= Kit.ENTREE_DEBUT:
-		pts.append(Kit.point(phi, rc, Kit.hauteur(phi, sols.slice(0, 2))))
-		phi -= 5.0
-	var fin := Kit.point(Kit.ENTREE_DEBUT, rc, 0.0)
-	var t := Vector3(sin(deg_to_rad(Kit.ENTREE_DEBUT)), 0, -cos(deg_to_rad(Kit.ENTREE_DEBUT)))
-	for k in range(1, 4):
-		pts.append(fin + t * 3.0 * k)
-	return _monde(pts)
-
-
-func _monde(pts: Array) -> PackedVector3Array:
-	var out := PackedVector3Array()
-	for q: Vector3 in pts:
-		out.append(_aeroport.global_transform * q)
-	return out
-
-
-# Conduite comme au clavier : poursuite du tracé à 4 m devant, direction par move_left / move_right (force
-# proportionnelle à l'angle), accélérateur par move_forward autour de 4,5 m/s.
-func _helice(delta: float) -> void:
-	_t_helice += delta
-	var pos := _pilote.global_position
-	# repère le plus proche en avant
-	var meilleur := _k_trace
-	var d_min := INF
-	for k in range(_k_trace, mini(_k_trace + 12, _trace.size())):
-		var dd := Vector2(_trace[k].x - pos.x, _trace[k].z - pos.z).length()
-		if dd < d_min:
-			d_min = dd
-			meilleur = k
-	_k_trace = meilleur
-	var cible := _trace[_trace.size() - 1]
-	var cumul := 0.0
-	for k in range(_k_trace, _trace.size() - 1):
-		cumul += Vector2(_trace[k + 1].x - _trace[k].x, _trace[k + 1].z - _trace[k].z).length()
-		if cumul >= 4.0:
-			cible = _trace[k + 1]
-			break
-	var f := -_pilote.global_transform.basis.z
-	var t := Vector3(cible.x - pos.x, 0, cible.z - pos.z).normalized()
-	var angle := atan2(f.z * t.x - f.x * t.z, f.x * t.x + f.z * t.z)
-	var braquage := clampf(angle * 2.5, -1.0, 1.0)
-	Input.action_release("move_left")
-	Input.action_release("move_right")
-	if braquage > 0.02:
-		Input.action_press("move_left", braquage)
-	elif braquage < -0.02:
-		Input.action_press("move_right", -braquage)
-	var v: float = _pilote.get("_drive_speed")
-	if v < 4.5:
-		Input.action_press("move_forward")
-	else:
-		Input.action_release("move_forward")
-	_immobile = _immobile + delta if absf(v) < 0.3 else 0.0
-	# arrivée : au bout du tracé ET près de son dernier point (en plan, le départ au rez et l'arrivée au niveau 1
-	# ne sont qu'à 2 m l'un de l'autre)
-	var arrivee := _k_trace >= _trace.size() - 3 and (_trace[_trace.size() - 1] - pos).length() < 2.5
-	if arrivee or _immobile > 4.0 or _t_helice > 80.0:
-		Input.action_release("move_forward")
-		Input.action_release("move_left")
-		Input.action_release("move_right")
-		_helice_bilan[_sens] = {"arrivee": arrivee, "temps": _t_helice, "pos": pos, "immobile": _immobile > 4.0, "repere": _k_trace, "reperes": _trace.size()}
-		if _joueur != null:
-			_joueur.call("_exit_vehicle")
-		_phase = "sortie"
-		_t_sortie = 0.0
-
-
-# Le joueur vient de sortir de la voiture : on le laisse retomber, puis on relève où il se tient. Plancher attendu :
-# celui du niveau 1 au bout de la montée, le béton du site (y = 0 dans le repère du parking) au bout de la descente.
-func _sortie(delta: float) -> void:
-	_t_sortie += delta
-	if _t_sortie < 1.5:
-		return
-	if _joueur != null:
-		var sols: PackedFloat32Array = Kit.planchers(_aeroport.mesh)
-		var attendu := (_aeroport.global_transform * Vector3(0, sols[1] if _sens == "montee" else 0.0, 0)).y
-		_helice_bilan[_sens]["sortie"] = [_joueur.global_position.y - 0.9, attendu, _joueur.is_on_floor()]
-	if _sens == "montee":
-		_sens = "descente"
-		_preparer_trace(_trace_descente())
-		if _joueur != null:
-			_joueur.call("_enter_vehicle", _pilote)
-		_phase = "helice"
-	else:
-		_bilan()
-
-
-# Pente et ressauts de la voie, relevés sur la COLLISION : rayons verticaux tous les 0,25 m sur les deux bords (à
-# 0,3 m à l'intérieur) et l'axe, du bas de la rampe d'entrée au palier du niveau 1.
-func _pente_helice() -> void:
-	var espace := get_world_3d().direct_space_state
-	var sols: PackedFloat32Array = Kit.planchers(_aeroport.mesh)
-	var pire := {}
-	var saut := 0.0
-	var fin := 180.0 + Kit.PALIER_DEMI + 360.0
-	for r: float in [Kit.R_INT + 0.3, (Kit.R_INT + Kit.R_EXT) * 0.5, Kit.R_EXT - 0.3]:
-		var prec := Vector3.INF
-		var phi := Kit.ENTREE_DEBUT + 1.0
-		var pas_deg := rad_to_deg(0.25 / r)
-		pire[r] = 0.0
-		while phi < fin - 1.0:
-			var m := Kit.point(phi, r, 0.0)
-			var haut := _aeroport.global_transform * (m + Vector3(0, Kit.hauteur(phi, sols.slice(0, 2)) + 0.6, 0))
-			var q := PhysicsRayQueryParameters3D.create(haut, haut - Vector3(0, 1.2, 0), 1)
-			var hit := espace.intersect_ray(q)
-			if not hit.is_empty():
-				var y: Vector3 = hit["position"]
-				if prec != Vector3.INF:
-					var dy := absf(y.y - prec.y)
-					var dxz := Vector2(y.x - prec.x, y.z - prec.z).length()
-					if dxz > 0.01:
-						pire[r] = maxf(float(pire[r]), dy / dxz)
-					saut = maxf(saut, dy - 0.25 * 0.125)
-				prec = y
-			phi += pas_deg
-	print("PARKING_HELICE pente relevee sur la collision : bord interieur %.1f %%, axe %.1f %%, bord exterieur %.1f %% ; plus grand ecart d'un releve au suivant au-dela de la pente : %.3f m"
-			% [float(pire[Kit.R_INT + 0.3]) * 100.0, float(pire[(Kit.R_INT + Kit.R_EXT) * 0.5]) * 100.0, float(pire[Kit.R_EXT - 0.3]) * 100.0, saut])
-	for r in pire:
-		if float(pire[r]) > 0.121:
-			_fautes.append("helice : pente de %.1f %% a %.2f m de l'axe" % [float(pire[r]) * 100.0, r])
-	if saut > 0.02:
-		_fautes.append("helice : ressaut de %.3f m dans la voie" % saut)
 
 
 # À mi-pente : assiette du modèle et écart du bas de chaque roue à la pente.
@@ -659,24 +354,6 @@ func _bilan_dalles() -> void:
 
 func _bilan() -> void:
 	set_physics_process(false)
-	for sens in ["montee", "descente"]:
-		if not _helice_bilan.has(sens):
-			continue
-		var h: Dictionary = _helice_bilan[sens]
-		var p: Vector3 = h["pos"]
-		var local := _aeroport.global_transform.affine_inverse() * p
-		print("PARKING_HELICE %s : %s en %.1f s (repere %d/%d), arrivee en (%.1f, %.2f, %.1f) monde, hauteur %.2f m dans le repere du parking"
-				% [sens, "ARRIVEE" if h["arrivee"] else ("IMMOBILE" if h["immobile"] else "TEMPS DEPASSE"), h["temps"], h["repere"], h["reperes"], p.x, p.y, p.z, local.y])
-		if not h["arrivee"]:
-			_fautes.append("helice, %s : la voiture n'est pas arrivee (repere %d/%d)" % [sens, h["repere"], h["reperes"]])
-		if not h.has("sortie"):
-			_fautes.append("helice, %s : pas de vrai joueur au volant" % sens)
-		else:
-			var so: Array = h["sortie"]
-			print("PARKING_HELICE %s : le joueur sort de la voiture, pied a %.2f m pour un sol a %.2f (%s)"
-					% [sens, so[0], so[1], "au sol" if so[2] else "EN L'AIR"])
-			if absf(float(so[0]) - float(so[1])) > 0.1 or not so[2]:
-				_fautes.append("helice, %s : a la sortie de la voiture, pied a %.2f m pour un sol a %.2f" % [sens, so[0], so[1]])
 	var txt := PackedStringArray()
 	for r: Array in _rayons:
 		txt.append("%.0f m/s : %.2f m" % [r[0], r[1]])
