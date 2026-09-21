@@ -22,14 +22,7 @@ extends Node3D
 #  6. IMAGE LENTE : à 15 images/s, quatre pas physiques de 1/60 s s'enchaînent entre deux images affichées
 #     (_update_visuals tourne dans _physics_process). Leur somme reste sous la demi-période de la jante et
 #     dans le bon sens, et l'image suivante tourne de nouveau — l'UHD 750 de référence rend entre 10 et 30
-#     images/s, c'est là que l'effet stroboscopique reviendrait si le plafond valait par pas physique ;
-#  7. BRAQUAGE (2026-09-21) : roues avant braquées à fond, à gauche puis à droite, à trois angles de roulement
-#     différents. L'axe du moyeu tourne dans le plan HORIZONTAL (carrossage nul : le pneu reste vertical), de
-#     l'angle de braquage exact, du bon côté (+1 = à gauche), et le centre de la roue ne bouge pas ; les roues
-#     arrière ne bougent pas. Les 54 modèles city_* s'inclinaient de 29,8° au lieu de pivoter : leur braquage
-#     était exprimé dans le repère du parent de la roue, tourné de 90° autour de X ;
-#  8. CIRCULATION : le braquage visuel d'une voiture de la circulation est l'angle géométrique du virage
-#     qu'elle décrit, atan(empattement / rayon), du bon côté, et nul en ligne droite.
+#     images/s, c'est là que l'effet stroboscopique reviendrait si le plafond valait par pas physique.
 #
 # Lancer : Godot --headless --path <projet> res://scenes/tests/WheelSpinTest.tscn
 
@@ -173,88 +166,6 @@ func _ready() -> void:
 				_fautes.append("%s / %s : la roue ne tourne plus a l'image suivante" % [nom, w.name])
 	print("WHEEL_SPIN_IMAGE_LENTE %d roues a 15 images/s (%d pas physiques par image) : pas le plus grand %.0f %% de la demi-periode de sa jante"
 			% [lentes, PAS_PAR_IMAGE_LENTE, pire_lente * 100.0])
-	# 7. braquage : roues avant braquées à fond, des deux côtés, à trois angles de roulement
-	await get_tree().process_frame
-	var max_steer: float = (voitures[0][1] as Node3D).get("MAX_STEER_RAD")
-	var braquages := 0
-	var pire_carrossage := 0.0
-	var pire_carrossage_ou := ""
-	var pire_ecart := 0.0
-	var pire_ecart_ou := ""
-	var pire_centre := 0.0
-	var empattements := Vector2(INF, -INF)
-	for pair: Array in voitures:
-		var nom: String = pair[0]
-		var car: Node3D = pair[1]
-		var inv_car := car.global_transform.affine_inverse()
-		var roues: Array = car.get("_wheels")
-		var avant: Array = car.get("_wheels_front")
-		var ang: Dictionary = car.get("_wheel_angle")
-		var emp: float = car.get("_empattement")
-		empattements = Vector2(minf(empattements.x, emp), maxf(empattements.y, emp))
-		for roulement in [0.0, 1.1, 2.3]:
-			for w: Node3D in roues:
-				ang[w] = roulement
-			for cote in [1.0, -1.0]:
-				car.call("_update_visuals", 1.0, 0.0, 0.0)
-				var moyeux0 := {}
-				var centres0 := {}
-				for w: Node3D in roues:
-					moyeux0[w] = _moyeu(car, inv_car, w)
-					centres0[w] = _pivot(car, w)
-				car.call("_update_visuals", 1.0, 0.0, cote)
-				for w: Node3D in roues:
-					var a0: Vector3 = moyeux0[w]
-					var a1: Vector3 = _moyeu(car, inv_car, w)
-					var derive := (_pivot(car, w) - (centres0[w] as Vector3)).length()
-					pire_centre = maxf(pire_centre, derive)
-					if derive > 0.005:
-						_fautes.append("%s / %s : le centre de la roue se deplace de %.3f m quand on braque" % [nom, w.name, derive])
-					if not (w in avant):
-						if a0.angle_to(a1) > deg_to_rad(0.1):
-							_fautes.append("%s / %s : une roue ARRIERE bouge quand on braque (%.1f deg)" % [nom, w.name, rad_to_deg(a0.angle_to(a1))])
-						continue
-					braquages += 1
-					var carrossage := rad_to_deg(asin(clampf(absf(a1.y), 0.0, 1.0)))
-					if carrossage > pire_carrossage:
-						pire_carrossage = carrossage
-						pire_carrossage_ou = "%s / %s" % [nom, w.name]
-					if carrossage > 0.5:
-						_fautes.append("%s / %s : braquee a %s, le moyeu penche de %.1f deg (carrossage) au lieu de rester horizontal"
-								% [nom, w.name, "gauche" if cote > 0.0 else "droite", carrossage])
-					# angle signé autour de +Y : positif = le nez de la roue part à gauche
-					var lacet := atan2(a0.cross(a1).y, a0.dot(a1))
-					var ecart := absf(rad_to_deg(lacet - cote * max_steer))
-					if ecart > pire_ecart:
-						pire_ecart = ecart
-						pire_ecart_ou = "%s / %s" % [nom, w.name]
-					if ecart > 1.0:
-						_fautes.append("%s / %s : braquee a %s, la roue pivote de %+.1f deg autour de la verticale au lieu de %+.1f"
-								% [nom, w.name, "gauche" if cote > 0.0 else "droite", rad_to_deg(lacet), rad_to_deg(cote * max_steer)])
-		car.call("_update_visuals", 1.0, 0.0, 0.0)
-	print("WHEEL_SPIN_BRAQUAGE %d braquages de roue avant (gauche et droite, 3 angles de roulement) : carrossage max %.2f deg (%s), ecart a l'angle de braquage max %.2f deg (%s, attendu %.1f deg), centre deplace de %.1f mm au plus"
-			% [braquages, pire_carrossage, pire_carrossage_ou, pire_ecart, pire_ecart_ou, rad_to_deg(max_steer), pire_centre * 1000.0])
-	# 8. circulation : virage à gauche de 10 m de rayon à 10 m/s (1 rad/s), à droite, puis ligne droite
-	var braq_min := INF
-	var braq_max := -INF
-	for pair: Array in voitures:
-		var nom: String = pair[0]
-		var car: Node3D = pair[1]
-		var emp: float = car.get("_empattement")
-		car.set("_ai_speed", 10.0)
-		var dcap := rad_to_deg(1.0 * IMAGE)
-		var g: float = car.call("_braquage_ia", dcap, IMAGE)
-		var dr: float = car.call("_braquage_ia", -dcap, IMAGE)
-		var droit: float = car.call("_braquage_ia", 0.0, IMAGE)
-		var attendu := atan(emp / 10.0) / max_steer
-		braq_min = minf(braq_min, rad_to_deg(g * max_steer))
-		braq_max = maxf(braq_max, rad_to_deg(g * max_steer))
-		if absf(g - attendu) > 0.01 or absf(dr + attendu) > 0.01 or absf(droit) > 1e-6:
-			_fautes.append("%s : braquage de la circulation %.3f / %.3f / %.3f au lieu de %.3f / %.3f / 0 (gauche, droite, ligne droite)"
-					% [nom, g, dr, droit, attendu, -attendu])
-		car.set("_ai_speed", 0.0)
-	print("WHEEL_SPIN_CIRCULATION empattements mesures %.2f a %.2f m ; virage a gauche de 10 m de rayon : roues avant a %.1f a %.1f deg a gauche selon l'empattement"
-			% [empattements.x, empattements.y, braq_min, braq_max])
 	var sym := PackedStringArray()
 	var cles := par_symetrie.keys()
 	cles.sort()
@@ -271,24 +182,6 @@ func _ready() -> void:
 			print("WHEEL_SPIN_FAUTE %s" % f)
 		print("WHEEL_SPIN_RESULT FAIL %d faute(s)" % _fautes.size())
 	get_tree().quit(0)
-
-
-# Axe du moyeu d'une roue, dans le repère de la voiture : son axe de roulement mesuré (Car.mesure_roue).
-func _moyeu(car: Node3D, inv_car: Transform3D, w: Node3D) -> Vector3:
-	var m: Array = car.call("mesure_roue", w)
-	var axe: Vector3 = m[0] if m.size() > 0 else Vector3.RIGHT
-	return (inv_car.basis * w.global_transform.basis * axe).normalized()
-
-
-# Centre de la roue dans le monde : son centre LOCAL mesuré (Car.mesure_roue, milieu de la boîte locale de ses
-# maillages), ramené dans le monde. C'est le point autour duquel elle braque, et il doit rester fixe. Le milieu de
-# la boîte MONDE (_centre) ne convient pas ici : une roue asymétrique le long de son essieu (moyeu saillant d'un
-# seul côté, les six modèles d'origine) voit ce milieu glisser de 14 à 18 mm dès qu'elle pivote, même autour d'un
-# axe parfait — c'était l'instrument qui bougeait, pas la roue.
-func _pivot(car: Node3D, w: Node3D) -> Vector3:
-	var m: Array = car.call("mesure_roue", w)
-	var c: Vector3 = m[4] if m.size() > 4 else Vector3.ZERO
-	return w.global_transform * c
 
 
 # Milieu de la boîte monde des maillages d'une roue.

@@ -172,7 +172,7 @@ attendu.
 "$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/CarDrivingTest.tscn  # accélération, virage, freinage : CAR_DRIVING_RESULT
 "$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/CarDropTest.tscn     # chute de 10 m : CAR_DROP_RESULT
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/CarKerbTest.tscn          # bordures : le joueur monte, l'IA non
-"$GODOT" --headless --path "$PROJET" res://scenes/tests/WheelSpinTest.tscn        # roues des 72 modèles : axe, sens, rayon, stroboscope, pivot, braquage
+"$GODOT" --headless --path "$PROJET" res://scenes/tests/WheelSpinTest.tscn        # roues des 72 modèles : axe, sens, rayon, stroboscope, pivot
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/DowntownStreetsTest.tscn
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/DowntownBuildingsTest.tscn
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/ShopBuildingsTest.tscn     # échec ANTÉRIEUR connu
@@ -351,31 +351,6 @@ sans le plafond de 800x450 du §6). Une vue peut imposer sa propre heure par un 
   roues, 198 pas physiques sur 198, axe latéral. Elles tournent en revanche de 48° par pas physique (64° à
   l'avant au démarrage), et leur jante n'a pas été mesurée : si cette voiture entre un jour en jeu,
   vérifier l'effet stroboscopique comme pour `Car.gd`.
-- **LE BRAQUAGE ÉTAIT UN CARROSSAGE sur les 54 modèles `city_*`** (2026-09-21 au soir). Le joueur voyait, en
-  tournant, ses roues avant s'incliner vers l'intérieur ou l'extérieur au lieu de pivoter, et l'attribuait au
-  chantier des roues. **Mesuré sur les 72 modèles : le résultat est IDENTIQUE sur `975a4bf` et `8b466f1`, le défaut
-  est antérieur.** Le braquage était une rotation autour de (0, 1, 0) pré-multipliée à la base de repos de la roue,
-  donc exprimée dans le repère du PARENT de la roue — pas dans celui de la caisse, comme le prétendait le
-  commentaire. Le pack city range ses roues sous un noeud tourné de **90° autour de X** (son repère Z-up) : le Y de
-  ce parent est l'axe AVANT-ARRIÈRE de la voiture, et la roue braquée à fond s'inclinait de 29,8° sans pivoter du
-  tout. Les 18 autres modèles (lowpoly, modèles d'origine) n'ont pas de noeud tourné et braquaient juste. Le lacet
-  de 180° du catalogue n'y est pour rien (une rotation autour de la verticale, conjuguée par un lacet, reste la
-  même), et l'ordre de composition était bon (roulement dans le repère de la roue, braquage autour).
-  Correction : le braquage est une rotation autour de la verticale DE LA VOITURE, ramenée dans le repère du parent
-  par conjugaison, M⁻¹ · R(verticale, angle) · M, M étant la base du parent dans la voiture (`_wheel_parent_base`).
-  **Règle : un réglage « dans le repère de la caisse » appliqué à un noeud de modèle doit passer par la base de
-  son parent** — un pack peut ranger ses pièces sous un noeud tourné, et rien ne le signale.
-  **La circulation ne braquait pas du tout** : elle passait un braquage NUL à `_update_visuals`. Ses roues avant
-  prennent maintenant l'angle du virage qu'elle décrit, atan(empattement / rayon), l'empattement étant mesuré sur
-  les centres des roues (1,52 à 5,60 m) : 13° pour la berline dans un virage de 10 m de rayon.
-  `WheelSpinTest` braque les roues avant à fond des deux côtés, à trois angles de roulement : axe du moyeu
-  horizontal (carrossage nul), angle exact, bon côté, centre immobile, roues arrière immobiles — 864 braquages,
-  carrossage 0,00°. Il échoue sur l'ancien braquage (1 296 fautes, 29,8° de carrossage). **Piège de mesure payé en
-  l'écrivant** : le milieu de la boîte MONDE d'une roue asymétrique le long de son essieu (moyeu saillant d'un
-  côté, les six modèles d'origine) glisse de 14 à 18 mm quand elle pivote, même autour d'un axe parfait ; c'est
-  son centre LOCAL, ramené dans le monde, qui doit rester fixe. Captures de face et de trois quarts, avant et
-  après, dans `D:/p-recree/ground_shots/braquage_2026-09-21/` (hors dépôt) : de face à 1,2 m, le pare-chocs de la
-  berline cache les roues, il faut descendre à 0,6 m ou se mettre de trois quarts pour les voir.
 - **`move_and_slide()` ne monte AUCUNE marche verticale**, si basse soit-elle. Les bordures de trottoir
   de la carte font **0,150 m** mesurés sur la collision cuite, en marche franche (la montée tient entre
   deux relevés distants de 2 cm), sur trimesh pour les artères et sur piles de boîtes au centre-ville.

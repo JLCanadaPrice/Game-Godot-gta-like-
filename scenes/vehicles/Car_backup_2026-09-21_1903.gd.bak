@@ -248,8 +248,6 @@ var _wheel_pas_image: Dictionary = {} # roue -> angle déjà parcouru depuis la 
 var _roues_image := -1                # image affichée (Engine.get_process_frames) du dernier pas de roue
 var _wheel_centre: Dictionary = {}    # roue -> centre géométrique, dans SON repère local (pivot de rotation)
 var _wheel_rest_origin: Dictionary = {}   # roue -> position de repos du noeud
-var _wheel_parent_base: Dictionary = {}   # roue -> [base de son PARENT dans la voiture, son inverse] (cf. BRAQUAGE)
-var _empattement := 2.6               # essieu avant -> essieu arrière, MESURÉ sur les roues (cf. _mesurer_empattement)
 var _steer_visual := 0.0
 var _ride_height := RIDE_HEIGHT       # recalculé selon la boîte ajustée au modèle
 var _half_length := 2.0               # demi-longueur (axe -Z avant) de la caisse, recalculée au modèle réel ; 2.0 = moitié de la boîte par défaut de Car.tscn (size.z=4)
@@ -340,13 +338,9 @@ func _setup_model() -> void:
 		_mesurer_roue(w3)
 		var wn := String(w3.name).to_lower()
 		var front_by_name := wn.contains("front") or wn.contains("_f") or wn.contains("fl") or wn.contains("fr")
-		# ATTENTION : position dans le repère du PARENT de la roue, qui n'est l'avant de la voiture que si ce parent
-		# n'est pas tourné. Faux pour les 54 modèles city_* (parent tourné de 90° autour de X, cf. BRAQUAGE) : ce
-		# sont leurs noms (Wheel_FL / Wheel_FR) qui les classent. VehicleCatalogTest vérifie 2 roues avant par modèle.
 		var front_by_pos := w3.position.z > 0.0   # +Z local = avant (modèle tourné de 180°)
 		if front_by_name or front_by_pos:
 			_wheels_front.append(w3)
-	_mesurer_empattement()
 
 	_fit_collision_to_model()
 
@@ -483,7 +477,6 @@ func _physics_process(delta: float) -> void:
 
 	var target_dir := _path.direction_at(_cur_edge, _from_node, _edge_progress)
 	var turn_rate_deg := clampf(rad_to_deg(_ai_speed / MIN_TURN_RADIUS), MIN_TURN_RATE_DEG, MAX_TURN_RATE_DEG)
-	var cap_avant := _heading_deg
 	_heading_deg = _turn_toward(_heading_deg, _heading_from_dir(target_dir), turn_rate_deg * delta)
 	var heading_dir := _dir_from_heading(_heading_deg)
 
@@ -523,7 +516,7 @@ func _physics_process(delta: float) -> void:
 	ideal.y += _ride_height
 	global_position = global_position.lerp(ideal, clampf(delta * LANE_SNAP, 0.0, 1.0))
 	rotation_degrees.y = _heading_deg
-	_update_visuals(delta, _ai_speed, _braquage_ia(wrapf(_heading_deg - cap_avant, -180.0, 180.0), delta))
+	_update_visuals(delta, _ai_speed, 0.0)
 
 func _snap_to_path() -> void:
 	if _path == null or _cur_edge < 0:
@@ -1277,9 +1270,8 @@ func get_drive_speed() -> float:
 func _update_visuals(delta: float, fwd_speed: float, steer_target: float) -> void:
 	if not _wheels.is_empty():
 		_steer_visual = lerpf(_steer_visual, steer_target * MAX_STEER_RAD, clampf(delta * 10.0, 0.0, 1.0))
-		# steer_b : dans le repère de la VOITURE (wheel_steer_axis = sa verticale), puis ramené dans le repère du
-		#           PARENT de chaque roue avant (cf. BRAQUAGE plus bas) -> rotation garantie autour de la
-		#           verticale, la roue pivote gauche/droite.
+		# steer_b : dans le repère caisse (pré-multiplié) -> rotation garantie
+		#           autour de la verticale, la roue pivote gauche/droite.
 		var steer_b := Basis(wheel_steer_axis.normalized(), _steer_visual)
 		# LE PLAFOND VAUT PAR IMAGE AFFICHÉE, PAS PAR PAS PHYSIQUE. _update_visuals tourne dans _physics_process,
 		# à 60 Hz fixes ; sous 60 images/s — l'UHD 750 de référence rend une image en 30 à 100 ms — plusieurs pas
@@ -1303,11 +1295,7 @@ func _update_visuals(delta: float, fwd_speed: float, steer_target: float) -> voi
 			# spin_b : dans le repère roue (post-multiplié via rest).
 			var spin_b := Basis(_wheel_axis.get(w, wheel_spin_axis.normalized()), angle)
 			var rest: Basis = _wheel_rest[w]
-			# roulement DANS le repère de la roue, braquage AUTOUR : le braquage ne tourne pas avec la roue
-			var b := rest * spin_b
-			if w in _wheels_front:
-				var m: Array = _wheel_parent_base.get(w, [Basis.IDENTITY, Basis.IDENTITY])
-				b = (m[1] as Basis) * steer_b * (m[0] as Basis) * b
+			var b := (steer_b * rest * spin_b) if w in _wheels_front else (rest * spin_b)
 			# rotation autour du CENTRE de la roue, pas de l'origine de son noeud : certains modèles ont le
 			# pivot ailleurs (cf. _mesurer_roue), et la roue tournait alors en excentrique
 			var c: Vector3 = _wheel_centre.get(w, Vector3.ZERO)
@@ -1344,53 +1332,6 @@ func _update_visuals(delta: float, fwd_speed: float, steer_target: float) -> voi
 #    45 % de sa période : au-delà de quelques m/s la roue tourne un peu moins vite que la voiture ne roule,
 #    mais toujours DANS LE BON SENS — c'est ce que l'oeil lit.
 const ROUE_PAS_DEFAUT := 0.35         # rad par image (20°), pour une roue sans maillage mesurable
-
-# BRAQUAGE DANS LE REPÈRE DE LA VOITURE (2026-09-21). Le braquage était une rotation autour de (0, 1, 0)
-# pré-multipliée à la base de repos de la roue — donc exprimée dans le repère du PARENT de la roue, pas dans celui
-# de la caisse comme le disait le commentaire. Les 54 modèles city_* rangent leurs roues sous un noeud tourné de
-# 90° autour de X (repère Z-up du pack) : le Y de ce parent est l'axe AVANT-ARRIÈRE de la voiture, et une roue
-# braquée à fond s'y inclinait de 29,8° comme un carrossage, sans pivoter du tout. Mesuré sur les 72 modèles,
-# IDENTIQUE avant et après le chantier des roues (975a4bf / 8b466f1) : défaut antérieur. Les 18 autres modèles
-# (lowpoly, modèles d'origine) n'ont pas de noeud tourné et braquaient juste. Le lacet de 180° du catalogue n'y
-# est pour rien : une rotation autour de la verticale, conjuguée par un lacet, reste la même rotation.
-# Le braquage est maintenant une rotation autour de la verticale DE LA VOITURE, ramenée dans le repère du parent
-# de la roue par conjugaison : M⁻¹ · R(verticale, angle) · M, M = base du parent dans la voiture (échelle et miroir
-# compris). Le roulement reste appliqué dans le repère de la roue, À L'INTÉRIEUR : le braquage ne tourne pas avec
-# elle. WheelSpinTest vérifie, roues avant braquées à fond des deux côtés et à trois angles de roulement : axe du
-# moyeu horizontal (carrossage nul), angle de braquage exact, bon côté, centre de la roue immobile.
-
-# Empattement : distance, le long de la voiture, entre le milieu des roues avant et le milieu des autres, mesurée
-# sur leurs centres (repère de la voiture). Sert au braquage visuel de la circulation.
-func _mesurer_empattement() -> void:
-	var za := 0.0
-	var na := 0
-	var zr := 0.0
-	var nr := 0
-	for w in _wheels:
-		var z := (_xf_dans_voiture(w) * (_wheel_centre.get(w, Vector3.ZERO) as Vector3)).z
-		if w in _wheels_front:
-			za += z
-			na += 1
-		else:
-			zr += z
-			nr += 1
-	if na > 0 and nr > 0:
-		_empattement = maxf(absf(zr / float(nr) - za / float(na)), 0.5)
-
-
-# BRAQUAGE VISUEL DE LA CIRCULATION (2026-09-21). Les voitures de la circulation passaient un braquage NUL à
-# _update_visuals : leurs roues avant ne pivotaient jamais, même dans un virage serré. On le déduit du virage
-# qu'elles décrivent réellement : un cap qui tourne de ω rad/s à la vitesse v trace un rayon R = v / ω, et des
-# roues avant à l'empattement L font alors l'angle atan(L / R) = atan(L·ω / v). Un cap qui augmente tourne à
-# gauche (rotation autour de +Y), comme _steer_input > 0 chez le joueur. Visuel seulement : la conduite n'en
-# dépend pas.
-func _braquage_ia(dcap_deg: float, delta: float) -> float:
-	if delta <= 0.0:
-		return 0.0
-	var omega := deg_to_rad(dcap_deg) / delta
-	var v := maxf(absf(_ai_speed), 0.5)
-	return clampf(atan(_empattement * omega / v) / MAX_STEER_RAD, -1.0, 1.0)
-
 # Mesures par modèle et par roue, faites UNE fois : toutes les voitures d'un même modèle ont les mêmes roues,
 # et la mesure de symétrie parcourt tous les sommets de la roue.
 static var _mesures_roues := {}
@@ -1403,7 +1344,6 @@ func _mesurer_roue(w: Node3D) -> void:
 		_wheel_radius[w] = m[1]
 		_wheel_pas_max[w] = m[2]
 		_wheel_centre[w] = m[4]
-		_wheel_parent_base[w] = m[5]
 		return
 	var b := _base_dans_voiture(w)
 	var meilleur := wheel_spin_axis.normalized()
@@ -1456,14 +1396,10 @@ func _mesurer_roue(w: Node3D) -> void:
 	_wheel_centre[w] = (lmin + lmax) * 0.5 if lmax.x >= lmin.x else Vector3.ZERO
 	var n_sym := _symetrie_roue(w, meilleur, _wheel_centre[w])
 	_wheel_pas_max[w] = 0.45 * TAU / float(n_sym) if n_sym > 1 else PI * 0.5
-	var base_parent := _base_dans_voiture(w.get_parent())
-	_wheel_parent_base[w] = [base_parent, base_parent.inverse()]
-	_mesures_roues[cle] = [_wheel_axis[w], _wheel_radius.get(w, WHEEL_RADIUS), _wheel_pas_max[w], n_sym, _wheel_centre[w],
-			_wheel_parent_base[w]]
+	_mesures_roues[cle] = [_wheel_axis[w], _wheel_radius.get(w, WHEEL_RADIUS), _wheel_pas_max[w], n_sym, _wheel_centre[w]]
 
 
-# Mesures d'une roue (axe local, rayon, pas maximal par image, ordre de symétrie, centre local, base du parent), pour
-# les tests.
+# Mesures d'une roue (axe local, rayon, pas maximal par image, ordre de symétrie, centre local), pour les tests.
 func mesure_roue(w: Node3D) -> Array:
 	return _mesures_roues.get("%s|%s" % [model_path, String(_model.get_path_to(w))], [])
 
