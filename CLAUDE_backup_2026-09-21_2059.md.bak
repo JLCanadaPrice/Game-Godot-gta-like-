@@ -29,8 +29,7 @@ travail imposée, les commandes exactes, les pièges déjà payés et l'état d'
   le 2026-09-21 (trois lentilles de gyrophare « au repos »), **613** depuis le test du rond-point
   (`RoundaboutTrafficTest`, même jour), **614** depuis les lampadaires du parking de l'aérogare
   (`generated/places/lamp_heads.tres`), **616** depuis le vitrage et le porche de l'aérogare (deux
-  matériaux), **617** depuis `LampGlass.gd`, **619** depuis `WheelSpinTest` (2026-09-21 au soir) et **622** depuis le
-  parking à étages (`ParkingStructureKit.gd`, `ParkingStructureTest`, §11).
+  matériaux), **617** depuis `LampGlass.gd` et **619** depuis `WheelSpinTest` (2026-09-21 au soir).
 
 ## 2. Méthode de travail (imposée, non négociable)
 
@@ -174,11 +173,10 @@ attendu.
 "$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/CarDropTest.tscn     # chute de 10 m : CAR_DROP_RESULT
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/CarKerbTest.tscn          # bordures : le joueur monte, l'IA non
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/WheelSpinTest.tscn        # roues des 72 modèles : axe, sens, rayon, stroboscope, pivot, braquage
-"$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/ParkingStructureTest.tscn  # parkings à étages : chaque plateau praticable, cf. §11
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/DowntownStreetsTest.tscn
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/DowntownBuildingsTest.tscn
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/ShopBuildingsTest.tscn     # échec ANTÉRIEUR connu
-"$GODOT" --headless --path "$PROJET" --script res://scenes/world/map/tools/ProjectLoadCheck.gd   # attendu : 622 fichiers, 0 échec
+"$GODOT" --headless --path "$PROJET" --script res://scenes/world/map/tools/ProjectLoadCheck.gd   # attendu : 619 fichiers, 0 échec
 ```
 
 Outil d'inspection, hors batterie : `res://scenes/tests/VehicleSortTest.tscn` aligne les véhicules du catalogue
@@ -1184,11 +1182,3 @@ Le centre-ville pose chaque bâtiment au CENTRE DE SA BOÎTE, et le cône de l'a
 façade : le retirer de la boîte faisait glisser les trois parkings de 0,195 m. C'est le tirage des fenêtres
 allumées, qui dépend de la position, qui l'a trahi (31 133 -> 31 135 carreaux). Contrôle qui décide : après la
 cuisson, `downtown/generated/buildings.json` et les cellules `windowglow_*` sont identiques octet pour octet.
-
-**Étape 2 — une collision par dalle.** Chaque parking n'avait qu'une boîte pleine de 48 x 26 x 22 m : on marchait sur
-son toit, jamais dedans. `ParkingStructureKit.collision` rend les **triangles exacts** du maillage fusionné (1 040 :
-dalles, murets, poteaux, tours), partagés par les trois exemplaires (`downtown/generated/buildings/parking_collision.res`).
-**Deux faces** (`backface_collision`) : le modèle a des cloisons SANS ÉPAISSEUR — la face de la tour vitrée côté parking
-est un seul plan — qu'on traverserait depuis la pièce de l'escalier. `ParkingStructureTest` lâche un piéton (la capsule
-du joueur) et une voiture à 1 m au-dessus de chaque plateau de chaque exemplaire : les 30 s'y posent, à 5 mm près. Les
-plateaux y sont relevés sur le maillage cuit (`planchers()`) : **0,36 / 4,93 / 9,49 / 14,05 / 18,61 m** au centimètre.

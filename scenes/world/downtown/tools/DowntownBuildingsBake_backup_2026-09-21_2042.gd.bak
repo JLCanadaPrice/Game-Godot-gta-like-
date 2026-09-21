@@ -22,7 +22,6 @@ const Spec := preload("res://scenes/world/downtown/DowntownSpec.gd")
 const MapSpec := preload("res://scenes/world/map/MapSpec.gd")
 const ELModels := preload("res://scenes/world/map/tools/BuildingModels.gd")
 const Windows := preload("res://scenes/world/map/tools/BuildingWindows.gd")
-const Parking := preload("res://scenes/world/map/tools/ParkingStructureKit.gd")
 
 const OUT := "res://scenes/world/downtown/generated"
 const MODELS := OUT + "/buildings"
@@ -832,23 +831,6 @@ func _write_window_glow(root: Node3D, cells: Dictionary, portee: float, prefixe:
 
 # --- scène --------------------------------------------------------------------------------------------------------------
 
-# Forme de collision d'un modèle : sa boîte pleine, SAUF pour le parking à étages, qu'on doit pouvoir parcourir à pied
-# et en voiture à chaque niveau (2026-09-21) : les triangles exacts de son maillage (ParkingStructureKit.collision),
-# dans son repère, enregistrés une fois et partagés par ses exemplaires. La boîte pleine faisait de chaque parking
-# un bloc de 22 m sur lequel on ne marchait que sur le toit.
-func _forme(key: String, mdl: Dictionary) -> Shape3D:
-	if key == Parking.CLE:
-		var forme := Parking.collision(mdl["mesh"])
-		var chemin := MODELS.path_join("parking_collision.res")
-		ResourceSaver.save(forme, chemin)
-		_stats["parking_collision_triangles"] = forme.get_meta("triangles")
-		return load(chemin)
-	var aabb: AABB = mdl["aabb"]
-	var box := BoxShape3D.new()
-	box.size = Vector3(aabb.size.x, aabb.end.y, aabb.size.z)
-	return box
-
-
 func _write_scene() -> String:
 	var root := Node3D.new()
 	root.name = "Buildings"
@@ -876,7 +858,9 @@ func _write_scene() -> String:
 		var aabb: AABB = mdl["aabb"]
 		var shape_key: String = p["model"]
 		if not _shapes.has(shape_key):
-			_shapes[shape_key] = _forme(shape_key, mdl)
+			var box := BoxShape3D.new()
+			box.size = Vector3(aabb.size.x, aabb.end.y, aabb.size.z)
+			_shapes[shape_key] = box
 		var body := StaticBody3D.new()
 		body.name = "StaticBody3D"
 		node.add_child(body)
@@ -884,8 +868,7 @@ func _write_scene() -> String:
 		var cs := CollisionShape3D.new()
 		cs.name = "CollisionShape3D"
 		cs.shape = _shapes[shape_key]
-		if _shapes[shape_key] is BoxShape3D:
-			cs.position = Vector3(aabb.get_center().x, aabb.end.y * 0.5, aabb.get_center().z)
+		cs.position = Vector3(aabb.get_center().x, aabb.end.y * 0.5, aabb.get_center().z)
 		body.add_child(cs)
 		cs.owner = root
 		_collect_windows(p, mdl, cells, sky_cells)
