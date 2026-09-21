@@ -23,8 +23,6 @@ extends Node3D
 
 const MAP_HEADS := "res://scenes/world/map/generated/roads/lamp_heads.tres"
 const DOWNTOWN_HEADS := "res://scenes/world/downtown/generated/lamp_heads.tres"
-# lampadaires posés par les lieux (îlot du parking de l'aérogare, 2026-09-21)
-const PLACES_HEADS := "res://scenes/world/map/generated/places/lamp_heads.tres"
 const GLOW_MATERIAL := "res://scenes/world/lamp_glow_material.tres"
 
 const GLOW_ON := Color(1.00, 0.88, 0.62)
@@ -80,7 +78,7 @@ var _last_cam := Vector3(1e9, 1e9, 1e9)
 
 
 func _ready() -> void:
-	for path in [MAP_HEADS, DOWNTOWN_HEADS, PLACES_HEADS]:
+	for path in [MAP_HEADS, DOWNTOWN_HEADS]:
 		if not ResourceLoader.exists(path):
 			push_warning("StreetLights : %s absent, cuisson à relancer" % path)
 			continue

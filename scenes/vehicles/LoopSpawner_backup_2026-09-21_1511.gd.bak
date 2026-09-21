@@ -109,11 +109,7 @@ func _process_proximity(delta: float) -> void:
 			if d >= proximity_min and d <= proximity_max:
 				_near.append(i)
 		_recycle(origin)
-	# SES entités seulement (cf. _actifs). Ce mode-ci — celui des deux spawners de World.tscn — comptait
-	# encore TOUT le groupe : la correction du 2026-09-20 n'avait été faite que dans l'autre branche de
-	# _process. Relevé le 2026-09-21 : 252 moins les 66 véhicules garés = 186 voitures en circulation, et
-	# 136 une fois le parking de l'aérogare agrandi, qui faisait tomber le test du rond-point faute de trafic.
-	var active := _actifs()
+	var active := get_tree().get_nodes_in_group(kind).size()
 	for i in _near:
 		_cooldowns[i] -= delta
 		if _cooldowns[i] > 0.0:

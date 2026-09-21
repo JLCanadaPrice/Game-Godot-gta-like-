@@ -16,8 +16,6 @@ extends Node3D
 const WORLD := preload("res://scenes/world/World.tscn")
 const MAP_HEADS := "res://scenes/world/map/generated/roads/lamp_heads.tres"
 const DOWNTOWN_HEADS := "res://scenes/world/downtown/generated/lamp_heads.tres"
-# lampadaires posés par les lieux (îlot du parking de l'aérogare, 2026-09-21)
-const PLACES_HEADS := "res://scenes/world/map/generated/places/lamp_heads.tres"
 
 # Dégagement sous le luminaire, BORNES RELEVÉES le 2026-09-19 sur les 1540 luminaires cuits, pas
 # supposées : carte 6,129 / 6,205 / 6,995 m (min / médiane / max), centre-ville 6,227 à 6,377 m. Le
@@ -245,7 +243,7 @@ func _luminaires(world: Node) -> void:
 	# pieds de mât relevés sur la scène cuite : RoadBake pose la capsule de collision à pied + 3,00 m
 	var pieds := PackedVector3Array()
 	_pieds(world, pieds)
-	for chemin in [MAP_HEADS, DOWNTOWN_HEADS, PLACES_HEADS]:
+	for chemin in [MAP_HEADS, DOWNTOWN_HEADS]:
 		if not ResourceLoader.exists(chemin):
 			_fautes.append("%s absent : la cuisson n'a pas écrit les luminaires" % chemin)
 			continue
@@ -254,7 +252,7 @@ func _luminaires(world: Node) -> void:
 		if res.size() == 0:
 			_fautes.append("%s vide" % chemin)
 			continue
-		var carte: bool = chemin == MAP_HEADS or chemin == PLACES_HEADS   # mâts à crosse, comme ceux de la carte
+		var carte: bool = chemin == MAP_HEADS
 		var hauts := 0
 		var bas := 0
 		var sans_sol := 0
@@ -337,7 +335,7 @@ func _bassin(cycle: Node, lights: Node) -> void:
 		_fautes.append("%d vraie(s) lumière(s) allumée(s) en plein jour" % allumees_jour)
 	# chaque lumière allumée doit être sous un luminaire cuit, et pas n'importe où
 	var heads := PackedVector3Array()
-	for chemin in [MAP_HEADS, DOWNTOWN_HEADS, PLACES_HEADS]:
+	for chemin in [MAP_HEADS, DOWNTOWN_HEADS]:
 		if ResourceLoader.exists(chemin):
 			heads.append_array((load(chemin) as MapLampHeads).heads)
 	var allumees := 0

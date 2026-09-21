@@ -26,9 +26,8 @@ travail imposée, les commandes exactes, les pièges déjà payés et l'état d'
   retravaillé, le copier hors du projet. Le compte de `ProjectLoadCheck` n'avait pas bougé (584) ce jour-là, ce qui
   est la preuve que rien de chargé n'etait parti ; il vaut **608** depuis les chantiers du
   2026-09-20 (matériaux de balisage, de feux de véhicule, scripts et tests ajoutés), **611** depuis
-  le 2026-09-21 (trois lentilles de gyrophare « au repos »), **613** depuis le test du rond-point
-  (`RoundaboutTrafficTest`, même jour) et **614** depuis les lampadaires du parking de l'aérogare
-  (`generated/places/lamp_heads.tres`).
+  le 2026-09-21 (trois lentilles de gyrophare « au repos ») et **613** depuis le test du rond-point
+  (`RoundaboutTrafficTest`, même jour).
 
 ## 2. Méthode de travail (imposée, non négociable)
 
@@ -168,7 +167,7 @@ manque en silence, ce qui est arrivé jusqu'au 2026-09-21.
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/DowntownStreetsTest.tscn
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/DowntownBuildingsTest.tscn
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/ShopBuildingsTest.tscn     # échec ANTÉRIEUR connu
-"$GODOT" --headless --path "$PROJET" --script res://scenes/world/map/tools/ProjectLoadCheck.gd   # attendu : 614 fichiers, 0 échec
+"$GODOT" --headless --path "$PROJET" --script res://scenes/world/map/tools/ProjectLoadCheck.gd   # attendu : 613 fichiers, 0 échec
 ```
 
 Outil d'inspection, hors batterie : `res://scenes/tests/VehicleSortTest.tscn` aligne les véhicules du catalogue
@@ -272,12 +271,6 @@ sans le plafond de 800x450 du §6). Une vue peut imposer sa propre heure par un 
   que lui seul en posait. Depuis les véhicules garés (22) et les blocs d'arrêt des passages à niveau
   (2 par fermeture), le plafond `max_active` mangeait autant de voitures de circulation. Il ne compte
   plus que SES PROPRES ENFANTS, comme `_recycle` le faisait déjà.
-  **CORRECTION du 2026-09-21 : c'était FAUX pour le mode `proximity`**, le seul qu'utilisent les deux
-  spawners de `World.tscn` — `_process_proximity` comptait toujours `get_nodes_in_group(kind).size()`, la
-  correction n'avait été faite que dans l'autre branche. La circulation plafonnait donc à 252 MOINS les
-  véhicules garés : 186 voitures au lieu de 252, et 136 une fois le parking de l'aérogare agrandi (section
-  E). C'est `RoundaboutTrafficTest` qui l'a trahi, faute de trafic (16 à 20 sorties au lieu de 30 à 48).
-  Les deux branches passent maintenant par `_actifs()`.
 - **`ShopBuildingsTest` échoue depuis avant ces chantiers** : ne pas l'imputer à la modification du
   jour, ne pas le « réparer » au passage.
 - **Geler la circulation pour une capture demande `PROCESS_MODE_DISABLED`, pas
@@ -856,35 +849,6 @@ garde sa voiture, son angle et son décalage d'une cuisson à l'autre. Une place
 et chaque voiture prend quelques degrés de travers et un peu d'avance ou de recul, pour que la rangée
 ne soit pas alignée au cordeau. **58 véhicules garés** au total, contre 14.
 
-### Parking de l'aérogare refait comme un vrai (2026-09-21)
-
-`_parking_aerogare` remplace l'appel direct à `_parking` pour Prairie Wind :
-
-- **Plus rien sur la raquette de la route** (le « petit rond-point » au bout de l'accès). Les deux rangées de
-  bord couraient sur toute la longueur du parking, jusque sur la raquette : trois voitures bleues y étaient
-  garées. `_rangee` ne dessine ni n'occupe plus une place dont le centre est à moins de 3 m d'une chaussée ou
-  d'une raquette (même emprise que `_near_road`), ni ses traits : 2 places retirées. C'était aussi un défaut
-  de CIRCULATION : la sonde de toute la carte de la section D a trouvé une voiture de la circulation arrêtée
-  pour de bon derrière l'une d'elles, en faisant demi-tour sur la raquette.
-- **Une double rangée face à face au milieu**, nez contre un îlot de 2 m (bordure de 0,15 m, que la voiture du
-  joueur franchit comme un trottoir), qui NE fait PAS toute la longueur : 102 m sur 126, soit **12 m d'allée à
-  chaque bout** pour faire le tour. Deux allées de 11,95 m entre les rangées de bord et la double rangée.
-- **154 places, 102 voitures** : même tirage stable qu'avant (une place garde sa voiture d'une cuisson à
-  l'autre), une place sur trois vide.
-- **Sens variés** : une partie des voitures est garée en marche arrière, nez vers l'allée — **49 sur 102**
-  mesurées. Le seuil vise 40 %, mais ce tirage partage des bits avec celui des places vides.
-- **4 lampadaires doubles (le `lamp_2` des terre-pleins de la carte) sur l'îlot, et nulle part ailleurs** :
-  aucune voiture n'y roule. Crosses en travers, une tête au-dessus de chaque rangée : 8 luminaires, écrits
-  dans `generated/places/lamp_heads.tres`, que `StreetLights` (bassin de vraies lumières) et `DayNightTest`
-  lisent avec ceux de la carte et du centre-ville. Poteaux de collision nommés `LampsDouble_airport_<i>`,
-  comme ceux de `RoadBake`, pour que `DayNightTest` retrouve leur pied.
-- **Deux modèles du tirage n'existaient pas** : `Veh_Microcar_01_Yellow` et `Veh_Minivan_01_White` au lieu de
-  `Veh_Microcar_Yellow` et `Veh_Minivan_White`. `_garer_sur_place` sortait sans rien dire, donc un tirage sur
-  sept laissait sa place vide en silence (87 voitures au lieu de 102 sur le nouveau parking). Corrigé.
-
-Véhicules garés au total : 108 dans `places.json` (102 à l'aérogare, 3 voitures de patrouille, 3 ambulances)
-et 8 camions dans les casernes du centre-ville.
-
 ## 10. Circulation : Echo Circle à deux voies, et les interblocages (2026-09-21)
 
 Le joueur a vu une file figée sur l'anneau. Une sonde jetable a laissé rouler la circulation et relevé,
@@ -939,12 +903,6 @@ l'entrée aussi, jamais celle par laquelle on est arrivé : plus de demi-tour su
 3 voitures de la zone sont figées 40 s, si moins de 20 voitures sortent de l'anneau, ou si une voie ne sert
 jamais. Il ne remplace pas la simulation longue, qui se fait avec la sonde de toute la carte (30 min de jeu,
 gel coupé).
-
-**Simulation longue, résultat** : 30 min de jeu sur toute la carte, gel coupé, 186 voitures en
-circulation (le plafond de `LoopSpawner` mangeait alors les voitures garées, cf. §6) : **aucune file de
-voitures en circulation figée 40 s**, sauf UNE, derrière une voiture GARÉE sur la raquette de l'aérogare
-(476,6 ; -1194,1), arrêtée là 1 078 s — c'est ce qui a fait retirer ces voitures de la raquette (parking
-de l'aérogare, §9).
 
 Trois pièges de mesure, payés pendant ce chantier :
 

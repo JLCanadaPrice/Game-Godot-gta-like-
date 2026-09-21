@@ -62,11 +62,6 @@ var faces := PackedVector3Array()
 var body: StaticBody3D
 var places: Array[Dictionary] = []
 var footprints: Array = []
-# Têtes des lampadaires posés par les lieux (parking de l'aérogare) : écrites dans places/lamp_heads.tres,
-# que StreetLights lit comme ceux de la carte et du centre-ville pour y poser ses vraies lumières.
-var lamp_heads := PackedVector3Array()
-var lamp_aims := PackedVector3Array()
-const LampHeadsRes := preload("res://scenes/world/map/MapLampHeads.gd")
 var parked: Array = []               # véhicules en stationnement, instanciés au lancement par ParkedVehicles
 # Maillages de pack FBX déjà fusionnés et enregistrés, rangés par chemin de fichier : deux camions partagent un .res
 var fbx_cache := {}
@@ -185,10 +180,6 @@ func _initialize() -> void:
 	var f := FileAccess.open(OUT.path_join("places.json"), FileAccess.WRITE)
 	f.store_string(JSON.stringify({"places": places, "footprints": footprints, "parked": parked}, "\t"))
 	f.close()
-	var tetes := LampHeadsRes.new()
-	tetes.heads = lamp_heads
-	tetes.aims = lamp_aims
-	ResourceSaver.save(tetes, OUT.path_join("lamp_heads.tres"))
 	_ensure_in_map()
 	print("PLACES_BALISAGE %s" % stats_air)
 	print("PLACES_BAKE %s en %.1f s" % [stats, (Time.get_ticks_msec() - t0) / 1000.0])
@@ -251,7 +242,7 @@ func _airport() -> void:
 	# donnée garde sa voiture, son angle et son décalage d'une cuisson à l'autre. Rien n'est aligné au
 	# cordeau — quelques degrés de travers, un peu d'avance ou de recul dans la place, et une place
 	# sur trois laissée vide.
-	for place: Dictionary in _parking_aerogare(top):
+	for place: Dictionary in _parking(Vector2(537, -1173.5), Vector2(126, 47), top - 0.02, true):
 		_garer_sur_place(place, top)
 	_balisage_aeroport(top)
 	_end("Prairie Wind International Airport", "airport")
@@ -780,7 +771,7 @@ func _paved(center: Vector2, size: Vector2, top: float, surface: String, line_co
 #
 # C'est cette liste qui sert a garer les voitures : avant le 2026-09-20 elles etaient posees a des
 # coordonnees ecrites a la main, donc A COTE des places et non dedans.
-func _parking(center: Vector2, size: Vector2, top: float, two_rows := true, lip := LIP, marge_route := -1.0) -> Array:
+func _parking(center: Vector2, size: Vector2, top: float, two_rows := true, lip := LIP) -> Array:
 	_paved(center, size, top, "plain", Color(), false, lip)
 	var along := Vector2(1, 0) if size.x >= size.y else Vector2(0, 1)
 	var across := Vector2(0, 1) if size.x >= size.y else Vector2(1, 0)
@@ -792,178 +783,13 @@ func _parking(center: Vector2, size: Vector2, top: float, two_rows := true, lip 
 	var places: Array = []
 	for row: float in rows:
 		var line_center := center + across * row * (depth * 0.5 - 2.75)
-		places.append_array(_rangee(line_center, along, across * row, length, top, marge_route))
+		var s := -length * 0.5 + 1.5
+		while s <= length * 0.5 - 1.5:
+			_stripe(line_center + along * s, across, 5.2, 0.12, top + 0.015, WHITE)
+			if s + 2.8 <= length * 0.5 - 1.5:
+				places.append({"pos": line_center + along * (s + 1.4), "nez": across * row})
+			s += 2.8
 	return places
-
-
-# Une rangée de places perpendiculaires : traits de 5,2 m tous les 2,8 m le long de `along`, et la liste
-# des places (centre, direction du nez). Avec `marge_route` >= 0, une place dont le centre est à moins de
-# cette marge d'une chaussée ou d'une raquette (même emprise que _near_road) n'est ni dessinée ni
-# occupée : c'est ce qui retire les places tombées sur la raquette de l'aérogare (2026-09-21).
-func _rangee(line_center: Vector2, along: Vector2, nez: Vector2, length: float, top: float, marge_route := -1.0) -> Array:
-	var places: Array = []
-	var s := -length * 0.5 + 1.5
-	while s <= length * 0.5 - 1.5:
-		var marque := line_center + along * s      # (« trait » est un mot réservé de GDScript 4.7)
-		if marge_route < 0.0 or not _near_road(marque, marge_route - 1.4):
-			_stripe(marque, nez, 5.2, 0.12, top + 0.015, WHITE)
-		if s + 2.8 <= length * 0.5 - 1.5:
-			var centre := line_center + along * (s + 1.4)
-			if marge_route < 0.0 or not _near_road(centre, marge_route):
-				places.append({"pos": centre, "nez": nez})
-			else:
-				stats["places_sur_la_route"] = int(stats.get("places_sur_la_route", 0)) + 1
-		s += 2.8
-	return places
-
-
-# Parking de l'aérogare, comme un vrai (2026-09-21) :
-#  - les deux rangées de bord du 2026-09-20, SANS les places qui mordaient sur la raquette de la route :
-#    trois voitures bleues y étaient garées, sur l'enrobé de la raquette ;
-#  - au milieu, une DOUBLE RANGÉE FACE À FACE, nez contre un îlot central, qui ne fait PAS toute la
-#    longueur : PARKING_ALLEE_BOUT m d'allée à chaque bout, pour que les voitures fassent le tour ;
-#  - des lampadaires SUR L'ÎLOT seulement, là où aucune voiture ne roule.
-# Géométrie : parking 126 x 47 m ; rangées de bord de 5,2 m ; double rangée de 2 x 5,2 m autour d'un
-# îlot de 2 m ; il reste deux allées de 11,95 m entre les rangées, et 12 m à chaque bout.
-const PARKING_CENTRE := Vector2(537, -1173.5)
-const PARKING_TAILLE := Vector2(126, 47)
-const PARKING_ALLEE_BOUT := 12.0
-const PARKING_ILOT := 2.0
-const PARKING_ILOT_HAUT := 0.15
-const PARKING_LAMPES := 4
-const PARKING_MARGE_ROUTE := 3.0
-const LAMPE_DOUBLE := "res://assets/modular_roads/lamp_2.glb"
-const LAMPE_DOUBLE_TETES := [Vector3(1.268, 6.145, 0.005), Vector3(-1.268, 6.145, 0.005)]   # relevées par RoadBake
-const LAMPE_PORTEE := 650.0
-const HALO := Vector3(0.46, 0.30, 0.44)                  # mêmes halos que RoadBake (LAMP_GLOW_SIZE)
-const GLOW_MATERIAL := "res://scenes/world/lamp_glow_material.tres"
-
-
-func _parking_aerogare(top: float) -> Array:
-	var y := top - 0.02
-	var places := _parking(PARKING_CENTRE, PARKING_TAILLE, y, true, LIP, PARKING_MARGE_ROUTE)
-	var long := PARKING_TAILLE.x - 2.0 * PARKING_ALLEE_BOUT
-	for cote: float in [-1.0, 1.0]:
-		# rangée nord (cote -1) : nez vers le sud, contre l'îlot ; rangée sud (+1) : nez vers le nord
-		var ligne := PARKING_CENTRE + Vector2(0, cote * (PARKING_ILOT * 0.5 + 2.6))
-		places.append_array(_rangee(ligne, Vector2(1, 0), Vector2(0, -cote), long, y))
-	# îlot : bordure de béton, franchissable par la voiture du joueur comme un trottoir (0,15 m)
-	_box("paint", Vector3(PARKING_CENTRE.x, y, PARKING_CENTRE.y), Vector3(long, PARKING_ILOT_HAUT, PARKING_ILOT),
-			Color(0.62, 0.62, 0.6), true)
-	# lampadaires doubles sur l'îlot, crosses en travers : une tête au-dessus de chaque rangée
-	var lampes: Array = []
-	for k in PARKING_LAMPES:
-		var x := PARKING_CENTRE.x - long * 0.5 + long * (k + 0.5) / PARKING_LAMPES
-		var base := Vector3(x, y + PARKING_ILOT_HAUT, PARKING_CENTRE.y)
-		var bras := Vector3(0, 0, 1)
-		lampes.append(Transform3D(Basis(bras, Vector3.UP, bras.cross(Vector3.UP)), base))
-	_lampadaires(LAMPE_DOUBLE, LAMPE_DOUBLE_TETES, lampes, "LampsDouble")
-	stats["places_parking_aerogare"] = places.size()
-	return places
-
-
-# Lampadaires d'un lieu : maillage du modèle fusionné pour tous (un appel de dessin), un poteau de
-# collision chacun (nommé comme ceux de RoadBake, que DayNightTest reconnaît), un halo par tête dans le
-# groupe lamp_glow (caché le jour, montré la nuit par StreetLights), et les têtes ajoutées au fichier que
-# StreetLights lit pour poser ses vraies lumières.
-func _lampadaires(chemin: String, tetes: Array, transforms: Array, nom: String) -> void:
-	var inst: Node = (load(chemin) as PackedScene).instantiate()
-	var source: Mesh = (inst.find_children("*", "MeshInstance3D", true, false)[0] as MeshInstance3D).mesh
-	inst.free()
-	var src := source.surface_get_arrays(0)
-	var sv: PackedVector3Array = src[Mesh.ARRAY_VERTEX]
-	var sn: PackedVector3Array = src[Mesh.ARRAY_NORMAL]
-	var su: PackedVector2Array = src[Mesh.ARRAY_TEX_UV] if src[Mesh.ARRAY_TEX_UV] != null else PackedVector2Array()
-	var si: PackedInt32Array = src[Mesh.ARRAY_INDEX] if src[Mesh.ARRAY_INDEX] != null else PackedInt32Array(range(sv.size()))
-	var v := PackedVector3Array()
-	var n := PackedVector3Array()
-	var u := PackedVector2Array()
-	var idx := PackedInt32Array()
-	var halos: Array = []
-	for i in transforms.size():
-		var t: Transform3D = transforms[i]
-		var base := v.size()
-		for k in sv.size():
-			v.append(t * sv[k])
-			n.append((t.basis * sn[k]).normalized())
-			if not su.is_empty():
-				u.append(su[k])
-		for k in si:
-			idx.append(base + k)
-		var pole := CollisionShape3D.new()
-		pole.name = "%s_%s_%d" % [nom, String(place.get_meta("place_id")), i]
-		var forme := BoxShape3D.new()
-		forme.size = Vector3(0.3, 6.0, 0.3)
-		pole.shape = forme
-		pole.position = t.origin + Vector3(0, 3.0, 0)
-		body.add_child(pole)
-		for o: Vector3 in tetes:
-			var tete := t * o
-			halos.append(tete)
-			lamp_heads.append(tete)
-			lamp_aims.append((tete - Vector3(t.origin.x, tete.y, t.origin.z)).normalized())
-	var arrays := []
-	arrays.resize(Mesh.ARRAY_MAX)
-	arrays[Mesh.ARRAY_VERTEX] = v
-	arrays[Mesh.ARRAY_NORMAL] = n
-	if not u.is_empty():
-		arrays[Mesh.ARRAY_TEX_UV] = u
-	arrays[Mesh.ARRAY_INDEX] = idx
-	var mesh := ArrayMesh.new()
-	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
-	mesh.surface_set_material(0, source.surface_get_material(0))
-	var chemin_res := OUT.path_join("%s_%s.res" % [String(place.get_meta("place_id")), nom.to_lower()])
-	ResourceSaver.save(mesh, chemin_res)
-	var mi := MeshInstance3D.new()
-	mi.name = nom
-	mi.mesh = load(chemin_res)
-	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	mi.visibility_range_end = LAMPE_PORTEE
-	place.add_child(mi)
-	_halos(halos, nom)
-	stats["lampadaires"] = int(stats.get("lampadaires", 0)) + transforms.size()
-
-
-# Halos des têtes : une petite boîte non éclairée par tête, fusionnées, sur le matériau PARTAGÉ des
-# halos de la ville, dans le groupe lamp_glow.
-func _halos(tetes: Array, nom: String) -> void:
-	var v := PackedVector3Array()
-	var n := PackedVector3Array()
-	var idx := PackedInt32Array()
-	var h := HALO * 0.5
-	var faces := [
-		[Vector3(0, 0, 1), Vector3(-h.x, -h.y, h.z), Vector3(h.x, -h.y, h.z), Vector3(h.x, h.y, h.z), Vector3(-h.x, h.y, h.z)],
-		[Vector3(0, 0, -1), Vector3(h.x, -h.y, -h.z), Vector3(-h.x, -h.y, -h.z), Vector3(-h.x, h.y, -h.z), Vector3(h.x, h.y, -h.z)],
-		[Vector3(1, 0, 0), Vector3(h.x, -h.y, h.z), Vector3(h.x, -h.y, -h.z), Vector3(h.x, h.y, -h.z), Vector3(h.x, h.y, h.z)],
-		[Vector3(-1, 0, 0), Vector3(-h.x, -h.y, -h.z), Vector3(-h.x, -h.y, h.z), Vector3(-h.x, h.y, h.z), Vector3(-h.x, h.y, -h.z)],
-		[Vector3(0, 1, 0), Vector3(-h.x, h.y, h.z), Vector3(h.x, h.y, h.z), Vector3(h.x, h.y, -h.z), Vector3(-h.x, h.y, -h.z)],
-		[Vector3(0, -1, 0), Vector3(-h.x, -h.y, -h.z), Vector3(h.x, -h.y, -h.z), Vector3(h.x, -h.y, h.z), Vector3(-h.x, -h.y, h.z)],
-	]
-	for tete: Vector3 in tetes:
-		for face: Array in faces:
-			var b := v.size()
-			for k in range(1, 5):
-				v.append(tete + (face[k] as Vector3))
-				n.append(face[0])
-			idx.append_array([b, b + 1, b + 2, b, b + 2, b + 3])
-	var arrays := []
-	arrays.resize(Mesh.ARRAY_MAX)
-	arrays[Mesh.ARRAY_VERTEX] = v
-	arrays[Mesh.ARRAY_NORMAL] = n
-	arrays[Mesh.ARRAY_INDEX] = idx
-	var mesh := ArrayMesh.new()
-	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
-	mesh.surface_set_material(0, load(GLOW_MATERIAL))
-	var chemin_res := OUT.path_join("%s_%s_halos.res" % [String(place.get_meta("place_id")), nom.to_lower()])
-	ResourceSaver.save(mesh, chemin_res)
-	var mi := MeshInstance3D.new()
-	mi.name = nom + "Glow"
-	mi.mesh = load(chemin_res)
-	mi.visible = false
-	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	mi.visibility_range_end = LAMPE_PORTEE
-	mi.add_to_group(&"lamp_glow", true)
-	place.add_child(mi)
 
 
 func _stripe(center: Vector2, dir: Vector2, length: float, width: float, y: float, color: Color) -> void:
@@ -1585,16 +1411,12 @@ const PARKING_MODELES := [
 	"Sedans/Veh_Sedan_02_White", "Sedans/Veh_Sedan_01_Yellow", "SUVs/Veh_SUV_01_White",
 	"SUVs/Veh_SUV_02_Green", "SUVs/Veh_SUV_03_Blue", "SUVs/Veh_SUV_01_Red",
 	"Vans/Veh_Van_01_White", "Pickup/Veh_Pickup_01_Blue", "Coupes/Veh_Coupe_01_Red",
-	"Microcar/Veh_Microcar_Yellow", "Minivan/Veh_Minivan_White",
+	"Microcar/Veh_Microcar_01_Yellow", "Minivan/Veh_Minivan_01_White",
 ]
-# (2026-09-21) Ces deux derniers étaient écrits « _01_ » : aucun fichier de ce nom, donc un tirage sur sept
-# retombait sur un modèle absent et la place restait vide EN SILENCE (_garer_sur_place sort sans rien dire).
-# 36 voitures au lieu d'une cinquantaine sur l'ancien parking ; relevé sur places.json à la section E.
 const PARKING_VIDE := 32            # % de places laissées libres
 const PARKING_TRAVERS := 4.0        # degrés de travers, au plus
 const PARKING_AVANCE := 0.45        # m d'avance ou de recul dans la place
 const PARKING_LATERAL := 0.30       # m de décalage vers un côté de la place
-const PARKING_MARCHE_ARRIERE := 40  # % de voitures garées en marche arrière
 
 
 func _garer_sur_place(place: Dictionary, top: float) -> void:
@@ -1612,12 +1434,6 @@ func _garer_sur_place(place: Dictionary, top: float) -> void:
 	var lateral := (float((h >> 23) % 2001) / 1000.0 - 1.0) * PARKING_LATERAL
 	var cote := Vector2(-nez.y, nez.x)
 	var centre := pos + nez * avance + cote * lateral
-	# SENS VARIÉS (2026-09-21) : toutes les voitures étaient garées en marche avant. Une partie est
-	# maintenant garée en marche ARRIÈRE (nez vers l'allée), tirage stable comme le reste. Le seuil vise
-	# 40 %, mais ce tirage partage des bits avec celui des places vides : mesuré, 49 voitures sur 102.
-	var arriere := ((h >> 3) % 100) < PARKING_MARCHE_ARRIERE
 	# Le cap enregistré est celui du MODÈLE BRUT, même convention que les voitures du commissariat :
 	# nez vers (-x, -z) donne atan2(-nez.x, -nez.y).
-	_parked_vehicle(chemin, centre, atan2(-nez.x, -nez.y) + travers + (PI if arriere else 0.0), top + 0.03)
-	if arriere:
-		stats["garees_en_marche_arriere"] = int(stats.get("garees_en_marche_arriere", 0)) + 1
+	_parked_vehicle(chemin, centre, atan2(-nez.x, -nez.y) + travers, top + 0.03)
