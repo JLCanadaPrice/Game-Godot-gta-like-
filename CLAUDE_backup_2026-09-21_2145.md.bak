@@ -1209,14 +1209,3 @@ touche toute la conduite).
   `cos(lacet)`.
 - `ParkingStructureTest` mesure les deux sur un sol témoin : rayons à 3, 8 et 16 m/s, et une vraie rampe de 12 %
   d'un seul tenant (plat, pente, plat) que la voiture du joueur monte en 8,4 s puis redescend en marche arrière.
-
-**Étape 4 — l'exemplaire de l'aéroport** (`PlacesBake._parking_etages`). Zone rouge de la photo 07, relevée sur le
-réseau avant de choisir : route d'accès `art_a9_s:2`, artère de 9 m, dessus à 5,30 m, axe à z -1194..-1199 entre
-x 300 et 457 ; raquette `n_air` en (470, -1195), bord à 9,5 m ; deux noeuds du graphe de circulation dans la zone,
-tous deux sur la raquette ; aucun noeud piéton. Origine du modèle en **(405, -1167,2)**, lacet de 180° : façade et
-entrée face à la route, bout est du modèle (où se raccorde la rampe) du côté ouest du site. Béton tout autour
-(x 352..432, z -1196..-1145), 2 cm SOUS la route — dont le bord sud va de z -1194,4 à -1190,1 — pour que ce soit le
-bord de la chaussée qui dessine la limite, sans herbe ; allée d'enrobé de la route au seuil de l'entrée. Collision
-exacte versée dans celle du lieu. `ParkingStructureTest` vérifie l'emprise (+0,5 m) : 0 point de chaussée, 0 noeud
-ni arête du graphe de circulation, 0 noeud du PedGraph ou du Circuit — `MapPlacesTest` ne regarde les graphes qu'à
-90 m du centre d'un lieu, et ce parking est à 165 m de celui de l'aéroport. Vues au sol `parking_aeroport_*`.

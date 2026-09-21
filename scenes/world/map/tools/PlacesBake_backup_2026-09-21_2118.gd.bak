@@ -261,58 +261,9 @@ func _airport() -> void:
 	# sur trois laissée vide.
 	for place: Dictionary in _parking_aerogare(top):
 		_garer_sur_place(place, top)
-	_parking_etages(top)
 	_balisage_aeroport(top)
 	_vitrage_uniforme = false
 	_end("Prairie Wind International Airport", "airport")
-
-
-# PARKING À ÉTAGES DE L'AÉROPORT (2026-09-21) : un exemplaire du Business_ParkingStructure du centre-ville, dans la
-# zone rouge de la photo 07 — au sud de la route d'accès, à l'ouest de la raquette et du parking existant. Relevé sur
-# le réseau avant de choisir l'emplacement : route art_a9_s:2, artère de 9 m, dessus à 5,30 m, axe à z -1194..-1199
-# entre x 300 et 457 ; raquette n_air en (470, -1195), bord à 9,5 m ; deux noeuds du graphe de circulation dans la
-# zone, tous deux sur la raquette ; aucun noeud piéton. Façade (+Z du modèle, l'entrée sous l'auvent) tournée vers
-# la route (lacet de 180°) ; le bout est du modèle, où se raccordera la rampe, du côté ouest du site.
-#  - le parking : le maillage fusionné (sans ses cônes, BuildingModels.EXCLUS) et sa collision EXACTE
-#    (ParkingStructureKit.collision), versée dans celle du lieu ;
-#  - béton tout autour, au niveau du parking de l'aérogare (dessus du site - 0,02) : il file 2 cm SOUS la route, dont
-#    le bord sud va de z -1194,4 (x 350) à -1190,1 (x 432) — c'est le bord de la chaussée qui dessine la limite, sans
-#    herbe entre les deux ;
-#  - une allée d'enrobé de la route au seuil de l'entrée (le passage sous l'auvent, 7,7 m), 1 cm au-dessus du béton.
-# La circulation n'y entre pas : aucune arête du graphe n'y mène (vérifié par ParkingStructureTest).
-const PARKING_ETAGES := "Business_ParkingStructure"
-const PARKING_ETAGES_ORIGINE := Vector2(405.0, -1167.2)
-const PARKING_ETAGES_LACET := PI
-const PARKING_ETAGES_BETON := Rect2(352.0, -1196.0, 80.0, 51.0)
-const PARKING_ETAGES_ALLEE := Rect2(400.0, -1196.0, 10.0, 17.65)
-const ParkingKit := preload("res://scenes/world/map/tools/ParkingStructureKit.gd")
-
-
-func _parking_etages(top: float) -> void:
-	var y := top - 0.02
-	var info := models.get_model(PARKING_ETAGES)
-	var xf := Transform3D(Basis(Vector3.UP, PARKING_ETAGES_LACET), Vector3(PARKING_ETAGES_ORIGINE.x, y, PARKING_ETAGES_ORIGINE.y))
-	var mi := MeshInstance3D.new()
-	mi.name = "%s_%d" % [PARKING_ETAGES, place.get_child_count()]
-	mi.mesh = info["mesh"]
-	mi.transform = xf
-	mi.visibility_range_end = 2500.0
-	place.add_child(mi)
-	var forme := ParkingKit.collision(info["mesh"])
-	for q: Vector3 in forme.get_faces():
-		faces.append(xf * q)
-	stats["modèles"] += 1
-	stats["triangles"] += int(info["triangles"])
-	stats["parking_etages_collision"] = forme.get_meta("triangles")
-	var panes := models.windows_of(PARKING_ETAGES)
-	if not panes.is_empty():
-		stats["carreaux_allumés"] += Windows.emit(panes, xf, _window_acc[0], _window_acc[1], _window_acc[2])
-	var boite: AABB = info["aabb"]
-	var centre := xf * boite.get_center()
-	footprints.append(_rect_footprint("building", Vector2(centre.x, centre.z), Vector2(boite.size.x, boite.size.z)))
-	# béton tout autour, puis l'allée d'enrobé de la route à l'entrée
-	_paved(PARKING_ETAGES_BETON.get_center(), PARKING_ETAGES_BETON.size, y, "concrete")
-	_paved(PARKING_ETAGES_ALLEE.get_center(), PARKING_ETAGES_ALLEE.size, y + 0.01, "plain", Color(), false, 0.0)
 
 
 # PORCHE D'ENTRÉE DE L'AÉROGARE (2026-09-21) : il était noir la nuit. L'auvent est un bloc qu'on a posé

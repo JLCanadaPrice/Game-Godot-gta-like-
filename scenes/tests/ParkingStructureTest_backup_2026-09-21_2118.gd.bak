@@ -6,9 +6,6 @@ extends Node3D
 #     hauteur 1,8 m) et une voiture (Car.tscn, laissée là) lâchés à 1 m au-dessus du plancher s'y posent et y
 #     restent. Avec l'ancienne boîte pleine, ils se posaient sur le TOIT de la boîte, 18 m plus haut.
 #
-#     Les quatre exemplaires : les trois du centre-ville et celui de l'aéroport (PlacesBake._parking_etages).
-#  1b. EMPRISE DE L'AÉROPORT : aucun point d'une chaussée (RoadNetwork), aucun noeud ni arête du graphe de
-#     circulation, aucun noeud du PedGraph ni du Circuit sous le parking de l'aéroport (emprise + 0,5 m).
 #  2. RAYON DE BRAQUAGE DU JOUEUR, mesuré sur le vrai Car._drive_physics (arc parcouru / lacet) : 5,5 m à 3 m/s,
 #     10 m à 16 m/s (inchangé). Il valait 10 m à toute vitesse : impossible de tourner dans un parking.
 #  3. RAMPE À 12 % : la voiture du joueur monte une vraie pente continue de 12 % (plat, pente, plat, sans ressaut aux
@@ -22,9 +19,6 @@ extends Node3D
 
 const Kit := preload("res://scenes/world/map/tools/ParkingStructureKit.gd")
 const CENTRE_VILLE := "res://scenes/world/downtown/generated/Buildings.tscn"
-const LIEUX := "res://scenes/world/map/generated/Places.tscn"
-const MONDE := "res://scenes/world/World.tscn"
-const Network := preload("res://scenes/world/map/tools/RoadNetwork.gd")
 const CAR := preload("res://scenes/vehicles/Car.tscn")
 const BERLINE := "res://assets/vehicle_models_extra/city_vehicles_UNVERIFIED_LICENSE/Sedans/Veh_Sedan_01_Blue.glb"
 const GRAVITE := 9.8
@@ -79,28 +73,18 @@ func _ready() -> void:
 	_pilote.global_position = Vector3(0, 1.0, TEMOIN_Z + 30.0)
 	var ville: Node3D = (load(CENTRE_VILLE) as PackedScene).instantiate()
 	add_child(ville)
-	var parkings: Array = []    # [noeud porteur de la transformation, maillage]
+	var parkings: Array = []
 	for b in ville.get_children():
 		if String(b.get_meta("model", "")) == Kit.CLE:
-			parkings.append([b, (b.get_node("Mesh") as MeshInstance3D).mesh])
-			var cs2 := b.get_node_or_null("StaticBody3D/CollisionShape3D") as CollisionShape3D
-			if cs2 == null or not (cs2.shape is ConcavePolygonShape3D):
-				_fautes.append("%s : collision %s, pas les triangles du modele" % [b.name, "absente" if cs2 == null else cs2.shape.get_class()])
+			parkings.append(b)
 	if parkings.size() != 3:
 		_fautes.append("%d parking(s) a etages au centre-ville au lieu de 3" % parkings.size())
-	var lieux: Node3D = (load(LIEUX) as PackedScene).instantiate()
-	add_child(lieux)
-	var aeroport: MeshInstance3D = null
-	for mi_n in lieux.find_children(Kit.MODELE + "_*", "MeshInstance3D", true, false):
-		aeroport = mi_n
-	if aeroport == null:
-		_fautes.append("parking a etages de l'aeroport absent de Places.tscn")
-	else:
-		parkings.append([aeroport, aeroport.mesh])
-		_emprise_aeroport(aeroport)
-	for e: Array in parkings:
-		var b: Node3D = e[0]
-		var planchers := Kit.planchers(e[1])
+	for b: Node3D in parkings:
+		var mi := b.get_node("Mesh") as MeshInstance3D
+		var cs2 := b.get_node_or_null("StaticBody3D/CollisionShape3D") as CollisionShape3D
+		if cs2 == null or not (cs2.shape is ConcavePolygonShape3D):
+			_fautes.append("%s : collision %s, pas les triangles du modele" % [b.name, "absente" if cs2 == null else cs2.shape.get_class()])
+		var planchers := Kit.planchers(mi.mesh)
 		print("PARKING %s en %s : planchers %s" % [b.name, str(b.global_position.snapped(Vector3.ONE * 0.01)), str(planchers)])
 		if planchers.size() != 5:
 			_fautes.append("%s : %d plateaux releves au lieu de 5" % [b.name, planchers.size()])
@@ -110,56 +94,6 @@ func _ready() -> void:
 			_pietons.append([_pieton(p), (b.global_transform * Vector3(0, y, 0)).y, "%s niveau %d" % [b.name, k]])
 			var c := b.global_transform * (VOITURE + Vector3(0, y + 1.0, 0))
 			_voitures.append([_voiture(c, "%s niveau %d" % [b.name, k]), (b.global_transform * Vector3(0, y, 0)).y, "%s niveau %d" % [b.name, k]])
-
-
-# Rien sous le parking de l'aéroport : ni chaussée, ni noeud ou arête du graphe de circulation, ni noeud piéton.
-func _emprise_aeroport(mi: MeshInstance3D) -> void:
-	var boite := mi.get_aabb()
-	var coins: Array[Vector2] = []
-	for k in 8:
-		var q := mi.global_transform * boite.get_endpoint(k)
-		coins.append(Vector2(q.x, q.z))
-	var r := Rect2(coins[0], Vector2.ZERO)
-	for c in coins:
-		r = r.expand(c)
-	r = r.grow(0.5)
-	var net := Network.new()
-	net.build()
-	var sous_route := 0
-	for rb in net.ribbons:
-		if rb.kind in ["median", "rail"]:
-			continue
-		for q: Vector3 in rb.points:
-			if r.has_point(Vector2(q.x, q.z)):
-				sous_route += 1
-	var noeuds := 0
-	for q: Vector3 in net.g_nodes:
-		if r.has_point(Vector2(q.x, q.z)):
-			noeuds += 1
-	var aretes := 0
-	for e: Dictionary in net.g_edges:
-		for q: Vector3 in e["points"]:
-			if r.has_point(Vector2(q.x, q.z)):
-				aretes += 1
-				break
-	var monde: Node = (load(MONDE) as PackedScene).instantiate()
-	var pietons := 0
-	var circuit := 0
-	for nom_graphe in ["PedGraph", "Circuit"]:
-		var g := monde.get_node_or_null(nom_graphe)
-		if g == null:
-			continue
-		for q: Vector3 in g.get("nodes"):
-			if r.has_point(Vector2(q.x, q.z)):
-				if nom_graphe == "PedGraph":
-					pietons += 1
-				else:
-					circuit += 1
-	monde.free()
-	print("PARKING_AEROPORT emprise x %.1f..%.1f z %.1f..%.1f : %d point(s) de chaussee, %d noeud(s) et %d arete(s) du graphe de circulation, %d noeud(s) pietons, %d du Circuit"
-			% [r.position.x, r.end.x, r.position.y, r.end.y, sous_route, noeuds, aretes, pietons, circuit])
-	if sous_route + noeuds + aretes + pietons + circuit > 0:
-		_fautes.append("parking de l'aeroport sur une chaussee ou un graphe (%d + %d + %d + %d + %d)" % [sous_route, noeuds, aretes, pietons, circuit])
 
 
 func _pieton(p: Vector3) -> CharacterBody3D:
