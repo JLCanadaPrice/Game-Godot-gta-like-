@@ -120,8 +120,6 @@ const VIEWS := [
 	# Gros plan sur une rampe de gyrophare, a 6 m : c'est la seule distance ou l'on voit si la
 	# GEOMETRIE de la rampe s'allume, et pas seulement la lumiere qu'elle projette.
 	["nuit_gyro_gros_plan", Vector3(-692.6, 2.6, 155.0), Vector3(-694.3, 1.75, 158.3), "", 1.0],
-	# le SUV de patrouille du meme parking (autre modele), vu de la meme facon, a utiliser avec --gyro-seul
-	["nuit_gyro_suv", Vector3(-692.6, 2.6, 160.6), Vector3(-694.3, 1.75, 163.9), "", 1.0],
 	# Section C du 2026-09-21 : une ambulance du St. Anselm (sapin de Noel, feux jaunes passes au
 	# blanc) vue de trois quarts avant puis de trois quarts arriere, et un camion de pompiers de la
 	# caserne 73 (tous ses feux rouges ET blancs, synchronises). A utiliser avec --gyros-allumes.
@@ -215,7 +213,6 @@ var _feux := -1                      # etat impose aux feux tricolores, -1 = les
 var _trafic := 0.0                   # s d'attente avec les spawners ACTIFS avant de capturer
 var _cadrer := ""                    # "phare" | "frein" | "face" | "gyro" : recadre sur un vrai vehicule
 var _gyros_allumes := false
-var _gyro_seul := false              # un SEUL vehicule d'urgence allume, le plus proche de la camera
 # Rayon de recherche de --cadrer=. Par defaut on va chercher loin (un vehicule d'urgence ne fait
 # que 1,4 % du trafic), mais pour une capture au sol il vaut mieux un sujet PROCHE du point de
 # vue : plus il est loin, plus la camera part dans une rue qu'on n'a pas choisie.
@@ -259,13 +256,6 @@ func _ready() -> void:
 			# Les gyrophares sont ETEINTS par defaut depuis le 2026-09-20 : ils s'allumeront sur
 			# evenement. Sans cette option, une capture de gyrophare ne montrerait rien.
 			_gyros_allumes = true
-		elif arg == "--gyro-seul":
-			# Allume UN SEUL vehicule d'urgence, le plus proche de la camera de chaque vue, et laisse les
-			# autres eteints : c'est la situation du jeu, ou le joueur allume SA voiture avec R et croise
-			# des voitures de patrouille eteintes. --gyros-allumes allumait TOUT, et masquait ainsi le
-			# defaut du 2026-09-21 : la moitie bleue d'une voiture de police allumee disparaissait des
-			# qu'une voiture du meme modele, eteinte, etait a portee.
-			_gyro_seul = true
 		elif arg.begins_with("--gyro="):
 			# Fige TOUS les gyrophares sur un etat. Sans ca un eclat ne dure que 0,20 s et on ne
 			# photographie pas la couleur voulue : il faudrait relancer jusqu'a tomber dessus.
@@ -381,9 +371,6 @@ func _ready() -> void:
 					# le reveiller avant de declencher, sinon il reste cache
 					for k in 90:
 						await get_tree().process_frame
-		# APRES le cadrage : c'est la position finale de la camera qui designe le vehicule a allumer
-		if _gyro_seul and vl != null:
-			_allumer_le_plus_proche(vl, from)
 		for k in SETTLE_FRAMES:
 			await get_tree().process_frame
 		# moyenne du temps GPU sur les 20 dernières images : une image isolée est trop bruitée pour
@@ -461,25 +448,6 @@ func _tous_les_feux(n: Node) -> Array[Node]:
 	for c in n.get_children():
 		out.append_array(_tous_les_feux(c))
 	return out
-
-
-# --gyro-seul : eteint tous les vehicules d'urgence, puis allume le plus proche de `oeil`.
-func _allumer_le_plus_proche(vl: Node, oeil: Vector3) -> void:
-	vl.call("allumer_urgences", false)
-	var meilleur: Node3D = null
-	var d_min := INF
-	for v in get_tree().get_nodes_in_group(&"vehicle"):
-		var body := v as Node3D
-		if body == null or not bool(vl.call("_urgence", vl.call("_cle", body))):
-			continue
-		var d := body.global_position.distance_to(oeil)
-		if d < d_min:
-			d_min = d
-			meilleur = body
-	if meilleur != null:
-		vl.call("set_gyro", meilleur, true)
-		print("MAP_SHOT_GYRO un seul allume : %s a %.1f m, en (%.1f, %.1f, %.1f)" % [String(vl.call("_cle", meilleur)).get_file(),
-				d_min, meilleur.global_position.x, meilleur.global_position.y, meilleur.global_position.z])
 
 
 # Amene le joueur sous la camera et laisse la circulation se remplir, pour --trafic=.

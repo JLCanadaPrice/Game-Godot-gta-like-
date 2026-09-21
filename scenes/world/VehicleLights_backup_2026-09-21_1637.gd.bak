@@ -179,10 +179,6 @@ var _par_modele := {}                    # chemin de modèle -> {"mm": MultiMesh
 var _spots: Array[SpotLight3D] = []
 var _modeles_dessines := 0
 var _optiques := 0
-# Racines posées au dernier passage, par « modèle|famille ». Lu par VehicleLightsTest : un MultiMesh ne
-# rend pas ses transformations en headless (le serveur de rendu factice ne les garde pas, elles
-# ressortent à zéro), il faut donc savoir QUELS véhicules ont été posés dans quel calque.
-var _poses := {}
 
 
 func _ready() -> void:
@@ -253,7 +249,6 @@ func _process(_delta: float) -> void:
 		return
 	var oeil := cam.global_position
 	var portee2 := portee * portee
-	_poses.clear()
 	# regroupement par MODÈLE : c'est la condition du MultiMesh, une instance ne peut porter qu'un
 	# seul maillage et chaque modèle a ses propres optiques
 	var par_modele := {}
@@ -360,7 +355,6 @@ func _poser(cle: String, racines: Array, fam: String) -> MultiMeshInstance3D:
 		mm.set_instance_transform(i, xf)
 	mm.visible_instance_count = racines.size()
 	calque.visible = true
-	_poses[cle + "|" + fam] = racines
 	_modeles_dessines += 1
 	_optiques += racines.size()
 	return calque
@@ -618,9 +612,6 @@ func _familles_urgence(genre: String, feux: Array) -> Dictionary:
 			# la rampe de TOIT seulement, ses feux ROUGES seulement ; le blanc du milieu reste tel quel
 			if couleur == "rouge" and float(f["fy"]) >= RAMPE_Y and absf(float(f["fx"])) >= RAMPE_MILIEU:
 				nom = "urg_rouge" if float(f["fx"]) < 0.0 else "urg_bleu"
-				if nom == "urg_bleu":
-					# MÊME géométrie, calque des voitures ÉTEINTES (cf. _poser_repos)
-					_ajouter(out, "urg_bleu_repos", f)
 		elif genre == "pompiers":
 			nom = "urg_rouge" if couleur == "rouge" else "urg_blanc"
 		elif genre == "sapin":
@@ -674,18 +665,10 @@ func _poser_urgence(cle: String, racines: Array, temps: int, tg: float) -> void:
 
 # Rampe éteinte : la moitié droite d'une rampe de police reste une lentille BLEUE, et les feux jaunes
 # de l'ambulance restent BLANCS. Le reste garde les couleurs du modèle.
-#
-# UN CALQUE À PART POUR LES RAMPES ÉTEINTES (2026-09-21). Un calque, c'est UN MultiMesh par modèle et par
-# famille. Les voitures éteintes passaient par le calque `urg_bleu` des voitures allumées, APRÈS elles :
-# dès qu'une voiture de police éteinte du même modèle était à portée — une des voitures de patrouille
-# garées devant le commissariat —, le calque était réaffecté à ELLE, et la moitié bleue de la voiture
-# que le joueur venait d'allumer disparaissait. Le rouge, que personne ne réaffecte, restait. Les
-# captures allumaient TOUS les gyrophares et ne pouvaient pas le voir (d'où `MapShotsTest --gyro-seul`).
-# `urg_bleu_repos` porte la même géométrie que `urg_bleu` ; une voiture est dans l'un OU l'autre.
 func _poser_repos(cle: String, racines: Array) -> void:
 	match _genre_urgence(cle):
 		"police":
-			_etat(cle, racines, "urg_bleu_repos", GYRO_BLEU_REPOS)
+			_etat(cle, racines, "urg_bleu", GYRO_BLEU_REPOS)
 		"sapin":
 			_etat(cle, racines, "sapin_repos", GYRO_BLANC_REPOS)
 
@@ -719,11 +702,6 @@ func plan_urgence(cle: String, racine: Node3D) -> Dictionary:
 			xmax = maxf(xmax, fx)
 		out[f] = {"tri": v.size() / 3, "fx_min": xmin, "fx_max": xmax}
 	return out
-
-
-# Racines des véhicules posés dans le calque `fam` du modèle `cle` au dernier passage (cf. _poses).
-func racines_posees(cle: String, fam: String) -> Array:
-	return _poses.get(cle + "|" + fam, [])
 
 
 # Ce véhicule a-t-il sa rampe allumée ? Éteinte par défaut (cf. gyro_par_defaut).

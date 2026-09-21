@@ -674,19 +674,6 @@ allumés (non éclairés), les lentilles rouge, bleue et blanche **au repos** (�
 nuit), plus l'éteint gris et l'ambre historiques. Un calque par modèle, par groupe et par couleur ;
 l'état du moment change le POINTEUR de matériau du calque, jamais le matériau.
 
-**LA MOITIÉ BLEUE DISPARAISSAIT EN JEU (corrigé le 2026-09-21 au soir).** Un calque, c'est UN `MultiMesh` par
-modèle et par famille. Les voitures de police ÉTEINTES passaient par le calque `urg_bleu` des voitures
-allumées, et après elles : dès qu'une voiture éteinte du même modèle était à portée — une des voitures de
-patrouille garées devant le Central Precinct —, `_poser_repos` réaffectait le calque à ELLE, et la voiture que
-le joueur venait d'allumer avec R perdait sa moitié bleue. Le rouge, que personne ne réaffecte, restait.
-**Les captures ne pouvaient pas le voir** : `--gyros-allumes` allume TOUS les véhicules d'urgence, donc aucune
-voiture éteinte. Les rampes éteintes ont maintenant leur calque, `urg_bleu_repos` (même géométrie) ;
-`MapShotsTest --gyro-seul` n'allume que le véhicule d'urgence le plus proche de la caméra, comme en jeu ; et
-`VehicleLightsTest` pose le cas mixte (une berline allumée, l'autre éteinte) et lit QUELS véhicules sont dans
-quel calque (`VehicleLights.racines_posees`) — les transformations d'un `MultiMesh` ne se relisent pas en
-headless, le serveur de rendu factice les rend à zéro. Règle : **deux états d'un même modèle ne partagent
-jamais un calque**.
-
 **Ils éclairent le décor** : bassin borné de 3 `OmniLight3D` sur la même horloge, joueur prioritaire.
 Rouge ou bleu pour la police, rouge pour les pompiers, rouge ou blanc pour le sapin — le **blanc à
 35 % de l'énergie** du rouge : à énergie égale il noyait tout le sol autour de l'ambulance.

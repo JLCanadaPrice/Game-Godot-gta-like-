@@ -13,8 +13,7 @@ extends Node3D
 #    le véhicule (2026-09-21) : POLICE rouge à gauche, bleu à droite, les deux moitiés ALTERNENT, le
 #    blanc du milieu jamais allumé ; POMPIERS tous les feux rouges ET blancs, synchronisés ; AMBULANCE
 #    « sapin de Noël » : au moins trois groupes de phase qui ne battent pas ensemble, et ses feux jaunes
-#    passés au blanc ; et le CAS MIXTE du jeu : une voiture de police allumée à côté d'une voiture du même
-#    modèle éteinte, chacune dans SON calque (la moitié bleue disparaissait, 2026-09-21) ;
+#    passés au blanc ;
 #  - STATIONNEMENT : les véhicules des lieux sont de VRAIES voitures du groupe `vehicle`, avec leur
 #    collision, à l'endroit que la cuisson a écrit dans sa fiche.
 
@@ -48,7 +47,6 @@ func _ready() -> void:
 	_stationnement()
 	_gyro_motif()
 	_gyro_api()
-	await _gyro_mixte()
 	_verdict()
 
 
@@ -237,11 +235,8 @@ func _gyro_motif() -> void:
 		plans[pair[0]] = vl.call("plan_urgence", pair[1], inst)
 		inst.queue_free()
 	var pol: Dictionary = plans["police"]
-	if not (pol.has("urg_rouge") and pol.has("urg_bleu") and pol.has("urg_bleu_repos")) or pol.size() != 3:
-		_fautes.append("police : calques attendus urg_rouge, urg_bleu et urg_bleu_repos seulement, obtenu %s" % str(pol.keys()))
-	elif int(pol["urg_bleu_repos"]["tri"]) != int(pol["urg_bleu"]["tri"]):
-		_fautes.append("police : le calque des rampes eteintes n'a pas la geometrie de la moitie bleue (%d triangles contre %d)"
-				% [int(pol["urg_bleu_repos"]["tri"]), int(pol["urg_bleu"]["tri"])])
+	if not (pol.has("urg_rouge") and pol.has("urg_bleu")) or pol.size() != 2:
+		_fautes.append("police : calques attendus urg_rouge et urg_bleu seulement, obtenu %s" % str(pol.keys()))
 	else:
 		if float(pol["urg_rouge"]["fx_max"]) >= 0.0:
 			_fautes.append("police : du rouge allume a DROITE de l'axe (fx max %.2f)" % float(pol["urg_rouge"]["fx_max"]))
@@ -305,69 +300,6 @@ func _gyro_api() -> void:
 	if bool(vl.call("gyro_on", urgence)):
 		_fautes.append("allumer_urgences(false) n'eteint pas la rampe")
 	print("VEHICLE_LIGHTS_GYRO_API eteint par defaut, bascule OK, %d vehicule(s) d'urgence adressable(s)" % n)
-
-
-# UNE voiture de police allumée, UNE autre du MÊME modèle éteinte, à portée l'une de l'autre : c'est la
-# situation du jeu (le joueur allume SA voiture avec R devant les voitures de patrouille garées). Payé
-# le 2026-09-21 : le calque de la moitié bleue était réaffecté à la voiture éteinte, et la voiture
-# allumée n'avait plus de bleu. On regarde les VRAIES instances posées par VehicleLights, dans les deux
-# phases.
-func _gyro_mixte() -> void:
-	var vl := _monde.get_node_or_null("VehicleLights")
-	if vl == null:
-		return
-	var sedans: Array = []
-	for v in get_tree().get_nodes_in_group(&"vehicle"):
-		var body := v as Node3D
-		if body != null and body.is_inside_tree() and String(vl.call("_cle", body)) == POLICE:
-			sedans.append(body)
-	if sedans.size() < 2:
-		_fautes.append("cas mixte : il faut deux voitures de police du meme modele dans la scene, trouve %d" % sedans.size())
-		return
-	var allumee: Node3D = sedans[0]
-	var eteinte: Node3D = sedans[1]
-	vl.call("allumer_urgences", false)
-	vl.call("set_gyro", allumee, true)
-	var cam := Camera3D.new()
-	add_child(cam)
-	cam.global_position = allumee.global_position + Vector3(4, 3, 0)
-	cam.make_current()
-	var mats: Array = vl.get("_mats_gyro")
-	var racine_on: Node3D = vl.call("_racine_modele", allumee)
-	var racine_off: Node3D = vl.call("_racine_modele", eteinte)
-	var bilan := ""
-	for phase: Array in [[4, "bleue", 1], [0, "rouge", 6]]:
-		vl.set("gyro_force", phase[0])
-		await get_tree().process_frame
-		await get_tree().process_frame
-		var calques: Dictionary = (vl.get("_par_modele") as Dictionary).get(POLICE, {})
-		var bleu = calques.get("urg_bleu")
-		var repos = calques.get("urg_bleu_repos")
-		if not (bleu is MultiMeshInstance3D) or not (repos is MultiMeshInstance3D):
-			_fautes.append("cas mixte, phase %s : calques urg_bleu / urg_bleu_repos absents" % phase[1])
-			continue
-		var mb := (bleu as MultiMeshInstance3D).multimesh
-		var mr := (repos as MultiMeshInstance3D).multimesh
-		# QUELS véhicules sont dans quel calque (les transformations d'un MultiMesh ne se relisent pas en
-		# headless : le serveur de rendu factice les rend à zéro)
-		var dans_bleu: Array = vl.call("racines_posees", POLICE, "urg_bleu")
-		var dans_repos: Array = vl.call("racines_posees", POLICE, "urg_bleu_repos")
-		# la voiture allumée est dans le calque des rampes allumées, et seulement elle
-		if not (bleu as MultiMeshInstance3D).visible or mb.visible_instance_count != 1 or dans_bleu != [racine_on]:
-			_fautes.append("cas mixte, phase %s : la moitie bleue de la voiture ALLUMEE n'est pas posee (%d instance(s))"
-					% [phase[1], mb.visible_instance_count])
-		# dans la phase bleue elle brille, dans la phase rouge elle repose
-		var attendu: Material = mats[1] if phase[1] == "bleue" else mats[6]
-		if mb.mesh.surface_get_material(0) != attendu:
-			_fautes.append("cas mixte, phase %s : mauvais materiau sur la moitie bleue de la voiture allumee" % phase[1])
-		# la voiture éteinte est dans SON calque, lentille bleue au repos
-		if not (repos as MultiMeshInstance3D).visible or mr.visible_instance_count != 1 or dans_repos != [racine_off] 				or mr.mesh.surface_get_material(0) != mats[6]:
-			_fautes.append("cas mixte, phase %s : la voiture ETEINTE n'a pas sa lentille bleue au repos" % phase[1])
-		bilan += " phase %s : allumee %d instance, eteinte %d instance ;" % [phase[1], mb.visible_instance_count, mr.visible_instance_count]
-	vl.set("gyro_force", -1)
-	vl.call("allumer_urgences", false)
-	cam.queue_free()
-	print("VEHICLE_LIGHTS_GYRO_MIXTE une voiture de police allumee, une du meme modele eteinte :%s" % bilan)
 
 
 func _verdict() -> void:
