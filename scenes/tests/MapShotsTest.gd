@@ -120,6 +120,16 @@ const VIEWS := [
 	# Gros plan sur une rampe de gyrophare, a 6 m : c'est la seule distance ou l'on voit si la
 	# GEOMETRIE de la rampe s'allume, et pas seulement la lumiere qu'elle projette.
 	["nuit_gyro_gros_plan", Vector3(-692.6, 2.6, 155.0), Vector3(-694.3, 1.75, 158.3), "", 1.0],
+	# Section C du 2026-09-21 : une ambulance du St. Anselm (sapin de Noel, feux jaunes passes au
+	# blanc) vue de trois quarts avant puis de trois quarts arriere, et un camion de pompiers de la
+	# caserne 73 (tous ses feux rouges ET blancs, synchronises). A utiliser avec --gyros-allumes.
+	["nuit_gyro_ambulance", Vector3(-265.0, 2.8, 145.0), Vector3(-271.0, 1.6, 137.0), "", 1.0],
+	["nuit_gyro_ambulance_arriere", Vector3(-277.5, 2.8, 129.0), Vector3(-271.0, 1.8, 137.0), "", 1.0],
+	["nuit_gyro_pompiers", Vector3(-224.0, 3.6, 15.0), Vector3(-212.9, 2.4, 7.4), "", 1.0],
+	["nuit_gyro_ambulance_pres", Vector3(-266.2, 2.4, 141.8), Vector3(-271.0, 1.9, 137.0), "", 1.0],
+	# les memes de jour, rampe ETEINTE : moitie droite bleue de la police, feux blancs de l'ambulance
+	["jour_repos_police", Vector3(-692.6, 2.6, 155.0), Vector3(-694.3, 1.75, 158.3), "", 12.0],
+	["jour_repos_ambulance", Vector3(-265.0, 2.8, 145.0), Vector3(-271.0, 1.6, 137.0), "", 12.0],
 	# Parking de l'aerogare : une vue elevee pour juger l'ALIGNEMENT sur le marquage (c'est un
 	# controle de geometrie, pas de rendu), et une a hauteur d'homme pour juger l'image.
 	["jour_parking_aeroport", Vector3(537.0, 22.0, -1128.0), Vector3(537.0, 0.0, -1176.0), "", 12.0],

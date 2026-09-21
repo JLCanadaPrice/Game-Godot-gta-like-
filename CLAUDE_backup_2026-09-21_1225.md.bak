@@ -25,8 +25,7 @@ travail imposée, les commandes exactes, les pièges déjà payés et l'état d'
   périmés, et **ne jamais recommiter une source brute dans ce dépôt-ci** — si un pack doit être
   retravaillé, le copier hors du projet. Le compte de `ProjectLoadCheck` n'avait pas bougé (584) ce jour-là, ce qui
   est la preuve que rien de chargé n'etait parti ; il vaut **608** depuis les chantiers du
-  2026-09-20 (matériaux de balisage, de feux de véhicule, scripts et tests ajoutés), et **611** depuis
-  le 2026-09-21 (trois lentilles de gyrophare « au repos »).
+  2026-09-20 (matériaux de balisage, de feux de véhicule, scripts et tests ajoutés).
 
 ## 2. Méthode de travail (imposée, non négociable)
 
@@ -165,7 +164,7 @@ manque en silence, ce qui est arrivé jusqu'au 2026-09-21.
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/DowntownStreetsTest.tscn
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/DowntownBuildingsTest.tscn
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/ShopBuildingsTest.tscn     # échec ANTÉRIEUR connu
-"$GODOT" --headless --path "$PROJET" --script res://scenes/world/map/tools/ProjectLoadCheck.gd   # attendu : 611 fichiers, 0 échec
+"$GODOT" --headless --path "$PROJET" --script res://scenes/world/map/tools/ProjectLoadCheck.gd   # attendu : 608 fichiers, 0 échec
 ```
 
 Outil d'inspection, hors batterie : `res://scenes/tests/VehicleSortTest.tscn` aligne les véhicules du catalogue
@@ -621,50 +620,20 @@ Un matériau par couleur, partagé, donc **un appel de dessin par couleur visibl
 (`VehicleLights.set_gyro()`, `toggle_gyro()`, `allumer_urgences()`), le système d'événements ne l'est
 pas. Le joueur qui conduit un véhicule d'urgence bascule avec **R**.
 
-**Chaque feu dans SA couleur, feu par feu** (refait le 2026-09-21 sur la description du joueur, photos à
-l'appui). La première version coupait la rampe en une moitié gauche et une moitié droite, sans regarder
-la couleur de chaque segment : le segment BLANC du milieu d'une rampe de police s'allumait à moitié
-rouge et à moitié bleu, et le camion de pompiers allumait en rouge ses segments blancs de gauche et en
-blanc ses segments rouges de droite. `VehicleLightParts.feux_urgence` rend maintenant les feux UN PAR UN
-(composante connexe de triangles d'une même couleur de palette : rouge `#782225`, blanc `#cfeaf3`,
-jaune `#eba335`), avec leur position sur la caisse. Inventaire relevé feu par feu sur les 11 véhicules :
+**Le motif est celui d'une vraie rampe américaine** : la rampe est coupée en deux et **les deux
+moitiés alternent** — jamais allumées ensemble — avec un **double éclat** par phase (allumé, éteint,
+allumé, éteint). Huit temps de 0,125 s, soit deux éclats par seconde et par moitié. Couleurs :
+**rouge à gauche / bleu à droite** pour la police et le SWAT, **rouge / blanc** pour les urgences, et
+**ambre à l'arrière des camions de pompiers seulement** (en vrai l'ambre dévie la circulation, il
+n'est jamais mêlé au rouge et bleu). `VehicleLightsTest` refuse tout chevauchement des deux moitiés
+et vérifie les couleurs par rôle.
 
-| véhicule | feux d'urgence modélisés |
-|---|---|
-| police berline, SUV, fourgon, camion ; SWAT APC 02 | rampe de toit rouge / BLANC / rouge |
-| SWAT APC 01 | rampe à cinq segments rouge / blanc / rouge / blanc / rouge |
-| camion de pompiers | la même rampe à cinq segments, plus deux feux de cabine rouge + blanc : 5 rouges, 4 blancs, aucun ambre |
-| ambulance | rampe de cabine rouge / blanc / rouge, et 15 feux rouges et JAUNES sur les flancs et la face arrière de la caisse |
-| fourgon d'urgence | rampe rouge / blanc / rouge |
-| SWAT tank, lowpoly_police | aucun |
+**Ils éclairent le décor** : un bassin borné de 3 `OmniLight3D` — une source qui envoie dans toutes
+les directions, ce qu'est une rampe — suit la MÊME phase et fait battre les murs, le sol et les PNJ.
+Joueur prioritaire.
 
-Le rouge de livrée `#ad3e2a` (bande de l'ambulance, caisse du camion) est exclu : ce n'est pas un feu.
-
-Trois façons d'allumer, selon ce qu'est le véhicule (`_genre_urgence`) :
-
-- **POLICE et SWAT** : les feux rouges de la moitié gauche de la rampe s'allument en ROUGE, ceux de la
-  moitié droite en BLEU, et les deux moitiés **alternent** (bleu allumé + rouge éteint, puis l'inverse),
-  double éclat par phase, huit temps de 0,125 s. Le **segment blanc du milieu reste tel quel**, jamais
-  allumé ; un segment rouge pile au milieu (SWAT APC 01) reste éteint aussi, pour la symétrie. Rampe
-  éteinte, la moitié droite garde une lentille BLEUE au repos.
-- **POMPIERS** : **tous** les feux, rouges en rouge et blancs en blanc, toutes les rampes, tous les
-  segments, **synchronisés** (`GYRO_SYNCHRO`).
-- **AMBULANCE et fourgon d'urgence** : le **« sapin de Noël »** — tous les feux, rouges et blancs, chacun
-  à son rythme. Les feux JAUNES de la caisse passent au BLANC, allumés comme éteints (calque
-  `sapin_repos` quand la rampe est coupée). Pour ne pas payer un matériau par feu, les feux sont
-  répartis en **4 groupes de phase** (ordre avant → arrière puis gauche → droite, donc deux voisins ne
-  sont jamais dans le même groupe), chacun avec sa période : 0,46 / 0,58 / 0,71 / 0,83 s, déphasés de
-  0 / 0,31 / 0,17 / 0,52 s. Des déphasages de quelques centièmes faisaient partir les quatre groupes
-  allumés ensemble au premier instant, vu à l'image.
-
-**Huit matériaux pour toute la ville, un par état, jamais un par véhicule** : rouge, bleu, blanc
-allumés (non éclairés), les lentilles rouge, bleue et blanche **au repos** (éclairées, donc sombres la
-nuit), plus l'éteint gris et l'ambre historiques. Un calque par modèle, par groupe et par couleur ;
-l'état du moment change le POINTEUR de matériau du calque, jamais le matériau.
-
-**Ils éclairent le décor** : bassin borné de 3 `OmniLight3D` sur la même horloge, joueur prioritaire.
-Rouge ou bleu pour la police, rouge pour les pompiers, rouge ou blanc pour le sapin — le **blanc à
-35 % de l'énergie** du rouge : à énergie égale il noyait tout le sol autour de l'ambulance.
+Cinq matériaux pour toute la ville, un par état, **tout le monde en phase** : c'est ce qui évite un
+matériau par véhicule, et donc un appel de dessin par voiture que rien ne regrouperait.
 
 ### Véhicules garés conduisibles
 

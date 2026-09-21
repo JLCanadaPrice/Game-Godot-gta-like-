@@ -1,0 +1,24 @@
+[gd_resource type="StandardMaterial3D" format=3]
+
+; Gyrophare, lentille BLANCHE AU REPOS : un feu eteint d'une vraie rampe n'est pas gris, c'est une
+; lentille de couleur qui ne brille pas. Sert au temps mort des eclats, et a la rampe eteinte quand
+; le modele doit changer de couleur (moitie droite BLEUE de la police, feux JAUNES de l'ambulance
+; passes au BLANC, 2026-09-21).
+;
+; ECLAIRE, shading_mode = 1 (PER_PIXEL) : c'est une surface, pas une source. La nuit elle est sombre.
+; Rappel du chiffre, paye trois fois sur ce projet : 0 = UNSHADED, 1 = PER_PIXEL, 2 = PER_VERTEX.
+;
+; Materiau UNIQUE de cet etat, partage par TOUS les vehicules du jeu : une copie par vehicule ferait
+; autant d'appels de dessin que de voitures (regression payee sur les mats, cf. LampPoleLayer).
+;
+; Il habille les triangles de feu EXTRAITS du maillage du modele (VehicleLightParts.feux_urgence) :
+; c'est la geometrie du vehicule qui change d'etat, rien n'est ajoute par-dessus.
+
+[resource]
+resource_name = "vehicle_gyro_blanc_repos"
+shading_mode = 1
+albedo_color = Color(0.78, 0.80, 0.84, 1)
+roughness = 0.25
+disable_receive_shadows = true
+grow = true
+grow_amount = 0.006

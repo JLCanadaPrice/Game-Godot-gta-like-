@@ -35,20 +35,12 @@ const GYRO_ROUGE := 0
 const GYRO_BLEU := 1
 const GYRO_ETEINT := 2
 const GYRO_BLANC := 3
-const GYRO_AMBRE := 4                    # plus porté par personne depuis le 2026-09-21, gardé pour l'ordre
-# Lentilles AU REPOS : un feu éteint d'une vraie rampe n'est pas gris, c'est une lentille rouge, bleue
-# ou blanche qui ne brille pas. Matériaux ÉCLAIRÉS (shading_mode 1), donc sombres la nuit.
-const GYRO_ROUGE_REPOS := 5
-const GYRO_BLEU_REPOS := 6
-const GYRO_BLANC_REPOS := 7
+const GYRO_AMBRE := 4
 const GYRO_MATERIALS := ["res://scenes/world/vehicle_gyro_rouge_material.tres",
 		"res://scenes/world/vehicle_gyro_bleu_material.tres",
 		"res://scenes/world/vehicle_gyro_eteint_material.tres",
 		"res://scenes/world/vehicle_gyro_blanc_material.tres",
-		"res://scenes/world/vehicle_gyro_ambre_material.tres",
-		"res://scenes/world/vehicle_gyro_rouge_repos_material.tres",
-		"res://scenes/world/vehicle_gyro_bleu_repos_material.tres",
-		"res://scenes/world/vehicle_gyro_blanc_repos_material.tres"]
+		"res://scenes/world/vehicle_gyro_ambre_material.tres"]
 const CATALOGUE := "res://resources/vehicle_models"
 
 # RYTHME ET COULEURS, calés sur une vraie rampe américaine moderne :
@@ -68,31 +60,7 @@ const GYRO_PERIODE := 1.0
 const GYRO_TEMPS_N := 8
 const GYRO_GAUCHE := [true, false, true, false, false, false, false, false]
 const GYRO_DROITE := [false, false, false, false, true, false, true, false]
-
-# TROIS FAÇONS D'ALLUMER, selon ce qu'est le véhicule (2026-09-21, décrit par le joueur, photos à
-# l'appui). Chaque feu s'allume dans SA couleur — c'est la géométrie du modèle, feu par feu
-# (VehicleLightParts.feux_urgence), plus une moitié gauche et une moitié droite :
-#
-#  - POLICE et SWAT : les feux ROUGES de la moitié gauche de la rampe s'allument en ROUGE, ceux de la
-#    moitié droite en BLEU, et les deux moitiés ALTERNENT (bleu allumé + rouge éteint, puis rouge
-#    allumé + bleu éteint), double éclat par phase. Le segment BLANC du milieu reste tel quel : il ne
-#    s'allume jamais. Un segment rouge pile au milieu (rampe à cinq segments du SWAT APC 01) reste
-#    éteint aussi, pour que la rampe reste symétrique : rouge à un bout, bleu à l'autre.
-#  - POMPIERS : TOUS les feux s'allument, rouges en rouge et blancs en blanc, toutes les rampes, tous
-#    les segments, ET ENSEMBLE — synchronisés sur GYRO_SYNCHRO.
-#  - AMBULANCE (et fourgon d'urgence) : le « SAPIN DE NOËL ». Tous les feux, rouges et blancs, chacun
-#    à son rythme, ce qui donne un scintillement désordonné. Les feux JAUNES de la caisse passent au
-#    BLANC, allumés comme éteints. Pour ne pas payer un matériau par feu, les feux sont répartis en
-#    SAPIN_GROUPES groupes de phase, chacun avec sa période : un calque par groupe et par couleur, les
-#    matériaux restant ceux des états (rouge, blanc, et leurs lentilles au repos) partagés par la ville.
-const GYRO_SYNCHRO := [true, false, true, false, false, false, false, false]
-const SAPIN_GROUPES := 4
-const SAPIN_PERIODES := [0.46, 0.58, 0.71, 0.83]      # s : quatre rythmes qui ne tombent jamais en phase
-# Déphasages larges : avec des décalages de quelques centièmes, les quatre groupes partaient ALLUMÉS
-# ENSEMBLE au premier instant (vu à l'image le 2026-09-21) et ne se désaccordaient qu'ensuite.
-const SAPIN_DEPHASAGES := [0.00, 0.31, 0.17, 0.52]
-const RAMPE_Y := 0.78                                 # police : seule la rampe de TOIT (cf. Parts.GYRO_Y)
-const RAMPE_MILIEU := 0.10                            # |fx| en deçà : segment central, jamais allumé
+const GYRO_AMBRE_T := [true, false, true, false, true, false, true, false]
 
 # GYROPHARES ÉTEINTS PAR DÉFAUT. Ils s'allumeront sur événement (meurtre, incendie, crime) ; le
 # déclencheur est prêt — `allumer_urgences()` et `set_gyro()` — mais le système d'événements n'est
@@ -106,9 +74,6 @@ const RAMPE_MILIEU := 0.10                            # |fx| en deçà : segment
 @export var bassin_gyro := 3
 const GYRO_LIGHT_RANGE := 16.0
 const GYRO_LIGHT_ENERGY := 6.0
-# Le BLANC projeté à la même énergie que le rouge noyait tout le sol autour d'une ambulance (vu à
-# l'image le 2026-09-21) : à énergie égale, un blanc paraît bien plus fort qu'un rouge saturé.
-const GYRO_LIGHT_BLANC := 0.35
 
 # Rôles qui portent un gyrophare : sur une voiture civile, la peinture du toit passerait le test de
 # couleur et on allumerait un toit. Sert dès l'extraction.
@@ -255,7 +220,6 @@ func _process(_delta: float) -> void:
 	var freinent := {}
 	var position := {}
 	var gyros := {}
-	var repos := {}                       # véhicules d'urgence dont la rampe est ÉTEINTE
 	var candidats: Array = []
 	var candidats_frein: Array = []
 	var gyros_bodies: Array = []
@@ -291,12 +255,9 @@ func _process(_delta: float) -> void:
 			# sinon les deux calques dessinent les mêmes triangles au même endroit. Une voiture garée
 			# est exclue : personne dedans, aucune raison que ses feux soient allumés.
 			position[cle] = position.get(cle, []) + [racine]
-		if _urgence(cle):
-			if gyro_on(body):
-				gyros[cle] = gyros.get(cle, []) + [racine]
-				gyros_bodies.append([d, body, racine, cle])
-			else:
-				repos[cle] = repos.get(cle, []) + [racine]
+		if _urgence(cle) and gyro_on(body):
+			gyros[cle] = gyros.get(cle, []) + [racine]
+			gyros_bodies.append([d, body, racine, cle])
 		if not gare:
 			candidats.append([d, body, racine])
 	_modeles_dessines = 0
@@ -317,16 +278,20 @@ func _process(_delta: float) -> void:
 	# feux de position : la nuit, sur les véhicules qui NE freinent pas
 	for cle in position:
 		_poser(cle, position[cle], "position")
-	# GYROPHARES : chaque feu dans SA couleur, selon ce qu'est le véhicule, tout le monde sur la MÊME
-	# horloge. Ceux dont la rampe est éteinte gardent leurs lentilles au repos (bleu de la police,
-	# blanc des anciens feux jaunes de l'ambulance).
-	var tg := _temps_gyro()
-	var temps: int = clampi(int(fmod(tg, GYRO_PERIODE) / (GYRO_PERIODE / GYRO_TEMPS_N)), 0, GYRO_TEMPS_N - 1)
+	# GYROPHARES : seulement ceux qui sont ALLUMÉS, et tout le monde sur la MÊME phase.
+	var temps: int = gyro_force if gyro_force >= 0 else int(fmod(Time.get_ticks_msec() * 0.001, GYRO_PERIODE) / (GYRO_PERIODE / GYRO_TEMPS_N))
+	temps = clampi(temps, 0, GYRO_TEMPS_N - 1)
 	_gyro_etat = temps
 	for cle in gyros:
-		_poser_urgence(cle, gyros[cle], temps, tg)
-	for cle in repos:
-		_poser_repos(cle, repos[cle])
+		var couleurs := _couleurs_gyro(cle)
+		for cote: String in ["gyro_g", "gyro_d", "gyro_ar"]:
+			var mi := _poser(cle, gyros[cle], cote)
+			if mi == null:
+				continue
+			var allume: bool = (GYRO_GAUCHE[temps] if cote == "gyro_g"
+					else (GYRO_DROITE[temps] if cote == "gyro_d" else GYRO_AMBRE_T[temps]))
+			# on change le POINTEUR de matériau, jamais le matériau : cinq matériaux pour la ville
+			mi.multimesh.mesh.surface_set_material(0, _mats_gyro[couleurs[cote] if allume else GYRO_ETEINT])
 	_eclairer_gyros(gyros_bodies, temps)
 	if vraies_lumieres and _night > 0.0:
 		_eclairer(candidats)
@@ -401,7 +366,7 @@ func _calque(cle: String, racine: Node3D, fam: String) -> MultiMeshInstance3D:
 		var entree := {}
 		# « position » n'est pas une extraction de plus : c'est EXACTEMENT la géométrie de « feux »,
 		# habillée du matériau de veilleuse. Deux calques, une seule découpe.
-		for f in ["phares", "feux", "position", "gyro"]:
+		for f in ["phares", "feux", "position", "gyro", "gyro_g", "gyro_d", "gyro_ar"]:
 			var source: String = "feux" if f == "position" else f
 			var mat: Material = _material
 			if f == "feux":
@@ -412,13 +377,6 @@ func _calque(cle: String, racine: Node3D, fam: String) -> MultiMeshInstance3D:
 				mat = _mats_gyro[GYRO_ETEINT]
 			entree[f] = _instancier(cle, f, Parts.maillage(parts[source], mat))
 		entree["gyro_centre"] = parts["gyro_centre"]
-		# feux d'urgence, UN PAR UN, regroupés en calques selon ce qu'est le véhicule
-		if _urgence(cle):
-			var genre := _genre_urgence(cle)
-			entree["genre"] = genre
-			var familles := _familles_urgence(genre, Parts.feux_urgence(racine))
-			for f in familles:
-				entree[f] = _instancier(cle, f, Parts.maillage(familles[f], _mats_gyro[GYRO_ETEINT]))
 		# demi-longueur de la CAISSE (roues exclues), pour poser la flaque de freinage derriere la
 		# poupe et non sous la voiture. Relevee une fois, avec le reste de l'extraction.
 		entree["demi_long"] = (Parts.caisse(racine)["aabb"] as AABB).size.z * 0.5
@@ -426,7 +384,7 @@ func _calque(cle: String, racine: Node3D, fam: String) -> MultiMeshInstance3D:
 		# posent les deux sources de la flaque de freinage
 		entree["feux_cotes"] = _centres_cotes(parts["feux"]["v"], Parts.caisse(racine)["aabb"])
 		_par_modele[cle] = entree
-	return _par_modele[cle].get(fam)
+	return _par_modele[cle][fam]
 
 
 # Un calque : un MultiMesh sur le maillage d'optiques du modèle. Rend null si le modèle n'a pas
@@ -589,119 +547,15 @@ func _feu_local(cle: String, cote: int) -> Vector3:
 
 # --- gyrophares : allumage, couleurs, éclairage du décor -------------------------------------------------------------
 
-# CE QU'EST le véhicule, pour ses feux d'urgence : le rôle vient du catalogue, et parmi les urgences
-# le camion de pompiers est reconnu à son modèle. Rend "" pour un véhicule sans gyrophare.
-func _genre_urgence(cle: String) -> String:
+# Couleurs de la rampe selon CE QU'EST le véhicule, pas selon son nom de fichier seul : le rôle vient
+# du catalogue (police, emergency, swat), et seul le camion de pompiers porte de l'ambre à l'arrière.
+func _couleurs_gyro(cle: String) -> Dictionary:
 	var role := String(_roles.get(cle, ""))
 	if role == "police" or role == "swat":
-		return "police"
-	if role == "emergency":
-		return "pompiers" if cle.to_lower().contains("fire") else "sapin"
-	return ""
-
-
-# Calques d'un véhicule d'urgence, à partir de ses feux un par un : nom -> {"v", "n"} en coordonnées du
-# modèle. Aucun matériau ici : c'est l'état du moment qui en choisit un, parmi ceux de la ville.
-func _familles_urgence(genre: String, feux: Array) -> Dictionary:
-	var out := {}
-	var groupe := 0
-	for f: Dictionary in feux:
-		var couleur := String(f["couleur"])
-		var nom := ""
-		if genre == "police":
-			# la rampe de TOIT seulement, ses feux ROUGES seulement ; le blanc du milieu reste tel quel
-			if couleur == "rouge" and float(f["fy"]) >= RAMPE_Y and absf(float(f["fx"])) >= RAMPE_MILIEU:
-				nom = "urg_rouge" if float(f["fx"]) < 0.0 else "urg_bleu"
-		elif genre == "pompiers":
-			nom = "urg_rouge" if couleur == "rouge" else "urg_blanc"
-		elif genre == "sapin":
-			# chaque feu dans un groupe de phase ; ordre stable (avant -> arrière, gauche -> droite),
-			# donc deux feux voisins ne sont jamais dans le même groupe
-			var g := groupe % SAPIN_GROUPES
-			groupe += 1
-			nom = "sapin_%d_%s" % [g, "rouge" if couleur == "rouge" else "blanc"]
-			if couleur == "ambre":
-				_ajouter(out, "sapin_repos", f)     # les feux JAUNES passent au blanc, même éteints
-		if nom == "":
-			continue
-		_ajouter(out, nom, f)
-	return out
-
-
-func _ajouter(out: Dictionary, nom: String, f: Dictionary) -> void:
-	if not out.has(nom):
-		out[nom] = {"v": PackedVector3Array(), "n": PackedVector3Array()}
-	var d: Dictionary = out[nom]
-	var v: PackedVector3Array = d["v"]
-	var n: PackedVector3Array = d["n"]
-	v.append_array(f["v"])
-	n.append_array(f["n"])
-	d["v"] = v
-	d["n"] = n
-
-
-# Un calque dans un état : on change le POINTEUR de matériau, jamais le matériau.
-func _etat(cle: String, racines: Array, fam: String, mat: int) -> void:
-	var mi := _poser(cle, racines, fam)
-	if mi != null:
-		mi.multimesh.mesh.surface_set_material(0, _mats_gyro[mat])
-
-
-func _poser_urgence(cle: String, racines: Array, temps: int, tg: float) -> void:
-	match _genre_urgence(cle):
-		"police":
-			_etat(cle, racines, "urg_rouge", GYRO_ROUGE if GYRO_GAUCHE[temps] else GYRO_ROUGE_REPOS)
-			_etat(cle, racines, "urg_bleu", GYRO_BLEU if GYRO_DROITE[temps] else GYRO_BLEU_REPOS)
-		"pompiers":
-			var on: bool = GYRO_SYNCHRO[temps]
-			_etat(cle, racines, "urg_rouge", GYRO_ROUGE if on else GYRO_ROUGE_REPOS)
-			_etat(cle, racines, "urg_blanc", GYRO_BLANC if on else GYRO_BLANC_REPOS)
-		"sapin":
-			for g in SAPIN_GROUPES:
-				var on := sapin_allume(g, tg)
-				_etat(cle, racines, "sapin_%d_rouge" % g, GYRO_ROUGE if on else GYRO_ROUGE_REPOS)
-				_etat(cle, racines, "sapin_%d_blanc" % g, GYRO_BLANC if on else GYRO_BLANC_REPOS)
-
-
-# Rampe éteinte : la moitié droite d'une rampe de police reste une lentille BLEUE, et les feux jaunes
-# de l'ambulance restent BLANCS. Le reste garde les couleurs du modèle.
-func _poser_repos(cle: String, racines: Array) -> void:
-	match _genre_urgence(cle):
-		"police":
-			_etat(cle, racines, "urg_bleu", GYRO_BLEU_REPOS)
-		"sapin":
-			_etat(cle, racines, "sapin_repos", GYRO_BLANC_REPOS)
-
-
-# Le groupe `g` du sapin de Noël est-il allumé à l'instant `t` ? Chaque groupe a sa période : les quatre
-# rythmes ne retombent jamais ensemble, c'est ce qui fait le scintillement désordonné.
-func sapin_allume(g: int, t: float) -> bool:
-	var periode: float = SAPIN_PERIODES[g % SAPIN_PERIODES.size()]
-	return fmod(t + float(SAPIN_DEPHASAGES[g % SAPIN_DEPHASAGES.size()]), periode) < periode * 0.5
-
-
-# Horloge des gyrophares, en secondes. `gyro_force` la fige au milieu d'un des huit temps, pour la capture.
-func _temps_gyro() -> float:
-	if gyro_force >= 0:
-		return (float(gyro_force) + 0.5) * GYRO_PERIODE / GYRO_TEMPS_N
-	return Time.get_ticks_msec() * 0.001
-
-
-# Résumé des calques d'urgence d'un modèle, pour les tests : nom -> {"tri", "fx_min", "fx_max"}.
-func plan_urgence(cle: String, racine: Node3D) -> Dictionary:
-	var out := {}
-	var familles := _familles_urgence(_genre_urgence(cle), Parts.feux_urgence(racine))
-	for f in familles:
-		var v: PackedVector3Array = familles[f]["v"]
-		var boite: AABB = Parts.caisse(racine)["aabb"]
-		var xmin := INF
-		var xmax := -INF
-		for k in v.size():
-			var fx := (v[k].x - boite.get_center().x) / (boite.size.x * 0.5)
-			xmin = minf(xmin, fx)
-			xmax = maxf(xmax, fx)
-		out[f] = {"tri": v.size() / 3, "fx_min": xmin, "fx_max": xmax}
-	return out
+		return {"gyro_g": GYRO_ROUGE, "gyro_d": GYRO_BLEU, "gyro_ar": GYRO_ROUGE}
+	# urgences : rouge et blanc. L'ambre de l'arrière est réservé aux camions de pompiers.
+	var ambre: int = GYRO_AMBRE if cle.to_lower().contains("fire") else GYRO_BLANC
+	return {"gyro_g": GYRO_ROUGE, "gyro_d": GYRO_BLANC, "gyro_ar": ambre}
 
 
 # Ce véhicule a-t-il sa rampe allumée ? Éteinte par défaut (cf. gyro_par_defaut).
@@ -795,30 +649,20 @@ func _eclairer_gyros(candidats: Array, temps: int) -> void:
 			continue
 		# la lumière suit la MÊME phase que la rampe : elle s'éteint sur les temps morts, et c'est ce
 		# battement-là qu'on voit courir sur les façades
-		var cle := String(candidats[k][3])
-		var allume := false
-		var couleur := GYRO_ROUGE
-		match _genre_urgence(cle):
-			"police":
-				allume = GYRO_GAUCHE[temps] or GYRO_DROITE[temps]
-				couleur = GYRO_ROUGE if GYRO_GAUCHE[temps] else GYRO_BLEU
-			"pompiers":
-				allume = GYRO_SYNCHRO[temps]
-			"sapin":
-				var tg := _temps_gyro()
-				allume = sapin_allume(0, tg) or sapin_allume(2, tg)
-				couleur = GYRO_ROUGE if sapin_allume(0, tg) else GYRO_BLANC
-		if not allume:
+		var gauche: bool = GYRO_GAUCHE[temps]
+		var droite: bool = GYRO_DROITE[temps]
+		if not (gauche or droite):
 			l.visible = false
 			continue
-		var mat := _mats_gyro[couleur] as StandardMaterial3D
+		var cle := String(candidats[k][3])
+		var couleurs := _couleurs_gyro(cle)
+		var mat := _mats_gyro[couleurs["gyro_g"] if gauche else couleurs["gyro_d"]] as StandardMaterial3D
 		var racine: Node3D = candidats[k][2]
 		var entree = _par_modele.get(cle)
 		var centre: Vector3 = (entree["gyro_centre"] as Vector3) if entree != null and entree.has("gyro_centre") else Vector3(0, 1.4, 0)
 		l.visible = true
 		l.global_position = racine.global_transform * centre
 		l.light_color = mat.albedo_color if mat != null else Color.RED
-		l.light_energy = GYRO_LIGHT_ENERGY * (GYRO_LIGHT_BLANC if couleur == GYRO_BLANC else 1.0)
 
 
 # Demi-longueur de caisse d'un modele, dans son propre repere (l'echelle du catalogue est portee par

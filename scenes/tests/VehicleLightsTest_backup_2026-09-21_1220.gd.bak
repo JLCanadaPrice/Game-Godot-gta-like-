@@ -9,11 +9,9 @@ extends Node3D
 #  - VOITURE GARÉE : feux éteints. Sans cette règle, un véhicule à l'arrêt (vitesse nulle) allumerait
 #    ses feux de freinage en permanence — ce que la section « véhicules garés » aurait introduit sur
 #    les quatorze véhicules des lieux ;
-#  - GYROPHARES : éteints par défaut, bascule par l'API, et chaque feu dans SA couleur selon ce qu'est
-#    le véhicule (2026-09-21) : POLICE rouge à gauche, bleu à droite, les deux moitiés ALTERNENT, le
-#    blanc du milieu jamais allumé ; POMPIERS tous les feux rouges ET blancs, synchronisés ; AMBULANCE
-#    « sapin de Noël » : au moins trois groupes de phase qui ne battent pas ensemble, et ses feux jaunes
-#    passés au blanc ;
+#  - GYROPHARES : éteints par défaut, bascule par l'API, deux moitiés de rampe qui ALTERNENT (jamais
+#    allumées ensemble), double éclat par phase, et les couleurs du vrai : rouge/bleu pour la police,
+#    rouge/blanc pour les urgences, ambre réservé à l'arrière des camions de pompiers ;
 #  - STATIONNEMENT : les véhicules des lieux sont de VRAIES voitures du groupe `vehicle`, avec leur
 #    collision, à l'endroit que la cuisson a écrit dans sa fiche.
 
@@ -205,7 +203,6 @@ func _gyro_motif() -> void:
 	if vl == null:
 		_fautes.append("VehicleLights absent de World.tscn")
 		return
-	# police : les deux moitiés ALTERNENT, jamais ensemble, double éclat par phase
 	var g: Array = vl.get("GYRO_GAUCHE")
 	var d: Array = vl.get("GYRO_DROITE")
 	var ensemble := 0
@@ -214,64 +211,27 @@ func _gyro_motif() -> void:
 	for k in g.size():
 		if bool(g[k]) and bool(d[k]):
 			ensemble += 1
-		ng += 1 if bool(g[k]) else 0
-		nd += 1 if bool(d[k]) else 0
+		if bool(g[k]):
+			ng += 1
+		if bool(d[k]):
+			nd += 1
 	if ensemble > 0:
-		_fautes.append("police : rouge et bleu allumes ensemble sur %d temps, ils doivent ALTERNER" % ensemble)
+		_fautes.append("les deux moities de rampe sont allumees ensemble sur %d temps : elles doivent ALTERNER" % ensemble)
 	if ng != 2 or nd != 2:
 		_fautes.append("double eclat attendu par moitie : %d a gauche, %d a droite" % [ng, nd])
-	# genres
-	var genres := {}
-	for pair in [["police", POLICE], ["pompiers", POMPIER], ["sapin", AMBULANCE]]:
-		var obtenu := String(vl.call("_genre_urgence", pair[1]))
-		genres[pair[0]] = obtenu
-		if obtenu != pair[0]:
-			_fautes.append("%s : genre d'urgence attendu %s, obtenu %s" % [String(pair[1]).get_file(), pair[0], obtenu])
-	# géométrie : quels feux tombent dans quels calques, sur les vrais modèles
-	var plans := {}
-	for pair in [["police", POLICE], ["pompiers", POMPIER], ["sapin", AMBULANCE]]:
-		var inst: Node3D = (load(pair[1]) as PackedScene).instantiate()
-		add_child(inst)
-		plans[pair[0]] = vl.call("plan_urgence", pair[1], inst)
-		inst.queue_free()
-	var pol: Dictionary = plans["police"]
-	if not (pol.has("urg_rouge") and pol.has("urg_bleu")) or pol.size() != 2:
-		_fautes.append("police : calques attendus urg_rouge et urg_bleu seulement, obtenu %s" % str(pol.keys()))
-	else:
-		if float(pol["urg_rouge"]["fx_max"]) >= 0.0:
-			_fautes.append("police : du rouge allume a DROITE de l'axe (fx max %.2f)" % float(pol["urg_rouge"]["fx_max"]))
-		if float(pol["urg_bleu"]["fx_min"]) <= 0.0:
-			_fautes.append("police : du bleu allume a GAUCHE de l'axe (fx min %.2f)" % float(pol["urg_bleu"]["fx_min"]))
-		# le segment BLANC du milieu ne doit appartenir a aucun calque allume
-		if float(pol["urg_rouge"]["fx_max"]) > -0.1 or float(pol["urg_bleu"]["fx_min"]) < 0.1:
-			_fautes.append("police : un calque allume deborde sur le segment blanc du milieu")
-	var pom: Dictionary = plans["pompiers"]
-	if not (pom.has("urg_rouge") and pom.has("urg_blanc")):
-		_fautes.append("pompiers : il faut les feux ROUGES et les feux BLANCS, obtenu %s" % str(pom.keys()))
-	var sap: Dictionary = plans["sapin"]
-	var groupes := 0
-	for k in 4:
-		if sap.has("sapin_%d_rouge" % k) or sap.has("sapin_%d_blanc" % k):
-			groupes += 1
-	if groupes < 3:
-		_fautes.append("ambulance : %d groupe(s) de phase, il en faut au moins 3 pour le sapin de Noel" % groupes)
-	if not sap.has("sapin_repos"):
-		_fautes.append("ambulance : ses feux jaunes ne sont pas passes au blanc (calque sapin_repos absent)")
-	# rythme du sapin : les groupes ne battent pas ensemble — sur deux secondes, deux groupes quelconques
-	# different sur au moins un quart des instants
-	var pire := 1.0
-	for a in 4:
-		for b in range(a + 1, 4):
-			var diff := 0
-			for i in 100:
-				var t := i * 0.02
-				if bool(vl.call("sapin_allume", a, t)) != bool(vl.call("sapin_allume", b, t)):
-					diff += 1
-			pire = minf(pire, diff / 100.0)
-	if pire < 0.25:
-		_fautes.append("sapin de Noel : deux groupes battent presque ensemble (%.0f %% d'instants differents seulement)" % (pire * 100.0))
-	print("VEHICLE_LIGHTS_GYRO police %d/%d eclats, %d chevauchement, %s ; pompiers %s ; sapin %d groupes, %s, groupes les plus proches differents %.0f %% du temps"
-			% [ng, nd, ensemble, str(pol.keys()), str(pom.keys()), groupes, "jaunes -> blanc" if sap.has("sapin_repos") else "JAUNES RESTES JAUNES", pire * 100.0])
+	var police: Dictionary = vl.call("_couleurs_gyro", POLICE)
+	var pompier: Dictionary = vl.call("_couleurs_gyro", POMPIER)
+	var ambu: Dictionary = vl.call("_couleurs_gyro", AMBULANCE)
+	if int(police["gyro_g"]) != 0 or int(police["gyro_d"]) != 1:
+		_fautes.append("police : rampe attendue rouge a gauche et bleue a droite, obtenu %s" % str(police))
+	if int(ambu["gyro_d"]) != 3:
+		_fautes.append("ambulance : moitie droite attendue BLANCHE, obtenu %s" % str(ambu))
+	if int(pompier["gyro_ar"]) != 4:
+		_fautes.append("camion de pompiers : ambre attendu a l'ARRIERE, obtenu %s" % str(pompier))
+	if int(police["gyro_ar"]) == 4:
+		_fautes.append("une voiture de police porte de l'ambre : reserve aux camions")
+	print("VEHICLE_LIGHTS_GYRO motif %d/%d eclats, %d chevauchement ; police %s, ambulance %s, pompiers %s"
+			% [ng, nd, ensemble, str(police), str(ambu), str(pompier)])
 
 
 # --- allumage des gyrophares ----------------------------------------------------------------------
