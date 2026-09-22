@@ -322,19 +322,6 @@ func _parking_etages(top: float) -> void:
 	stats["parking_etages"] = {"collision": (p["faces"] as PackedVector3Array).size() / 3, "decoupes": p["stats"]["decoupes"], "fautes": p["fautes"].size()}
 	_panneau_barre(xf, p["planchers"][0])
 	_lumieres_parking(xf, p["planchers"], PARKING_ETAGES_RAMPES, PARKING_ETAGES_ESCALIERS)
-	# voitures garées sur les places marquées, un tirage par niveau (un parking se vide en montant)
-	var garees := 0
-	for pl: Dictionary in p["places"]:
-		var centre: Vector3 = xf * (pl["centre"] as Vector3)
-		var nez3: Vector3 = xf.basis * Vector3((pl["nez"] as Vector2).x, 0.0, (pl["nez"] as Vector2).y)
-		var t := ParkingKit.tirage_place(Vector2(centre.x, centre.z), Vector2(nez3.x, nez3.z).normalized(),
-				100 - ParkingKit.remplissage(int(pl["niveau"])))
-		if t.is_empty():
-			continue
-		_parked_vehicle(String(t["model"]), t["pos"], float(t["yaw"]), centre.y + 0.03)
-		garees += 1
-	stats["parking_etages"]["places"] = (p["places"] as Array).size()
-	stats["parking_etages"]["garees"] = garees
 	var panes := models.windows_of(PARKING_ETAGES)
 	if not panes.is_empty():
 		stats["carreaux_allumés"] += Windows.emit(panes, xf, _window_acc[0], _window_acc[1], _window_acc[2])
@@ -1799,12 +1786,12 @@ const PARKING_LATERAL := 0.30       # m de décalage vers un côté de la place
 const PARKING_MARCHE_ARRIERE := 40  # % de voitures garées en marche arrière
 
 
-func _garer_sur_place(place: Dictionary, top: float, vide := PARKING_VIDE) -> void:
+func _garer_sur_place(place: Dictionary, top: float) -> void:
 	var pos: Vector2 = place["pos"]
 	var nez: Vector2 = place["nez"]
 	# tirage stable dérivé de la position, comme pour les fenêtres : la même place garde sa voiture
 	var h := Windows.cle(Vector3(pos.x, 0.0, pos.y))
-	if h % 100 < vide:
+	if h % 100 < PARKING_VIDE:
 		return
 	var chemin: String = VEH + PARKING_MODELES[(h >> 7) % PARKING_MODELES.size()] + ".glb"
 	if not ResourceLoader.exists(chemin):

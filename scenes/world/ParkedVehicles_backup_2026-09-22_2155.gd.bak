@@ -24,14 +24,10 @@ extends Node3D
 const CAR := preload("res://scenes/vehicles/Car.tscn")
 const PLACES_JSON := "res://scenes/world/map/generated/places/places.json"
 const DOWNTOWN_JSON := "res://scenes/world/downtown/generated/parked.json"
-# Voitures garées dans les trois parkings à étages du centre-ville (2026-09-22). Fichier séparé : il est écrit par
-# DowntownBuildingsBake, alors que parked.json l'est par DowntownFurnitureBake.
-const DOWNTOWN_PARKINGS_JSON := "res://scenes/world/downtown/generated/parked_parkings.json"
 # Lâchées un peu au-dessus du sol relevé à la cuisson : la caisse se pose d'elle-même à la bonne
 # hauteur au lieu de dépendre d'un décalage par modèle. 0,60 m suffit pour tous les gabarits du
 # catalogue, camion de pompiers compris.
 const DROP := 0.60
-const PORTEE := 300.0
 
 @export var enabled := true
 
@@ -42,7 +38,7 @@ var _manquants := 0
 func _ready() -> void:
 	if not enabled:
 		return
-	for chemin in [PLACES_JSON, DOWNTOWN_JSON, DOWNTOWN_PARKINGS_JSON]:
+	for chemin in [PLACES_JSON, DOWNTOWN_JSON]:
 		if not FileAccess.file_exists(chemin):
 			push_warning("ParkedVehicles : %s absent, cuisson à relancer" % chemin)
 			continue
@@ -72,11 +68,4 @@ func _poser(fiche: Dictionary) -> void:
 	car.rotation.y = float(fiche.get("yaw", 0.0)) - deg_to_rad(float(car.model_yaw_deg))
 	if car.has_method("park"):
 		car.park()
-	# PORTÉE DE VISIBILITÉ (2026-09-22). Un véhicule garé est POSÉ EN PERMANENCE, n'importe où sur la carte, et son
-	# maillage était dessiné à n'importe quelle distance : les 43 voitures des parkings du centre-ville coûtaient
-	# +25 appels de dessin à l'échangeur nord-ouest, à 2 km de là, et +24 à Echo Circle — mesuré en retirant leur
-	# fichier de fiches. Les voitures de la CIRCULATION n'ont pas ce défaut, elles n'existent qu'autour du joueur.
-	# 300 m : une caisse de 4 m y fait moins de trois pixels en 800x450.
-	for mi in car.find_children("*", "MeshInstance3D", true, false):
-		(mi as MeshInstance3D).visibility_range_end = PORTEE
 	_poses += 1

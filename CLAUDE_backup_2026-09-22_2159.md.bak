@@ -318,11 +318,6 @@ sans le plafond de 800x450 du §6). Une vue peut imposer sa propre heure par un 
   Payé le 2026-09-21 sur la séquence de l'hélice : des vues de travers et plongeantes, prises d'abord pour un défaut de
   la caméra de conduite. `Input.mouse_mode = MOUSE_MODE_VISIBLE` après l'instanciation du monde : le gestionnaire du
   joueur ne lit la souris qu'en mode capturé. (`MapShotsTest` n'est pas concerné : il rend avec sa propre caméra.)
-- **Un objet posé EN PERMANENCE sur la carte sans portée de visibilité se paie partout ailleurs.** Payé le
-  2026-09-22 sur les véhicules garés : 43 voitures dans trois parkings du centre-ville ajoutaient 25 appels de
-  dessin à une vue prise à 2 km de là, parce que leur maillage n'avait aucun `visibility_range_end`. Ce qui
-  n'existe qu'autour du joueur (la circulation, les PNJ) n'a pas ce problème ; tout ce qui est cuit ou instancié
-  une fois pour toutes, si. Cf. §11, étape 11.
 - Les `.tscn` cuits changent textuellement à chaque cuisson (identifiants de sous-ressources tirés
   au hasard) : un `git status` « modifié » ne prouve pas un changement de contenu.
 - **Il y a DEUX voitures dans ce jeu, et elles ne réagissent pas pareil au décor.** `Car.gd` est un
@@ -1505,38 +1500,4 @@ borné lui aussi, toujours actif.
   jamais pouvoir taper dedans. Relevé : **3,95 m au pire**. C'est la faute déjà payée avec les boîtiers du modèle,
   qui pendaient 20 cm au-dessus du tablier de la rampe.
 
-**Étape 11 — les places marquées et les voitures garées** (2026-09-22), qui ferme le chantier.
-
-- **Dix places par niveau, le long de la façade**, exactement le chiffre de l'évaluation de l'étape 8. Relevé sur le
-  modèle : intérieur du plateau z -9,75..9,80 ; cage d'escalier x ±5,52 à partir de z 7,48 ; tours d'angle
-  x ±(20,13..24,18) à partir de |z| 7,70. D'où **deux files de cinq places de 2,80 m**, de part et d'autre de la
-  cage, entre x ±6,12 et x ±20,12 : 14,00 m chacune, au centimètre. Place de 2,80 x 5,20 m comme en surface, nez
-  vers la façade, desservie par l'allée (z 3,85) ; une voiture de 4,20 m s'arrête à 0,50 m du muret de rive.
-  **200 places en tout** (5 niveaux x 10 x 4 parkings), marquage cuit dans le maillage partagé.
-- **Un parking se vide en montant**, comme dans la vraie vie : 67 % des places occupées au rez, puis 50, 33, 25 et
-  17 % sur le toit. **63 voitures**, 20 à l'aéroport et 43 au centre-ville ; le parc passe de 108 à **179 véhicules
-  garés**. C'est aussi ce qui borne le coût : remplir les 200 places aurait fait 200 `Car` de plus.
-- **Le tirage vit dans le kit** (`tirage_place`), pas dans les cuiseurs : l'aérogare passe par `PlacesBake` et les
-  trois autres par `DowntownBuildingsBake`, et deux copies du même tirage auraient dérivé à la première retouche.
-  Stable et dérivé de la position comme celui des fenêtres : une place garde sa voiture, son angle et son décalage
-  d'une cuisson à l'autre.
-- **Deux cuiseurs n'écrivent jamais le même fichier** : les voitures des parkings du centre-ville vont dans
-  `downtown/generated/parked_parkings.json`, à part de `parked.json` qu'écrit `DowntownFurnitureBake` (les camions
-  de caserne). Le premier cuiseur lancé seul aurait effacé le travail de l'autre. `ParkedVehicles` lit les trois
-  fichiers.
-- **UN VÉHICULE GARÉ ÉTAIT DESSINÉ À N'IMPORTE QUELLE DISTANCE, et ça se paie à l'autre bout de la carte.** Les
-  43 voitures des trois parkings du centre-ville coûtaient **+25 appels de dessin à l'échangeur nord-ouest, à 2 km
-  de là**, +24 à Echo Circle et +15 au rond-point — reproduit deux fois, puis prouvé en retirant leur fichier de
-  fiches (333 / 610 / 553, exactement les chiffres d'avant). Les voitures de la CIRCULATION n'ont pas ce défaut :
-  elles n'existent qu'autour du joueur. `ParkedVehicles` pose donc `visibility_range_end = 300 m` sur les maillages
-  de chaque véhicule qu'il instancie — une caisse de 4 m y fait moins de trois pixels en 800x450. Après : **333 /
-  352 / 610 / 351 / 268 / 554 de jour et 277 / 181 / 480 / 267 / 222 / 459 de nuit, avec 179 véhicules garés au lieu
-  de 108**, soit les chiffres du commit précédent à trois appels près. Leçon générale : **tout objet posé EN
-  PERMANENCE sur la carte a besoin d'une portée**, la règle déjà appliquée aux bâtiments, aux carreaux allumés et
-  aux halos ; seul ce qui n'existe qu'autour du joueur peut s'en passer.
-- `ParkingStructureTest` vérifie les 200 places par le rayon, pas par la cote : le tablier sous les quatre coins de
-  la voiture et au centre (**0,004 m d'écart au plancher au pire**), **2,00 m de dégagement au-dessus** de chaque
-  place (un poteau, un bandeau de plafonnier ou un bout de rampe dans une place encastrerait la voiture cuite), et
-  chaque fiche de véhicule garé retombe sur une place (**63 sur 63**).
-
-**Le chantier du parking à étages est terminé.**
+**Reste à faire** : les voitures garées à chaque niveau sur les 10 places marquées le long de la façade.

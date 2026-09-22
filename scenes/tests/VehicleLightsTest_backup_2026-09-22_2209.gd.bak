@@ -23,10 +23,6 @@ const WORLD := preload("res://scenes/world/World.tscn")
 const CAR := preload("res://scenes/vehicles/Car.tscn")
 const PLACES_JSON := "res://scenes/world/map/generated/places/places.json"
 const DOWNTOWN_JSON := "res://scenes/world/downtown/generated/parked.json"
-# Voitures garées dans les trois parkings à étages (2026-09-22). Troisième fichier parce que deux cuiseurs
-# différents écrivent les fiches du centre-ville ; la liste doit rester LA MÊME que celle de ParkedVehicles,
-# sinon ce test compte des véhicules posés sans fiche — c'est ce qui l'a fait échouer le jour où on l'a ajouté.
-const DOWNTOWN_PARKINGS_JSON := "res://scenes/world/downtown/generated/parked_parkings.json"
 # Chemins RÉELS du catalogue : _couleurs_gyro lit le rôle dans resources/vehicle_models, un chemin
 # inventé n'y est pas et retomberait sur le rôle vide.
 const VEH := "res://assets/vehicle_models_extra/city_vehicles_UNVERIFIED_LICENSE/"
@@ -166,7 +162,7 @@ func _flaque_de_frein() -> void:
 
 func _stationnement() -> void:
 	var fiches: Array = []
-	for chemin in [PLACES_JSON, DOWNTOWN_JSON, DOWNTOWN_PARKINGS_JSON]:
+	for chemin in [PLACES_JSON, DOWNTOWN_JSON]:
 		if not FileAccess.file_exists(chemin):
 			_fautes.append("%s absent : la cuisson n'a pas écrit les véhicules garés" % chemin)
 			continue

@@ -417,7 +417,6 @@ static func praticable(mesh: Mesh, materiau: Material, nom: String, escaliers: i
 		_rampe(m, sols[k], sols[k + 1], k == 0)
 	if rampes > 0:
 		_barre_hauteur(m, sols[0])
-	var pl := places(sols, m)
 	var faces := m.faces()
 	faces.append_array(col.faces())
 	# cage vitrée opaque DE L'INTÉRIEUR : ses quatre faces doublées à l'envers, APRÈS les découpes de portes (la
@@ -430,8 +429,7 @@ static func praticable(mesh: Mesh, materiau: Material, nom: String, escaliers: i
 	for x: float in [CAGE.position.x, CAGE.end.x]:
 		_compte(stats, fautes, "doublure de la cage (flancs)", m.doubler("x", x - 0.01, x + 0.01,
 				Rect2(CAGE.position.y, bas_haut.x, CAGE.size.y, bas_haut.y - bas_haut.x)))
-	return {"mesh": m.vers_mesh(materiau, nom), "faces": faces, "stats": stats, "fautes": fautes, "planchers": sols,
-			"places": pl}
+	return {"mesh": m.vers_mesh(materiau, nom), "faces": faces, "stats": stats, "fautes": fautes, "planchers": sols}
 
 
 static func _compte(stats: Dictionary, fautes: Array[String], quoi: String, touches: int) -> void:
@@ -652,92 +650,6 @@ static func _barre_hauteur(m: Maillage, y_sol: float) -> void:
 	for x: Vector2 in [Vector2(BARRE_X.x, BARRE_X.x + 0.25), Vector2(BARRE_X.y - 0.25, BARRE_X.y)]:
 		m.boite(Vector3(x.x, y_sol - 0.5, BARRE_Z.x), Vector3(x.y, haut + BARRE_EPAIS, BARRE_Z.y), BARRE_GRIS)
 	m.boite(Vector3(BARRE_X.x, haut, BARRE_Z.x), Vector3(BARRE_X.y, haut + BARRE_EPAIS, BARRE_Z.y), BARRE_JAUNE)
-
-
-# --- PLACES MARQUÉES (2026-09-22) -------------------------------------------------------------------------------------
-#
-# Dix places par niveau, le long de la façade, exactement ce que l'évaluation de l'étape 8 avait chiffré : la bande
-# arrière est prise par la rampe, l'allée occupe le milieu, il reste la profondeur d'une place entre l'allée et le
-# muret de rive. Relevé sur le modèle : intérieur du plateau z -9,75..9,80, muret de rive à 9,80 ; cage d'escalier
-# x ±5,52 à partir de z 7,48 ; tours d'angle x ±(20,13..24,18) à partir de |z| 7,70. D'où deux files de CINQ places
-# de 2,80 m, de part et d'autre de la cage, entre x ±6,12 et x ±20,12 : 14,00 m chacune, au centimètre.
-#
-# Une place fait 2,80 x 5,20 m comme celles des parkings de surface (PlacesBake._parking), nez vers la façade, et
-# c'est l'allée (z 3,85) qui la dessert. Une voiture de 4,20 m s'y arrête à 0,50 m du muret : aucun montant de façade
-# n'est dans son emprise.
-const PL_PROF := 5.2
-const PL_LARG := 2.8
-const PL_Z := 9.75                             # fond de la place (le muret de rive est à 9,80)
-const PL_TRAIT := 0.12
-const PL_FILES := [Vector2(-20.12, -6.12), Vector2(6.12, 20.12)]
-const PL_PEINTURE := Color(0.86, 0.86, 0.84)
-const PL_HAUT := 0.006                         # le trait, au-dessus du tablier
-
-
-# Dessine le marquage dans `m` et rend les places : [{"niveau": k, "centre": Vector3 (repère du modèle), "nez": Vector2}].
-# Le nez pointe vers la façade (+z) : c'est la marche avant, `_garer_sur_place` retourne une partie des voitures.
-static func places(sols: PackedFloat32Array, m: Maillage) -> Array:
-	var sortie: Array = []
-	for k in sols.size():
-		var y: float = sols[k] + PL_HAUT
-		for f: Vector2 in PL_FILES:
-			var n := int(round((f.y - f.x) / PL_LARG))
-			for i in n + 1:
-				var x: float = f.x + (f.y - f.x) * float(i) / float(n)
-				m.quad(Vector3(x - PL_TRAIT * 0.5, y, PL_Z - PL_PROF), Vector3(x + PL_TRAIT * 0.5, y, PL_Z - PL_PROF),
-						Vector3(x + PL_TRAIT * 0.5, y, PL_Z), Vector3(x - PL_TRAIT * 0.5, y, PL_Z), Vector3.UP, PL_PEINTURE)
-			for i in n:
-				var xc: float = f.x + (f.y - f.x) * (float(i) + 0.5) / float(n)
-				sortie.append({"niveau": k, "centre": Vector3(xc, sols[k], PL_Z - PL_PROF * 0.5), "nez": Vector2(0.0, 1.0)})
-	return sortie
-
-
-# Le tirage d'une voiture sur une place. Il vit ICI et pas dans un cuiseur parce que les quatre parkings doivent se
-# garnir de la même façon : l'aérogare passe par PlacesBake, les trois autres par DowntownBuildingsBake, et deux
-# copies du même tirage auraient dérivé à la première retouche. Mêmes réglages que le parking de surface de
-# l'aérogare (PlacesBake._garer_sur_place), dont il reprend le principe : tirage STABLE dérivé de la position, donc
-# une place garde sa voiture, son angle et son décalage d'une cuisson à l'autre.
-const PL_MODELES := [
-	"Sedans/Veh_Sedan_01_Blue", "Sedans/Veh_Sedan_01_White", "Sedans/Veh_Sedan_02_Red",
-	"Sedans/Veh_Sedan_02_White", "Sedans/Veh_Sedan_01_Yellow", "SUVs/Veh_SUV_01_White",
-	"SUVs/Veh_SUV_02_Green", "SUVs/Veh_SUV_03_Blue", "SUVs/Veh_SUV_01_Red",
-	"Coupes/Veh_Coupe_01_Red", "Microcar/Veh_Microcar_Yellow", "Minivan/Veh_Minivan_White",
-]
-const PL_VEH := "res://assets/vehicle_models_extra/city_vehicles_UNVERIFIED_LICENSE/"
-const PL_TRAVERS := 3.0        # degrés de travers, au plus (moins qu'en surface : les places sont serrées)
-const PL_AVANCE := 0.35
-const PL_LATERAL := 0.22
-const PL_ARRIERE := 40         # % de voitures garées en marche arrière
-const Fenetres := preload("res://scenes/world/map/tools/BuildingWindows.gd")
-
-
-# Rend {} si la place reste vide, sinon {"model": chemin, "pos": Vector2 monde, "yaw": float}.
-# `pos` et `nez` sont en coordonnées MONDE ; `nez` pointe vers le fond de la place.
-static func tirage_place(pos: Vector2, nez: Vector2, vide: int) -> Dictionary:
-	var h := Fenetres.cle(Vector3(pos.x, 0.0, pos.y))
-	if h % 100 < vide:
-		return {}
-	var chemin: String = PL_VEH + PL_MODELES[(h >> 7) % PL_MODELES.size()] + ".glb"
-	if not ResourceLoader.exists(chemin):
-		push_error("ParkingStructureKit : modèle absent %s" % chemin)
-		return {}
-	var travers := (float((h >> 11) % 2001) / 1000.0 - 1.0) * deg_to_rad(PL_TRAVERS)
-	var avance := (float((h >> 17) % 2001) / 1000.0 - 1.0) * PL_AVANCE
-	var lateral := (float((h >> 23) % 2001) / 1000.0 - 1.0) * PL_LATERAL
-	var cote := Vector2(-nez.y, nez.x)
-	var arriere := ((h >> 3) % 100) < PL_ARRIERE
-	# Le cap enregistré est celui du MODÈLE BRUT, même convention que partout ailleurs : nez vers (-x, -z).
-	return {"model": chemin, "pos": pos + nez * avance + cote * lateral,
-			"yaw": atan2(-nez.x, -nez.y) + travers + (PI if arriere else 0.0), "arriere": arriere}
-
-
-# Combien de places occupées, par niveau : un parking se vide en montant, comme dans la vraie vie. Le dernier
-# chiffre vaut pour le toit. C'est aussi ce qui borne le nombre de véhicules posés (5 niveaux x 4 parkings).
-const PL_REMPLISSAGE := [67, 50, 33, 25, 17]
-
-
-static func remplissage(niveau: int) -> int:
-	return int(PL_REMPLISSAGE[mini(niveau, PL_REMPLISSAGE.size() - 1)])
 
 
 # --- ÉCLAIRAGE INTÉRIEUR (2026-09-22) ---------------------------------------------------------------------------------

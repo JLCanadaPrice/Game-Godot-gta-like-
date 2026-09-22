@@ -31,10 +31,6 @@ extends Node3D
 #     luminaire de la partie roulante il reste au moins 2,90 m de dégagement — un véhicule qui passe la barre de
 #     2,15 m ne doit jamais pouvoir taper dedans. C'est exactement la faute déjà payée avec les boîtiers du modèle,
 #     qui pendaient 20 cm au-dessus du tablier de la rampe.
-#  4b ter. PLACES MARQUÉES (2026-09-22) : les 10 places de chaque niveau doivent être PLATES (le tablier sous les
-#     quatre coins de la voiture, au niveau du plancher) et DÉGAGÉES sur 2 m de haut — un poteau, un bandeau de
-#     plafonnier ou un bout de rampe dans une place, et la voiture cuite se retrouve encastrée. Et chaque fiche de
-#     véhicule garé doit tomber sur une place de parking.
 #  4c. BARRE DE HAUTEUR : à l'entrée de l'aéroport, un camion (2,79 m de caisse) et une berline (1,45 m) lancés à
 #     4 m/s vers le passage. Le camion est arrêté DEHORS par le portique, la berline entre.
 #  5. RAMPES INTÉRIEURES (2026-09-22) : la voiture du joueur, conduite comme au clavier (move_forward / move_left /
@@ -287,7 +283,6 @@ func _physics_process(delta: float) -> void:
 				for b: Array in _braqueurs:
 					(b[0] as Node).call("start_drive")
 				_lumieres()
-				_places()
 				_phase = "braquage"
 				_t_phase = 0.0
 		"braquage":
@@ -653,75 +648,6 @@ func _lumieres() -> void:
 		_fautes.append("eclairage : %.2f m seulement sous un luminaire de la partie roulante (%s)" % [pire, pire_ou])
 	print("PARKING_LUMIERES %d maillage(s), %d triangles, %d materiau(x) partage(s), %d luminaires ; degagement le plus faible sous un luminaire roulant %.2f m (%s)"
 			% [noeuds.size(), triangles, materiaux.size(), tetes.size(), pire, pire_ou])
-
-
-# --- 4b ter. places marquées ------------------------------------------------------------------------------------------
-
-const PL_JSON := ["res://scenes/world/map/generated/places/places.json",
-		"res://scenes/world/downtown/generated/parked_parkings.json"]
-const PL_DEMI_X := 1.15          # demi-largeur d'une voiture du parc, plus un peu
-const PL_DEMI_Z := 2.10          # demi-longueur
-const PL_LIBRE := 2.00           # hauteur libre exigée au-dessus d'une place
-
-
-func _places() -> void:
-	var espace := get_world_3d().direct_space_state
-	var total := 0
-	var pire := 0.0
-	var pire_ou := ""
-	var bas := 99.0
-	var bas_ou := ""
-	for e: Array in _parkings:
-		var b: Node3D = e[0]
-		var sols: PackedFloat32Array = e[2]
-		var maillage: Mesh = e[1]
-		for pl: Dictionary in Kit.places(sols, Kit.Maillage.depuis(maillage)):
-			total += 1
-			var c: Vector3 = pl["centre"]
-			var sol: float = (b.global_transform * c).y
-			for d: Vector3 in [Vector3.ZERO, Vector3(PL_DEMI_X, 0, PL_DEMI_Z), Vector3(-PL_DEMI_X, 0, PL_DEMI_Z),
-					Vector3(PL_DEMI_X, 0, -PL_DEMI_Z), Vector3(-PL_DEMI_X, 0, -PL_DEMI_Z)]:
-				var p := b.global_transform * (c + d + Vector3(0, 1.0, 0))
-				var hit := espace.intersect_ray(PhysicsRayQueryParameters3D.create(p, p - Vector3(0, 1.6, 0), 1))
-				var ecart := 9.0 if hit.is_empty() else absf(float((hit["position"] as Vector3).y) - sol)
-				if ecart > pire:
-					pire = ecart
-					pire_ou = "%s niveau %d, place x %.1f" % [b.name, int(pl["niveau"]), c.x]
-			var p0 := b.global_transform * (c + Vector3(0, 0.15, 0))
-			var haut := espace.intersect_ray(PhysicsRayQueryParameters3D.create(p0, p0 + Vector3(0, PL_LIBRE, 0), 1))
-			var libre: float = PL_LIBRE if haut.is_empty() else float((haut["position"] as Vector3).y) - sol
-			if libre < bas:
-				bas = libre
-				bas_ou = "%s niveau %d, place x %.1f" % [b.name, int(pl["niveau"]), c.x]
-	if pire > 0.05:
-		_fautes.append("places marquees : %.2f m d'ecart au plancher sous une place (%s)" % [pire, pire_ou])
-	if bas < PL_LIBRE:
-		_fautes.append("places marquees : %.2f m libres seulement au-dessus d'une place (%s)" % [bas, bas_ou])
-	# les fiches de véhicules garés tombent-elles sur une place ?
-	var hors := 0
-	var fiches := 0
-	for chemin: String in PL_JSON:
-		if not FileAccess.file_exists(chemin):
-			_fautes.append("places marquees : %s absent" % chemin)
-			continue
-		var data = JSON.parse_string(FileAccess.get_file_as_string(chemin))
-		if typeof(data) != TYPE_DICTIONARY or not data.has("parked"):
-			continue
-		for f: Dictionary in data["parked"]:
-			var pos: Array = f["pos"]
-			var monde := Vector3(float(pos[0]), float(pos[1]), float(pos[2]))
-			for e2: Array in _parkings:
-				var b2: Node3D = e2[0]
-				var local := b2.global_transform.affine_inverse() * monde
-				if absf(local.x) > 24.5 or absf(local.z) > 12.5 or local.y < -1.0 or local.y > 20.0:
-					continue
-				fiches += 1
-				if absf(local.z - (Kit.PL_Z - Kit.PL_PROF * 0.5)) > 0.6 or absf(local.x) < 5.5 or absf(local.x) > 20.2:
-					hors += 1
-	if hors > 0:
-		_fautes.append("places marquees : %d vehicule(s) gare(s) hors d'une place" % hors)
-	print("PARKING_PLACES %d places sur les %d parkings, ecart au plancher %.3f m au pire (%s), hauteur libre %.2f m au plus bas (%s) ; %d vehicules gares, %d hors place"
-			% [total, _parkings.size(), pire, pire_ou, bas, bas_ou, fiches, hors])
 
 
 func _debut_barre() -> void:

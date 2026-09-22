@@ -28,10 +28,6 @@ const LampHeadsRes := preload("res://scenes/world/map/MapLampHeads.gd")
 # Luminaires INTÉRIEURS des trois parkings à étages, en coordonnées monde : écrits dans
 # downtown/generated/parking_lights.tres, lus par StreetLights pour son bassin toujours allumé.
 var _parking_heads := PackedVector3Array()
-# Voitures garées sur les places marquées des trois parkings : écrites dans downtown/generated/parked_parkings.json,
-# à part de parked.json que DowntownFurnitureBake écrit de son côté (deux cuiseurs qui écrivent le même fichier, ce
-# serait le premier lancé seul qui effacerait l'autre).
-var _parking_gares: Array = []
 
 const OUT := "res://scenes/world/downtown/generated"
 const MODELS := OUT + "/buildings"
@@ -869,7 +865,6 @@ func _parking_praticable(mdl: Dictionary) -> void:
 	ResourceSaver.save(maillage.vers_mesh(Parking.materiau_lumiere(), "ParkingLumieres"), chemin_lum)
 	mdl["lumieres"] = load(chemin_lum)
 	mdl["tetes_lumieres"] = e["tetes"]
-	mdl["places"] = p["places"]
 	_stats["parking_lumieres"] = e["compte"]
 
 # Forme de collision d'un modèle : sa boîte pleine, SAUF pour le parking à étages, qu'on doit pouvoir parcourir à pied
@@ -940,18 +935,6 @@ func _write_scene() -> String:
 			lum.owner = root
 			for t: Vector3 in (mdl["tetes_lumieres"] as PackedVector3Array):
 				_parking_heads.append(node.transform * t)
-			# voitures garées sur les places marquées, même tirage que le parking de l'aéroport
-			for pl: Dictionary in (mdl["places"] as Array):
-				var centre: Vector3 = node.transform * (pl["centre"] as Vector3)
-				var nez3: Vector3 = node.transform.basis * Vector3((pl["nez"] as Vector2).x, 0.0, (pl["nez"] as Vector2).y)
-				var tir := Parking.tirage_place(Vector2(centre.x, centre.z), Vector2(nez3.x, nez3.z).normalized(),
-						100 - Parking.remplissage(int(pl["niveau"])))
-				if tir.is_empty():
-					continue
-				var pv: Vector2 = tir["pos"]
-				_parking_gares.append({"model": String(tir["model"]),
-						"pos": [snappedf(pv.x, 0.01), snappedf(centre.y + 0.03, 0.01), snappedf(pv.y, 0.01)],
-						"yaw": snappedf(float(tir["yaw"]), 0.001), "place": String(node.name)})
 			# panneau de la barre de hauteur à l'entrée (cf. ParkingStructureKit.BARRE_HAUTEUR)
 			var panneau := Label3D.new()
 			panneau.name = "BarreHauteur"
@@ -992,10 +975,6 @@ func _write_scene() -> String:
 	var packed := PackedScene.new()
 	var err := packed.pack(root)
 	if err == OK:
-		var fg := FileAccess.open(OUT.path_join("parked_parkings.json"), FileAccess.WRITE)
-		fg.store_string(JSON.stringify({"parked": _parking_gares}, "	"))
-		fg.close()
-		_stats["parking_garees"] = _parking_gares.size()
 		var tetes_int := LampHeadsRes.new()
 		tetes_int.heads = _parking_heads
 		ResourceSaver.save(tetes_int, OUT.path_join("parking_lights.tres"))
