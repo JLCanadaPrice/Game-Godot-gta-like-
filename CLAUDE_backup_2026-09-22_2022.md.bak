@@ -1378,46 +1378,6 @@ appliqué, réduit compris. La voie (écart des roues avant) est mesurée avec l
   arrêtés, debout sur leur plancher.
 - Collision du parking : 1 441 → **2 707 triangles** au centre-ville, 2 767 à l'aéroport (hélice comprise).
 
-**Étape 8 — la rampe INTÉRIEURE, évaluée à 16 % et à 18 %** (2026-09-22, sur demande du joueur, qui veut les quatre
-parkings identiques et tout en intérieur ; la décision d'abattre l'hélice lui revient).
-
-**CORRECTION DE L'ÉTAPE 5.** Il y est écrit qu'« une rampe intérieure ne tient pas dans le modèle ». C'était vrai **à
-12 %**, la seule pente essayée alors : 4,57 m d'un plancher à l'autre y demandent 38,1 m, dans une dalle de 43,5 m entre
-murets. Les vrais parkings montent souvent à 15-18 % : à **16 %** il faut 28,56 m (29,26 m avec les raccords à mi-pente),
-à **18 %** 25,4 m (26,1 m), et il reste alors 7,1 m (16 %) ou 8,7 m (18 %) à chaque bout pour tourner. **Ne pas
-reconclure « impossible » sans dire à quelle pente.**
-
-Disposition évaluée, la seule qui tienne : rampe dans la bande du **mur arrière**, entre la tour arrière (x ±5,52,
-z -9,75..-7,48) et la rangée de poteaux (z ±0,54) — axe à z = -5,55, voie de 3,5 m entre garde-corps, montant vers +x ;
-**demi-tour à chaque bout** autour des poteaux de bout (x ±15,885, qui tombent dans l'îlot du demi-tour) ; voie de retour
-côté façade. Les rampes se superposent d'un niveau à l'autre (même profil décalé d'un étage) : la dalle du dessus est
-percée sur toute la bande, et la hauteur libre sous la rampe supérieure vaut **4,27 m**, constante. La bande côté façade
-ne peut pas servir : la cage d'escalier (x ±5,52, z 7,48..9,80) et sa porte y donnent.
-
-Mesuré, pas estimé : les **72 modèles du catalogue**, montée ET descente d'un étage, avec la vraie `Car` conduite comme
-au clavier (poursuite d'un tracé) sur une maquette aux cotes relevées (murets de 1,95 m, 6 tours, 5 poteaux, trémie,
-garde-corps). On compte les contacts dont la normale est presque horizontale — mur, poteau, garde-corps.
-
-| famille | 16 %, demi-tours de 4,7 m | 18 %, demi-tours de 5,8 m |
-|---|---|---|
-| berlines (7) | 6 sans contact, 1 frôlement | **7 sans contact** |
-| coupés, sport, citadines (26) | 16 sans contact, 5 frôlent, 4 frottent, 1 bloqué | 24 sans contact, 2 frôlent |
-| SUV et pick-ups (10) | 5 sans contact, 2 frôlent, 2 frottent, 1 bloqué | 7 sans contact, 3 frôlent |
-| fourgons (12) | 2 sans contact, 7 frottent, 3 bloqués | 5 sans contact, 3 frôlent, 3 frottent, 1 bloqué |
-| camions (13), bus (2), limousine | aucun ne passe proprement | 2 camions sans contact, le reste frotte ou bloque |
-| places marquées par étage | **10** | 2 à 4 |
-
-Les chiffres qui expliquent le tableau : le demi-tour d'une berline de 4,20 x 2,06 m balaie
-sqrt((R + 1,03)² + 2,10²), soit 5,96 m à R = 4,7 et 7,13 m à R = 5,8, pour 7,1 m (16 %) ou 8,7 m (18 %) disponibles ;
-et le rayon au milieu de la voiture vaut 4,07 m pour une berline, 5,10 m pour un fourgon, 9,45 m pour un camion
-(étape 6). La hauteur ne limite pas : la trémie est ouverte sur presque toute la bande, d'où 4,27 m libres — sauf la
-**boîte de collision, qui reste horizontale sur la pente** : un véhicule long et haut a besoin de sa hauteur PLUS
-pente x longueur (3,9 m pour le camion de glaces), et c'est ce qui l'a coincé sous le bord de trémie dans un premier
-essai à 3,2 m de dégagement.
-
-En échange, la bande arrière est perdue pour le stationnement à tous les niveaux, et fourgons, camions et bus ne
-montent plus — ce qu'impose de toute façon la barre de hauteur d'un vrai parking à étages.
-
-**Reste à faire** (après la décision du joueur sur la rampe) : les rampes pour voitures de tous les niveaux,
-l'éclairage intérieur de nuit (plafonniers de `base_072` sur matériau partagé, bassin borné de vraies lumières), les
-voitures garées à chaque niveau sur des places marquées.
+**Reste à faire** (après validation du premier niveau par le joueur) : les rampes pour voitures de tous les niveaux
+(cf. l'évaluation de la rampe intérieure, étape 8), l'éclairage intérieur de nuit (plafonniers de `base_072` sur
+matériau partagé, bassin borné de vraies lumières), les voitures garées à chaque niveau sur des places marquées.
