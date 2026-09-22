@@ -180,7 +180,7 @@ attendu.
 "$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/CarDrivingTest.tscn  # accélération, virage, freinage : CAR_DRIVING_RESULT
 "$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/CarDropTest.tscn     # chute de 10 m : CAR_DROP_RESULT
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/CarKerbTest.tscn          # bordures : le joueur monte, l'IA non
-"$GODOT" --headless --path "$PROJET" res://scenes/tests/WheelSpinTest.tscn        # roues des 72 modèles : axe, sens, rayon, stroboscope, pivot, braquage, rayon de braquage par modèle
+"$GODOT" --headless --path "$PROJET" res://scenes/tests/WheelSpinTest.tscn        # roues des 72 modèles : axe, sens, rayon, stroboscope, pivot, braquage
 "$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/ParkingStructureTest.tscn  # parkings à étages : plateaux, escalier, hélice, cf. §11
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/DowntownStreetsTest.tscn
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/DowntownBuildingsTest.tscn
@@ -506,9 +506,6 @@ débogage sur `V`.
 - **appartements reliés à la carte** (les intérieurs existent, ils ne sont pas raccordés aux
   bâtiments de la carte) ;
 - **concessionnaire enrichi** ;
-- **flaques de sang des PNJ à hauteur fixe**, plus tard : `NPC._die` pose la flaque à `POOL_GROUND_Y` = 0,1 m et, faute
-  d'animation, le corps à y = 0,5 — sous le sol ou en l'air partout où la carte n'est pas à 0 (plateau de l'aéroport,
-  ponts, parkings). Même famille que la sortie de voiture à y = 1,3 (§11, étape 5). Vérifier aussi `Car._add_body_stain` ;
 - **mode graphique léger**, plus tard, pour les PC à carte graphique Intel : c'est le gel des PC de l'école (§6)
   qui l'a fait inscrire. Réglages déjà en place qu'il pourra piloter : le bassin de vraies lumières
   (`StreetLights.pool`, 16, §9), les ombres du soleil (`DirectionalLight3D`, portée 240 m), le LOD des bâtiments
@@ -1269,9 +1266,7 @@ touche toute la conduite).
   toute vitesse**, le double d'une vraie voiture. Impossible de faire demi-tour dans un étage (19 m entre les murets,
   poteaux au milieu), de suivre une rampe en hélice ou d'entrer à angle droit dans une travée. `rayon_braquage(v)` :
   **5,5 m sous 4 m/s**, les 10 m d'avant au-delà de 12 m/s, linéaire entre les deux. Mesuré sur le vrai
-  `_drive_physics` (arc parcouru / lacet) : 5,50 m à 3 m/s, 7,67 m à 8 m/s, 10,00 m à 16 m/s. **REMPLACÉ le
-  2026-09-22 par le braquage par modèle (étape 6)** : ce rayon était le même pour une citadine et un autocar, et le
-  joueur le trouvait encore « trop grand partout ».
+  `_drive_physics` (arc parcouru / lacet) : 5,50 m à 3 m/s, 7,67 m à 8 m/s, 10,00 m à 16 m/s.
 - **Assiette en pente.** La boîte de collision ne s'incline jamais : `move_and_slide` la fait bien monter une pente de
   12 %, mais horizontale, appuyée sur son arête avant (en montée) ou arrière (en descente). À mi-pente, la roue la plus
   haute de la berline du pack city flottait à **0,38 m**. Le modèle prend maintenant l'angle du sol sous la voiture
@@ -1335,26 +1330,6 @@ correspond plus au modèle.
   parking et la rue au travers, comme du verre ; depuis le parking, la face est opaque.
 - Vues au sol `parking_aeroport_rampe_*`, `_travee_niveau1`, `_porte_rez`, `_escalier`, `_escalier_haut`,
   `parking_centre_3_escalier*`.
-
-**Étape 6 — rayon de braquage par modèle, réduit à vitesse** (`Car.gd`, 2026-09-22). Modèle BICYCLETTE sur
-l'empattement MESURÉ de chaque modèle : lacet = v · tan(δ) / L. À basse vitesse δ = `MAX_STEER_RAD` (29,8°, l'angle
-que montrent les roues avant à fond) ; à vitesse, δ se réduit pour que l'accélération latérale ne dépasse jamais
-`BRAQUAGE_A_LAT` = 15 m/s² (tan δ = L · a / v²) — c'est le seul réglage. Les roues avant montrent l'angle réellement
-appliqué, réduit compris. La voie (écart des roues avant) est mesurée avec l'empattement (`_mesurer_empattement`).
-- Rayon « entre murs » (roue avant extérieure, celui des fiches techniques, `rayon_entre_murs()`), relevé sur les 72
-  modèles par `WheelSpinTest` (contrôle 9) : **berlines 5,30 à 5,91 m**, SUV et pick-ups 5,10 à 7,34, fourgons 5,08 à
-  7,66, coupés et citadines 3,52 (micro-citadine) à 7,24, camions 6,35 à 11,73, limousine 9,34, **bus 11,51 et autocar
-  12,13**. Rangées à part après mesure : `normalcar2` (empattement 2,00 m) est une citadine, pas une berline, et la
-  balayeuse de voirie (1,77 m, 4,10 m) un engin compact, pas un camion.
-- Mesuré en conduite (`ParkingStructureTest`, arc / lacet, braquage à fond) : à 3 m/s, berline 4,07 m au milieu de la
-  voiture (5,30 m entre murs), camion 9,45 m, bus 9,24 m ; à 16 m/s, les trois à 16,8 m et 15,3 m/s² (le frottement
-  retire 0,15 m/s à la vitesse de consigne, d'où 16,8 au lieu de 17,1).
-- Pour une berline, au milieu de la voiture : 4,1 m jusqu'à 28 km/h, 9,6 m à 43 km/h, 17 m à 58 km/h, 38 m à 86 km/h.
-  Les 10 m d'avant, à 86 km/h, demandaient 5,9 g.
-- La circulation n'est pas concernée : elle suit son graphe (`_ai_speed`, `_heading_deg`), et ses roues prennent déjà
-  l'angle de son virage (`_braquage_ia`). Simulation longue rejouée après le changement : 30 min de jeu sur toute la carte, gel coupé,
-  252 voitures, **aucune file figée à aucun relevé** (toutes les 30 s) ; pire arrêt isolé 41 s, une seule voiture (34 s le
-  2026-09-21 : les départs sont tirés au hasard d'une simulation à l'autre).
 
 **Reste à faire** (après validation du premier niveau par le joueur) : les niveaux 2 à 4 et le toit (hélice et
 escalier), l'éclairage intérieur de nuit (plafonniers de `base_072` sur matériau partagé, bassin borné de vraies

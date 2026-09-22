@@ -9,11 +9,8 @@ extends Node3D
 #     Les quatre exemplaires : les trois du centre-ville et celui de l'aéroport (PlacesBake._parking_etages).
 #  1b. EMPRISE DE L'AÉROPORT : aucun point d'une chaussée (RoadNetwork), aucun noeud ni arête du graphe de
 #     circulation, aucun noeud du PedGraph ni du Circuit sous le parking de l'aéroport (emprise + 0,5 m).
-#  2. RAYON DE BRAQUAGE DU JOUEUR, PAR MODÈLE, mesuré sur le vrai Car._drive_physics (arc parcouru / lacet), braquage
-#     à fond, pour une berline, un camion et le bus, à 3, 8 et 16 m/s : il suit l'empattement mesuré de chaque modèle
-#     (Car.rayon_braquage, modèle bicyclette) — 4,1 m pour la berline à 3 m/s, plus de 9 m pour le camion et le bus —,
-#     et à vitesse l'accélération latérale reste à BRAQUAGE_A_LAT pour tous. Il valait 10 m à toute vitesse et pour
-#     tous les modèles, puis 5,5 m à basse vitesse pour tous (2026-09-21).
+#  2. RAYON DE BRAQUAGE DU JOUEUR, mesuré sur le vrai Car._drive_physics (arc parcouru / lacet) : 5,5 m à 3 m/s,
+#     10 m à 16 m/s (inchangé). Il valait 10 m à toute vitesse : impossible de tourner dans un parking.
 #  3. RAMPE À 12 % : la voiture du joueur monte une vraie pente continue de 12 % (plat, pente, plat, sans ressaut aux
 #     raccords), arrive en haut, puis redescend en marche arrière. À mi-pente, son modèle a l'assiette de la pente
 #     (nez levé en montée) et ses roues touchent la pente : écart entre le bas de chaque roue et la pente sous 8 cm.
@@ -42,9 +39,6 @@ const Network := preload("res://scenes/world/map/tools/RoadNetwork.gd")
 const JOUEUR := preload("res://scenes/player/Player.tscn")
 const CAR := preload("res://scenes/vehicles/Car.tscn")
 const BERLINE := "res://assets/vehicle_models_extra/city_vehicles_UNVERIFIED_LICENSE/Sedans/Veh_Sedan_01_Blue.glb"
-const CATALOGUE := "res://resources/vehicle_models"
-# véhicules lourds mesurés en plus de la berline : [modèle du catalogue, position de départ sur le sol témoin]
-const LOURDS := [["city_truck_01", Vector3(-40.0, 1.0, 45.0)], ["city_bus_01", Vector3(55.0, 1.0, 45.0)]]
 const GRAVITE := 9.8
 const DUREE := 2.0
 # Points de lâcher, repère du modèle : bande sud (z -5), loin des poteaux (z ~0) et des tours.
@@ -67,7 +61,6 @@ var _lacet := 0.0
 var _prec := Vector3.ZERO
 var _prec_lacet := 0.0
 var _rayons := []
-var _braqueurs: Array = []   # [voiture, libellé, arc, lacet, position et lacet précédents]
 var _rampe_mi := {}          # relevé à mi-pente
 var _rampe_haut := -1.0      # temps d'arrivée en haut
 var _rampe_bas := -1.0       # temps de retour en bas
@@ -108,15 +101,6 @@ func _ready() -> void:
 	_pilote.name = "Pilote"
 	add_child(_pilote)
 	_pilote.global_position = Vector3(0, 1.0, TEMOIN_Z + 30.0)
-	_braqueurs.append([_pilote, "berline city_sedan_01", 0.0, 0.0, Vector3.ZERO, 0.0])
-	for l: Array in LOURDS:
-		var data = load(CATALOGUE.path_join(String(l[0]) + ".tres"))
-		var lourd := CAR.instantiate() as Node3D
-		lourd.set("forced_model_path", String(data.model_paths[0]))
-		lourd.name = "Braqueur_" + String(l[0])
-		add_child(lourd)
-		lourd.global_position = (l[1] as Vector3) + Vector3(0, 0, TEMOIN_Z)
-		_braqueurs.append([lourd, String(l[0]), 0.0, 0.0, Vector3.ZERO, 0.0])
 	var ville: Node3D = (load(CENTRE_VILLE) as PackedScene).instantiate()
 	add_child(ville)
 	var parkings: Array = []    # [noeud porteur de la transformation, maillage]
@@ -267,8 +251,7 @@ func _physics_process(delta: float) -> void:
 				corps.move_and_slide()
 			if _t >= DUREE:
 				_bilan_dalles()
-				for b: Array in _braqueurs:
-					(b[0] as Node).call("start_drive")
+				_pilote.call("start_drive")
 				_phase = "braquage"
 				_t_phase = 0.0
 		"braquage":
@@ -285,32 +268,24 @@ func _physics_process(delta: float) -> void:
 
 func _braquage(delta: float) -> void:
 	var v: float = _vitesses[_k_vitesse]
+	_pilote.set("_drive_speed", v)
 	Input.action_press("move_left")
 	_t_phase += delta
-	for b: Array in _braqueurs:
-		var car: Node3D = b[0]
-		car.set("_drive_speed", v)
-		var p := car.global_position
-		var lacet := car.global_rotation.y
-		if _t_phase > 0.5:
-			b[2] = float(b[2]) + Vector2(p.x - (b[4] as Vector3).x, p.z - (b[4] as Vector3).z).length()
-			b[3] = float(b[3]) + absf(wrapf(lacet - float(b[5]), -PI, PI))
-		b[4] = p
-		b[5] = lacet
+	var p := _pilote.global_position
+	var lacet := _pilote.global_rotation.y
+	if _t_phase > 0.5:
+		_arc += Vector2(p.x - _prec.x, p.z - _prec.z).length()
+		_lacet += absf(wrapf(lacet - _prec_lacet, -PI, PI))
+	_prec = p
+	_prec_lacet = lacet
 	if _t_phase >= 1.5:
-		for b: Array in _braqueurs:
-			var car: Node3D = b[0]
-			_rayons.append([b[1], v, float(b[2]) / maxf(float(b[3]), 0.0001), float(car.call("rayon_braquage", v)),
-					float(car.get("_empattement"))])
-			b[2] = 0.0
-			b[3] = 0.0
+		_rayons.append([v, _arc / maxf(_lacet, 0.0001)])
+		_arc = 0.0
+		_lacet = 0.0
 		_t_phase = 0.0
 		_k_vitesse += 1
 		if _k_vitesse >= _vitesses.size():
 			Input.action_release("move_left")
-			for b: Array in _braqueurs.slice(1):
-				(b[0] as Node).queue_free()
-			_braqueurs = _braqueurs.slice(0, 1)
 			_phase = "rampe"
 			_pilote.set("_drive_speed", 0.0)
 			_pilote.global_position = Vector3(RAMPE_X, 1.0, TEMOIN_Z + 8.0)
@@ -702,24 +677,15 @@ func _bilan() -> void:
 					% [sens, so[0], so[1], "au sol" if so[2] else "EN L'AIR"])
 			if absf(float(so[0]) - float(so[1])) > 0.1 or not so[2]:
 				_fautes.append("helice, %s : a la sortie de la voiture, pied a %.2f m pour un sol a %.2f" % [sens, so[0], so[1]])
-	var a_lat: float = _pilote.get("BRAQUAGE_A_LAT")
-	var bas := {}
+	var txt := PackedStringArray()
 	for r: Array in _rayons:
-		var mesure: float = r[2]
-		var attendu: float = r[3]
-		print("PARKING_BRAQUAGE %-22s empattement %.2f m, %2.0f m/s : rayon mesure %6.2f m, attendu %6.2f m, acceleration laterale %.1f m/s2"
-				% [r[0], r[4], r[1], mesure, attendu, float(r[1]) * float(r[1]) / mesure])
-		if absf(mesure - attendu) > maxf(0.35, 0.03 * attendu):
-			_fautes.append("rayon de braquage de %s a %.0f m/s : %.2f m mesures pour %.2f attendus" % [r[0], r[1], mesure, attendu])
-		if float(r[1]) * float(r[1]) / mesure > a_lat * 1.05:
-			_fautes.append("%s a %.0f m/s : acceleration laterale %.1f m/s2 au-dela de %.1f" % [r[0], r[1], float(r[1]) * float(r[1]) / mesure, a_lat])
-		if float(r[1]) < 4.0:
-			bas[r[0]] = mesure
-	# à basse vitesse le rayon suit le modèle : berline ~4 m (origine de la voiture ; ~5,3 m entre murs), camion et bus
-	# au-delà de 9 m ; et à 16 m/s, tous au rayon de l'accélération latérale plafonnée
-	if float(bas.get("berline city_sedan_01", 99.0)) > 4.6 or float(bas.get("city_truck_01", 0.0)) < 8.5 or float(bas.get("city_bus_01", 0.0)) < 8.5:
-		_fautes.append("braquage a 3 m/s : berline %.2f m (attendu ~4,1), camion %.2f m et bus %.2f m (attendus > 8,5)"
-				% [bas.get("berline city_sedan_01", -1.0), bas.get("city_truck_01", -1.0), bas.get("city_bus_01", -1.0)])
+		txt.append("%.0f m/s : %.2f m" % [r[0], r[1]])
+		var attendu: float = _pilote.call("rayon_braquage", r[0])
+		if absf(float(r[1]) - attendu) > 0.35:
+			_fautes.append("rayon de braquage a %.0f m/s : %.2f m mesures pour %.2f attendus" % [r[0], r[1], attendu])
+	print("PARKING_BRAQUAGE rayon de braquage mesure (joueur, braquage a fond) : %s" % ", ".join(txt))
+	if _rayons.size() == 3 and (float(_rayons[0][1]) > 6.0 or absf(float(_rayons[2][1]) - 10.0) > 0.35):
+		_fautes.append("braquage : %.2f m a 3 m/s (attendu 5,5), %.2f m a 16 m/s (attendu 10, inchange)" % [_rayons[0][1], _rayons[2][1]])
 	if _rampe_mi.is_empty():
 		_fautes.append("rampe a 12 pour cent : la voiture n'a jamais atteint le milieu de la pente (y max %.2f)" % _rampe_y_max)
 	else:

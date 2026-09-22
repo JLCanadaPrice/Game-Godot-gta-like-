@@ -72,18 +72,15 @@ const DRIVE_MAX_SPEED := 24.0
 const DRIVE_REVERSE_MAX := 8.0
 const DRIVE_FRICTION := 9.0
 const DRIVE_BRAKE := 26.0
-# RAYON DE BRAQUAGE DU JOUEUR, PAR MODÈLE (2026-09-22). Historique : le lacet valait TURN_RATE x v / DRIVE_MAX_SPEED,
-# soit un rayon CONSTANT de 24 / 2,4 = 10 m à toute vitesse et pour tous les modèles ; le 2026-09-21 il descendait à
-# 5,5 m sous 4 m/s, toujours le même pour une citadine et un autocar. C'est maintenant le modèle BICYCLETTE, sur
-# l'empattement L MESURÉ du modèle (_mesurer_empattement) : lacet = v x tan(δ) / L, δ = consigne x angle_braquage(v).
-#  - À l'arrêt et à basse vitesse, δ vaut MAX_STEER_RAD (29,8°), l'angle que les roues avant montrent à fond : le
-#    rayon décrit par l'origine de la voiture est L / tan(δ), et le rayon « entre murs » des fiches techniques (roue
-#    avant extérieure, cf. rayon_entre_murs) en découle — environ 5,5 m pour une berline, plus de 12 m pour l'autocar.
-#  - Pour rester stable à vitesse, le braquage se réduit : δ ne dépasse pas l'angle qui tient l'accélération latérale
-#    à BRAQUAGE_A_LAT (tan δ = L x a / v²). Le rayon croît alors comme v² / a, pour tous les modèles.
-# Les roues avant montrent l'angle δ réellement appliqué (cf. _physics_process). La circulation n'est pas concernée :
-# elle suit son graphe, et ses roues prennent l'angle de son virage (_braquage_ia).
-const BRAQUAGE_A_LAT := 15.0      # m/s² : accélération latérale au plus, braquage à fond (~1,5 g, voiture d'arcade)
+const TURN_RATE := 2.4
+# RAYON DE BRAQUAGE DU JOUEUR (2026-09-21). Le lacet valait TURN_RATE x v / DRIVE_MAX_SPEED : un rayon CONSTANT de
+# DRIVE_MAX_SPEED / TURN_RATE = 10 m, à toute vitesse — le double d'une vraie voiture (5 à 6 m). Payé en construisant
+# le parking à étages : impossible d'y faire demi-tour (19 m entre les murets, poteaux au milieu), de suivre une
+# rampe en hélice ou de tourner à angle droit pour entrer dans une travée. Sous BRAQUAGE_V_BAS le rayon descend à
+# BRAQUAGE_R_MIN ; au-delà de BRAQUAGE_V_HAUT il reste les 10 m d'avant, et la conduite rapide ne change pas.
+const BRAQUAGE_R_MIN := 5.5
+const BRAQUAGE_V_BAS := 4.0
+const BRAQUAGE_V_HAUT := 12.0
 # Franchissement de bordure, JOUEUR SEULEMENT (cf. _try_step_up). 0,22 m : les bordures de la carte font
 # 0,150 m mesurés sur la collision cuite, la marge couvre les raccords de tuiles sans rendre franchissable un
 # muret. 0,32 m d'avance testée : un peu plus que ce que la voiture parcourt en une frame à pleine vitesse.
@@ -267,7 +264,6 @@ var _wheel_centre: Dictionary = {}    # roue -> centre géométrique, dans SON r
 var _wheel_rest_origin: Dictionary = {}   # roue -> position de repos du noeud
 var _wheel_parent_base: Dictionary = {}   # roue -> [base de son PARENT dans la voiture, son inverse] (cf. BRAQUAGE)
 var _empattement := 2.6               # essieu avant -> essieu arrière, MESURÉ sur les roues (cf. _mesurer_empattement)
-var _voie := 1.6                      # entre les centres des roues avant, MESURÉE (cf. _mesurer_empattement)
 var _steer_visual := 0.0
 var _ride_height := RIDE_HEIGHT       # recalculé selon la boîte ajustée au modèle
 var _half_length := 2.0               # demi-longueur (axe -Z avant) de la caisse, recalculée au modèle réel ; 2.0 = moitié de la boîte par défaut de Car.tscn (size.z=4)
@@ -452,8 +448,7 @@ func setup(path: CircuitPath, start_node: int, speed: float, lateral: float, edg
 func _physics_process(delta: float) -> void:
 	if driven_by_player:
 		_drive_physics(delta)
-		# les roues avant montrent l'angle de braquage réellement appliqué (réduit à vitesse, cf. angle_braquage)
-		_update_visuals(delta, _drive_speed, _steer_input * angle_braquage(_drive_speed) / MAX_STEER_RAD)
+		_update_visuals(delta, _drive_speed, _steer_input)
 		return
 
 	if _knock_time > 0.0:
@@ -1197,9 +1192,7 @@ func _drive_physics(delta: float) -> void:
 		_drive_speed = move_toward(_drive_speed, 0.0, DRIVE_FRICTION * delta)
 
 	if absf(_drive_speed) > 0.3:
-		# modèle bicyclette (cf. BRAQUAGE_A_LAT) : lacet = v x tan(δ) / L ; en marche arrière, v < 0 et la voiture
-		# tourne de l'autre côté, comme une vraie
-		rotate_y(_drive_speed * tan(_steer_input * angle_braquage(_drive_speed)) / _empattement * delta)
+		rotate_y(_steer_input * _drive_speed / rayon_braquage(_drive_speed) * delta)
 
 	# Montée de trottoir : voir _try_step_up, appelée après move_and_slide.
 	# (La réponse précédente était scenes/world/CurbRamp.gd, qui construisait des rampes de collision le
@@ -1230,25 +1223,10 @@ func _drive_physics(delta: float) -> void:
 	_pente = lerpf(_pente, pente_cible, clampf(delta * 8.0, 0.0, 1.0))
 
 
-# Angle de braquage à fond à la vitesse `v` (cf. BRAQUAGE_A_LAT) : MAX_STEER_RAD tant que l'accélération latérale
-# reste sous BRAQUAGE_A_LAT, puis l'angle qui l'y tient.
-func angle_braquage(v: float) -> float:
-	var v2 := v * v
-	if v2 < 0.01:
-		return MAX_STEER_RAD
-	return minf(MAX_STEER_RAD, atan(_empattement * BRAQUAGE_A_LAT / v2))
-
-
-# Rayon décrit par l'origine de la voiture, braquage à fond, à la vitesse `v` : L / tan(δ).
+# Rayon de braquage à la vitesse `v` (cf. BRAQUAGE_R_MIN).
 func rayon_braquage(v: float) -> float:
-	return _empattement / tan(angle_braquage(v))
-
-
-# Rayon de braquage « entre murs », celui des fiches techniques : la roue avant EXTÉRIEURE, braquage à fond, à basse
-# vitesse. Le centre du virage est sur l'essieu arrière prolongé, à L / tan(δ) du milieu de la voiture.
-func rayon_entre_murs() -> float:
-	var r := _empattement / tan(MAX_STEER_RAD) + _voie * 0.5
-	return sqrt(r * r + _empattement * _empattement)
+	var t := clampf((absf(v) - BRAQUAGE_V_BAS) / (BRAQUAGE_V_HAUT - BRAQUAGE_V_BAS), 0.0, 1.0)
+	return lerpf(BRAQUAGE_R_MIN, DRIVE_MAX_SPEED / TURN_RATE, t)
 
 # Franchissement de bordure. move_and_slide() ne monte AUCUNE marche verticale, si basse soit-elle : mesuré, la
 # voiture arcade s'arrête net devant les bordures de 0,150 m, à 3, 6, 10 et 15 m/s, aussi bien sur le trimesh
@@ -1413,27 +1391,22 @@ const ROUE_PAS_DEFAUT := 0.35         # rad par image (20°), pour une roue sans
 # moyeu horizontal (carrossage nul), angle de braquage exact, bon côté, centre de la roue immobile.
 
 # Empattement : distance, le long de la voiture, entre le milieu des roues avant et le milieu des autres, mesurée
-# sur leurs centres (repère de la voiture) ; voie : écart latéral entre les roues avant. Servent au braquage du
-# joueur (modèle bicyclette, cf. BRAQUAGE_A_LAT) et au braquage visuel de la circulation.
+# sur leurs centres (repère de la voiture). Sert au braquage visuel de la circulation.
 func _mesurer_empattement() -> void:
 	var za := 0.0
 	var na := 0
 	var zr := 0.0
 	var nr := 0
-	var xa := Vector2(INF, -INF)
 	for w in _wheels:
-		var c := _xf_dans_voiture(w) * (_wheel_centre.get(w, Vector3.ZERO) as Vector3)
+		var z := (_xf_dans_voiture(w) * (_wheel_centre.get(w, Vector3.ZERO) as Vector3)).z
 		if w in _wheels_front:
-			za += c.z
+			za += z
 			na += 1
-			xa = Vector2(minf(xa.x, c.x), maxf(xa.y, c.x))
 		else:
-			zr += c.z
+			zr += z
 			nr += 1
 	if na > 0 and nr > 0:
 		_empattement = maxf(absf(zr / float(nr) - za / float(na)), 0.5)
-	if na >= 2:
-		_voie = maxf(xa.y - xa.x, 0.5)
 
 
 # BRAQUAGE VISUEL DE LA CIRCULATION (2026-09-21). Les voitures de la circulation passaient un braquage NUL à
