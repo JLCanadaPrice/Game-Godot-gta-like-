@@ -1356,28 +1356,6 @@ appliqué, réduit compris. La voie (écart des roues avant) est mesurée avec l
   252 voitures, **aucune file figée à aucun relevé** (toutes les 30 s) ; pire arrêt isolé 41 s, une seule voiture (34 s le
   2026-09-21 : les départs sont tirés au hasard d'une simulation à l'autre).
 
-**Étape 7 — l'escalier jusqu'au toit, la cage opaque, les garde-corps de l'escalier** (2026-09-22).
-
-- **Escalier empilé jusqu'au toit** dans les quatre parkings (`escaliers` passe de 1 à 4). Les volées se superposent
-  d'un étage à l'autre, et c'est ce qui donne les hauteurs libres : la volée A du dessus (marches pleines depuis son
-  plancher) fait le plafond de la volée A du dessous, **2,46 m** au-dessus de sa marche la plus haute ; sous la volée B,
-  **4,24 m** partout (les deux volées ont le même profil, décalé d'un étage). La tour monte AU-DESSUS du toit (relevé au
-  plan : elle existe encore à 21,11 m alors que le toit est à 18,61) : l'escalier débouche dans sa tête, et la porte y
-  est découpée comme aux autres niveaux. Découpes comptées à la cuisson : 13 portes, 18 trémies, 0 faute.
-- **La cage vitrée est opaque de l'intérieur** (`Maillage.doubler`). Ses faces n'ont qu'UN côté dans le modèle : depuis
-  l'escalier on voyait le parking et la rue au travers (limite notée à l'étape 5). Chaque face de la cage est recopiée à
-  l'envers — enroulement inverse, normale opposée, même couleur — **après** les découpes de portes, donc avec leurs
-  trous : 53 + 20 + 16 = 89 faces doublées. Visuel seulement : la collision est déjà à deux faces.
-- **Garde-corps de l'escalier**, 1,05 m, avec collision : au bord EST de chaque trémie — depuis la partie est de la
-  cage, on tombait sur le palier 2,3 m plus bas — et, au dernier niveau desservi, EN TRAVERS du couloir de la volée A,
-  qui n'a plus de volée au-dessus et restait un trou ouvert juste à côté de l'arrivée. Aux étages intermédiaires, la
-  fente de 0,28 m entre le bord de trémie et la première contremarche de la volée suivante est comblée.
-- `ParkingStructureTest` : les quatre parkings montés du rez au TOIT (capsules au centre-ville, VRAI joueur à
-  l'aéroport), pied à 18,81 m au centre-ville et 23,89 m à l'aéroport, en 24 s ; puis **20 piétons poussés à 3 m/s
-  contre les garde-corps** (bord est de chaque trémie des quatre parkings, couloir de la volée A au toit) : les 20 sont
-  arrêtés, debout sur leur plancher.
-- Collision du parking : 1 441 → **2 707 triangles** au centre-ville, 2 767 à l'aéroport (hélice comprise).
-
-**Reste à faire** (après validation du premier niveau par le joueur) : les rampes pour voitures de tous les niveaux
-(cf. l'évaluation de la rampe intérieure, étape 8), l'éclairage intérieur de nuit (plafonniers de `base_072` sur
-matériau partagé, bassin borné de vraies lumières), les voitures garées à chaque niveau sur des places marquées.
+**Reste à faire** (après validation du premier niveau par le joueur) : les niveaux 2 à 4 et le toit (hélice et
+escalier), l'éclairage intérieur de nuit (plafonniers de `base_072` sur matériau partagé, bassin borné de vraies
+lumières), les voitures garées à chaque niveau sur des places marquées.

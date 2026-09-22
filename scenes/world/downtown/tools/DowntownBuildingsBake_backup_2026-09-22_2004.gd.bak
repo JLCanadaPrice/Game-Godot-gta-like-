@@ -839,7 +839,7 @@ func _write_window_glow(root: Node3D, cells: Dictionary, portee: float, prefixe:
 # collision est faite de ses triangles (dont les rampes invisibles de l'escalier). Pas de rampe pour les voitures ici :
 # il n'y a de place pour une rampe extérieure au bout d'aucun des trois (voisins à moins de 8 m), et une rampe
 # intérieure ne tient pas dans le modèle (cf. CLAUDE.md §11). La boîte du modèle, qui sert à la pose, ne change pas.
-const PARKING_ESCALIERS := 4                 # du rez au toit
+const PARKING_ESCALIERS := 1
 
 
 func _parking_praticable(mdl: Dictionary) -> void:

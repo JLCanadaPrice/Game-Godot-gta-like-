@@ -286,7 +286,7 @@ const PARKING_ETAGES_ORIGINE := Vector2(405.0, -1167.2)
 const PARKING_ETAGES_LACET := PI
 const PARKING_ETAGES_BETON := Rect2(352.0, -1196.0, 80.0, 51.0)
 const PARKING_ETAGES_ALLEE := Rect2(400.0, -1196.0, 10.0, 17.65)
-const PARKING_ETAGES_ESCALIERS := 4        # étages desservis par l'escalier : du rez au toit
+const PARKING_ETAGES_ESCALIERS := 1        # étages desservis par l'escalier (1 : rez -> niveau 1)
 const PARKING_ETAGES_HELICE := 1           # dernier palier desservi par la rampe en hélice (1 : niveau 1)
 const ParkingKit := preload("res://scenes/world/map/tools/ParkingStructureKit.gd")
 

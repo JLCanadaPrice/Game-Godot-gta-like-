@@ -233,39 +233,6 @@ class Maillage:
 				meilleur = c[i[t]]
 		return meilleur
 
-	# DOUBLURE : ajoute, pour chaque face plane perpendiculaire à `axe` dans [a_min, a_max] qui recoupe `rect` (mêmes
-	# conventions que decouper), la même face retournée — enroulement inverse, normale opposée, même couleur. Une
-	# cloison du modèle qui n'a qu'un côté (on voyait à travers depuis l'intérieur) devient opaque des deux côtés.
-	# Rend le nombre de faces doublées.
-	func doubler(axe: String, a_min: float, a_max: float, rect: Rect2) -> int:
-		var k_axe := {"x": 0, "y": 1, "z": 2}[axe] as int
-		var k_u := {"x": 2, "y": 0, "z": 0}[axe] as int
-		var k_v := {"x": 1, "y": 2, "z": 1}[axe] as int
-		var ajout := 0
-		var n_tri := i.size()
-		for t in range(0, n_tri - 2, 3):
-			var p0 := v[i[t]]
-			var p1 := v[i[t + 1]]
-			var p2 := v[i[t + 2]]
-			if absf(p0[k_axe] - p1[k_axe]) > 0.005 or absf(p0[k_axe] - p2[k_axe]) > 0.005:
-				continue
-			if p0[k_axe] < a_min or p0[k_axe] > a_max:
-				continue
-			var umax := maxf(p0[k_u], maxf(p1[k_u], p2[k_u]))
-			var umin := minf(p0[k_u], minf(p1[k_u], p2[k_u]))
-			var vmax := maxf(p0[k_v], maxf(p1[k_v], p2[k_v]))
-			var vmin := minf(p0[k_v], minf(p1[k_v], p2[k_v]))
-			if umax <= rect.position.x + 0.0001 or umin >= rect.end.x - 0.0001 or vmax <= rect.position.y + 0.0001 or vmin >= rect.end.y - 0.0001:
-				continue
-			var b := v.size()
-			v.append_array(PackedVector3Array([p0, p2, p1]))
-			c.append_array(PackedColorArray([c[i[t]], c[i[t + 2]], c[i[t + 1]]]))
-			for k in [0, 2, 1]:
-				n.append(-n[i[t + k]])
-			i.append_array(PackedInt32Array([b, b + 1, b + 2]))
-			ajout += 1
-		return ajout
-
 	func ajouter(autre: Maillage) -> void:
 		var b := v.size()
 		v.append_array(autre.v)
@@ -320,9 +287,6 @@ const ESC_MUR := Vector2(8.60, 8.70)       # mur d'échiffre entre les volées (
 const ESC_TREMIE := Rect2(-4.48, 7.55, 5.12, 2.25)   # trémie dans la dalle du dessus : x -4,48..0,64, z 7,55..9,80
 const ESC_PORTE := Vector2(-5.52, -4.2)    # porte dans la face de la tour (x), 2,2 m de haut
 const ESC_PORTE_H := 2.2
-const GC_H := 1.05                         # garde-corps : 1,05 m au-dessus de ce qu'il borde
-# Cage vitrée : ses faces n'ont qu'un côté dans le modèle ; depuis l'escalier on voyait au travers (étape 5).
-const CAGE := Rect2(-5.52, 7.48, 11.04, 4.39)   # x -5,52..5,52, z 7,48..11,87
 const BETON_ESCALIER := Color(0.46, 0.46, 0.44)
 const GARDE_CORPS := Color(0.30, 0.31, 0.33)
 
@@ -376,16 +340,6 @@ static func praticable(mesh: Mesh, materiau: Material, nom: String, escaliers: i
 		_travee(m, sols[k], stats, fautes)
 	var faces := m.faces()
 	faces.append_array(col.faces())
-	# cage vitrée opaque DE L'INTÉRIEUR : ses quatre faces doublées à l'envers, APRÈS les découpes de portes (la
-	# doublure en garde les trous). Visuel seulement : la collision est déjà à deux faces.
-	var bas_haut := Vector2(-3.0, 30.0)
-	_compte(stats, fautes, "doublure de la cage (face cote parking)", m.doubler("z", TOUR_VITREE_Z - 0.01, TOUR_VITREE_Z + 0.01,
-			Rect2(CAGE.position.x, bas_haut.x, CAGE.size.x, bas_haut.y - bas_haut.x)))
-	_compte(stats, fautes, "doublure de la cage (face avant)", m.doubler("z", CAGE.end.y - 0.01, CAGE.end.y + 0.01,
-			Rect2(CAGE.position.x, bas_haut.x, CAGE.size.x, bas_haut.y - bas_haut.x)))
-	for x: float in [CAGE.position.x, CAGE.end.x]:
-		_compte(stats, fautes, "doublure de la cage (flancs)", m.doubler("x", x - 0.01, x + 0.01,
-				Rect2(CAGE.position.y, bas_haut.x, CAGE.size.y, bas_haut.y - bas_haut.x)))
 	return {"mesh": m.vers_mesh(materiau, nom), "faces": faces, "stats": stats, "fautes": fautes, "planchers": sols}
 
 
@@ -452,15 +406,6 @@ static func _escalier(m: Maillage, col: Maillage, y0: float, y1: float, dernier:
 	m.boite(Vector3(ESC_X0, y0, ESC_MUR.x), Vector3(ESC_PALIER.x, haut, ESC_MUR.y), BETON_ESCALIER)
 	m.boite(Vector3(ESC_PALIER.y, ya, ESC_A.x), Vector3(ESC_PALIER.y + 0.06, ya + 1.0, ESC_B.y), GARDE_CORPS)
 	m.boite(Vector3(ESC_PIED, y0 + RIVE_HAUT, ESC_B.y + 0.02), Vector3(ESC_PALIER.y, y1 + 1.0, ESC_B.y + 0.10), GARDE_CORPS)
-	# GARDE-CORPS DE LA TRÉMIE, au plancher du dessus (2026-09-22) : son bord est, au droit du palier — on y tombait sur le
-	# palier, 2,3 m plus bas, depuis la partie est de la cage. Au dernier étage desservi, le couloir de la volée A est un
-	# trou (aucune volée n'y part) : garde-corps en travers, au bord de trémie. Aux étages intermédiaires, la volée A
-	# suivante part de ce couloir : la fente entre le bord de trémie et sa première contremarche est comblée.
-	m.boite(Vector3(ESC_PALIER.y, y1, ESC_TREMIE.position.y), Vector3(ESC_PALIER.y + 0.06, y1 + GC_H, ESC_TREMIE.end.y), GARDE_CORPS)
-	if dernier:
-		m.boite(Vector3(ESC_PIED - 0.06, y1, ESC_TREMIE.position.y), Vector3(ESC_PIED, y1 + GC_H, ESC_MUR.x), GARDE_CORPS)
-	else:
-		m.boite(Vector3(ESC_PIED, y1 - 0.15, ESC_A.x), Vector3(ESC_X0, y1, ESC_A.y), BETON_ESCALIER)
 	# rampes invisibles PAR LES NEZ DE MARCHES : A du pied (plancher) au palier, palier, B du palier au plancher du
 	# dessus. Le nez d'une marche de B est son bord EST (on monte vers -x) : la ligne des nez part du palier un giron
 	# à l'est de la première marche (-0,56) et atteint le plancher au nez de la 13e (-4,2), dont le dessus affleure
