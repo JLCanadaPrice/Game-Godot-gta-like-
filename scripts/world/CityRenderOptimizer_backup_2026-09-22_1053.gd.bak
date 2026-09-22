@@ -1,4 +1,3 @@
-@tool
 extends Node3D
 
 # Optimisation du RENDU de la ville statique, appliquée au lancement : World.tscn reste éditable nœud par nœud (et
@@ -73,15 +72,6 @@ const WALL_MATERIAL := "InteriorWall"
 @export var building_lod_bias := 0.25        # lod_bias des bâtiments du kit au-delà de lod_near_radius (1 = Godot)
 @export var lod_near_radius := 150.0         # m de la caméra : en deçà, lod_bias 1, rien ne change de près
 @export var lod_update_interval := 0.25      # s entre deux mises à jour des lod_bias
-
-# --- LOD dans l'ÉDITEUR (rien d'autre n'y est appliqué, cf. _ready) ---
-# L'éditeur redessine la ville en permanence et n'exécute PAS _optimize : il n'a donc jamais eu le LOD des
-# bâtiments lointains, alors qu'il bénéficie déjà de l'occlusion (boîtes cuites dans les scènes + réglage de
-# project.godot). Sur l'UHD 750, les chiffres de l'en-tête placent ce régime à 48 ms de GPU contre 30,8 avec le
-# LOD. On applique donc ici le LOD, et LUI SEUL : pas d'occlusion (les scènes en ont déjà), pas de culling par
-# distance (il écrit deux propriétés dans World.tscn, mesuré), pas de MultiMesh (il libère des nœuds).
-@export var lod_dans_editeur := true
-@export var lod_update_interval_editeur := 0.5   # s : moitié moins souvent qu'en jeu, l'éditeur n'en demande pas plus
 @export var cell_size := 72.0                # m : un pâté de maisons (pas du Circuit)
 @export var batched_scenes: PackedStringArray = [
 	"*/Sidewalk_Straight_3m.gltf",
@@ -108,10 +98,6 @@ var _lod_timer := 0.0
 
 
 func _ready() -> void:
-	if Engine.is_editor_hint():
-		if lod_dans_editeur and building_lod_bias != 1.0:
-			_preparer_lod.call_deferred()
-		return
 	# Différé : les lampadaires (LampPoleLayer) règlent calque et matériau dans leur propre _ready, quel que soit
 	# l'ordre des nœuds.
 	_optimize.call_deferred()
@@ -122,36 +108,16 @@ func _optimize() -> void:
 	if occlusion:
 		_add_building_occluders(world)
 	if building_lod_bias != 1.0:
-		_preparer_lod()
+		_lod_meshes = building_meshes(world)
+		for mi in _lod_meshes:
+			_lod_boxes.append(mi.global_transform * mi.get_aabb())
+		_lod_far.resize(_lod_meshes.size())
+		update_building_lods(true)
 	if distance_culling:
 		apply_distance_culling(world)
 	if multimesh:
 		for mi in batch_static_meshes(world):
 			mi.queue_free()
-
-
-# Relève les bâtiments et leurs AABB (statiques) puis pose les lod_bias une première fois. Appelé par _optimize
-# au lancement du jeu, et seul dans l'éditeur.
-func _preparer_lod() -> void:
-	_lod_meshes = building_meshes(get_parent())
-	_lod_boxes.clear()
-	for mi in _lod_meshes:
-		_lod_boxes.append(mi.global_transform * mi.get_aabb())
-	_lod_far.resize(_lod_meshes.size())
-	_lod_far.fill(0)
-	update_building_lods(true)
-
-
-# Caméra dont part la distance du LOD. En jeu, celle du viewport, comme depuis toujours. Dans l'éditeur,
-# get_viewport().get_camera_3d() rend NULL (mesuré) : la vue 3D n'expose sa caméra que par EditorInterface, et
-# sans elle update_building_lods sortirait en silence en laissant croire que le LOD est appliqué.
-func _camera_lod() -> Camera3D:
-	if not Engine.is_editor_hint():
-		return get_viewport().get_camera_3d()
-	if not Engine.has_singleton(&"EditorInterface"):
-		return null
-	var vue: Object = Engine.get_singleton(&"EditorInterface").call(&"get_editor_viewport_3d", 0)
-	return vue.call(&"get_camera_3d") as Camera3D if vue != null else null
 
 
 func apply_distance_culling(world: Node) -> void:
@@ -192,14 +158,14 @@ func _process(delta: float) -> void:
 		return
 	_lod_timer -= delta
 	if _lod_timer <= 0.0:
-		_lod_timer = lod_update_interval_editeur if Engine.is_editor_hint() else lod_update_interval
+		_lod_timer = lod_update_interval
 		update_building_lods()
 
 
 # lod_bias 1 (réglage de Godot, inchangé) pour les bâtiments à moins de lod_near_radius de la caméra active,
 # building_lod_bias au-delà. Seuls les bâtiments qui changent de côté sont touchés, sauf `force`.
 func update_building_lods(force := false) -> void:
-	var cam := _camera_lod()
+	var cam := get_viewport().get_camera_3d()
 	if cam == null:
 		return
 	var eye := cam.global_position

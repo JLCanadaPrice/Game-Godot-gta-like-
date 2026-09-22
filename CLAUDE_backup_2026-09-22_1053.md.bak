@@ -432,44 +432,6 @@ sans le plafond de 800x450 du §6). Une vue peut imposer sa propre heure par un 
   `misc/` (fumée, traces, sons ; pas branchés) lisent `w_size` — utiliser `w_radius` pour placer quoi
   que ce soit au rayon de la roue.
 
-- **LE LOD DES BÂTIMENTS DANS L'ÉDITEUR : CE QUI A ÉTÉ MESURÉ AVANT DE L'ÉCRIRE** (2026-09-22).
-  `CityRenderOptimizer` est passé `@tool` pour que la vue 3D de l'éditeur profite elle aussi du LOD des
-  bâtiments lointains. Quatre choses valent d'être sues, toutes mesurées :
-  1. **`get_viewport().get_camera_3d()` rend NULL dans un script `@tool`.** Le viewport existe bien
-     (`SubViewport`), mais sa caméra non. `update_building_lods` aurait donc pris sa sortie
-     `if cam == null: return` **en silence**, en laissant croire que le LOD était appliqué. La vue 3D n'expose sa
-     caméra que par `Engine.get_singleton("EditorInterface").get_editor_viewport_3d(0).get_camera_3d()`, qui rend
-     une vraie `Camera3D` (vérifié dans un éditeur lancé sous Xvfb). D'où `_camera_lod()`, deux sources selon
-     `Engine.is_editor_hint()`.
-  2. **Modifier `lod_bias` dans l'éditeur n'écrit RIEN dans les scènes, et c'est structurel.** Reproduit le chemin
-     de sauvegarde de l'éditeur : `World.tscn` instancié en `GEN_EDIT_STATE_MAIN`, empaqueté (96 019 o), les
-     441 maillages de bâtiment passés à `lod_bias = 0.25`, ré-empaqueté (96 077 o) : **`lod_bias` apparaît 0 fois
-     dans les deux**. Ces 441 vivent tous dans des sous-scènes INSTANCIÉES (`Map.tscn` -> `generated/Buildings.tscn`,
-     `Downtown/Buildings.tscn`), et Godot ne sérialise les surcharges de propriété que pour les nœuds appartenant à
-     la scène sauvegardée. **RÉSERVE : ce résultat vaut pour l'état par défaut.** Activer « Enfants modifiables »
-     (Editable Children) sur `Map` ou `Downtown` changerait la donne — les surcharges deviendraient sérialisables,
-     et un Ctrl+S écrirait alors 441 `lod_bias` dans les scènes cuites. Ne pas activer cette option sur ces deux
-     nœuds sans revérifier ce test.
-  3. **Le reste de `_optimize()` n'est PAS inoffensif dans l'éditeur, d'où le périmètre réduit.** Même protocole :
-     `apply_distance_culling` touche 1 879 nœuds et **2 sont bien écrits** (+58 o) — `Downtown/Quay/QuayPavement/Mesh`
-     et `Downtown/Quay/Seabed/Mesh`, les deux seuls `MeshInstance3D` déclarés directement dans `World.tscn`. Les
-     occluders, eux, sont ajoutés par `mi.add_child(occ)` **sans `owner`** et ne sont donc jamais sérialisés (0
-     occurrence), mais ils sont inutiles dans l'éditeur : les scènes en portent déjà **131** (`map/generated/Buildings.tscn`)
-     et **391** (`downtown/generated/Buildings.tscn`) de cuits. **L'éditeur n'est donc pas dans le régime « avant
-     optimisation » (102 ms) mais dans « occlusion sans LOD » (48 ms)** ; c'est 48 -> 30,8 ms qui est visé, pas
-     102 -> 30,8. Dans l'éditeur on applique le LOD et RIEN d'autre : ni occlusion, ni culling par distance, ni
-     MultiMesh.
-  4. **LE SEUIL DU §3 NE SAIT PAS VALIDER CE CHANGEMENT.** Comme pour les lumières, le LOD ne bouge pas les appels
-     de dessin. Mesuré dans l'éditeur, `World.tscn` ouvert, caméra par défaut : **4 416 106 -> 3 854 098 primitives
-     (-12,7 %), appels de dessin 6 564 dans les deux cas**, objets 7 142 dans les deux cas ; 441 bâtiments relevés,
-     411 au-delà des 150 m. La mesure qui vaut pour ce genre de chantier est donc le nombre de PRIMITIVES, et le
-     temps GPU sur l'UHD 750 (`RenderPerfTest`), jamais les appels.
-  Le comportement en jeu est inchangé d'une ligne : tout l'ajout est derrière `Engine.is_editor_hint()`, et
-  `update_building_lods()` garde sa signature — `RenderPerfTest._verify_lod` l'appelle de l'extérieur.
-  Dernière réserve, qui n'est pas mesurée mais assumée : **`_process` tourne en permanence dans l'éditeur** (boucle
-  sur 441 maillages). L'intervalle y est donc porté à `lod_update_interval_editeur` = **0,5 s**, au lieu des 0,25 s
-  du jeu. `lod_dans_editeur = false` coupe tout l'ajout sans toucher au jeu.
-
 ## 7. État d'avancement
 
 **Fait** — la carte 3D est le gros du travail accompli : modèle de terrain et rivière, réseau
