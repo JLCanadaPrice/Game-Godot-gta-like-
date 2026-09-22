@@ -506,12 +506,6 @@ débogage sur `V`.
 - **appartements reliés à la carte** (les intérieurs existent, ils ne sont pas raccordés aux
   bâtiments de la carte) ;
 - **concessionnaire enrichi** ;
-- **bug : 34 erreurs « instance déjà libérée » dans `Car._cycle_de_suivi`**, plus tard. Elles sortent à chaque
-  simulation longue depuis `57159aa` (le chantier des interblocages, §10) : la chaîne des voitures suivies garde un
-  `Car` qui a été recyclé par `LoopSpawner` entre deux images. Sans conséquence visible sur la conduite (le cycle est
-  simplement abandonné), mais ça pollue la sortie de tous les tests de trafic. La correction tient probablement en un
-  `is_instance_valid()` dans la remontée de chaîne ; ne pas la faire au passage d'un autre chantier, elle mérite son
-  commit et sa simulation longue ;
 - **flaques de sang des PNJ à hauteur fixe**, plus tard : `NPC._die` pose la flaque à `POOL_GROUND_Y` = 0,1 m et, faute
   d'animation, le corps à y = 0,5 — sous le sol ou en l'air partout où la carte n'est pas à 0 (plateau de l'aéroport,
   ponts, parkings). Même famille que la sortie de voiture à y = 1,3 (§11, étape 5). Vérifier aussi `Car._add_body_stain` ;
@@ -1424,47 +1418,6 @@ essai à 3,2 m de dégagement.
 En échange, la bande arrière est perdue pour le stationnement à tous les niveaux, et fourgons, camions et bus ne
 montent plus — ce qu'impose de toute façon la barre de hauteur d'un vrai parking à étages.
 
-**Étape 9 — la rampe intérieure posée dans les quatre parkings, l'hélice retirée, garde-corps et barre de hauteur**
-(2026-09-22). Le joueur a tranché l'étape 8 : « Option A : 16 %, demi-tours de 4,7 m, 10 places par étage. Les places
-comptent plus que les gros véhicules, et un vrai parking à étages interdit de toute façon les camions. »
-
-- **Une rampe par niveau, dans la bande arrière** (`ParkingStructureKit._rampe`, `RAMPE_Z = -5,55`) : voie de 3,50 m
-  entre deux garde-corps de 0,15 x 1,05 m, longueur 29,26 m (x -14,63..14,63) avec 0,70 m de raccord à chaque bout,
-  tablier de 0,37 m, trémie percée sur toute la bande (+0,02 m de jeu) dans la dalle du dessus. Quatre rampes empilées
-  mènent du rez au toit. Demi-tour de 4,7 m à chaque bout, allée de retour à z 3,85, hauteur libre **4,27 m**.
-  **L'hélice extérieure de l'aéroport est supprimée** (`helice()` et la méta `parking_helice_axe` avec elle) : les
-  quatre parkings sont identiques, `PARKING_RAMPES = 4` à l'aéroport comme au centre-ville.
-- **Barre de hauteur à l'entrée des quatre** (`BARRE_HAUTEUR = 2,15`), poutre jaune entre deux montants gris en travers
-  du passage (z 11,95..12,15), avec un panneau `Label3D` « 2.15 m » sur sa face extérieure, lisible à 4 m (capture).
-  **La cote vient de la mesure de l'étape 8, pas d'un chiffre rond** : le plus haut des 38 modèles qui montent la rampe
-  est le 4x4 lowpoly à 2,07 m, d'où 8 cm de garde ; la barre arrête dehors **22 des 34 modèles que la rampe refuse**.
-  Les 12 qu'elle laisse entrer sont des voitures BASSES mais trop longues ou trop larges pour les demi-tours
-  (limousine, coupés lowpoly, gros pick-ups) : une barre de hauteur ne peut rien contre elles, un vrai parking non plus.
-- **Garde-corps partout où l'on peut tomber** : les deux bords de chaque rampe, le pourtour de chaque trémie, et ceux
-  de l'escalier (étape 7). 1,05 m, avec collision. Vérifiés par la POUSSÉE et pas par la cote : **88 poussées, 60
-  piétons à 3 m/s et 28 voitures à 4 m/s, 88 arrêtés du bon côté, debout sur leur plancher.**
-- Relevé sur la collision cuite des quatre rampes, 1 392 rayons : **16,0 % au pire, ressaut 0,000 m**. Le vrai joueur
-  au volant monte du béton au toit en **79,3 s** et redescend en **78,7 s**, et sort debout aux deux bouts (pied à
-  23,89 m pour un toit à 23,89 ; 5,64 pour 5,64). Le camion `city_truck_01` (2,79 m) est arrêté dehors par le portique
-  (z 16,29 pour un portique à 11,95), la berline `city_sedan_01` (1,45 m) entre (z -1,54).
-
-Quatre pièges payés en le faisant, tous de la même famille — **la mesure qui ment avant la géométrie qui cloche** :
-
-1. **Un bandeau de plafonniers pendait 20 cm au-dessus du tablier de la rampe** (`base_072`, x 9,42..18,40,
-   y 4,40..4,61) : la voiture s'arrêtait net à mi-pente et la sonde annonçait **129,6 %** de pente. Le retrait
-   (`Maillage.retirer_boite`) exigeait que TOUS les sommets d'un triangle soient dans la boîte et n'en enlevait que 16
-   d'un bandeau de 9 m qui traverse la bande. Au test du **barycentre** : 84 triangles retirés, 0 anomalie, 16,0 %.
-2. **Une voiture d'essai lâchée à cheval sur la lisse** finit sur le garde-corps d'en face : elle part maintenant à 3 m.
-   Et sur les parapets d'une rampe, une voiture ne tient pas en travers d'une voie de 3,50 m : `_pousse_oblique` la
-   fait monter la rampe à 20° dans le parapet.
-3. **Deux voitures lâchées au même point se catapultent** (décalées à x ±3).
-4. **Un contrôle de hauteur sur une pente à 16 %** doit tolérer 0,5 m : la boîte de collision reste horizontale, donc
-   l'origine monte de demi-longueur x pente, soit ~0,34 m pour une berline.
-
-Et un cinquième, de cadrage : les véhicules du test de la barre partaient **en marche arrière** (les deux finissaient
-« dehors », donc le test passait pour une mauvaise raison) ; leur cap se prend sur la direction MONDE du modèle,
-`_aeroport.global_transform.basis * Vector3(0, 0, -1)`, jamais sur un angle écrit à la main.
-
-**Reste à faire** : l'éclairage intérieur de nuit (plafonniers de `base_072` sur matériau partagé, bassin borné de
-vraies lumières, cage d'escalier allumée en permanence) — de jour l'intérieur est déjà sombre, les captures au sol le
-montrent —, puis les voitures garées à chaque niveau sur les 10 places marquées le long de la façade.
+**Reste à faire** (après la décision du joueur sur la rampe) : les rampes pour voitures de tous les niveaux,
+l'éclairage intérieur de nuit (plafonniers de `base_072` sur matériau partagé, bassin borné de vraies lumières), les
+voitures garées à chaque niveau sur des places marquées.

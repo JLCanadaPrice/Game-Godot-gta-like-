@@ -22,18 +22,15 @@ extends Node3D
 #     (porte du rez, puis à chaque étage volée A, palier, volée B, arrivée ; porte du toit) et finit posé sur le toit.
 #     À l'aéroport, c'est le VRAI joueur (Player.tscn), piloté comme au clavier (move_forward, corps tourné vers le
 #     repère suivant) ; ailleurs, sa capsule.
-#  4b. GARDE-CORPS, PIÉTON ET VOITURE : un piéton (capsule du joueur) et une voiture poussés à 3 et 4 m/s contre
-#     chaque garde-corps — bord est de chaque trémie d'escalier, couloir de la volée A au toit, les DEUX parapets de
-#     chaque rampe, les deux bords de chaque trémie de rampe, et le bout ouest de la trémie du toit. Aucun ne passe
-#     par-dessus ni ne tombe : chacun reste du bon côté et debout sur son plancher.
-#  4c. BARRE DE HAUTEUR : à l'entrée de l'aéroport, un camion (2,79 m de caisse) et une berline (1,45 m) lancés à
-#     4 m/s vers le passage. Le camion est arrêté DEHORS par le portique, la berline entre.
-#  5. RAMPES INTÉRIEURES (2026-09-22) : la voiture du joueur, conduite comme au clavier (move_forward / move_left /
-#     move_right, poursuite d'un tracé), monte du rez AU TOIT par les quatre rampes empilées — demi-tour de 4,70 m de
-#     rayon à chaque bout, allée de retour côté façade —, puis redescend jusqu'au rez. Pente relevée sur la COLLISION
-#     (rayons tous les 0,25 m sur l'axe et les deux bords de chaque rampe) : 16 % au plus, aucun ressaut de plus de
-#     2 cm. C'est le VRAI joueur de l'escalier qui monte dans la voiture (Player._enter_vehicle) et qui en SORT sur le
-#     toit puis au rez (Player._exit_vehicle) : il doit s'y retrouver debout, pied à 10 cm du plancher au plus. Il
+#  4b. GARDE-CORPS DE L'ESCALIER : à chaque étage desservi au-dessus du rez, un piéton poussé contre le garde-corps du
+#     bord est de la trémie (depuis la partie est de la cage), et au toit contre celui qui barre le couloir de la volée
+#     A : il est arrêté, et reste debout sur son plancher.
+#  5. HÉLICE (aéroport) : la voiture du joueur, conduite comme au clavier (move_forward / move_left / move_right,
+#     poursuite d'un tracé), sort du rez par la travée, tourne sur le palier, monte l'hélice, entre au niveau 1 ; puis
+#     repart du niveau 1, redescend toute l'hélice et ressort sur le béton du site. Pente de la voie relevée sur la
+#     COLLISION (rayons tous les 0,25 m sur les bords et l'axe) : 12 % au plus, aucun ressaut de plus de 2 cm.
+#     C'est le VRAI joueur de l'escalier qui monte dans la voiture (Player._enter_vehicle) et qui en SORT au niveau 1
+#     puis sur le béton (Player._exit_vehicle) : il doit s'y retrouver debout, pied à 10 cm du plancher au plus. Il
 #     était posé à y = 1,3 fixe, donc sous le sol partout où la carte est plus haute.
 #
 # Les plateaux sont relevés sur le maillage cuit (ParkingStructureKit.planchers), pas recopiés d'une constante.
@@ -53,11 +50,9 @@ const CATALOGUE := "res://resources/vehicle_models"
 const LOURDS := [["city_truck_01", Vector3(-40.0, 1.0, 45.0)], ["city_bus_01", Vector3(55.0, 1.0, 45.0)]]
 const GRAVITE := 9.8
 const DUREE := 2.0
-# Points de lâcher, repère du modèle : le long de la façade, sur les places, hors de la bande de rampe (z -7,45..-3,65),
-# des poteaux du milieu (z ±0,54), de la cage d'escalier (x ±5,52, z > 7,48) ET de l'allée que la voiture parcourt
-# (z 3,85) — deux voitures lâchées dessus, et le pilote reste coincé derrière.
-const PIETON := Vector3(-12.0, 0.0, 8.0)
-const VOITURE := Vector3(12.0, 0.0, 8.0)
+# Points de lâcher, repère du modèle : bande sud (z -5), loin des poteaux (z ~0) et des tours.
+const PIETON := Vector3(-4.0, 0.0, -5.0)
+const VOITURE := Vector3(6.0, 0.0, -5.5)
 
 var _fautes: Array[String] = []
 var _pietons: Array = []     # [CharacterBody3D, altitude attendue du pied, libellé]
@@ -87,8 +82,8 @@ var _t_escalier := 0.0
 var _trace: PackedVector3Array
 var _k_trace := 0
 var _sens := "montee"
-var _t_rampe_int := 0.0
-var _rampe_int_bilan := {}
+var _t_helice := 0.0
+var _helice_bilan := {}
 var _immobile := 0.0
 var _joueur: CharacterBody3D  # le vrai joueur (Player.tscn), celui de l'escalier de l'aéroport
 var _t_sortie := 0.0
@@ -287,10 +282,8 @@ func _physics_process(delta: float) -> void:
 			_escalier(delta)
 		"garde_corps":
 			_garde_corps(delta)
-		"barre":
-			_barre(delta)
-		"rampe_int":
-			_rampe_int(delta)
+		"helice":
+			_helice(delta)
 		"sortie":
 			_sortie(delta)
 
@@ -446,68 +439,21 @@ var _t_pousse := 0.0
 func _debut_garde_corps() -> void:
 	_phase = "garde_corps"
 	_t_pousse = 0.0
-	var zr: float = Kit.RAMPE_Z
-	var bord: float = Kit.RAMPE_DEMI - Kit.RAMPE_GC          # face intérieure d'un parapet de rampe
-	var bord_tremie: float = Kit.RAMPE_DEMI + Kit.RAMPE_JEU  # bord de la trémie, garde-corps juste derrière
 	for e: Array in _parkings:
 		var b: Node3D = e[0]
 		var sols: PackedFloat32Array = e[2]
 		for k in range(1, sols.size()):
 			var y: float = sols[k]
-			# ESCALIER, bord est de la trémie : garde-corps en x 0,64..0,70 ; le piéton part de x 1,3 vers -x
-			_pousse(b, Vector3(1.3, y, 8.7), Vector3(-1, 0, 0), 0.70, y, "%s, bord est de la tremie d'escalier au niveau %d" % [b.name, k], false)
-			# RAMPE, garde-corps au ras du plancher, de part et d'autre de la trémie : piéton ET voiture
-			for sz: float in [-1.0, 1.0]:
-				# le piéton part à 1,2 m du garde-corps, la voiture à 3 m : elle fait 4,2 m de long et naîtrait à
-				# cheval dessus, ce qui la faisait ressortir SUR le garde-corps d'en face (payé le 2026-09-22)
-				_pousse(b, Vector3(6.0, y, zr + sz * (bord_tremie + Kit.RAMPE_GC + 1.2)), Vector3(0, 0, -sz),
-						zr + sz * (bord_tremie + Kit.RAMPE_GC), y,
-						"%s, tremie de rampe au niveau %d, cote %s" % [b.name, k, "sud" if sz < 0.0 else "facade"], false)
-				if sz > 0.0:
-					_pousse(b, Vector3(6.0, y, zr + sz * (bord_tremie + Kit.RAMPE_GC + 3.0)), Vector3(0, 0, -sz),
-							zr + sz * (bord_tremie + Kit.RAMPE_GC), y,
-							"%s, tremie de rampe au niveau %d, cote facade" % [b.name, k], true)
+			# bord est de la trémie : garde-corps en x 0,64..0,70 ; le piéton part de x 1,3 vers -x
+			_pousse(b, Vector3(1.3, y, 8.7), Vector3(-1, 0, 0), 0.70 + 0.4, y, "%s, bord est de la tremie au niveau %d" % [b.name, k])
 		var yt: float = sols[sols.size() - 1]
-		# TOIT : couloir de la volée A, et bout ouest de la trémie de rampe (aucune rampe ne part du toit)
-		_pousse(b, Vector3(-5.05, yt, 8.1), Vector3(1, 0, 0), -4.54, yt, "%s, couloir de la volee A au toit" % b.name, false)
-		var bt := Kit.rampe_bouts(float(sols[sols.size() - 1]) - float(sols[sols.size() - 2]))
-		_pousse(b, Vector3(bt.x - 2.0, yt, zr), Vector3(1, 0, 0), bt.x - Kit.RAMPE_JEU - Kit.RAMPE_GC, yt,
-				"%s, bout ouest de la tremie de rampe au toit" % b.name, true)
-		# PARAPETS DE LA RAMPE, des deux côtés, à mi-pente de la rampe du rez : piéton ET voiture
-		var h0: float = float(sols[1]) - float(sols[0])
-		var b0 := Kit.rampe_bouts(h0)
-		var y_mi: float = float(sols[0]) + Kit.rampe_hauteur(0.0, b0, h0)
-		for sz2: float in [-1.0, 1.0]:
-			var cote := "sud" if sz2 < 0.0 else "facade"
-			_pousse(b, Vector3(0.0, y_mi, zr - sz2 * 1.0), Vector3(0, 0, sz2), zr + sz2 * bord, y_mi,
-					"%s, parapet de la rampe du rez, cote %s (de cote)" % [b.name, cote], false)
-			# la voiture ne peut pas se mettre en travers (4,2 m de long pour 3,5 m de voie) : elle MONTE la rampe,
-			# braquée de 20° vers le parapet, comme une sortie de route
-			# les deux voitures d'essai démarrent à 6 m l'une de l'autre : au même point, elles se catapultent
-			_pousse_oblique(b, Vector3(sz2 * 3.0, float(sols[0]) + Kit.rampe_hauteur(sz2 * 3.0, b0, h0), zr), sz2, zr + sz2 * bord,
-					"%s, parapet de la rampe du rez, cote %s (voiture en biais)" % [b.name, cote])
+		# toit : garde-corps en travers du couloir de la volée A, x -4,54..-4,48 ; le piéton part de x -5,05 vers +x (mur de la cage en -5,52)
+		_pousse(b, Vector3(-5.05, yt, 8.1), Vector3(1, 0, 0), -4.54 - 0.4, yt, "%s, couloir de la volee A au toit" % b.name)
 
 
-# `voiture` : au lieu du piéton, une VRAIE voiture poussée au même endroit (4 m/s, conduite comme par le joueur).
-func _pousse(b: Node3D, local: Vector3, dir: Vector3, limite: float, plancher: float, libelle: String, voiture: bool) -> void:
-	if not voiture:
-		var corps := _pieton(b.global_transform * (local + Vector3(0, 1.0, 0)))
-		_pousses.append([corps, b, dir, limite, plancher, libelle + " (pieton)", false, false])
-		return
-	var car := _voiture(b.global_transform * (local + Vector3(0, 0.9, 0)), libelle)
-	car.call("start_drive")
-	car.global_rotation = Vector3(0, b.global_rotation.y + atan2(-dir.x, -dir.z), 0)
-	_pousses.append([car, b, dir, limite, plancher, libelle + " (voiture)", true, false])
-
-
-# Voiture lancée DANS la voie de la rampe, braquée de 20° vers le parapet de `sz` : la seule façon de la pousser
-# contre un parapet, une voiture de 4,2 m ne tenant pas en travers d'une voie de 3,5 m. Le plancher attendu est
-# alors celui de la rampe à l'abscisse où elle finit, d'où le drapeau `rampe`.
-func _pousse_oblique(b: Node3D, local: Vector3, sz: float, limite: float, libelle: String) -> void:
-	var car := _voiture(b.global_transform * (local + Vector3(0, 0.9, 0)), libelle)
-	car.call("start_drive")
-	car.global_rotation = Vector3(0, b.global_rotation.y + atan2(-1.0, 0.0) - sz * deg_to_rad(20.0), 0)
-	_pousses.append([car, b, Vector3(0, 0, sz), limite, 0.0, libelle, true, true])
+func _pousse(b: Node3D, local: Vector3, dir: Vector3, limite: float, plancher: float, libelle: String) -> void:
+	var corps := _pieton(b.global_transform * (local + Vector3(0, 1.0, 0)))
+	_pousses.append([corps, b, dir, limite, plancher, libelle])
 
 
 func _garde_corps(delta: float) -> void:
@@ -515,117 +461,41 @@ func _garde_corps(delta: float) -> void:
 	for e: Array in _pousses:
 		var corps: CharacterBody3D = e[0]
 		var b: Node3D = e[1]
-		if bool(e[6]):
-			# voiture : on pousse comme le joueur, l'accélérateur au plancher dans son cap
-			corps.set("_drive_speed", 4.0)
-			continue
 		var v: Vector3 = b.global_transform.basis * ((e[2] as Vector3) * 3.0)
 		corps.velocity.x = v.x
 		corps.velocity.z = v.z
 		corps.velocity.y = 0.0 if corps.is_on_floor() else corps.velocity.y - GRAVITE * delta
 		corps.move_and_slide()
-	if _t_pousse < 3.0:
+	if _t_pousse < 2.0:
 		return
 	var arretes := 0
-	var pietons := 0
-	var voitures := 0
 	for e: Array in _pousses:
 		var corps: CharacterBody3D = e[0]
 		var b: Node3D = e[1]
 		var local := b.global_transform.affine_inverse() * corps.global_position
 		var dir: Vector3 = e[2]
 		var limite: float = e[3]
-		var est_voiture := bool(e[6])
-		if est_voiture:
-			voitures += 1
-		else:
-			pietons += 1
-		# le CENTRE du corps doit rester du côté d'où il vient : il est plus large que le garde-corps est épais
-		var axe := 0 if absf(dir.x) > 0.5 else 2
-		var pos: float = local.x if axe == 0 else local.z
-		var sens: float = dir.x if axe == 0 else dir.z
-		var franchi := pos < limite - 0.05 if sens < 0.0 else pos > limite + 0.05
-		var repos: float = _repos_voiture if est_voiture else 0.9
-		var pied := local.y - repos
-		var tolerance := 0.15
-		if bool(e[7]):
-			# sur la rampe : le plancher attendu est celui de la voie à l'abscisse où le corps a fini, et la boîte de
-			# collision restant horizontale sur la pente, l'origine monte d'une demi-longueur x pente (0,34 m)
-			var sols2: PackedFloat32Array = Kit.planchers((b.get_node("Mesh") as MeshInstance3D).mesh if b.has_node("Mesh") else (b as MeshInstance3D).mesh)
-			var h2: float = float(sols2[1]) - float(sols2[0])
-			e[4] = float(sols2[0]) + Kit.rampe_hauteur(local.x, Kit.rampe_bouts(h2), h2)
-			tolerance = 0.5
-		if franchi or absf(pied - float(e[4])) > tolerance:
-			_fautes.append("garde-corps %s : centre a %.2f (limite %.2f), pied a %.2f pour %.2f, fini en (%.2f, %.2f, %.2f) du modele"
-					% [e[5], pos, limite, pied, e[4], local.x, local.y, local.z])
+		var pied := local.y - 0.9
+		var franchi := local.x < limite - 0.05 if dir.x < 0.0 else local.x > limite + 0.05
+		if franchi or absf(pied - float(e[4])) > 0.1:
+			_fautes.append("garde-corps %s : pieton en x %.2f (limite %.2f), pied a %.2f pour %.2f" % [e[5], local.x, limite, pied, e[4]])
 		else:
 			arretes += 1
 		corps.queue_free()
-	print("PARKING_GARDE_CORPS %d pousses contre les garde-corps (%d pietons a 3 m/s, %d voitures a 4 m/s) : %d arretes du bon cote, debout sur leur plancher"
-			% [_pousses.size(), pietons, voitures, arretes])
+	print("PARKING_GARDE_CORPS escalier : %d pieton(s) pousse(s) a 3 m/s contre les garde-corps, %d arrete(s) debout sur leur plancher"
+			% [_pousses.size(), arretes])
 	_pousses.clear()
-	_debut_barre()
+	_debut_helice()
 
 
-# --- 4c. barre de hauteur ---------------------------------------------------------------------------------------------
+# --- 5. hélice ------------------------------------------------------------------------------------------------------
 
-var _barres: Array = []     # [voiture, libellé, doit passer ?]
-var _t_barre := 0.0
-
-
-func _debut_barre() -> void:
-	if _aeroport == null:
-		_debut_rampe_int()
-		return
-	_phase = "barre"
-	_t_barre = 0.0
-	var sols: PackedFloat32Array = Kit.planchers(_aeroport.mesh)
-	for e: Array in [["city_truck_01", -2.0, false], ["city_sedan_01", 2.0, true]]:
-		var data = load(CATALOGUE.path_join(String(e[0]) + ".tres"))
-		var car := CAR.instantiate() as Node3D
-		car.set("forced_model_path", String(data.model_paths[0]))
-		car.set("is_player_owned", true)
-		car.name = "Barre_" + String(e[0])
-		add_child(car)
-		car.global_position = _aeroport.global_transform * Vector3(float(e[1]), float(sols[0]) + 0.9, 20.0)
-		var vers := _aeroport.global_transform.basis * Vector3(0, 0, -1)   # vers l'intérieur du parking
-		car.global_rotation = Vector3(0, atan2(-vers.x, -vers.z), 0)
-		car.call("start_drive")
-		_barres.append([car, String(e[0]), bool(e[2])])
-
-
-func _barre(delta: float) -> void:
-	_t_barre += delta
-	for e: Array in _barres:
-		(e[0] as Node).set("_drive_speed", 4.0)
-	if _t_barre < 6.0:
-		return
-	for e: Array in _barres:
-		var car: Node3D = e[0]
-		var local := _aeroport.global_transform.affine_inverse() * car.global_position
-		var passe := local.z < Kit.BARRE_Z.x
-		print("PARKING_BARRE %s (%.2f m de haut) : %s, fini a z %.2f du modele (portique a z %.2f, barre a %.2f m)"
-				% [e[1], (car.get_node("CollisionShape3D").shape as BoxShape3D).size.y, "ENTRE" if passe else "arrete dehors",
-				local.z, Kit.BARRE_Z.x, Kit.BARRE_HAUTEUR])
-		if passe != bool(e[2]):
-			_fautes.append("barre de hauteur : %s %s (z %.2f)" % [e[1], "est passe alors qu'il ne devrait pas" if passe else "n'est pas entre", local.z])
-		car.queue_free()
-	_barres.clear()
-	_debut_rampe_int()
-
-
-# --- 5. rampes intérieures --------------------------------------------------------------------------------------------
-
-const RAMPE_RU := 4.7          # rayon des demi-tours aux deux bouts (option A, choisie par le joueur)
-const RAMPE_RECUL := 0.5       # ligne droite entre la fin d'un demi-tour et le pied (ou le haut) de la rampe
-
-
-func _debut_rampe_int() -> void:
+func _debut_helice() -> void:
 	if _aeroport == null:
 		_bilan()
 		return
-	_pente_rampe_int()
-	_phase = "rampe_int"
+	_pente_helice()
+	_phase = "helice"
 	_sens = "montee"
 	_pilote.set("is_player_owned", true)   # sinon stop_drive() l'efface 25 s après la sortie du joueur
 	_preparer_trace(_trace_montee())
@@ -636,7 +506,7 @@ func _debut_rampe_int() -> void:
 func _preparer_trace(pts: PackedVector3Array) -> void:
 	_trace = pts
 	_k_trace = 0
-	_t_rampe_int = 0.0
+	_t_helice = 0.0
 	_immobile = 0.0
 	var d := _trace[1] - _trace[0]
 	_pilote.set("_drive_speed", 0.0)
@@ -645,47 +515,54 @@ func _preparer_trace(pts: PackedVector3Array) -> void:
 	_pilote.global_rotation = Vector3(0, atan2(-d.x, -d.z), 0)
 
 
-# Trace de la montée, repère du modèle puis monde : allée de retour côté façade, demi-tour au bout ouest, rampe vers
-# +x, demi-tour au bout est sur le plancher du dessus, et de nouveau, jusqu'au toit.
+# Trace de la montée, repère du modèle puis monde : dans le rez vers la travée, virage à gauche sur le palier, axe de
+# la voie jusqu'au palier du niveau 1, virage à gauche dans la travée, dans le niveau 1.
 func _trace_montee() -> PackedVector3Array:
 	var sols: PackedFloat32Array = Kit.planchers(_aeroport.mesh)
-	var zr: float = Kit.RAMPE_Z
-	var za := zr + 2.0 * RAMPE_RU
-	var zc := zr + RAMPE_RU
-	var pts: Array = [Vector3(10.0, sols[0], za), Vector3(4.0, sols[0], za)]
-	for k in sols.size() - 1:
-		var y0: float = sols[k]
-		var h: float = sols[k + 1] - y0
-		var b := Kit.rampe_bouts(h)
-		var xo := b.x - RAMPE_RECUL
-		var xe := b.y + RAMPE_RECUL
-		var x := float(pts[pts.size() - 1].x) - 6.0
-		while x > xo:
-			pts.append(Vector3(x, y0, za))
-			x -= 6.0
-		for t in range(0, 181, 10):
-			var a := deg_to_rad(float(t))
-			pts.append(Vector3(xo - RAMPE_RU * sin(a), y0, zc + RAMPE_RU * cos(a)))
-		var xr := xo + 1.0
-		while xr < xe:
-			pts.append(Vector3(xr, y0 + Kit.rampe_hauteur(xr, b, h), zr))
-			xr += 1.5
-		for t in range(0, 181, 10):
-			var a := deg_to_rad(float(t))
-			pts.append(Vector3(xe + RAMPE_RU * sin(a), sols[k + 1], zc - RAMPE_RU * cos(a)))
-	var yt: float = sols[sols.size() - 1]
-	pts.append(Vector3(6.0, yt, za))
-	pts.append(Vector3(0.0, yt, za))
+	var y0: float = sols[0]
+	var y1: float = sols[1]
+	var z := Kit.TRAVEE_SUD.x * 0.5 + Kit.TRAVEE_SUD.y * 0.5
+	var pts: Array = [Vector3(10, y0, z), Vector3(16, y0, z), Vector3(21.5, y0, z)]
+	var rc := (Kit.R_INT + Kit.R_EXT) * 0.5
+	var c1 := Vector2(23.5, z - 5.5)
+	for k in range(0, 91, 10):
+		var b := deg_to_rad(90.0 - k)
+		pts.append(Vector3(c1.x + 5.5 * cos(b), y0, c1.y + 5.5 * sin(b)))
+	var phi := 215.0
+	while phi <= 505.0:
+		pts.append(Kit.point(phi, rc, Kit.hauteur(phi, sols.slice(0, 2))))
+		phi += 5.0
+	var entree := Kit.point(507.5, rc, y1)
+	var c2 := Vector2(entree.x - 5.5, entree.z)
+	for k in range(0, 91, 10):
+		var b := deg_to_rad(-float(k))
+		pts.append(Vector3(c2.x + 5.5 * cos(b), y1, c2.y + 5.5 * sin(b)))
+	pts.append(Vector3(19.0, y1, z))
+	pts.append(Vector3(12.0, y1, z))
 	return _monde(pts)
 
 
-# Trace de la descente : la même, à l'envers.
+# Trace de la descente : du niveau 1 vers la travée, virage à droite sur le palier, axe de la voie en descendant
+# jusqu'au bas de la rampe d'entrée, puis sur le béton du site.
 func _trace_descente() -> PackedVector3Array:
-	var m := _trace_montee()
-	var out := PackedVector3Array()
-	for i2 in range(m.size() - 1, -1, -1):
-		out.append(m[i2])
-	return out
+	var sols: PackedFloat32Array = Kit.planchers(_aeroport.mesh)
+	var y1: float = sols[1]
+	var z := Kit.TRAVEE_SUD.x * 0.5 + Kit.TRAVEE_SUD.y * 0.5
+	var pts: Array = [Vector3(10, y1, z), Vector3(16, y1, z), Vector3(21.5, y1, z)]
+	var rc := (Kit.R_INT + Kit.R_EXT) * 0.5
+	var c1 := Vector2(23.5, z + 5.5)
+	for k in range(0, 91, 10):
+		var b := deg_to_rad(-90.0 + k)
+		pts.append(Vector3(c1.x + 5.5 * cos(b), y1, c1.y + 5.5 * sin(b)))
+	var phi := 505.0
+	while phi >= Kit.ENTREE_DEBUT:
+		pts.append(Kit.point(phi, rc, Kit.hauteur(phi, sols.slice(0, 2))))
+		phi -= 5.0
+	var fin := Kit.point(Kit.ENTREE_DEBUT, rc, 0.0)
+	var t := Vector3(sin(deg_to_rad(Kit.ENTREE_DEBUT)), 0, -cos(deg_to_rad(Kit.ENTREE_DEBUT)))
+	for k in range(1, 4):
+		pts.append(fin + t * 3.0 * k)
+	return _monde(pts)
 
 
 func _monde(pts: Array) -> PackedVector3Array:
@@ -697,8 +574,8 @@ func _monde(pts: Array) -> PackedVector3Array:
 
 # Conduite comme au clavier : poursuite du tracé à 4 m devant, direction par move_left / move_right (force
 # proportionnelle à l'angle), accélérateur par move_forward autour de 4,5 m/s.
-func _rampe_int(delta: float) -> void:
-	_t_rampe_int += delta
+func _helice(delta: float) -> void:
+	_t_helice += delta
 	var pos := _pilote.global_position
 	# repère le plus proche en avant
 	var meilleur := _k_trace
@@ -735,11 +612,11 @@ func _rampe_int(delta: float) -> void:
 	# arrivée : au bout du tracé ET près de son dernier point (en plan, le départ au rez et l'arrivée au niveau 1
 	# ne sont qu'à 2 m l'un de l'autre)
 	var arrivee := _k_trace >= _trace.size() - 3 and (_trace[_trace.size() - 1] - pos).length() < 2.5
-	if arrivee or _immobile > 4.0 or _t_rampe_int > 150.0:
+	if arrivee or _immobile > 4.0 or _t_helice > 80.0:
 		Input.action_release("move_forward")
 		Input.action_release("move_left")
 		Input.action_release("move_right")
-		_rampe_int_bilan[_sens] = {"arrivee": arrivee, "temps": _t_rampe_int, "pos": pos, "immobile": _immobile > 4.0, "repere": _k_trace, "reperes": _trace.size()}
+		_helice_bilan[_sens] = {"arrivee": arrivee, "temps": _t_helice, "pos": pos, "immobile": _immobile > 4.0, "repere": _k_trace, "reperes": _trace.size()}
 		if _joueur != null:
 			_joueur.call("_exit_vehicle")
 		_phase = "sortie"
@@ -747,66 +624,60 @@ func _rampe_int(delta: float) -> void:
 
 
 # Le joueur vient de sortir de la voiture : on le laisse retomber, puis on relève où il se tient. Plancher attendu :
-# le TOIT au bout de la montée, le rez au bout de la descente.
+# celui du niveau 1 au bout de la montée, le béton du site (y = 0 dans le repère du parking) au bout de la descente.
 func _sortie(delta: float) -> void:
 	_t_sortie += delta
 	if _t_sortie < 1.5:
 		return
 	if _joueur != null:
 		var sols: PackedFloat32Array = Kit.planchers(_aeroport.mesh)
-		var attendu := (_aeroport.global_transform * Vector3(0, sols[sols.size() - 1] if _sens == "montee" else sols[0], 0)).y
-		_rampe_int_bilan[_sens]["sortie"] = [_joueur.global_position.y - 0.9, attendu, _joueur.is_on_floor()]
+		var attendu := (_aeroport.global_transform * Vector3(0, sols[1] if _sens == "montee" else 0.0, 0)).y
+		_helice_bilan[_sens]["sortie"] = [_joueur.global_position.y - 0.9, attendu, _joueur.is_on_floor()]
 	if _sens == "montee":
 		_sens = "descente"
 		_preparer_trace(_trace_descente())
 		if _joueur != null:
 			_joueur.call("_enter_vehicle", _pilote)
-		_phase = "rampe_int"
+		_phase = "helice"
 	else:
 		_bilan()
 
 
-# Pente et ressauts des rampes, relevés sur la COLLISION : rayons verticaux tous les 0,25 m sur l'axe de la voie et
-# ses deux bords (0,3 m en dedans des parapets), sur les quatre rampes.
-func _pente_rampe_int() -> void:
+# Pente et ressauts de la voie, relevés sur la COLLISION : rayons verticaux tous les 0,25 m sur les deux bords (à
+# 0,3 m à l'intérieur) et l'axe, du bas de la rampe d'entrée au palier du niveau 1.
+func _pente_helice() -> void:
 	var espace := get_world_3d().direct_space_state
 	var sols: PackedFloat32Array = Kit.planchers(_aeroport.mesh)
-	var demi: float = Kit.RAMPE_DEMI - Kit.RAMPE_GC - 0.3
-	var pire := 0.0
-	var pire_ou := ""
+	var pire := {}
 	var saut := 0.0
-	var releves := 0
-	for k in sols.size() - 1:
-		var y0: float = sols[k]
-		var h: float = sols[k + 1] - y0
-		var b := Kit.rampe_bouts(h)
-		for dz: float in [-demi, 0.0, demi]:
-			var prec := Vector3.INF
-			var x := b.x + 0.2
-			while x < b.y - 0.2:
-				var haut := _aeroport.global_transform * Vector3(x, y0 + Kit.rampe_hauteur(x, b, h) + 0.6, Kit.RAMPE_Z + dz)
-				var q := PhysicsRayQueryParameters3D.create(haut, haut - Vector3(0, 1.2, 0), 1)
-				var hit := espace.intersect_ray(q)
-				if not hit.is_empty():
-					var pos: Vector3 = hit["position"]
-					releves += 1
-					if prec != Vector3.INF:
-						var dy := absf(pos.y - prec.y)
-						var dxz := Vector2(pos.x - prec.x, pos.z - prec.z).length()
-						if dxz > 0.01 and dy / dxz > pire:
-							pire = dy / dxz
-							pire_ou = "rampe %d, a %.1f m de l'axe, x %.1f" % [k, dz, x]
-						saut = maxf(saut, dy - 0.25 * Kit.RAMPE_PENTE)
-					prec = pos
-				x += 0.25
-	print("PARKING_RAMPE_INT pente relevee sur la collision des 4 rampes (%d releves) : %.1f %% au pire (%s) ; plus grand ecart d'un releve au suivant au-dela de la pente : %.3f m"
-			% [releves, pire * 100.0, pire_ou, saut])
-	if pire > Kit.RAMPE_PENTE + 0.005:
-		_fautes.append("rampe interieure : pente de %.1f %% (%s)" % [pire * 100.0, pire_ou])
+	var fin := 180.0 + Kit.PALIER_DEMI + 360.0
+	for r: float in [Kit.R_INT + 0.3, (Kit.R_INT + Kit.R_EXT) * 0.5, Kit.R_EXT - 0.3]:
+		var prec := Vector3.INF
+		var phi := Kit.ENTREE_DEBUT + 1.0
+		var pas_deg := rad_to_deg(0.25 / r)
+		pire[r] = 0.0
+		while phi < fin - 1.0:
+			var m := Kit.point(phi, r, 0.0)
+			var haut := _aeroport.global_transform * (m + Vector3(0, Kit.hauteur(phi, sols.slice(0, 2)) + 0.6, 0))
+			var q := PhysicsRayQueryParameters3D.create(haut, haut - Vector3(0, 1.2, 0), 1)
+			var hit := espace.intersect_ray(q)
+			if not hit.is_empty():
+				var y: Vector3 = hit["position"]
+				if prec != Vector3.INF:
+					var dy := absf(y.y - prec.y)
+					var dxz := Vector2(y.x - prec.x, y.z - prec.z).length()
+					if dxz > 0.01:
+						pire[r] = maxf(float(pire[r]), dy / dxz)
+					saut = maxf(saut, dy - 0.25 * 0.125)
+				prec = y
+			phi += pas_deg
+	print("PARKING_HELICE pente relevee sur la collision : bord interieur %.1f %%, axe %.1f %%, bord exterieur %.1f %% ; plus grand ecart d'un releve au suivant au-dela de la pente : %.3f m"
+			% [float(pire[Kit.R_INT + 0.3]) * 100.0, float(pire[(Kit.R_INT + Kit.R_EXT) * 0.5]) * 100.0, float(pire[Kit.R_EXT - 0.3]) * 100.0, saut])
+	for r in pire:
+		if float(pire[r]) > 0.121:
+			_fautes.append("helice : pente de %.1f %% a %.2f m de l'axe" % [float(pire[r]) * 100.0, r])
 	if saut > 0.02:
-		_fautes.append("rampe interieure : ressaut de %.3f m dans la voie" % saut)
-	if releves < 1000:
-		_fautes.append("rampe interieure : %d releves seulement, la collision de la voie n'est pas la" % releves)
+		_fautes.append("helice : ressaut de %.3f m dans la voie" % saut)
 
 
 # À mi-pente : assiette du modèle et écart du bas de chaque roue à la pente.
@@ -885,23 +756,23 @@ func _bilan_dalles() -> void:
 func _bilan() -> void:
 	set_physics_process(false)
 	for sens in ["montee", "descente"]:
-		if not _rampe_int_bilan.has(sens):
+		if not _helice_bilan.has(sens):
 			continue
-		var h: Dictionary = _rampe_int_bilan[sens]
+		var h: Dictionary = _helice_bilan[sens]
 		var p: Vector3 = h["pos"]
 		var local := _aeroport.global_transform.affine_inverse() * p
-		print("PARKING_RAMPE_INT %s : %s en %.1f s (repere %d/%d), arrivee en (%.1f, %.2f, %.1f) monde, hauteur %.2f m dans le repere du parking"
+		print("PARKING_HELICE %s : %s en %.1f s (repere %d/%d), arrivee en (%.1f, %.2f, %.1f) monde, hauteur %.2f m dans le repere du parking"
 				% [sens, "ARRIVEE" if h["arrivee"] else ("IMMOBILE" if h["immobile"] else "TEMPS DEPASSE"), h["temps"], h["repere"], h["reperes"], p.x, p.y, p.z, local.y])
 		if not h["arrivee"]:
-			_fautes.append("rampe interieure, %s : la voiture n'est pas arrivee (repere %d/%d)" % [sens, h["repere"], h["reperes"]])
+			_fautes.append("helice, %s : la voiture n'est pas arrivee (repere %d/%d)" % [sens, h["repere"], h["reperes"]])
 		if not h.has("sortie"):
-			_fautes.append("rampe interieure, %s : pas de vrai joueur au volant" % sens)
+			_fautes.append("helice, %s : pas de vrai joueur au volant" % sens)
 		else:
 			var so: Array = h["sortie"]
-			print("PARKING_RAMPE_INT %s : le joueur sort de la voiture, pied a %.2f m pour un sol a %.2f (%s)"
+			print("PARKING_HELICE %s : le joueur sort de la voiture, pied a %.2f m pour un sol a %.2f (%s)"
 					% [sens, so[0], so[1], "au sol" if so[2] else "EN L'AIR"])
 			if absf(float(so[0]) - float(so[1])) > 0.1 or not so[2]:
-				_fautes.append("rampe interieure, %s : a la sortie de la voiture, pied a %.2f m pour un sol a %.2f" % [sens, so[0], so[1]])
+				_fautes.append("helice, %s : a la sortie de la voiture, pied a %.2f m pour un sol a %.2f" % [sens, so[0], so[1]])
 	var a_lat: float = _pilote.get("BRAQUAGE_A_LAT")
 	var bas := {}
 	for r: Array in _rayons:

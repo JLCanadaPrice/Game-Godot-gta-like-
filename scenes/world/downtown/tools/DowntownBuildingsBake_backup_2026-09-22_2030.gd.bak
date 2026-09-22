@@ -840,11 +840,10 @@ func _write_window_glow(root: Node3D, cells: Dictionary, portee: float, prefixe:
 # il n'y a de place pour une rampe extérieure au bout d'aucun des trois (voisins à moins de 8 m), et une rampe
 # intérieure ne tient pas dans le modèle (cf. CLAUDE.md §11). La boîte du modèle, qui sert à la pose, ne change pas.
 const PARKING_ESCALIERS := 4                 # du rez au toit
-const PARKING_RAMPES := 4                    # rampes intérieures empilées, du rez au toit (2026-09-22)
 
 
 func _parking_praticable(mdl: Dictionary) -> void:
-	var p := Parking.praticable(mdl["mesh"], el.material, Parking.MODELE, PARKING_ESCALIERS, [], PARKING_RAMPES)
+	var p := Parking.praticable(mdl["mesh"], el.material, Parking.MODELE, PARKING_ESCALIERS, [])
 	for f: String in p["fautes"]:
 		push_error("DOWNTOWN_PARKING %s" % f)
 	var chemin := MODELS.path_join("parking_praticable.res")
@@ -912,21 +911,6 @@ func _write_scene() -> String:
 			cs.position = Vector3(aabb.get_center().x, aabb.end.y * 0.5, aabb.get_center().z)
 		body.add_child(cs)
 		cs.owner = root
-		if String(p["model"]) == Parking.CLE:
-			# panneau de la barre de hauteur à l'entrée (cf. ParkingStructureKit.BARRE_HAUTEUR)
-			var panneau := Label3D.new()
-			panneau.name = "BarreHauteur"
-			panneau.text = Parking.barre_texte()
-			panneau.font_size = 96
-			panneau.pixel_size = 0.0022
-			panneau.modulate = Color(0.06, 0.06, 0.06)
-			panneau.outline_size = 0
-			panneau.billboard = BaseMaterial3D.BILLBOARD_DISABLED
-			panneau.shaded = false
-			panneau.position = Parking.barre_panneau(Parking.planchers(mdl["mesh"])[0])
-			panneau.visibility_range_end = 220.0
-			node.add_child(panneau)
-			panneau.owner = root
 		_collect_windows(p, mdl, cells, sky_cells)
 		var boxes: Array[AABB] = mdl["occluders"]
 		var low := false

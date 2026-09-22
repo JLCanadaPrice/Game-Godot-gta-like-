@@ -266,35 +266,6 @@ class Maillage:
 			ajout += 1
 		return ajout
 
-	# RETRAIT : enlève les triangles dont le CENTRE est dans la boîte. Sert à vider le volume d'une rampe de ce que le
-	# modèle y laisse pendre : les bandeaux de plafonnier, relevés à la sonde le 2026-09-22 à 20 cm au-dessus du
-	# tablier, qui arrêtaient net la voiture. Le centre et pas les trois sommets : un bandeau fait 9 m de long
-	# (x 9,42..18,40, z -5,73..-5,02) et traverse la bande, donc aucun de ses triangles n'y tient en entier.
-	# Rend le nombre de triangles retirés.
-	func retirer_boite(mn: Vector3, mx: Vector3) -> int:
-		var nv := PackedVector3Array()
-		var nn := PackedVector3Array()
-		var nc := PackedColorArray()
-		var ni := PackedInt32Array()
-		var retires := 0
-		for t in range(0, i.size() - 2, 3):
-			var cen := (v[i[t]] + v[i[t + 1]] + v[i[t + 2]]) / 3.0
-			var dedans := cen.x >= mn.x and cen.x <= mx.x and cen.y >= mn.y and cen.y <= mx.y and cen.z >= mn.z and cen.z <= mx.z
-			if dedans:
-				retires += 1
-				continue
-			var b := nv.size()
-			for k in 3:
-				nv.append(v[i[t + k]])
-				nn.append(n[i[t + k]])
-				nc.append(c[i[t + k]])
-			ni.append_array(PackedInt32Array([b, b + 1, b + 2]))
-		v = nv
-		n = nn
-		c = nc
-		i = ni
-		return retires
-
 	func ajouter(autre: Maillage) -> void:
 		var b := v.size()
 		v.append_array(autre.v)
@@ -384,9 +355,8 @@ static func dessous(mesh: Mesh, sols: PackedFloat32Array) -> PackedFloat32Array:
 # Le parking rendu praticable, dans son repère : maillage (la fusion du modèle, découpé et complété, un seul
 # matériau) et triangles de collision (le modèle découpé, les escaliers, leurs rampes invisibles).
 # `escaliers` : nombre d'étages desservis par l'escalier (1 = rez -> niveau 1) ;
-# `travees` : plateaux dont la travée sud du bout est est ouverte (raccord à l'ancienne rampe extérieure) ;
-# `rampes` : nombre de rampes intérieures empilées (4 = du rez au toit).
-static func praticable(mesh: Mesh, materiau: Material, nom: String, escaliers: int, travees: Array, rampes := 0) -> Dictionary:
+# `travees` : plateaux dont la travée sud du bout est est ouverte (raccord à la rampe extérieure).
+static func praticable(mesh: Mesh, materiau: Material, nom: String, escaliers: int, travees: Array) -> Dictionary:
 	var sols := planchers(mesh)
 	var bas := dessous(mesh, sols)
 	var m := Maillage.depuis(mesh)
@@ -404,19 +374,6 @@ static func praticable(mesh: Mesh, materiau: Material, nom: String, escaliers: i
 		_porte(m, sols[escaliers], stats, fautes)
 	for k: int in travees:
 		_travee(m, sols[k], stats, fautes)
-	# RAMPES INTÉRIEURES : toutes les découpes d'abord (une découpe cherche des faces dans un plan, et le tablier
-	# d'une rampe touche justement le plan du plancher qu'il rejoint), les géométries ensuite.
-	for k in rampes:
-		var bt := rampe_bouts(sols[k + 1] - sols[k])
-		_tremie_rampe(m, sols[k + 1], bas[k + 1], bt, k == rampes - 1, stats, fautes)
-		# ce que le modèle laisse pendre dans le volume de la rampe (boîtiers de plafonnier) : retiré, sinon la
-		# voiture bute dessus à 20 cm au-dessus du tablier
-		stats["decoupes"]["plafonniers dans la bande"] = int(stats["decoupes"].get("plafonniers dans la bande", 0)) 				+ m.retirer_boite(Vector3(bt.x - 0.5, sols[k + 1] - 1.0, RAMPE_Z - RAMPE_DEMI - 0.1),
-				Vector3(20.0, sols[k + 1] - 0.15, RAMPE_Z + RAMPE_DEMI + 0.1))
-	for k in rampes:
-		_rampe(m, sols[k], sols[k + 1], k == 0)
-	if rampes > 0:
-		_barre_hauteur(m, sols[0])
 	var faces := m.faces()
 	faces.append_array(col.faces())
 	# cage vitrée opaque DE L'INTÉRIEUR : ses quatre faces doublées à l'envers, APRÈS les découpes de portes (la
@@ -516,150 +473,170 @@ static func _escalier(m: Maillage, col: Maillage, y0: float, y1: float, dernier:
 	col.quad(Vector3(ESC_X0, y1, ESC_B.x), Vector3(ESC_PIED, y1, ESC_B.x), Vector3(ESC_PIED, y1, ESC_B.y), Vector3(ESC_X0, y1, ESC_B.y), Vector3.UP, Color.WHITE)
 
 
-# --- RAMPE INTÉRIEURE, 16 % (2026-09-22) --------------------------------------------------------------------------------
+# --- rampe extérieure en hélice (exemplaire de l'aéroport) -------------------------------------------------------------
 #
-# Choisie par le joueur après l'évaluation de l'étape 8 : les quatre parkings identiques, tout en intérieur. Elle tient
-# à 16 % (28,56 m de pente plus 0,70 m de raccords à mi-pente, dans une dalle de 43,52 m entre murets), pas à 12 %
-# (38,1 m, la conclusion de l'étape 5). Implantation, la seule possible : la bande du MUR ARRIÈRE, entre la tour
-# arrière (z -7,48) et la rangée de poteaux (z ±0,54) — axe z = -5,55, bande de 3,80 m, voie de 3,50 m entre
-# garde-corps, montant vers +x. La bande côté façade ne peut pas servir : la cage d'escalier et sa porte y donnent.
+# Pourquoi dehors : 4,57 m d'un plancher à l'autre exigent au moins 38,1 m de rampe à 12 %, dans une dalle de 42 m ;
+# ses deux bouts tomberaient contre les murs de bout, sans place pour y entrer ni en sortir en tournant (mesuré avec le
+# rayon de braquage du joueur, 5,5 m à basse vitesse, et même pas avec celui d'une vraie voiture). Dehors, une hélice
+# tient la pente sur 300° de tour : paliers plats de 60° devant la travée sud du bout est, à chaque niveau ; rampes
+# de 300° entre deux paliers, raccordées en douceur sur 20° (pente qui monte et redescend linéairement). Même le
+# bord INTÉRIEUR, le plus raide, reste sous 12 % : 4,57 m sur 280° utiles à 8 m de l'axe = 11,7 %.
 #
-# Les rampes se SUPERPOSENT d'un niveau à l'autre, même profil décalé d'un étage : la dalle du dessus est percée sur
-# toute la bande, la rampe du dessus fait le plafond de celle du dessous, et la hauteur libre vaut 4,20 m (4,57 moins
-# l'épaisseur de dalle), constante. Aux deux bouts, un demi-tour de 4,70 m de rayon autour des poteaux de bout, qui
-# tombent dans son îlot ; la voie de retour longe la façade et laisse 4,67 m de profondeur pour 10 places par niveau.
-#
-# Cotes de sécurité vérifiées par ParkingStructureTest : pente relevée sur la COLLISION, garde-corps de 1,05 m sur les
-# deux bords de chaque rampe et autour de chaque trémie (piéton ET voiture poussés contre chacun), barre de hauteur à
-# l'entrée.
-const RAMPE_PENTE := 0.16
-const RAMPE_RACCORD := 0.7                 # raccord à mi-pente à chaque bout : la voiture ne talonne pas au changement
-const RAMPE_Z := -5.55                     # axe de la voie
-const RAMPE_DEMI := 1.9                    # demi-largeur de la bande, garde-corps compris
-const RAMPE_GC := 0.15                     # épaisseur d'un garde-corps
-const RAMPE_GC_H := 1.05                   # hauteur d'un garde-corps au-dessus de ce qu'il borde
-const RAMPE_DALLE := 0.37                  # épaisseur de la rampe, la même que les dalles du modèle
-const RAMPE_JEU := 0.02                    # la trémie déborde la bande : deux faces dans le même plan scintillent
-const RAMPE_GC_DEPART := 4.45              # m après le pied : avant, c'est le parapet de la rampe du dessus qui borde
-const ENROBE_RAMPE := Color(0.26, 0.26, 0.27)
-const BETON_RAMPE := Color(0.52, 0.52, 0.50)
+# Angles en degrés, mesurés de +x vers +z autour de HELICE_C ; on MONTE dans le sens des angles croissants.
+const HELICE_C := Vector2(37.2, -5.62)     # centre : aligné sur la travée sud, à 13 m de la tour d'angle
+const R_INT := 8.0
+const R_EXT := 12.5
+const PARAPET := 0.3
+const PARAPET_H := 1.1
+const EPAIS := 0.3
+const PAS := 3.0
+const PALIER_DEMI := 30.0
+const RACCORD := 20.0
+const ENTREE_DEBUT := 110.0                # rampe d'entrée depuis le sol du site, jusqu'au palier du rez (150°)
+const BETON := Color(0.58, 0.58, 0.55)
+const JUPE_H := 2.5                        # sous cette hauteur, le dessous de la voie est fermé jusqu'au sol
+const POTEAUX := [25.0, 135.0, 240.0, 300.0]   # hors du palier (150..210) et de l'approche de la bouche (60..110)
+const BETON_SOUS := Color(0.42, 0.42, 0.40)
+const ENROBE := Color(0.24, 0.24, 0.25)
 
 
-# Abscisses du pied et du haut de la rampe, pour une montée de `h`.
-static func rampe_bouts(h: float) -> Vector2:
-	var l := h / RAMPE_PENTE + RAMPE_RACCORD
-	return Vector2(-l * 0.5, l * 0.5)
+# Hauteur de la voie à l'angle `phi`, sur les paliers 0..n (plancher k centré sur 180 + 360 k).
+static func hauteur(phi: float, sols: PackedFloat32Array) -> float:
+	if phi < 180.0 - PALIER_DEMI:
+		var u := clampf((phi - ENTREE_DEBUT) / (180.0 - PALIER_DEMI - ENTREE_DEBUT), 0.0, 1.0)
+		return sols[0] * (u * u * (3.0 - 2.0 * u))
+	var k := floori((phi - (180.0 - PALIER_DEMI)) / 360.0)
+	if k >= sols.size() - 1:
+		return sols[sols.size() - 1]
+	var debut := 180.0 + PALIER_DEMI + 360.0 * k      # fin du palier k
+	if phi <= debut:
+		return sols[k]
+	var longueur := 360.0 - 2.0 * PALIER_DEMI
+	var u2 := phi - debut
+	var montee := sols[k + 1] - sols[k]
+	var m0 := montee / (longueur - RACCORD)
+	if u2 >= longueur:
+		return sols[k + 1]
+	if u2 <= RACCORD:
+		return sols[k] + m0 * u2 * u2 / (2.0 * RACCORD)
+	if u2 >= longueur - RACCORD:
+		return sols[k + 1] - m0 * (longueur - u2) * (longueur - u2) / (2.0 * RACCORD)
+	return sols[k] + m0 * (u2 - RACCORD * 0.5)
 
 
-# Hauteur de la voie au-dessus du plancher de départ, à l'abscisse x.
-static func rampe_hauteur(x: float, bouts: Vector2, h: float) -> float:
-	var l := bouts.y - bouts.x
-	var d := clampf(x - bouts.x, 0.0, l)
-	if d < RAMPE_RACCORD:
-		return 0.5 * RAMPE_PENTE * d * d / RAMPE_RACCORD
-	if d > l - RAMPE_RACCORD:
-		var r := l - d
-		return h - 0.5 * RAMPE_PENTE * r * r / RAMPE_RACCORD
-	return 0.5 * RAMPE_PENTE * RAMPE_RACCORD + RAMPE_PENTE * (d - RAMPE_RACCORD)
+static func point(phi: float, r: float, y: float) -> Vector3:
+	var a := deg_to_rad(phi)
+	return Vector3(HELICE_C.x + r * cos(a), y, HELICE_C.y + r * sin(a))
 
 
-# Trémie de la rampe dans la dalle du plancher `y` (sous-face `yb`) : la bande entière, plus 2 cm de jeu à l'ouest et
-# sur les deux longs côtés (à l'est, c'est le bout de la rampe qui ferme la dalle). Chants, puis garde-corps au ras du
-# plancher le long des deux longs côtés : au dernier niveau, sur toute la longueur et fermé à l'ouest, puisqu'aucune
-# rampe ne part de là ; en dessous, seulement passé RAMPE_GC_DEPART, avant quoi c'est le parapet de la rampe qui part
-# de ce plancher qui borde le trou.
-static func _tremie_rampe(m: Maillage, y: float, yb: float, bouts: Vector2, dernier: bool, stats: Dictionary, fautes: Array[String]) -> void:
-	var z0 := RAMPE_Z - RAMPE_DEMI - RAMPE_JEU
-	var z1 := RAMPE_Z + RAMPE_DEMI + RAMPE_JEU
-	var x0 := bouts.x - RAMPE_JEU
-	var x1 := bouts.y
-	var teinte := m.couleur_pres(Vector3(x0 - 1.5, y, RAMPE_Z), "y")
-	_compte(stats, fautes, "trémie de rampe", m.decouper("y", yb - 0.01, y + 0.01, Rect2(x0, z0, x1 - x0, z1 - z0)))
-	m.quad(Vector3(x0, yb, z0), Vector3(x0, yb, z1), Vector3(x0, y, z1), Vector3(x0, y, z0), Vector3.RIGHT, teinte)
-	m.quad(Vector3(x0, yb, z0), Vector3(x1, yb, z0), Vector3(x1, y, z0), Vector3(x0, y, z0), Vector3.BACK, teinte)
-	m.quad(Vector3(x0, yb, z1), Vector3(x1, yb, z1), Vector3(x1, y, z1), Vector3(x0, y, z1), Vector3.FORWARD, teinte)
-	var xg := x0 if dernier else bouts.x + RAMPE_GC_DEPART
-	m.boite(Vector3(xg, y, z0 - RAMPE_GC), Vector3(x1, y + RAMPE_GC_H, z0), GARDE_CORPS)
-	m.boite(Vector3(xg, y, z1), Vector3(x1, y + RAMPE_GC_H, z1 + RAMPE_GC), GARDE_CORPS)
-	if dernier:
-		m.boite(Vector3(x0 - RAMPE_GC, y, z0 - RAMPE_GC), Vector3(x0, y + RAMPE_GC_H, z1 + RAMPE_GC), GARDE_CORPS)
+# L'hélice, jusqu'au palier du plancher `jusqu_a`, en quads [a, b, c, d, normale, couleur, collision] dans le repère du
+# parking. Plus : le parvis de chaque palier jusqu'au bâtiment, ses garde-corps, le noyau, les poteaux, la jupe qui
+# ferme le dessous du premier tour, le mur de bout. Et l'axe de la voie (pour les sondes de conduite).
+static func helice(sols: PackedFloat32Array, jusqu_a: int) -> Dictionary:
+	var quads: Array = []
+	var fin := 180.0 + PALIER_DEMI + 360.0 * jusqu_a
+	var sous_sols := sols.slice(0, jusqu_a + 1)
+	var phi := ENTREE_DEBUT
+	while phi < fin - 0.001:
+		var p2 := minf(phi + PAS, fin)
+		var h1 := hauteur(phi, sous_sols)
+		var h2 := hauteur(p2, sous_sols)
+		# dessus (enrobé), dessous
+		quads.append([point(phi, R_INT, h1), point(phi, R_EXT, h1), point(p2, R_EXT, h2), point(p2, R_INT, h2), Vector3.UP, ENROBE, true])
+		quads.append([point(phi, R_INT, h1 - EPAIS), point(phi, R_EXT, h1 - EPAIS), point(p2, R_EXT, h2 - EPAIS), point(p2, R_INT, h2 - EPAIS), Vector3.DOWN, BETON_SOUS, true])
+		var milieu := fmod(phi + PAS * 0.5, 360.0)
+		var au_palier := milieu > 180.0 - PALIER_DEMI and milieu < 180.0 + PALIER_DEMI and phi >= 180.0 - PALIER_DEMI - 0.001
+		var dehors := Vector3(cos(deg_to_rad(phi + PAS * 0.5)), 0, sin(deg_to_rad(phi + PAS * 0.5)))
+		if not au_palier:
+			# parapet extérieur : face intérieure, dessus, face extérieure (jusqu'au sous-face de la dalle)
+			quads.append([point(phi, R_EXT, h1), point(p2, R_EXT, h2), point(p2, R_EXT, h2 + PARAPET_H), point(phi, R_EXT, h1 + PARAPET_H), -dehors, BETON, true])
+			quads.append([point(phi, R_EXT, h1 + PARAPET_H), point(p2, R_EXT, h2 + PARAPET_H), point(p2, R_EXT + PARAPET, h2 + PARAPET_H), point(phi, R_EXT + PARAPET, h1 + PARAPET_H), Vector3.UP, BETON, false])
+			# jupe jusqu'au sol là où le dessous de la voie est trop bas pour qu'une voiture y passe (JUPE_H) :
+			# ailleurs, la face s'arrête sous la dalle — sinon la jupe du premier tour enfermait la bouche de la
+			# rampe d'entrée, et une voiture qui redescendait restait prisonnière sous le premier tour (vu par
+			# ParkingStructureTest)
+			var bas1 := 0.0 if h1 - EPAIS < JUPE_H else h1 - EPAIS
+			var bas2 := 0.0 if h2 - EPAIS < JUPE_H else h2 - EPAIS
+			quads.append([point(phi, R_EXT + PARAPET, bas1), point(p2, R_EXT + PARAPET, bas2), point(p2, R_EXT + PARAPET, h2 + PARAPET_H), point(phi, R_EXT + PARAPET, h1 + PARAPET_H), dehors, BETON, true])
+		else:
+			# au palier, le chant de la dalle côté parvis
+			quads.append([point(phi, R_EXT, h1 - EPAIS), point(p2, R_EXT, h2 - EPAIS), point(p2, R_EXT, h2), point(phi, R_EXT, h1), dehors, BETON_SOUS, false])
+		phi = p2
+	# noyau : cylindre plein du sol au-dessus du dernier palier
+	var haut_noyau := sols[jusqu_a] + PARAPET_H
+	var a := ENTREE_DEBUT - 360.0
+	while a < ENTREE_DEBUT - 0.001:
+		var a2 := a + PAS * 2.0
+		var d := Vector3(cos(deg_to_rad(a + PAS)), 0, sin(deg_to_rad(a + PAS)))
+		quads.append([point(a, R_INT, 0.0), point(a2, R_INT, 0.0), point(a2, R_INT, haut_noyau), point(a, R_INT, haut_noyau), d, BETON, true])
+		var cen := Vector3(HELICE_C.x, haut_noyau, HELICE_C.y)
+		quads.append([cen, point(a, R_INT, haut_noyau), point(a2, R_INT, haut_noyau), cen, Vector3.UP, BETON, false])
+		a = a2
+	# poteaux sous le bord extérieur (hors du côté bâtiment)
+	for ang: float in POTEAUX:
+		var c := point(ang, R_EXT + PARAPET + 0.25, 0.0)
+		for q in _boite_quads(Vector3(c.x - 0.25, 0.0, c.z - 0.25), Vector3(c.x + 0.25, sols[jusqu_a] + PARAPET_H, c.z + 0.25), BETON):
+			quads.append(q)
+	# mur de bout, en travers de la voie, au bout du dernier palier
+	var hf := hauteur(fin, sous_sols)
+	var dir_fin := Vector3(-sin(deg_to_rad(fin)), 0, cos(deg_to_rad(fin)))
+	quads.append([point(fin, R_INT, hf), point(fin, R_EXT, hf), point(fin, R_EXT, hf + PARAPET_H), point(fin, R_INT, hf + PARAPET_H), -dir_fin, BETON, true])
+	# parvis entre chaque palier et le bâtiment, garde-corps à ses deux bouts
+	for k in jusqu_a + 1:
+		for q in _parvis(sols[k]):
+			quads.append(q)
+	# axe de la voie, pour les sondes : du sol (entrée) au dernier palier
+	var axe := PackedVector3Array()
+	var ph := ENTREE_DEBUT
+	while ph <= fin + 0.001:
+		axe.append(point(ph, (R_INT + R_EXT) * 0.5, hauteur(ph, sous_sols)))
+		ph += PAS
+	return {"quads": quads, "axe": axe, "pente_max_bord_int": _pente_max(sous_sols, R_INT)}
 
 
-# La rampe du plancher y0 au plancher y1 : tablier (dessus, dessous, flancs, bout est), parapets de 1,05 m des deux
-# côtés, et au rez les flancs prolongés jusqu'au sol pour qu'on ne passe pas sous la rampe.
-static func _rampe(m: Maillage, y0: float, y1: float, premier: bool) -> void:
-	var h := y1 - y0
-	var b := rampe_bouts(h)
-	var zc0 := RAMPE_Z - RAMPE_DEMI
-	var zc1 := RAMPE_Z + RAMPE_DEMI
-	var n := int(ceil((b.y - b.x) / 0.5))
-	for i in n:
-		var x0 := b.x + (b.y - b.x) * float(i) / float(n)
-		var x1 := b.x + (b.y - b.x) * float(i + 1) / float(n)
-		var h0 := y0 + rampe_hauteur(x0, b, h)
-		var h1 := y0 + rampe_hauteur(x1, b, h)
-		m.quad(Vector3(x0, h0, zc0), Vector3(x1, h1, zc0), Vector3(x1, h1, zc1), Vector3(x0, h0, zc1), Vector3.UP, ENROBE_RAMPE)
-		m.quad(Vector3(x0, h0 - RAMPE_DALLE, zc0), Vector3(x1, h1 - RAMPE_DALLE, zc0), Vector3(x1, h1 - RAMPE_DALLE, zc1),
-				Vector3(x0, h0 - RAMPE_DALLE, zc1), Vector3.DOWN, BETON_RAMPE)
-		m.quad(Vector3(x0, h0 - RAMPE_DALLE, zc0), Vector3(x1, h1 - RAMPE_DALLE, zc0), Vector3(x1, h1, zc0), Vector3(x0, h0, zc0), Vector3.FORWARD, BETON_RAMPE)
-		m.quad(Vector3(x0, h0 - RAMPE_DALLE, zc1), Vector3(x1, h1 - RAMPE_DALLE, zc1), Vector3(x1, h1, zc1), Vector3(x0, h0, zc1), Vector3.BACK, BETON_RAMPE)
-		for zg: Vector2 in [Vector2(zc0, zc0 + RAMPE_GC), Vector2(zc1 - RAMPE_GC, zc1)]:
-			m.quad(Vector3(x0, h0, zg.y), Vector3(x1, h1, zg.y), Vector3(x1, h1 + RAMPE_GC_H, zg.y), Vector3(x0, h0 + RAMPE_GC_H, zg.y), Vector3.BACK, GARDE_CORPS)
-			m.quad(Vector3(x0, h0, zg.x), Vector3(x1, h1, zg.x), Vector3(x1, h1 + RAMPE_GC_H, zg.x), Vector3(x0, h0 + RAMPE_GC_H, zg.x), Vector3.FORWARD, GARDE_CORPS)
-			m.quad(Vector3(x0, h0 + RAMPE_GC_H, zg.x), Vector3(x1, h1 + RAMPE_GC_H, zg.x), Vector3(x1, h1 + RAMPE_GC_H, zg.y),
-					Vector3(x0, h0 + RAMPE_GC_H, zg.y), Vector3.UP, GARDE_CORPS)
-		if premier:
-			var s0 := maxf(h0 - RAMPE_DALLE, y0)
-			var s1 := maxf(h1 - RAMPE_DALLE, y0)
-			m.quad(Vector3(x0, y0, zc0), Vector3(x1, y0, zc0), Vector3(x1, s1, zc0), Vector3(x0, s0, zc0), Vector3.FORWARD, BETON_RAMPE)
-			m.quad(Vector3(x0, y0, zc1), Vector3(x1, y0, zc1), Vector3(x1, s1, zc1), Vector3(x0, s0, zc1), Vector3.BACK, BETON_RAMPE)
-	# bout est : la tranche de la rampe ferme le chant de la dalle percée (même épaisseur, d'où aucune face en double)
-	m.quad(Vector3(b.y, y1 - RAMPE_DALLE, zc0), Vector3(b.y, y1 - RAMPE_DALLE, zc1), Vector3(b.y, y1, zc1), Vector3(b.y, y1, zc0), Vector3.RIGHT, BETON_RAMPE)
-	if premier:
-		m.quad(Vector3(b.y, y0, zc0), Vector3(b.y, y0, zc1), Vector3(b.y, y1 - RAMPE_DALLE, zc1), Vector3(b.y, y1 - RAMPE_DALLE, zc0), Vector3.RIGHT, BETON_RAMPE)
+# Parvis d'un palier : entre l'arc extérieur du palier (R_EXT, 150..210°) et le bâtiment — la face du muret de bout
+# (x = 23,10) au droit de la travée, la tour d'angle (x = 24,18) au-delà de z = -7,70. Plat, à la hauteur du plancher.
+static func _parvis(y: float) -> Array:
+	var out: Array = []
+	var phi := 180.0 - PALIER_DEMI
+	while phi < 180.0 + PALIER_DEMI - 0.001:
+		var p2 := phi + PAS
+		var e1 := point(phi, R_EXT, y)
+		var e2 := point(p2, R_EXT, y)
+		var b1 := Vector3(_face_batiment(e1.z), y, e1.z)
+		var b2 := Vector3(_face_batiment(e2.z), y, e2.z)
+		out.append([b1, e1, e2, b2, Vector3.UP, ENROBE, true])
+		out.append([b1 - Vector3(0, EPAIS, 0), e1 - Vector3(0, EPAIS, 0), e2 - Vector3(0, EPAIS, 0), b2 - Vector3(0, EPAIS, 0), Vector3.DOWN, BETON_SOUS, true])
+		phi = p2
+	for ang: float in [180.0 - PALIER_DEMI, 180.0 + PALIER_DEMI]:
+		var e := point(ang, R_EXT + PARAPET, y)
+		var x0 := _face_batiment(e.z)
+		for q in _boite_quads(Vector3(x0, y - EPAIS, e.z - 0.1), Vector3(e.x, y + PARAPET_H, e.z + 0.1), BETON):
+			out.append(q)
+	return out
 
 
-# --- BARRE DE HAUTEUR À L'ENTRÉE (2026-09-22) -------------------------------------------------------------------------
-#
-# Comme dans un vrai parking à étages : un portique en travers de l'entrée, qui arrête dehors ce qui ne peut pas
-# monter la rampe. Sa hauteur vient de la MESURE, pas d'un chiffre rond choisi au hasard : sur les 72 modèles du
-# catalogue passés dans la rampe (montée et descente d'un étage, évaluation de l'étape 8), le plus haut qui passe est
-# le 4x4 lowpoly, 2,07 m de caisse. La barre est donc à 2,15 m : 8 cm de garde, aucun de ceux qui passent n'est
-# arrêté, et 22 des 34 refusés par la rampe (fourgons, camions, bus, ambulances) le sont dehors. Les 12 autres sont
-# des voitures BASSES mais trop longues ou trop larges pour les demi-tours (limousine, coupés lowpoly, gros
-# pick-ups) : une barre de hauteur ne peut rien contre elles, un vrai parking non plus.
-const BARRE_HAUTEUR := 2.15
-const BARRE_X := Vector2(-4.12, 4.12)       # le portique barre tout le passage d'entrée (x ±3,87)
-const BARRE_Z := Vector2(11.95, 12.15)      # juste devant la façade (z 11,87), sous l'auvent
-const BARRE_EPAIS := 0.25                   # hauteur de la poutre
-const BARRE_JAUNE := Color(0.80, 0.66, 0.10)
-const BARRE_GRIS := Color(0.32, 0.32, 0.34)
+static func _face_batiment(z: float) -> float:
+	return TOUR_ANGLE_X if z < TRAVEE_SUD.x else RIVE_BOUT_EXT
 
 
-static func barre_texte() -> String:
-	return "%.2f m" % BARRE_HAUTEUR
+static func _boite_quads(mn: Vector3, mx: Vector3, couleur: Color) -> Array:
+	return [
+		[Vector3(mx.x, mn.y, mn.z), Vector3(mx.x, mn.y, mx.z), Vector3(mx.x, mx.y, mx.z), Vector3(mx.x, mx.y, mn.z), Vector3.RIGHT, couleur, true],
+		[Vector3(mn.x, mn.y, mx.z), Vector3(mn.x, mn.y, mn.z), Vector3(mn.x, mx.y, mn.z), Vector3(mn.x, mx.y, mx.z), Vector3.LEFT, couleur, true],
+		[Vector3(mx.x, mn.y, mx.z), Vector3(mn.x, mn.y, mx.z), Vector3(mn.x, mx.y, mx.z), Vector3(mx.x, mx.y, mx.z), Vector3.BACK, couleur, true],
+		[Vector3(mn.x, mn.y, mn.z), Vector3(mx.x, mn.y, mn.z), Vector3(mx.x, mx.y, mn.z), Vector3(mn.x, mx.y, mn.z), Vector3.FORWARD, couleur, true],
+		[Vector3(mn.x, mx.y, mn.z), Vector3(mx.x, mx.y, mn.z), Vector3(mx.x, mx.y, mx.z), Vector3(mn.x, mx.y, mx.z), Vector3.UP, couleur, false],
+	]
 
 
-# Où poser le panneau : sur la face extérieure de la poutre, au milieu du passage.
-static func barre_panneau(y_sol: float) -> Vector3:
-	return Vector3(0.0, y_sol + BARRE_HAUTEUR + BARRE_EPAIS * 0.5, BARRE_Z.y + 0.01)
-
-
-static func _barre_hauteur(m: Maillage, y_sol: float) -> void:
-	var haut := y_sol + BARRE_HAUTEUR
-	for x: Vector2 in [Vector2(BARRE_X.x, BARRE_X.x + 0.25), Vector2(BARRE_X.y - 0.25, BARRE_X.y)]:
-		m.boite(Vector3(x.x, y_sol - 0.5, BARRE_Z.x), Vector3(x.y, haut + BARRE_EPAIS, BARRE_Z.y), BARRE_GRIS)
-	m.boite(Vector3(BARRE_X.x, haut, BARRE_Z.x), Vector3(BARRE_X.y, haut + BARRE_EPAIS, BARRE_Z.y), BARRE_JAUNE)
-
-
-# --- rampe extérieure en hélice : SUPPRIMÉE le 2026-09-22 ---------------------------------------------------------
-#
-# Elle montait le long du bout est de l'aérogare, seul exemplaire à en avoir une ; les trois parkings du centre-ville
-# n'avaient aucune rampe. Le joueur les a voulus identiques et tous praticables en voiture (§11, étape 9) : la rampe
-# INTÉRIEURE à 16 % tient dans la bande arrière des quatre, donc l'hélice n'avait plus d'emploi. Son code
-# (`helice()`, `hauteur()`, `point()`, `_parvis()`, `_pente_max()` et leurs constantes) et la méta
-# `parking_helice_axe` sont retirés d'ici ; ils restent dans l'historique git, au commit `033557e` et avant.
-# Ce qu'elle a coûté à mesurer, et qui vaut encore si on remet un jour une rampe dehors : à 12 %, 4,57 m d'un plancher
-# à l'autre exigent 38,1 m de rampe dans une dalle de 42 m, d'où le passage dehors ; une hélice tient la pente sur
-# 300° de tour, bord intérieur à 11,7 % ; et sa jupe fermée jusqu'au sol ENFERMAIT la bouche de la rampe d'entrée,
-# piège qui n'est apparu qu'en y conduisant une voiture.
+# Pente la plus forte de la voie au rayon `r`, mesurée sur la fonction de hauteur par pas de 0,5°.
+static func _pente_max(sols: PackedFloat32Array, r: float) -> float:
+	var pire := 0.0
+	var phi := ENTREE_DEBUT
+	var fin := 180.0 + PALIER_DEMI + 360.0 * (sols.size() - 1)
+	while phi < fin:
+		var dh := absf(hauteur(phi + 0.5, sols) - hauteur(phi, sols))
+		pire = maxf(pire, dh / (deg_to_rad(0.5) * r))
+		phi += 0.5
+	return pire

@@ -275,8 +275,7 @@ func _airport() -> void:
 # la route (lacet de 180°) ; le bout est du modèle, où se raccordera la rampe, du côté ouest du site.
 #  - le parking rendu praticable (ParkingStructureKit.praticable) : escalier dans la tour vitrée, travée sud du bout
 #    est ouverte à chaque niveau desservi par la rampe ; sa collision exacte, versée dans celle du lieu ;
-#  - ses rampes intérieures, du rez au toit (ParkingStructureKit, bande du mur arrière) ; l'hélice extérieure qui
-#    servait jusqu'au 2026-09-22 a été retirée : les quatre parkings sont identiques ;
+#  - la rampe extérieure en hélice (ParkingStructureKit.helice) : dans le béton du lieu, collision comprise ;
 #  - béton tout autour, au niveau du parking de l'aérogare (dessus du site - 0,02) : il file 2 cm SOUS la route, dont
 #    le bord sud va de z -1194,4 (x 350) à -1190,1 (x 432) — c'est le bord de la chaussée qui dessine la limite, sans
 #    herbe entre les deux ;
@@ -288,8 +287,7 @@ const PARKING_ETAGES_LACET := PI
 const PARKING_ETAGES_BETON := Rect2(352.0, -1196.0, 80.0, 51.0)
 const PARKING_ETAGES_ALLEE := Rect2(400.0, -1196.0, 10.0, 17.65)
 const PARKING_ETAGES_ESCALIERS := 4        # étages desservis par l'escalier : du rez au toit
-const PARKING_ETAGES_RAMPES := 4           # rampes intérieures empilées : du rez au toit (l'hélice extérieure a été
-                                           # retirée le 2026-09-22, les quatre parkings sont identiques)
+const PARKING_ETAGES_HELICE := 1           # dernier palier desservi par la rampe en hélice (1 : niveau 1)
 const ParkingKit := preload("res://scenes/world/map/tools/ParkingStructureKit.gd")
 
 
@@ -297,7 +295,10 @@ func _parking_etages(top: float) -> void:
 	var y := top - 0.02
 	var info := models.get_model(PARKING_ETAGES)
 	var xf := Transform3D(Basis(Vector3.UP, PARKING_ETAGES_LACET), Vector3(PARKING_ETAGES_ORIGINE.x, y, PARKING_ETAGES_ORIGINE.y))
-	var p := ParkingKit.praticable(info["mesh"], models.material, PARKING_ETAGES, PARKING_ETAGES_ESCALIERS, [], PARKING_ETAGES_RAMPES)
+	var travees: Array = []
+	for k in PARKING_ETAGES_HELICE + 1:
+		travees.append(k)
+	var p := ParkingKit.praticable(info["mesh"], models.material, PARKING_ETAGES, PARKING_ETAGES_ESCALIERS, travees)
 	for f: String in p["fautes"]:
 		push_error("PARKING_ETAGES %s" % f)
 	var chemin := OUT.path_join("%s_parking_etages.res" % String(place.get_meta("place_id")))
@@ -313,7 +314,20 @@ func _parking_etages(top: float) -> void:
 	stats["modèles"] += 1
 	stats["triangles"] += (p["mesh"] as Mesh).surface_get_array_index_len(0) / 3
 	stats["parking_etages"] = {"collision": (p["faces"] as PackedVector3Array).size() / 3, "decoupes": p["stats"]["decoupes"], "fautes": p["fautes"].size()}
-	_panneau_barre(xf, p["planchers"][0])
+	if PARKING_ETAGES_HELICE >= 0:
+		var h := ParkingKit.helice(p["planchers"], PARKING_ETAGES_HELICE)
+		for q: Array in h["quads"]:
+			_quad("paint", xf * (q[0] as Vector3), xf * (q[1] as Vector3), xf * (q[2] as Vector3), xf * (q[3] as Vector3),
+					xf.basis * (q[4] as Vector3), [], q[5], q[6])
+		var c := xf * Vector3(ParkingKit.HELICE_C.x, 0.0, ParkingKit.HELICE_C.y)
+		var d := 2.0 * (ParkingKit.R_EXT + ParkingKit.PARAPET + 0.5)
+		footprints.append(_rect_footprint("building", Vector2(c.x, c.z), Vector2(d, d)))
+		stats["parking_etages"]["helice_quads"] = h["quads"].size()
+		stats["parking_etages"]["helice_pente_max_bord_int"] = snappedf(h["pente_max_bord_int"], 0.0001)
+		var axe := PackedVector3Array()
+		for pt: Vector3 in h["axe"]:
+			axe.append(xf * pt)
+		place.set_meta("parking_helice_axe", axe)
 	var panes := models.windows_of(PARKING_ETAGES)
 	if not panes.is_empty():
 		stats["carreaux_allumés"] += Windows.emit(panes, xf, _window_acc[0], _window_acc[1], _window_acc[2])
@@ -323,24 +337,6 @@ func _parking_etages(top: float) -> void:
 	# béton tout autour, puis l'allée d'enrobé de la route à l'entrée
 	_paved(PARKING_ETAGES_BETON.get_center(), PARKING_ETAGES_BETON.size, y, "concrete")
 	_paved(PARKING_ETAGES_ALLEE.get_center(), PARKING_ETAGES_ALLEE.size, y + 0.01, "plain", Color(), false, 0.0)
-
-
-# Panneau de la barre de hauteur, à l'entrée du parking à étages : un Label3D, lisible de loin, sur la face
-# extérieure de la poutre du portique (cf. ParkingStructureKit.BARRE_HAUTEUR).
-func _panneau_barre(xf: Transform3D, y_sol: float) -> void:
-	var l := Label3D.new()
-	l.name = "BarreHauteur"
-	l.text = ParkingKit.barre_texte()
-	l.font_size = 96
-	l.pixel_size = 0.0022
-	l.modulate = Color(0.06, 0.06, 0.06)
-	l.outline_size = 0
-	l.billboard = BaseMaterial3D.BILLBOARD_DISABLED
-	l.shaded = false
-	l.transform = xf * Transform3D(Basis(), ParkingKit.barre_panneau(y_sol))
-	l.visibility_range_end = 220.0
-	place.add_child(l)
-	l.owner = place.owner if place.owner != null else place
 
 
 # PORCHE D'ENTRÉE DE L'AÉROGARE (2026-09-21) : il était noir la nuit. L'auvent est un bloc qu'on a posé
