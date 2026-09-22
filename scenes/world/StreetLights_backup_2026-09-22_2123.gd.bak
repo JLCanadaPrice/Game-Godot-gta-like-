@@ -27,20 +27,6 @@ const DOWNTOWN_HEADS := "res://scenes/world/downtown/generated/lamp_heads.tres"
 const PLACES_HEADS := "res://scenes/world/map/generated/places/lamp_heads.tres"
 const GLOW_MATERIAL := "res://scenes/world/lamp_glow_material.tres"
 
-# LUMINAIRES INTÉRIEURS (parkings à étages, 2026-09-22). Ils n'ont rien à voir avec les lampadaires et ne passent donc
-# pas par la même mécanique : un parking couvert est sombre DE JOUR aussi, ses lumières sont allumées en permanence.
-# Les vitres allumées sont des maillages statiques toujours visibles, que ce nœud ne touche jamais ; ce qu'il gère,
-# c'est un SECOND bassin de vraies lumières, borné lui aussi, toujours actif, qui pose la flaque au sol là où le
-# joueur se trouve. Cônes droits vers le bas : un plafonnier n'a pas de crosse, `aims` reste vide dans ces fichiers.
-const PARKING_LIGHTS := ["res://scenes/world/map/generated/places/parking_lights.tres",
-		"res://scenes/world/downtown/generated/parking_lights.tres"]
-# OMNIDIRECTIONNELLES, et pas des cônes comme les lampadaires : réglé À L'IMAGE. Un cône vers le bas posait bien sa
-# flaque sur le tablier, mais laissait murs, poteaux et plafond noirs — un plateau de parking se lit par ses poteaux.
-# Un vrai tube de plafond éclaire tout autour de lui, c'est ce qu'on met.
-const INT_RANGE := 14.0
-const INT_ENERGY := 2.6
-const INT_COLOR := Color(1.00, 0.95, 0.84)
-
 const GLOW_ON := Color(1.00, 0.88, 0.62)
 const GLOW_OFF := Color(0.26, 0.25, 0.23)    # capot éteint, gris tiède : le halo reste un objet le jour
 
@@ -69,7 +55,6 @@ const REASSIGN_PERIOD := 0.25                # s entre deux réaffectations du b
 const REASSIGN_MOVE := 4.0                   # ...ou dès que la caméra a bougé de tant de mètres
 
 @export var pool := 16
-@export var pool_interieur := 8              # vraies lumières des parkings couverts, toujours allumées
 @export var all_lights := false              # mesure seulement : une vraie lumière par luminaire
 @export var glow := true
 @export var windows := true                  # fenêtres allumées des bâtiments (même mécanique que glow)
@@ -90,8 +75,6 @@ var _window_nodes: Array[Node] = []
 var _airport_nodes: Array[Node] = []
 var _airport_on := false
 var _night := -1.0
-var _int_heads := PackedVector3Array()
-var _int_lights: Array[OmniLight3D] = []
 var _next_reassign := 0.0
 var _last_cam := Vector3(1e9, 1e9, 1e9)
 
@@ -104,9 +87,6 @@ func _ready() -> void:
 		var res: MapLampHeads = load(path)
 		_heads.append_array(res.heads)
 		_aims.append_array(res.aims)
-	for path in PARKING_LIGHTS:
-		if ResourceLoader.exists(path):
-			_int_heads.append_array((load(path) as MapLampHeads).heads)
 	_material = load(GLOW_MATERIAL)
 	_window_material = load(WINDOW_MATERIAL)
 	# Le groupe est posé à la cuisson (persistant), donc présent dès le chargement de la scène.
@@ -119,16 +99,15 @@ func _ready() -> void:
 		_on_hour_changed(cycle.hour, cycle.night_factor())
 	else:
 		_apply_night(1.0)
-	_spawn_int_lights()
 	print("STREET_LIGHTS %d luminaires, %d maillages de halo, %d maillages de fenêtres, %d maillages de balisage, bassin de %d vraie(s) lumière(s)%s"
 			% [_heads.size(), _glow_nodes.size(), _window_nodes.size(), _airport_nodes.size(),
 			(_heads.size() if all_lights else pool),
 			" [MESURE : une lumière par luminaire]" if all_lights else ""])
-	print("STREET_LIGHTS_INTERIEUR %d luminaire(s) de parking couvert, bassin de %d vraie(s) lumière(s), toujours allumé"
-			% [_int_heads.size(), _int_lights.size()])
 
 
 func _process(_delta: float) -> void:
+	if _night <= 0.0 or all_lights or _lights.is_empty():
+		return
 	var cam := get_viewport().get_camera_3d()
 	if cam == null:
 		return
@@ -138,11 +117,7 @@ func _process(_delta: float) -> void:
 		return
 	_next_reassign = now + REASSIGN_PERIOD
 	_last_cam = p
-	# les lampadaires ne sont réaffectés que la nuit ; les plafonniers de parking, toujours
-	if _night > 0.0 and not all_lights and not _lights.is_empty():
-		_assign(p)
-	if not _int_lights.is_empty():
-		_assign_int(p)
+	_assign(p)
 
 
 func _on_hour_changed(_hour: float, night: float) -> void:
@@ -201,37 +176,6 @@ func _spawn_lights() -> void:
 		_lights.append(l)
 		if all_lights:
 			_place(l, i)
-
-
-func _spawn_int_lights() -> void:
-	for i in mini(pool_interieur, _int_heads.size()):
-		var l := OmniLight3D.new()
-		l.name = "LampeInterieure_%d" % i
-		l.omni_range = INT_RANGE
-		l.omni_attenuation = 1.0
-		l.light_color = INT_COLOR
-		l.light_energy = INT_ENERGY
-		l.shadow_enabled = false
-		l.visible = false
-		add_child(l)
-		_int_lights.append(l)
-
-
-# Même balayage que `_assign`, sur les luminaires intérieurs, et sans dépendre de l'heure.
-func _assign_int(p: Vector3) -> void:
-	var portee := INT_RANGE * 3.0
-	var proches: Array = []
-	for i in _int_heads.size():
-		var d := p.distance_squared_to(_int_heads[i])
-		if d <= portee * portee:
-			proches.append([d, i])
-	proches.sort_custom(func(a, b): return a[0] < b[0])
-	for k in _int_lights.size():
-		if k < proches.size():
-			_int_lights[k].global_position = _int_heads[int(proches[k][1])]
-			_int_lights[k].visible = true
-		else:
-			_int_lights[k].visible = false
 
 
 # Pose le bassin sur les `pool` luminaires les plus proches de `p`. Balayage direct des 1540

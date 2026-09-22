@@ -65,10 +65,6 @@ var footprints: Array = []
 # Têtes des lampadaires posés par les lieux (parking de l'aérogare) : écrites dans places/lamp_heads.tres,
 # que StreetLights lit comme ceux de la carte et du centre-ville pour y poser ses vraies lumières.
 var lamp_heads := PackedVector3Array()
-# Luminaires INTÉRIEURS (parking à étages) : écrits dans places/parking_lights.tres, lus par StreetLights pour un
-# bassin à part, toujours allumé. Séparés des lampadaires parce qu'eux ne s'éteignent jamais. `aims` reste vide :
-# ces cônes-là pointent droit vers le bas.
-var parking_heads := PackedVector3Array()
 var lamp_aims := PackedVector3Array()
 const LampHeadsRes := preload("res://scenes/world/map/MapLampHeads.gd")
 var parked: Array = []               # véhicules en stationnement, instanciés au lancement par ParkedVehicles
@@ -197,9 +193,6 @@ func _initialize() -> void:
 	tetes.heads = lamp_heads
 	tetes.aims = lamp_aims
 	ResourceSaver.save(tetes, OUT.path_join("lamp_heads.tres"))
-	var tetes_int := LampHeadsRes.new()
-	tetes_int.heads = parking_heads
-	ResourceSaver.save(tetes_int, OUT.path_join("parking_lights.tres"))
 	_ensure_in_map()
 	print("PLACES_BALISAGE %s" % stats_air)
 	print("PLACES_BAKE %s en %.1f s" % [stats, (Time.get_ticks_msec() - t0) / 1000.0])
@@ -321,7 +314,6 @@ func _parking_etages(top: float) -> void:
 	stats["triangles"] += (p["mesh"] as Mesh).surface_get_array_index_len(0) / 3
 	stats["parking_etages"] = {"collision": (p["faces"] as PackedVector3Array).size() / 3, "decoupes": p["stats"]["decoupes"], "fautes": p["fautes"].size()}
 	_panneau_barre(xf, p["planchers"][0])
-	_lumieres_parking(xf, p["planchers"], PARKING_ETAGES_RAMPES, PARKING_ETAGES_ESCALIERS)
 	var panes := models.windows_of(PARKING_ETAGES)
 	if not panes.is_empty():
 		stats["carreaux_allumés"] += Windows.emit(panes, xf, _window_acc[0], _window_acc[1], _window_acc[2])
@@ -331,25 +323,6 @@ func _parking_etages(top: float) -> void:
 	# béton tout autour, puis l'allée d'enrobé de la route à l'entrée
 	_paved(PARKING_ETAGES_BETON.get_center(), PARKING_ETAGES_BETON.size, y, "concrete")
 	_paved(PARKING_ETAGES_ALLEE.get_center(), PARKING_ETAGES_ALLEE.size, y + 0.01, "plain", Color(), false, 0.0)
-
-
-# Les lumières intérieures du parking à étages : un maillage non éclairé, TOUJOURS visible (un parking est sombre de
-# jour aussi, ce n'est pas un éclairage de nuit), et les centres des luminaires versés dans `parking_heads` pour le
-# bassin de vraies lumières de StreetLights. Cf. ParkingStructureKit.eclairage.
-func _lumieres_parking(xf: Transform3D, sols: PackedFloat32Array, rampes: int, escaliers: int) -> void:
-	var e := ParkingKit.eclairage(sols, rampes, escaliers)
-	var chemin := OUT.path_join("%s_parking_lumieres.res" % String(place.get_meta("place_id")))
-	var maillage = e["maillage"]
-	ResourceSaver.save(maillage.vers_mesh(ParkingKit.materiau_lumiere(), "ParkingLumieres"), chemin)
-	var mi := MeshInstance3D.new()
-	mi.name = "ParkingLumieres"
-	mi.mesh = load(chemin)
-	mi.transform = xf
-	mi.visibility_range_end = 400.0
-	place.add_child(mi)
-	for t: Vector3 in (e["tetes"] as PackedVector3Array):
-		parking_heads.append(xf * t)
-	stats["parking_etages"]["lumieres"] = e["compte"]
 
 
 # Panneau de la barre de hauteur, à l'entrée du parking à étages : un Label3D, lisible de loin, sur la face

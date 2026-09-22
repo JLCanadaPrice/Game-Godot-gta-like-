@@ -23,11 +23,6 @@ const MapSpec := preload("res://scenes/world/map/MapSpec.gd")
 const ELModels := preload("res://scenes/world/map/tools/BuildingModels.gd")
 const Windows := preload("res://scenes/world/map/tools/BuildingWindows.gd")
 const Parking := preload("res://scenes/world/map/tools/ParkingStructureKit.gd")
-const LampHeadsRes := preload("res://scenes/world/map/MapLampHeads.gd")
-
-# Luminaires INTÉRIEURS des trois parkings à étages, en coordonnées monde : écrits dans
-# downtown/generated/parking_lights.tres, lus par StreetLights pour son bassin toujours allumé.
-var _parking_heads := PackedVector3Array()
 
 const OUT := "res://scenes/world/downtown/generated"
 const MODELS := OUT + "/buildings"
@@ -858,14 +853,6 @@ func _parking_praticable(mdl: Dictionary) -> void:
 	mdl["faces"] = p["faces"]
 	_stats["parking_decoupes"] = p["stats"]["decoupes"]
 	_stats["parking_fautes"] = p["fautes"].size()
-	# lumières intérieures : un maillage partagé par les trois exemplaires, comme la collision
-	var e := Parking.eclairage(p["planchers"], PARKING_RAMPES, PARKING_ESCALIERS)
-	var chemin_lum := MODELS.path_join("parking_lumieres.res")
-	var maillage = e["maillage"]
-	ResourceSaver.save(maillage.vers_mesh(Parking.materiau_lumiere(), "ParkingLumieres"), chemin_lum)
-	mdl["lumieres"] = load(chemin_lum)
-	mdl["tetes_lumieres"] = e["tetes"]
-	_stats["parking_lumieres"] = e["compte"]
 
 # Forme de collision d'un modèle : sa boîte pleine, SAUF pour le parking à étages, qu'on doit pouvoir parcourir à pied
 # et en voiture à chaque niveau (2026-09-21) : les triangles exacts de son maillage (ParkingStructureKit.collision),
@@ -926,15 +913,6 @@ func _write_scene() -> String:
 		body.add_child(cs)
 		cs.owner = root
 		if String(p["model"]) == Parking.CLE:
-			# lumières intérieures, toujours visibles (un parking est sombre de jour aussi)
-			var lum := MeshInstance3D.new()
-			lum.name = "ParkingLumieres"
-			lum.mesh = mdl["lumieres"]
-			lum.visibility_range_end = 400.0
-			node.add_child(lum)
-			lum.owner = root
-			for t: Vector3 in (mdl["tetes_lumieres"] as PackedVector3Array):
-				_parking_heads.append(node.transform * t)
 			# panneau de la barre de hauteur à l'entrée (cf. ParkingStructureKit.BARRE_HAUTEUR)
 			var panneau := Label3D.new()
 			panneau.name = "BarreHauteur"
@@ -975,9 +953,6 @@ func _write_scene() -> String:
 	var packed := PackedScene.new()
 	var err := packed.pack(root)
 	if err == OK:
-		var tetes_int := LampHeadsRes.new()
-		tetes_int.heads = _parking_heads
-		ResourceSaver.save(tetes_int, OUT.path_join("parking_lights.tres"))
 		err = ResourceSaver.save(packed, OUT.path_join("Buildings.tscn"))
 	root.free()
 	# emprises pour le mobilier (D4) et les contrôles

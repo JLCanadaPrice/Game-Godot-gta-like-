@@ -30,8 +30,7 @@ travail imposée, les commandes exactes, les pièges déjà payés et l'état d'
   (`RoundaboutTrafficTest`, même jour), **614** depuis les lampadaires du parking de l'aérogare
   (`generated/places/lamp_heads.tres`), **616** depuis le vitrage et le porche de l'aérogare (deux
   matériaux), **617** depuis `LampGlass.gd`, **619** depuis `WheelSpinTest` (2026-09-21 au soir) et **622** depuis le
-  parking à étages (`ParkingStructureKit.gd`, `ParkingStructureTest`, §11) et **625** depuis son éclairage
-  intérieur du 2026-09-22 (`parking_glow_material.tres` et les deux `parking_lights.tres`).
+  parking à étages (`ParkingStructureKit.gd`, `ParkingStructureTest`, §11).
 
 ## 2. Méthode de travail (imposée, non négociable)
 
@@ -186,7 +185,7 @@ attendu.
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/DowntownStreetsTest.tscn
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/DowntownBuildingsTest.tscn
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/ShopBuildingsTest.tscn     # échec ANTÉRIEUR connu
-"$GODOT" --headless --path "$PROJET" --script res://scenes/world/map/tools/ProjectLoadCheck.gd   # attendu : 625 fichiers, 0 échec
+"$GODOT" --headless --path "$PROJET" --script res://scenes/world/map/tools/ProjectLoadCheck.gd   # attendu : 622 fichiers, 0 échec
 ```
 
 Outil d'inspection, hors batterie : `res://scenes/tests/VehicleSortTest.tscn` aligne les véhicules du catalogue
@@ -1466,38 +1465,6 @@ Et un cinquième, de cadrage : les véhicules du test de la barre partaient **en
 « dehors », donc le test passait pour une mauvaise raison) ; leur cap se prend sur la direction MONDE du modèle,
 `_aeroport.global_transform.basis * Vector3(0, 0, -1)`, jamais sur un angle écrit à la main.
 
-**Étape 10 — l'éclairage intérieur des quatre parkings** (2026-09-22). Un parking couvert est sombre **DE JOUR
-aussi** : ce n'est pas un éclairage de nuit, rien ne se fond au crépuscule, les lumières sont allumées en permanence.
-D'où un matériau non éclairé à couleur fixe (`scenes/world/parking_glow_material.tres`), des maillages toujours
-visibles que `StreetLights` ne touche jamais — zéro travail par image — et un SECOND bassin de vraies lumières,
-borné lui aussi, toujours actif.
-
-- **CE QU'ON ALLUME EXISTE DÉJÀ DANS LE MODÈLE, et l'inventaire du 2026-09-21 était incomplet.** Il disait :
-  « `light_006` ne contient que les cônes de lumière opaques » et « les boîtiers des plafonniers sont dans
-  `base_072` ». Le premier point est FAUX : relevé triangle par triangle, `light_006` porte **162 triangles PLATS**
-  (trois sommets à la même hauteur au mm) et 136 non plats. Les plats sont les **VITRES** des plafonniers — 17
-  panneaux, quatre par niveau couvert à x ±(9,42..18,40) et z ±(5,02..5,73), 8,98 x 0,71 m, plus un de 8,58 x 0,31 m
-  sous l'auvent. Ce sont eux qu'on rallume, recopiés 12 mm plus bas sur le matériau partagé, comme le verre des
-  lampadaires et les optiques des véhicules. Les cônes restent écartés.
-- **Ce qu'on AJOUTE, et pourquoi.** Les deux panneaux z < 0 de chaque niveau tombent dans la bande de la rampe et
-  disparaissent avec le plafond que la rampe a remplacé (60 triangles sur 162, même boîte de découpe que leurs
-  boîtiers). Restent **deux** luminaires par niveau, aux deux bouts : **le milieu du plateau restait NOIR, vu à
-  l'image**. Un vrai parking aligne ses plafonniers le long de l'allée, c'est ce qu'on fait : **5 bandeaux d'allée
-  par niveau** (z 3,85), **3 bandeaux par rampe couverte** à 4,08 m au-dessus de la voie, et **1 panneau par niveau
-  dans la cage d'escalier**, qui n'en a aucun dans le modèle et qui est fermée. La rampe du haut n'en a pas : sa
-  trémie perce la dalle du toit sur toute la bande, elle est à ciel ouvert.
-- **Les vraies lumières sont OMNIDIRECTIONNELLES, pas des cônes comme les lampadaires — réglé à l'image.** Un cône
-  vers le bas posait bien sa flaque sur le tablier mais laissait murs, poteaux et plafond noirs, et un plateau de
-  parking se lit par ses poteaux. `StreetLights.pool_interieur` = **8 `OmniLight3D` sans ombre**, portée 14 m,
-  énergie 2,6, posées sur les 8 luminaires les plus proches de la caméra, **sans dépendre de l'heure**. Le réglage
-  se baisse comme celui des lampadaires, sans recompiler.
-- Compté à la cuisson, par parking : 102 triangles de vitre du modèle gardés, 60 emportés par la bande, 9 bandeaux de
-  rampe, 20 bandeaux d'allée, 5 panneaux de cage — **48 luminaires par parking, 192 en tout**, 680 triangles pour les
-  quatre, **un seul matériau**.
-- `ParkingStructureTest` vérifie les quatre points qui peuvent casser : un maillage de lumières par parking, **un
-  seul matériau partagé** (sinon le moteur ne les regroupe plus), aucun niveau sans luminaire, et surtout **2,90 m de
-  dégagement au minimum sous un luminaire de la partie roulante** — un véhicule qui passe la barre de 2,15 m ne doit
-  jamais pouvoir taper dedans. Relevé : **3,95 m au pire**. C'est la faute déjà payée avec les boîtiers du modèle,
-  qui pendaient 20 cm au-dessus du tablier de la rampe.
-
-**Reste à faire** : les voitures garées à chaque niveau sur les 10 places marquées le long de la façade.
+**Reste à faire** : l'éclairage intérieur de nuit (plafonniers de `base_072` sur matériau partagé, bassin borné de
+vraies lumières, cage d'escalier allumée en permanence) — de jour l'intérieur est déjà sombre, les captures au sol le
+montrent —, puis les voitures garées à chaque niveau sur les 10 places marquées le long de la façade.

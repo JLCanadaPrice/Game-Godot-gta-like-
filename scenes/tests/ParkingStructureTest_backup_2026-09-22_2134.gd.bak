@@ -26,11 +26,6 @@ extends Node3D
 #     chaque garde-corps — bord est de chaque trémie d'escalier, couloir de la volée A au toit, les DEUX parapets de
 #     chaque rampe, les deux bords de chaque trémie de rampe, et le bout ouest de la trémie du toit. Aucun ne passe
 #     par-dessus ni ne tombe : chacun reste du bon côté et debout sur son plancher.
-#  4b bis. ÉCLAIRAGE INTÉRIEUR (2026-09-22) : les quatre parkings portent un maillage de lumières, TOUS sur le MÊME
-#     matériau (sinon le moteur ne les regroupe plus) ; chaque niveau couvert a des luminaires ; et sous chaque
-#     luminaire de la partie roulante il reste au moins 2,90 m de dégagement — un véhicule qui passe la barre de
-#     2,15 m ne doit jamais pouvoir taper dedans. C'est exactement la faute déjà payée avec les boîtiers du modèle,
-#     qui pendaient 20 cm au-dessus du tablier de la rampe.
 #  4c. BARRE DE HAUTEUR : à l'entrée de l'aéroport, un camion (2,79 m de caisse) et une berline (1,45 m) lancés à
 #     4 m/s vers le passage. Le camion est arrêté DEHORS par le portique, la berline entre.
 #  5. RAMPES INTÉRIEURES (2026-09-22) : la voiture du joueur, conduite comme au clavier (move_forward / move_left /
@@ -282,7 +277,6 @@ func _physics_process(delta: float) -> void:
 				_bilan_dalles()
 				for b: Array in _braqueurs:
 					(b[0] as Node).call("start_drive")
-				_lumieres()
 				_phase = "braquage"
 				_t_phase = 0.0
 		"braquage":
@@ -577,77 +571,6 @@ func _garde_corps(delta: float) -> void:
 
 var _barres: Array = []     # [voiture, libellé, doit passer ?]
 var _t_barre := 0.0
-
-
-# --- 4b bis. éclairage intérieur --------------------------------------------------------------------------------------
-
-const LUM_TETES := ["res://scenes/world/map/generated/places/parking_lights.tres",
-		"res://scenes/world/downtown/generated/parking_lights.tres"]
-const LUM_DEGAGEMENT := 2.90     # sous un luminaire de la partie roulante
-const LUM_CAGE_Z := 7.0          # au-delà (repère du modèle), on est dans la cage d'escalier : piétons seulement
-
-
-func _lumieres() -> void:
-	var noeuds := find_children("ParkingLumieres", "MeshInstance3D", true, false)
-	if noeuds.size() != _parkings.size():
-		_fautes.append("eclairage : %d maillage(s) de lumieres pour %d parking(s)" % [noeuds.size(), _parkings.size()])
-	var materiaux := {}
-	var triangles := 0
-	for n in noeuds:
-		var mi := n as MeshInstance3D
-		if mi.mesh == null or mi.mesh.get_surface_count() == 0:
-			_fautes.append("eclairage : %s sans maillage" % mi.name)
-			continue
-		triangles += mi.mesh.surface_get_array_index_len(0) / 3
-		var mat := mi.mesh.surface_get_material(0)
-		materiaux[mat.resource_path if mat != null else "?"] = true
-		if not mi.visible:
-			_fautes.append("eclairage : %s invisible (un parking est sombre de jour aussi)" % mi.name)
-	if materiaux.size() != 1:
-		_fautes.append("eclairage : %d materiaux au lieu d'un seul partage (%s)" % [materiaux.size(), str(materiaux.keys())])
-	var tetes := PackedVector3Array()
-	for chemin: String in LUM_TETES:
-		if not ResourceLoader.exists(chemin):
-			_fautes.append("eclairage : %s absent, cuisson a relancer" % chemin)
-			continue
-		tetes.append_array((load(chemin) as MapLampHeads).heads)
-	if tetes.size() != _parkings.size() * 48:
-		_fautes.append("eclairage : %d luminaire(s) au lieu de %d" % [tetes.size(), _parkings.size() * 48])
-	# un luminaire par niveau couvert, et le dégagement sous ceux de la partie roulante
-	var espace := get_world_3d().direct_space_state
-	var pire := 99.0
-	var pire_ou := ""
-	var par_niveau := {}
-	for t: Vector3 in tetes:
-		var proche: Array = _parkings[0]
-		for e: Array in _parkings:
-			if (e[0] as Node3D).global_position.distance_to(t) < (proche[0] as Node3D).global_position.distance_to(t):
-				proche = e
-		var b: Node3D = proche[0]
-		var sols: PackedFloat32Array = proche[2]
-		var local := b.global_transform.affine_inverse() * t
-		for k in sols.size() - 1:
-			if local.y > float(sols[k]) and local.y <= float(sols[k + 1]) + 0.2:
-				par_niveau["%s|%d" % [b.name, k]] = int(par_niveau.get("%s|%d" % [b.name, k], 0)) + 1
-		if local.z > LUM_CAGE_Z:
-			continue     # cage d'escalier ou auvent : aucune voiture n'y passe
-		var q := PhysicsRayQueryParameters3D.create(t, t - Vector3(0, 6.0, 0), 1)
-		var hit := espace.intersect_ray(q)
-		if hit.is_empty():
-			continue     # rien dessous à 6 m : bandeau au-dessus d'une trémie ouverte, pas un obstacle
-		var libre: float = t.y - float((hit["position"] as Vector3).y)
-		if libre < pire:
-			pire = libre
-			pire_ou = "%s a (%.1f, %.1f, %.1f) du modele" % [b.name, local.x, local.y, local.z]
-	for e: Array in _parkings:
-		var sols: PackedFloat32Array = e[2]
-		for k in sols.size() - 1:
-			if not par_niveau.has("%s|%d" % [(e[0] as Node3D).name, k]):
-				_fautes.append("eclairage : %s niveau %d sans aucun luminaire" % [(e[0] as Node3D).name, k])
-	if pire < LUM_DEGAGEMENT:
-		_fautes.append("eclairage : %.2f m seulement sous un luminaire de la partie roulante (%s)" % [pire, pire_ou])
-	print("PARKING_LUMIERES %d maillage(s), %d triangles, %d materiau(x) partage(s), %d luminaires ; degagement le plus faible sous un luminaire roulant %.2f m (%s)"
-			% [noeuds.size(), triangles, materiaux.size(), tetes.size(), pire, pire_ou])
 
 
 func _debut_barre() -> void:
