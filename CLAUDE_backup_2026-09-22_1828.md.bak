@@ -56,15 +56,9 @@ travail imposée, les commandes exactes, les pièges déjà payés et l'état d'
 
 ## 3. Seuil de performance
 
-- **L'Intel UHD 750 du PC d'école N'EST PLUS la machine de référence du jeu** (décision du joueur, 2026-09-22).
-  Le jeu y gèle le PC dès qu'on se déplace (cf. §6, « Le jeu gèle les PC de l'école »), pas sur le PC de la maison.
-  Le joueur ne fait plus à l'école que travailler dans l'ÉDITEUR, qui y tient depuis le LOD en `@tool` (`3088ea0`,
-  §6), et teste le jeu à la maison. L'UHD 750 reste donc la machine où l'on ouvre l'éditeur : un chantier qui
-  alourdit la vue 3D de l'éditeur (`World.tscn` ouvert) touche le poste de travail de l'école. Les cartes Intel
-  seront servies plus tard par un **mode graphique léger** (§7).
-- **Les seuils ci-dessous en appels de dessin sont gardés tels quels.** Les FPS de la machine de travail ne
-  disent rien ; les compteurs de rendu de `MapShotsTest` (appels de dessin, objets, primitives) restent la
-  mesure comparable.
+- **Machine de référence : Intel UHD 750** (PC d'école). Les FPS de la machine de travail ne
+  disent rien ; les compteurs de rendu de `MapShotsTest` (appels de dessin, objets, primitives)
+  sont la mesure comparable.
 - **+10 % d'appels de dessin au maximum** sur les **6 vues de référence** :
   `echangeur_nord_ouest`, `carrefour_willow_lake`, `rond_point_echo`, `losange_aeroport`,
   `quartier_bluffview_survol`, `lieu_echo_circle`.
@@ -85,8 +79,7 @@ travail imposée, les commandes exactes, les pièges déjà payés et l'état d'
   lumières donnent exactement le même nombre d'appels. Pour comparer des approches d'éclairage, il faut le temps
   GPU, et **la machine de développement ne sait pas le mesurer** : elle rend la scène en ~1,8 ms, les lumières y
   sont noyées dans le bruit, et trois métriques s'y sont contredites (cf. §9). La seule mesure valable est
-  `RenderPerfTest` (qui accepte `--heure=`, `--bassin=` et `--toutes-lampes`) sur une machine dont le GPU est
-  le goulot : c'était l'UHD 750, ce sera la carte Intel visée par le mode graphique léger (§7).
+  `RenderPerfTest` sur l'UHD 750, qui accepte maintenant `--heure=`, `--bassin=` et `--toutes-lampes`.
 
 Référence relevée le 2026-09-18 en 800x450 (après le chantier de Northgate Rise) :
 
@@ -476,14 +469,6 @@ sans le plafond de 800x450 du §6). Une vue peut imposer sa propre heure par un 
   Dernière réserve, qui n'est pas mesurée mais assumée : **`_process` tourne en permanence dans l'éditeur** (boucle
   sur 441 maillages). L'intervalle y est donc porté à `lod_update_interval_editeur` = **0,5 s**, au lieu des 0,25 s
   du jeu. `lod_dans_editeur = false` coupe tout l'ajout sans toucher au jeu.
-- **LE JEU GÈLE LES PC DE L'ÉCOLE (Intel UHD 750) QUAND ON SE DÉPLACE** — constaté par le joueur, noté le
-  2026-09-22 pour mémoire. Ses mots : le jeu « gèle le PC quand on se déplace ». C'est le JEU seul : l'éditeur, lui, y
-  tient depuis le LOD en `@tool` (note précédente). Sur TOUS les PC de l'école, pas sur le PC de la maison, et
-  **déjà présent au commit `0ceb547`** (2026-09-20, les phares) : ce n'est donc pas une régression des chantiers qui
-  ont suivi (roues, braquage, parking à étages). **Non diagnostiqué** : on n'a que le symptôme, aucune mesure ni cause
-  relevée. Décision prise en conséquence : l'UHD 750 n'est plus la machine de référence du jeu (§3), et les cartes
-  Intel seront servies par un mode graphique léger (§7). Si on le reprend : le reproduire d'abord sur un PC de
-  l'école — le PC de la maison ne le montre pas —, avec `RenderPerfTest`, avant de toucher au moindre réglage.
 
 ## 7. État d'avancement
 
@@ -506,13 +491,6 @@ débogage sur `V`.
 - **appartements reliés à la carte** (les intérieurs existent, ils ne sont pas raccordés aux
   bâtiments de la carte) ;
 - **concessionnaire enrichi** ;
-- **mode graphique léger**, plus tard, pour les PC à carte graphique Intel : c'est le gel des PC de l'école (§6)
-  qui l'a fait inscrire. Réglages déjà en place qu'il pourra piloter : le bassin de vraies lumières
-  (`StreetLights.pool`, 16, §9), les ombres du soleil (`DirectionalLight3D`, portée 240 m), le LOD des bâtiments
-  (`CityRenderOptimizer.building_lod_bias` 0,25 au-delà de `lod_near_radius` 150 m), la distance des silhouettes du
-  centre-ville (`DowntownHLOD`, 650 m) ; côté moteur, l'échelle de rendu 3D du viewport (`scaling_3d_scale`, non
-  utilisée aujourd'hui). Ni SSAO ni glow ne sont activés, rien à gagner de ce côté. La mesure qui décidera est le
-  temps GPU (`RenderPerfTest`) sur une carte Intel, pas les appels de dessin (§3) ;
 - **bug : 0 voiture exposée** chez le concessionnaire ;
 - ~~**bug : `PlayerCarPhysics` finit SUR LE TOIT**~~ **CORRIGÉ le 2026-09-21** (cause : §6, « le pack
   VitaVehicle compte en pieds »). Avant : `CarDrivingTest` `min_up_dot = -0,9977`, `final_speed =
@@ -624,8 +602,7 @@ Les cinq étapes, une par commit :
 5. `SimulationCuller`, `MultiMesh`, mesure de perf sur les 12 vues. **à faire**
 
 Compositions arrêtées : **1 + 4** pour la grande vitesse (60,48 m, 90 km/h), **1 + 14 panachés**
-pour le fret (155,56 m, 55 km/h, 73 176 triangles). Repli prévu pour une carte faible : 1 + 10 (à ranger dans le
-mode graphique léger, §7).
+pour le fret (155,56 m, 55 km/h, 73 176 triangles). Repli prévu si l'UHD 750 souffre : 1 + 10.
 Pack de trains commité à l'étape 1 avec ses `.import` et un `LICENSE_ATTRIBUTION.txt` qui le classe
 en licence NON VÉRIFIÉE.
 
@@ -688,7 +665,7 @@ Deux mécanismes, et c'est la séparation qui tient le budget :
 
 **Le réglage se change sans recompiler** : `pool` sur le nœud `StreetLights`. À 0, il ne reste que les halos — la
 rue garde ses lampadaires visibles mais perd ses flaques de lumière au sol (comparaison au sol faite, la
-différence est nette). C'est le premier bouton à baisser sur une carte Intel (mode graphique léger, §7).
+différence est nette). C'est le bouton à baisser en premier si l'UHD 750 souffre.
 
 ### Pourquoi pas une vraie lumière par lampadaire, et pourquoi je ne peux pas le chiffrer ici
 
@@ -708,8 +685,7 @@ essayées, aucune ne départage les options sur la machine de développement :**
 Cause : cette machine rend la scène en ~1,8 ms quand l'UHD 750 met 30 à 100 ms (chiffres de `CityRenderOptimizer`).
 Le GPU n'est jamais le goulot ici, donc le coût des lumières ne sort pas. **Ne pas recommencer à chercher une
 cinquième métrique sur cette machine.** `RenderPerfTest` accepte désormais `--heure=`, `--bassin=` et
-`--toutes-lampes` : c'est là, sur une machine dont le GPU est le goulot (la carte Intel du mode graphique léger,
-§7), que la comparaison se fait.
+`--toutes-lampes` : c'est là, et sur l'UHD 750, que la comparaison se fait.
 
 Le choix du bassin borné ne repose donc pas sur un écart mesuré ici, mais sur le fait que **son pire cas est borné
 par construction** : 16 lumières quoi qu'il arrive, où que soit le joueur. Le coût de l'option à 1 540 est, lui,
