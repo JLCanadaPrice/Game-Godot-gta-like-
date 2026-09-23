@@ -31,8 +31,7 @@ travail imposée, les commandes exactes, les pièges déjà payés et l'état d'
   (`generated/places/lamp_heads.tres`), **616** depuis le vitrage et le porche de l'aérogare (deux
   matériaux), **617** depuis `LampGlass.gd`, **619** depuis `WheelSpinTest` (2026-09-21 au soir) et **622** depuis le
   parking à étages (`ParkingStructureKit.gd`, `ParkingStructureTest`, §11) et **625** depuis son éclairage
-  intérieur du 2026-09-22 (`parking_glow_material.tres` et les deux `parking_lights.tres`), **626** depuis l'outil
-  d'export des enveloppes de véhicules du 2026-09-23 (`EnveloppesExport.gd`, §12).
+  intérieur du 2026-09-22 (`parking_glow_material.tres` et les deux `parking_lights.tres`).
 
 ## 2. Méthode de travail (imposée, non négociable)
 
@@ -150,14 +149,6 @@ Autres cuissons, plus rares, hors de cette chaîne : `RoadTexturesBake`, `Terrai
 lampadaires, arbres, bancs, camions de caserne, **et les halos de lampadaire du cycle jour/nuit**). Vérifications
 sans effet de bord : `MapSpecCheck`, `RoadNetworkPreview`, `ProjectLoadCheck`.
 
-**Enveloppes par pièce des camions, bus et pick-up** (§12), à relancer si l'un de ces 18 modèles change : l'export Godot
-puis Blender, qui écrit `scenes/vehicles/enveloppes_pieces.json` et une image de contrôle par modèle (hors du dépôt) :
-
-```bash
-"$GODOT" --headless --path "$PROJET" --script res://scenes/vehicles/tools/EnveloppesExport.gd -- --sortie=<export.json>
-"<disque>:/p-recree/blender-5.2.2-windows-x64/blender.exe" -b --factory-startup --python scenes/vehicles/tools/enveloppes_pieces.py -- --entree=<export.json> --sortie="$PROJET/scenes/vehicles/enveloppes_pieces.json" --images=<dossier hors du dépôt>
-```
-
 **Toucher aux lampadaires impose DEUX cuissons hors chaîne** : `RoadBake` écrit les luminaires de la carte
 (`generated/roads/lamp_heads.tres`) et `DowntownFurnitureBake` ceux du centre-ville
 (`downtown/generated/lamp_heads.tres`). Oublier la seconde laisse 906 lampadaires sur 1 371 sans halo et sans
@@ -202,7 +193,7 @@ attendu.
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/DowntownStreetsTest.tscn
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/DowntownBuildingsTest.tscn
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/ShopBuildingsTest.tscn     # échec ANTÉRIEUR connu
-"$GODOT" --headless --path "$PROJET" --script res://scenes/world/map/tools/ProjectLoadCheck.gd   # attendu : 626 fichiers, 0 échec
+"$GODOT" --headless --path "$PROJET" --script res://scenes/world/map/tools/ProjectLoadCheck.gd   # attendu : 625 fichiers, 0 échec
 ```
 
 Outil d'inspection, hors batterie : `res://scenes/tests/VehicleSortTest.tscn` aligne les véhicules du catalogue
@@ -240,9 +231,7 @@ sans le plafond de 800x450 du §6). Une vue peut imposer sa propre heure par un 
 - **`WorldTrafficSmokeTest` et `NoclipTest` ont un aléa** : le premier signale parfois « 1 paires
   avec véhicule long », le second a lâché une fois sur trois sur « voiture à portée » (la voiture
   du trafic n'était pas encore arrivée). Avant d'accuser une modification, rejouer le test deux
-  fois, puis le rejouer sur `HEAD~1`. **Cause trouvée pour le premier le 2026-09-23** : il jugeait « même voie » dans le
-  repère d'UNE voiture, et prenait deux voitures côte à côte sur des voies voisines, dans un virage, pour une file
-  chevauchée. Corrigé (même voie dans les deux repères, §12) ; 3 réussites sur 3 depuis.
+  fois, puis le rejouer sur `HEAD~1`.
 - **Le GPU décroche en capture** (`0x887A0005`, `DXGI_ERROR_DEVICE_REMOVED` pendant `get_image()`).
   Ne jamais capturer au-dessus de **800x450**, et si une vue tombe quand même, la reprendre seule
   en **640x360** : les compteurs restent comparables entre les deux résolutions, pas les images.
@@ -1639,32 +1628,3 @@ ajouter des valeurs via le tableau ne touche pas l'original.
 - **Lieux de mission**, dans tous les cas : collision exacte sur l'hôpital, le commissariat, le casino, le ranch, la planque,
   l'hôtel et l'aéroport (arcades de l'hôpital et du commissariat praticables), et une collision pour l'avion de l'aéroport.
 - **On ne fait pas** : le mobilier, les poteaux et lampadaires ; les zones par os des PNJ vont au chantier combat (§7).
-
-### Véhicules : fait le 2026-09-23
-
-- **Déplacement : enveloppe convexe qui suit la silhouette** (`Car._poser_enveloppes`, une fois par modèle, cache
-  statique). Deux retouches : rétroviseurs ramenés à la largeur de la caisse sous la ceinture (bas 55 % de la hauteur), et
-  sous les pare-chocs une face VERTICALE jusqu'au sol, comme l'ancienne boîte : c'est elle que touchent les bordures de
-  0,15 m, et `_try_step_up` comme l'arrêt de la circulation en dépendent. La boîte englobante reste une DONNÉE
-  (`_boite_caisse`, `boite_caisse()`) : `_half_length`, hauteur de caisse, bande d'impact des taches, tests.
-- **Camions, bus et pick-up (18 modèles) : enveloppes PAR PIÈCE**, faites dans Blender (commandes au §4) : la caisse est
-  coupée aux marches de son profil lu au rayon (saut de plus de 0,35 m : cabine / benne, cabine / caisse), une enveloppe
-  par tronçon, par roue et par pièce séparée (tourelle du blindé). Les bus sortent en UN tronçon, leur enveloppe unique
-  étant déjà juste. Images de contrôle regardées (profil et trois-quarts) ; piège de lecture : l'enveloppe d'une caisse en
-  pavé coïncide avec ses faces et ne se voit pas au rendu, ce sont les étendues des points qui le prouvent.
-- Mesuré sur la forme réellement posée (72 modèles, rayons tous les 5 cm), débord devant la bande capot / pare-brise,
-  médiane : **voitures 1,46 -> 0,32 m, camions 1,31 -> 0,05 m, pick-up 1,50 -> 0,38 m, bus 0,29 -> 0,00 m** ;
-  au-dessus : voitures 0,37 -> 0,06, camions 0,26 -> 0,08, pick-up 0,73 -> 0,22 (l'enveloppe de la benne va jusqu'aux
-  ridelles : c'est la silhouette de profil, l'intérieur de la benne n'est pas creusé).
-- **Tirs : zone exacte sur la couche 4** (`Car.COUCHE_TIRS`, `StaticBody3D` « ZoneDeTir », triangles du modèle, masque
-  vide). Le rayon d'arme du joueur passe de `0b11` à `0b1011` : **avant, les balles traversaient les voitures.** Un tir
-  de face à hauteur de pare-brise s'arrête sur la vitre, 1,30 m derrière l'avant de l'ancienne boîte ; le rayon de sol d'un
-  PNJ (masque 1) ne voit ni la voiture ni sa zone de tir. Aucun dégât aux véhicules pour l'instant : le touché s'arrête là.
-- **Ce qui a bougé et pourquoi.** La voiture du joueur repose 2 cm plus bas (l'enveloppe s'arrête au bas des pneus, la
-  boîte avait 2 cm de marge). Une voiture sans conducteur s'arrête 27 cm plus près d'une bordure (c'est le bas du
-  pare-chocs qui touche, plus la pointe la plus avancée du modèle). `WorldTrafficSmokeTest` échouait 3 fois sur 6 avec les
-  enveloppes (0 sur 4 avec la boîte, même jour) : pas un défaut de suivi, voir §6 — le test est corrigé.
-- Tests adaptés : `VehicleCatalogTest` (lit `boite_caisse()`, vérifie les enveloppes convexes dans la boîte et la zone de
-  tir sur la couche 4), `ParkingStructureTest` et `WheelSpinTest` (lisaient la boîte comme `BoxShape3D`), `CarKerbTest`
-  (joue maintenant, en plus du modèle tiré au sort, un pick-up, un camion et un bus), `WorldTrafficSmokeTest` (même voie
-  dans les deux repères).

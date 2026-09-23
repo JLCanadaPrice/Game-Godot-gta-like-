@@ -452,20 +452,14 @@ func boite_caisse() -> AABB:
 #    touche les bordures de 0,15 m, et le franchissement du joueur (_try_step_up) comme l'arrêt de la circulation devant
 #    elles (CarKerbTest) en dépendent. Capot, toit et coffre gardent leur pente.
 # Repli : la boîte, si le modèle n'a rien de mesurable.
-# Camions, bus et pick-up : enveloppes PAR PIÈCE, faites dans Blender (tools/enveloppes_pieces.py, à partir de
-# tools/EnveloppesExport.gd) et lues ici : une enveloppe unique relierait le toit de la cabine au bout de la benne.
 static var _enveloppes := {}   # model_path -> Array de ConvexPolygonShape3D, dans le repère de la voiture
-const ENVELOPPES_PIECES := "res://scenes/vehicles/enveloppes_pieces.json"
-static var _pieces := {}       # id du modèle -> enveloppes (listes de points), lu une fois
-static var _pieces_lues := false
 
 func _poser_enveloppes(cs: CollisionShape3D) -> void:
 	if not _enveloppes.has(model_path):
-		var formes := _enveloppes_par_piece()
-		if formes.is_empty():
-			var coque := _enveloppe_silhouette()
-			if coque != null:
-				formes.append(coque)
+		var formes: Array = []
+		var coque := _enveloppe_silhouette()
+		if coque != null:
+			formes.append(coque)
 		_enveloppes[model_path] = formes
 	var formes: Array = _enveloppes[model_path]
 	if formes.is_empty():
@@ -481,27 +475,6 @@ func _poser_enveloppes(cs: CollisionShape3D) -> void:
 		c.name = "Enveloppe_%d" % i
 		c.shape = formes[i]
 		add_child(c)
-
-func _enveloppes_par_piece() -> Array:
-	if not _pieces_lues:
-		_pieces_lues = true
-		var f := FileAccess.open(ENVELOPPES_PIECES, FileAccess.READ)
-		if f != null:
-			var lu = JSON.parse_string(f.get_as_text())
-			if lu is Dictionary:
-				_pieces = lu
-	var data := VehicleCatalog.find_by_path(model_path)
-	var formes: Array = []
-	if data == null or not _pieces.has(data.id):
-		return formes
-	for env in _pieces[data.id]:
-		var pts := PackedVector3Array()
-		for p in env:
-			pts.append(Vector3(float(p[0]), float(p[1]), float(p[2])))
-		var forme := ConvexPolygonShape3D.new()
-		forme.points = pts
-		formes.append(forme)
-	return formes
 
 func _enveloppe_silhouette() -> ConvexPolygonShape3D:
 	var faces := PackedVector3Array()

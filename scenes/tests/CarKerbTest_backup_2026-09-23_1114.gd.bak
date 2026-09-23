@@ -15,21 +15,14 @@ extends Node3D
 #     au joueur (Car._try_step_up) plutôt qu'une rampe de collision posée le long des trottoirs, qui aurait
 #     ouvert les trottoirs à tout le monde.
 #
-# Depuis que la forme de déplacement suit la silhouette (enveloppes convexes, CLAUDE.md §12), la séquence est jouée sur
-# le modèle tiré au sort comme avant, PUIS sur un pick-up, un camion et un bus, dont les enveloppes sont faites par pièce :
-# leur face basse sous les pare-chocs est ce qui touche la bordure, il faut qu'elle soit là pour chaque famille.
-#
 # Lancer : Godot --headless res://scenes/tests/CarKerbTest.tscn
 
 const ARCADE := preload("res://scenes/vehicles/Car.tscn")
-const VehicleCatalog := preload("res://scripts/data/VehicleCatalog.gd")
 const MARCHE := 0.15
 const BORDURE_Z := 0.0        # z de la face verticale
 const VITESSES := [3.0, 6.0, 10.0, 15.0]
-const MODELES := ["", "city_pickup_01", "city_truck_01", "city_bus_01"]   # "" : tiré au sort par la circulation
 
 var _errors: Array[String] = []
-var _chemin := ""             # modèle imposé à la voiture de la séquence en cours ("" : tirage)
 
 
 func _ready() -> void:
@@ -51,19 +44,9 @@ func _slab(size: Vector3, at: Vector3) -> void:
 
 
 func _run() -> void:
-	for id: String in MODELES:
-		_chemin = ""
-		if id != "":
-			for m in VehicleCatalog.models():
-				if m.id == id:
-					_chemin = m.model_paths[0]
-			if _chemin == "":
-				_fail("modele %s introuvable au catalogue" % id)
-				continue
-		print("CAR_KERB_MODELE %s" % (id if id != "" else "tire au sort"))
-		for v: float in VITESSES:
-			await _montee(v)
-		await _sans_personne()
+	for v: float in VITESSES:
+		await _montee(v)
+	await _sans_personne()
 	if _errors.is_empty():
 		print("CAR_KERB_RESULT OK")
 	else:
@@ -134,8 +117,6 @@ func _sans_personne() -> void:
 
 func _car(z: float) -> CharacterBody3D:
 	var car: CharacterBody3D = ARCADE.instantiate()
-	if _chemin != "":
-		car.set("forced_model_path", _chemin)
 	add_child(car)
 	car.remove_from_group("vehicle")
 	# l'avant de la voiture arcade est son -Z : pour rouler vers +Z il faut un demi-tour

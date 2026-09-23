@@ -66,13 +66,7 @@ func _physics_process(delta: float) -> void:
 				continue
 			var rel := b.global_position - a.global_position
 			rel.y = 0.0
-			# MÊME VOIE dans le repère des DEUX voitures (2026-09-23). Jugé dans celui de `a` seulement, avec 25° d'écart de
-			# cap permis, deux voitures côte à côte sur des voies VOISINES passaient pour une file dans un virage : sonde de
-			# chevauchement, 5 paires « chevauchées de plus de 1 m » en 3 min ; pour les 4 relevées à l'instant du
-			# chevauchement, la voiture de derrière voyait l'autre à 2,54 à 3,18 m sur le côté (hors de son couloir de 2,5 m,
-			# ignorée à juste titre), jamais en contact. C'était l'aléa noté au CLAUDE.md §6 ; il est devenu fréquent quand
-			# les enveloppes ont remplacé les boîtes (3 échecs sur 6 contre 0 sur 4 le même jour).
-			if absf(rel.dot(side)) > SAME_LANE_LATERAL or absf(rel.dot(_flat_forward(b).cross(Vector3.UP))) > SAME_LANE_LATERAL:
+			if absf(rel.dot(side)) > SAME_LANE_LATERAL:
 				continue
 			var gap: float = absf(rel.dot(fwd)) - float(a.get("_half_length")) - float(b.get("_half_length"))
 			if gap > FOLLOW_RANGE:
