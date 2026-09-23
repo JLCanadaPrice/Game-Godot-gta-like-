@@ -14,23 +14,9 @@ extends RefCounted
 # MAX_STEP_HEIGHT reprend l'écart trottoir/route réellement mesuré ce soir
 # (dessus trottoir 0.408, dessus route 0.2 côté District / 0.05 côté
 # CityKitBuilder -> écart 0.208 à 0.358 m), avec une marge généreuse.
-#
-# HAUTEUR MESURÉE (2026-09-23, CLAUDE.md §12). On soulevait toujours de
-# MAX_STEP_HEIGHT, et le floor snapping du joueur fait lui aussi 0,40 m :
-# quand la capsule n'avait pas encore passé l'arête (marche vue à 0,2 m) ou
-# ne pouvait pas monter dessus (socle de 9 cm au pied d'un mur), le snap ne
-# retrouvait plus le sol resté 0,40 m plus bas et le joueur retombait en
-# ~0,25 s. Mesuré avec le vrai joueur : saut parasite de 40 cm à chaque
-# bordure de trottoir, à chaque marche d'un perron, contre les murs à socle
-# de l'hôpital. On lit donc le dessus de l'obstacle (rayon vertical
-# STEP_TOP_INSET derrière le point touché par le rayon bas) et on ne soulève
-# que de sa hauteur + STEP_CLEARANCE. Dessus introuvable (obstacle plus mince
-# que STEP_TOP_INSET) : on soulève de MAX_STEP_HEIGHT comme avant.
 const MAX_STEP_HEIGHT := 0.4
 const LOW_PROBE_Y := 0.05
 const PROBE_DIST := 0.6
-const STEP_TOP_INSET := 0.03
-const STEP_CLEARANCE := 0.02
 # Player.tscn et NPC.tscn utilisent la même CapsuleShape3D (radius 0.4,
 # height 1.8) -> demi-hauteur 0.9, capsule centrée sur global_position.
 const DEFAULT_CAPSULE_HALF_HEIGHT := 0.9
@@ -41,7 +27,6 @@ const DEFAULT_CAPSULE_HALF_HEIGHT := 0.9
 # Sans état entre deux appels : tous les champs lus sont réécrits avant usage.
 static var _low_params := PhysicsRayQueryParameters3D.new()
 static var _high_params := PhysicsRayQueryParameters3D.new()
-static var _top_params := PhysicsRayQueryParameters3D.new()
 static var _exclude: Array[RID] = [RID()]
 
 static func try_climb(body: CharacterBody3D, move_dir: Vector3, capsule_half_height: float = DEFAULT_CAPSULE_HALF_HEIGHT) -> void:
@@ -63,8 +48,7 @@ static func try_climb(body: CharacterBody3D, move_dir: Vector3, capsule_half_hei
 	_low_params.to = low_from + flat_dir * PROBE_DIST
 	_low_params.collision_mask = 1
 	_low_params.exclude = _exclude
-	var low_hit := space_state.intersect_ray(_low_params)
-	if low_hit.is_empty():
+	if space_state.intersect_ray(_low_params).is_empty():
 		return   # rien au ras du sol devant -> pas de marche à franchir
 
 	var high_from := Vector3(origin.x, foot_y + MAX_STEP_HEIGHT, origin.z)
@@ -75,16 +59,4 @@ static func try_climb(body: CharacterBody3D, move_dir: Vector3, capsule_half_hei
 	if not space_state.intersect_ray(_high_params).is_empty():
 		return   # obstacle encore présent en hauteur -> un mur, pas une marche
 
-	# dessus de la marche, juste derrière son arête
-	var edge: Vector3 = low_hit["position"] + flat_dir * STEP_TOP_INSET
-	_top_params.from = Vector3(edge.x, foot_y + MAX_STEP_HEIGHT, edge.z)
-	_top_params.to = Vector3(edge.x, foot_y, edge.z)
-	_top_params.collision_mask = 1
-	_top_params.exclude = _exclude
-	var top := space_state.intersect_ray(_top_params)
-	var lift := MAX_STEP_HEIGHT
-	if not top.is_empty():
-		var rise: float = (top["position"] as Vector3).y - foot_y
-		if rise > 0.01:
-			lift = minf(rise + STEP_CLEARANCE, MAX_STEP_HEIGHT)
-	body.global_position.y += lift
+	body.global_position.y += MAX_STEP_HEIGHT
