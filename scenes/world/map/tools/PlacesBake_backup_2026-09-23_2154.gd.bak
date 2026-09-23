@@ -624,9 +624,6 @@ func _safehouse() -> void:
 	_end("Planque de Cedar Lane", "safehouse")
 
 
-const SERRES_Z := -972.5
-
-
 func _greenfield() -> void:
 	var pad := _pad("n_green")
 	var top: float = pad.y
@@ -635,11 +632,9 @@ func _greenfield() -> void:
 	_parking(Vector2(-447.5, -924), Vector2(45, 24), top - 0.02, true)
 	_model("Industrial_Warehouse_alt03", Vector2(-446, -962), 0.0, top)
 	footprints.append(_rect_footprint("building", Vector2(-446, -962), Vector2(24, 24)))
-	# Serres centrées à z -972,5 (2026-09-23) : à -965, leurs 60 m allaient de -995 à -935 et passaient 5 m au-delà de la
-	# clôture nord (z -940). Elles vont maintenant de -1002,5 à -942,5, à 2,5 m des deux clôtures.
 	for x: float in [-530.0, -516.0, -502.0, -488.0]:
-		_greenhouse(Vector3(x, top, SERRES_Z), 9.0, 60.0)
-		footprints.append(_rect_footprint("building", Vector2(x, SERRES_Z), Vector2(9, 60)))
+		_greenhouse(Vector3(x, top, -965), 9.0, 60.0)
+		footprints.append(_rect_footprint("building", Vector2(x, -965), Vector2(9, 60)))
 	_fence(PackedVector2Array([Vector2(-540, -940), Vector2(-540, -1005), Vector2(-420, -1005), Vector2(-420, -940), Vector2(-540, -940)]), 2.2, STEEL, "chain", INF, [Vector2(-447, -940)])
 	_sign_board("GREENFIELD BOTANICALS", Vector2(-462, -911), 0.0, 5.0)
 	_end("Greenfield Botanicals", "complex")
