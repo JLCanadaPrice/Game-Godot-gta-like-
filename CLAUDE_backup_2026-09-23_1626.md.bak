@@ -3,9 +3,6 @@
 Fiche écrite pour être lue au début de chaque session : le contexte du projet, la méthode de
 travail imposée, les commandes exactes, les pièges déjà payés et l'état d'avancement.
 
-> **EN COURS (2026-09-23, 16 h 30) : lire d'abord la fin du §12, « EN COURS : reprendre ici ».** Une
-> régression (joueur laissé dans les bâtiments creux en sortie de voiture et de noclip) est à corriger avant tout.
-
 ## 1. Le projet
 
 - Jeu **open world mafia** façon *Tulsa King*, vue à la troisième personne, en **3D**.
@@ -1924,56 +1921,3 @@ raide ; l'escalier visible reste.
   - Trajets : inchangés (PedGraph 3 points près de `building_06`, Circuit 0), donc les rampes qui débordent sur les trottoirs
     du centre-ville ne touchent aucun trajet de PNJ.
   - Tests : MapDistrictsTest, DowntownBuildingsTest, MapGateTest OK ; ProjectLoadCheck 627, 0 échec.
-
-### EN COURS (2026-09-23, 16 h 30) : reprendre ici
-
-Consignes du joueur pour cette série : 1. rampes invisibles sous les escaliers d'entrée trop hauts, sans remonter la
-limite de 40 cm du joueur — **FAIT** (e204792, ci-dessus) ; 2. anti-apparition du LoopSpawner à corriger « en visant
-1 m au-dessus du point comme le culler », vérifier à la sonde que le nombre de refus devient réaliste et que la
-circulation se remplit toujours normalement ; 3. le coût physique d'environ 2 ms : **NE RIEN TOUCHER**, le joueur le
-teste en jeu. Un commit par point, tests concernés seulement. Il pousse lui-même.
-
-**A. RÉGRESSION trouvée, PAS ENCORE CORRIGÉE (aucun code modifié)**, causée par la collision exacte de tous les
-bâtiments (2534f55, d68f46c, f7bf8b7) et passée inaperçue parce que NoclipTest n'était pas dans les tests lancés à ces
-étapes. Une coque creuse n'expulse plus un joueur posé dedans ; une boîte pleine le faisait (Jolt le sortait par la
-face la plus proche).
-- **Sortie de voiture** : `Player._exit_vehicle` pose le joueur sur `ExitPoint` (côté gauche, x local -1,7) sans rien
-  vérifier. Sonde `sonde_sortie` (berline puis camion garés flanc gauche à 5 cm d'un mur, vrai joueur `_enter_vehicle`
-  puis `_exit_vehicle`) : **10 cas sur 10 dans le bâtiment** (GeorgianHome_alt04, Warehouse_alt01, Loft_alt06,
-  ModernSkyscraper_alt04, OldCottage_alt01 ; ExitPoint de 0,38 à 0,69 m derrière le mur). Log `sortie_avant.log`.
-- **Sortie de noclip** : `Player._land_after_noclip` ne reconnaît « dans un bâtiment » que si une capsule chevauche le
-  monde statique, ce qui est faux dans une coque creuse. **NoclipTest échoue** sur « sortie dans un bâtiment » : V à
-  30 m dans le gratte-ciel Mk2, le joueur reste dedans (y 24,68) au lieu d'être reposé sur le toit (115,0 m). Le
-  sous-test des zones (« voiture à portée ») passe.
-- **Correction prévue** (sauvegarder `Player.gd` avant) :
-  1. `_exit_vehicle` : premier point libre parmi ExitPoint (côté conducteur), son symétrique côté passager, derrière
-     puis devant (d'après `boite_caisse()`), sinon sur le toit si le plafond le permet, sinon ExitPoint comme avant.
-     Libre = le segment du centre de la voiture (à la hauteur de sortie) au point ne touche pas le monde statique
-     (masque 1, voiture exclue) ET une capsule réduite (0,3 x 1,2, comme `_land_after_noclip`) au point ne chevauche
-     ni le monde statique ni une autre voiture (masque 1 | 4).
-  2. `_land_after_noclip` : « dedans » aussi si le point est ENFERMÉ, c'est-à-dire un rayon vers le haut et 8 rayons
-     horizontaux tous arrêtés par la MÊME forme (même corps, même forme). Sous des arcades, dans une cour, sous un
-     pont, un rayon s'échappe. **À mesurer avant de valider** : le parking à étages (fait pour être parcouru :
-     garde-corps, rampes, étage au-dessus) ne doit pas passer pour « enfermé » ; sinon l'exclure par sa forme
-     (`parking_collision.res`).
-- **Vérifier** : `sonde_sortie -- --tag=apres` (tout « ok » attendu), NoclipTest, ParkingStructureTest (le vrai joueur
-  sort d'une voiture sur le toit et au rez d'un parking). Commit à part, présenté comme la correction d'une régression
-  des commits de collision exacte.
-
-**B. Point 2, anti-apparition : PAS COMMENCÉ dans le code.** Mesures « avant » faites sur ce PC (déterministes) :
-- `sonde_vue` : critère actuel du LoopSpawner (rayon vers le point AU SOL) : **14 refus sur 37 007** poses dans le
-  cône (`vue_avant.log`).
-- `sonde_remplissage` (World.tscn, spawners actifs) : Founders Plaza 86 voitures / 315 PNJ à 5 s, puis 93 (10 s),
-  106 (20 s), 118 (30 s), 142 (45 s), 163 voitures à 60 s (PNJ 315) ; Echo Circle 49 voitures / 78 PNJ tout du long ;
-  artère de l'aéroport 2 puis 3 voitures, 0 PNJ (`remplissage_avant*.log`).
-- RoundaboutTrafficTest : OK, « 300 s : 45 sorties, au plus 0 voiture(s) figée(s) 40 s, échantillons voie intérieure
-  106 / extérieure 147 » (222 s de lancement) ; WorldTrafficSmokeTest : OK (62 s) ; NoclipTest : ÉCHEC (A).
-- À faire : sauvegarder `LoopSpawner.gd` ; dans `_is_visible_to_player`, viser `spawn_pos + Vector3.UP * 1.0` (comme
-  `SimulationCuller.target_height`) ; faire calculer à `sonde_vue` l'ancien ET le nouveau critère ; relancer
-  `sonde_remplissage`, RoundaboutTrafficTest, WorldTrafficSmokeTest, NoclipTest (après A) ; mettre à jour la puce
-  anti-apparition du §7 ; un commit.
-
-**C. Sondes** : copiées hors du dépôt dans `D:/p-recree/sondes/2026-09-23_collision_exacte/` avec leurs logs « avant ».
-Leurs `.tscn` pointent encore vers le dossier temporaire de la session
-(`C:/Users/pa30oie/AppData/Local/Temp/claude/D--p-recree/<session>/scratchpad/sonde/`) : corriger le `path=` du script
-avant de les relancer. Toujours sous `timeout` : une erreur d'analyse laisse Godot bloqué.
