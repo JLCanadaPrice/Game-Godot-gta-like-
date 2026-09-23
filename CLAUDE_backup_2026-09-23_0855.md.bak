@@ -46,14 +46,7 @@ travail imposée, les commandes exactes, les pièges déjà payés et l'état d'
 - **Chaîne de cuisson COMPLÈTE, dans l'ordre documenté, sans sauter une seule étape** (§4). Sauter
   `DistrictsBake`/`PlacesBake` fait perdre le nivellement des parcelles et casse `MapDistrictsTest` ;
   sauter `VegetationBake` laisse une carte qui n'est pas celle que la chaîne produit.
-- **Tests headless après chaque étape** (§5) — sur un petit correctif, seulement les 2-3 tests directement
-  concernés (règles ci-dessous) —, **un commit séparé par étape**.
-- **VÉRIFICATIONS : RÈGLES DU JOUEUR (2026-09-23).** Elles valent pour TOUTE vérification demandée ailleurs dans
-  cette fiche (batterie du §5, mesures du §3, cuisson du §4, simulation longue du §10) :
-  - **pas de simulation longue de 30 minutes** (sonde de files du §10) **sans demande explicite** du joueur ;
-  - **pas de batterie complète sur un petit correctif** : jouer seulement les 2-3 tests directement concernés ;
-  - **une vérification qui prend plus de 10 minutes : demander d'abord** au joueur s'il la veut ;
-  - **les tests longs, c'est le joueur qui les lance**, quand il en a besoin.
+- **Tests headless après chaque étape** (§5), **un commit séparé par étape**.
 - **Captures au niveau du sol**, à hauteur d'homme ou de conduite, jamais vues du ciel : c'est
   comme ça que le jeu se joue. Les images restent hors du dépôt, seuls les chiffres vont dans le
   message de commit.
@@ -519,15 +512,12 @@ débogage sur `V`.
 - **appartements reliés à la carte** (les intérieurs existent, ils ne sont pas raccordés aux
   bâtiments de la carte) ;
 - **concessionnaire enrichi** ;
-- ~~**bug : 34 erreurs « instance déjà libérée » dans `Car._cycle_de_suivi`**~~ **CORRIGÉ le 2026-09-23.** La remontée
-  de chaîne affectait le `_devant` d'une autre voiture à `cur`, typée `Object` : ce `_devant` date de SA dernière
-  revérification et peut désigner une voiture libérée depuis (budget d'arêtes épuisé ; recyclage de `LoopSpawner` en
-  jeu). Il est maintenant lu sans type et testé par `is_instance_valid` AVANT l'affectation ; chaîne rompue -> `false`,
-  ce que la fonction interrompue par l'erreur rendait déjà (mesuré). Vérification déterministe (A arrêtée suit B, B
-  libérée, C remonte la chaîne) : 1 erreur -> 0, mêmes valeurs rendues sur 4 cas, vrai cycle compris. Aucun autre cas
-  dans `Car.gd` : `_devant`, `_passe_outre`, `diag_objet`, `_diag_carrefour_objet` et les paramètres typés ne reçoivent
-  que des voitures de l'index de la frame physique en cours, donc vivantes. Mesuré en 4.7.2 : une instance libérée
-  vaut `== null`, passe sans erreur dans une variable NON typée, et, passée à un paramètre typé, interrompt l'APPELANT ;
+- **bug : 34 erreurs « instance déjà libérée » dans `Car._cycle_de_suivi`**, plus tard. Elles sortent à chaque
+  simulation longue depuis `57159aa` (le chantier des interblocages, §10) : la chaîne des voitures suivies garde un
+  `Car` qui a été recyclé par `LoopSpawner` entre deux images. Sans conséquence visible sur la conduite (le cycle est
+  simplement abandonné), mais ça pollue la sortie de tous les tests de trafic. La correction tient probablement en un
+  `is_instance_valid()` dans la remontée de chaîne ; ne pas la faire au passage d'un autre chantier, elle mérite son
+  commit et sa simulation longue ;
 - **flaques de sang des PNJ à hauteur fixe**, plus tard : `NPC._die` pose la flaque à `POOL_GROUND_Y` = 0,1 m et, faute
   d'animation, le corps à y = 0,5 — sous le sol ou en l'air partout où la carte n'est pas à 0 (plateau de l'aéroport,
   ponts, parkings). Même famille que la sortie de voiture à y = 1,3 (§11, étape 5). Vérifier aussi `Car._add_body_stain` ;
@@ -1228,7 +1218,7 @@ l'entrée aussi, jamais celle par laquelle on est arrivé : plus de demi-tour su
 
 **`RoundaboutTrafficTest`** (dans la batterie) : 5 min de vraie circulation, joueur sur l'îlot ; échoue si
 3 voitures de la zone sont figées 40 s, si moins de 20 voitures sortent de l'anneau, ou si une voie ne sert
-jamais. Il ne remplace pas la simulation longue (seulement à la demande du joueur, §2), qui se fait avec la sonde de toute la carte (30 min de jeu,
+jamais. Il ne remplace pas la simulation longue, qui se fait avec la sonde de toute la carte (30 min de jeu,
 gel coupé).
 
 **Simulation longue, résultat** : 30 min de jeu sur toute la carte, gel coupé, 186 voitures en
