@@ -1577,11 +1577,9 @@ borné lui aussi, toujours actif.
 
 ## 12. Collisions : inventaire mesuré et décisions (2026-09-23)
 
-Le joueur voulait refaire TOUTES les collisions « à la forme réelle » (combat, poursuites, missions). **ERRATUM du même
-jour** : l'inventaire lui a d'abord annoncé que « 92 % des façades collent déjà à leur boîte », et il a réduit sa demande à
-« ce qui rapporte » sur cette base. **C'ÉTAIT FAUX** (erreur de signe dans la sonde, piège 4 ci-dessous) : corrigé, la boîte
-déborde de plus de 1 m sur un tiers des façades, et 71 % des bâtiments de la carte ont un escalier, un perron ou un socle
-englouti. Mesures faites par sondes jetables (hors dépôt), sur le monde chargé et sur les scènes cuites chargées seules.
+Le joueur voulait refaire TOUTES les collisions « à la forme réelle » (combat, poursuites, missions). L'inventaire mesuré a
+changé la demande : **92 % des façades collent déjà à leur boîte à hauteur d'homme, on ne refait que ce qui rapporte.**
+Mesures faites par sondes jetables (hors dépôt), sur le monde chargé et sur les scènes cuites chargées seules.
 
 **Ce qui existe.**
 
@@ -1597,22 +1595,12 @@ englouti. Mesures faites par sondes jetables (hors dépôt), sur le monde charg�
 | trottoirs du centre-ville | 1 418 | boîtes (dalles : exactes par nature) | 17 016 | 371 k |
 | routes / terrain / troncs | 133 / 242 / 308 | exactes (trimesh, heightmaps) | 0,21 M / 1,84 M / 0,16 M | — |
 
-**Écarts mesurés.** Bâtiments : rayons tous les 0,25 m à 0,3 / 1,0 / 1,7 m du sol, depuis 5 cm HORS de la boîte, distance
-signée corrigée. La boîte déborde du vrai mur de plus de 0,5 m sur **54,7 % des façades de la carte (53,5 % au centre-ville)**,
-de plus de 1 m sur **33,0 % (35,9 %)**, de plus de 2 m sur 19,2 % (22,0 %). Pires modèles (part des façades avec plus de 1 m
-de vide) : Factory_alt01 100 % (x5), CommercialBuilding_alt05 100 % (x28), IndustrialBuilding_alt03 95 % (x7), éolienne en treillis
-92 % (x6), kiosque 89 %, CommercialBuilding alt03/04/02/01 86 à 88 % (x47), DataCenter 85 %, GeneralStore 82 % (x14).
-**Escaliers, perrons, socles et rampes ENGLOUTIS** (mesure demandée par le joueur, de 0 à 1,2 m) : **843 bâtiments sur 1 191 à
-la carte (70,8 %, 29 modèles) et 170 sur 438 au centre-ville (38,8 %, 17 modèles).** Méthode qui tient : le mur au plus proche
-des rayons horizontaux à 1,5 / 2 / 2,5 / 3 m (une fenêtre ne le cache pas à toutes les hauteurs), un obstacle sous 0,6 m au moins
-0,25 m devant lui, et la forme lue par des rayons VERTICAUX entre la face de la boîte et ce mur seulement. Ce que c'est, vu en
-coupe à 1,2 m (Blender, colorée par la hauteur) pour trois d'entre eux : la maison georgienne alt04 (x64 à la carte) a un perron
-sur TOUTE la largeur de la façade, palier à 0,75 m et marche devant, que la boîte avale en entier ; la maison familiale alt04 une
-marche d'entrée de ~1,3 x 1 m ; l'immeuble commercial alt04 (x25), en L, un socle de 0,25 à 0,37 m qui déborde des murs tout
-autour, et TOUT l'angle intérieur du L, ~11 x 11 m de sol vide, dans sa boîte. Selon la sonde, sans image : les autres
-georgiennes (x214) des perrons à marches de ~3 m de large, les maisons familiales et grandes maisons (x456) une marche ou des
-marches d'entrée de 1,3 à 1,8 m, les maisons de ville (x55) des marches, les commerces et usines un socle de 0,15 à 0,56 m, le
-tribunal (x7) un grand escalier. Lieux (faces de boîte à 1 m du sol avec plus de 1 m de vide) : commissariat 80 %, hôpital
+**Écarts mesurés.** Bâtiments : rayons tous les 0,25 m à 0,3 / 1,0 / 1,7 m du sol, depuis 5 cm HORS de la boîte. La boîte
+déborde du vrai mur sur **7,9 % des façades de la carte et 7,2 % du centre-ville**, et c'est le même pourcentage à 0,5, 1 et
+2 m : ailleurs le mur est au ras de la boîte, et là où il ne l'est pas c'est profond (porche, arcade, baie ouverte, passage).
+Pires modèles (part des façades avec plus de 1 m de vide) : éolienne en treillis 92 % (x6), kiosque 44 %, IndustrialBuilding_alt03
+23 % (x7), GeneralStore 21 % (x14), Courthouse 15 % (x7), Restaurant 15 % (x11), CommercialBuilding alt01/03/04/05 13 à 16 %
+(x73), StorageFacility 12 % (x8). Lieux (faces de boîte à 1 m du sol avec plus de 1 m de vide) : commissariat 80 %, hôpital
 72 % (ses arcades), grange du ranch 56 %, casino 52 %, planque 27 %, hôtel 20 % ; **l'avion de l'aéroport n'a AUCUNE
 collision.** Véhicules (72 modèles, rayons tous les 5 cm) : au pare-chocs la boîte colle (0,08 m en médiane), mais devant la
 bande capot / pare-brise elle déborde de **1,44 m en médiane, 3,22 m au pire** ; une enveloppe convexe unique
@@ -1639,13 +1627,7 @@ shrinkwrap, bisect ; aucune décomposition convexe installée. `TriangleMesh` (`
 l'intérieur passe derrière le mur et compte toute la profondeur comme du vide — première mesure à 37 % au lieu de 8 %. Partir
 HORS de la boîte. (2) En jeu, `CityRenderOptimizer` convertit une partie des bâtiments du centre-ville en MultiMesh au démarrage :
 mesurer sur les scènes cuites chargées seules. (3) En GDScript, un `PackedFloat32Array` rangé dans un `Array` est COPIÉ : lui
-ajouter des valeurs via le tableau ne touche pas l'original. (4) **L'ERREUR QUI A FAUSSÉ LA DÉCISION** : en corrigeant (1), la
-distance a été écrite `(p - touché) · dir` au lieu de `(touché - p) · dir`, bornée à 0 : tout rayon qui touchait un mur valait 0,
-seuls ceux qui traversaient toute la boîte comptaient. D'où « 7,9 % », et le MÊME pourcentage à 0,5, 1 et 2 m — c'était le
-signal : un compteur qui ne dépend pas de son seuil est cassé. Trouvée parce que la sonde des perrons rendait 0 partout et que
-sa trace montrait 0,00 m à toutes les hauteurs. (5) Des rayons horizontaux à 1,2 m passent par les fenêtres : le mur sous
-l'appui passe pour un perron. (6) Un rayon VERTICAL ne rencontre jamais un mur vertical : une marche verticale « jusqu'au mur »
-entre dans le bâtiment et prend son plancher surélevé pour un perron. Trois chiffres faux (28 %, 82 %, 0 %) avant le bon.
+ajouter des valeurs via le tableau ne touche pas l'original.
 
 **Décisions du joueur (2026-09-23).**
 - **Véhicules** : forme de déplacement = enveloppe convexe qui suit la SILHOUETTE (capot penché, toit, coffre ; rétroviseurs et
@@ -1653,8 +1635,7 @@ entre dans le bâtiment et prend son plancher surélevé pour un perron. Trois c
   camions, bus et pick-up : **enveloppes par pièce faites dans Blender**. Jamais de trimesh pour le déplacement (mesure ci-dessus).
 - **Bâtiments** : son problème principal, ce sont les ESCALIERS et PERRONS devant les entrées, que la boîte engloutit. Mesure à
   faire de 0 à 1,2 m tous les 10 cm AVANT de décider : si beaucoup de bâtiments sont concernés, collision exacte partout ; sinon,
-  les modèles concernés seulement. **Mesuré : 70,8 % à la carte, 38,8 % au centre-ville — « beaucoup ». Rien construit : le
-  chiffre lui est donné avant, avec l'erratum ci-dessus.**
+  les modèles concernés seulement.
 - **Lieux de mission**, dans tous les cas : collision exacte sur l'hôpital, le commissariat, le casino, le ranch, la planque,
   l'hôtel et l'aéroport (arcades de l'hôpital et du commissariat praticables), et une collision pour l'avion de l'aéroport.
 - **On ne fait pas** : le mobilier, les poteaux et lampadaires ; les zones par os des PNJ vont au chantier combat (§7).
