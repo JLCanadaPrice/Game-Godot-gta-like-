@@ -4,11 +4,8 @@ extends Node
 #  - lots (generated/buildings/lots.json) : emprise hors des routes du modèle RoadNetwork (marge au bord des rubans et
 #    des plateaux), hors de l'eau, du centre-ville et des lieux réservés, sans chevauchement entre lots ;
 #  - affichage : les BuildingField ont créé une instance GPU par lot ;
-#  - collision : un rayon descendant touche la collision de chaque bâtiment au-dessus du sol, au centre de l'emprise ou, à
-#    défaut, en un point d'une grille de 5 x 5 sur l'emprise. Depuis la collision exacte (2026-09-23, CLAUDE.md §12), le
-#    centre peut être vide : l'angle intérieur d'un immeuble en L, une cour basse ;
-#  - terrain aplani : sous chaque emprise (quatre points intérieurs), le sol est au niveau du lot. Ces rayons ignorent la
-#    collision des bâtiments, qu'ils toucheraient sinon au plancher ou au perron d'un bâtiment exact.
+#  - collision : un rayon descendant au centre de chaque bâtiment touche sa collision au-dessus du sol ;
+#  - terrain aplani : sous chaque emprise (quatre points intérieurs), le sol est au niveau du lot.
 #
 # Lancer : Godot --headless --fixed-fps 60 --quit-after 3000 res://scenes/tests/MapDistrictsTest.tscn
 
@@ -19,6 +16,7 @@ const LOTS := "res://scenes/world/map/generated/buildings/lots.json"
 const ROAD_CLEAR := 1.0            # m libres entre l'emprise et le bord d'un ruban
 const BUCKET := 32.0
 const GROUND_TOLERANCE := 0.5
+const TRIMESH := ["Business_GasStation"]
 
 var _errors: Array[String] = []
 
@@ -192,36 +190,23 @@ func _check_physics(lots: Array) -> void:
 	var first_roof := ""
 	var first_ground := ""
 	var worst := 0.0
-	var buildings: Array[RID] = []
-	for body in find_children("Collision", "StaticBody3D", true, false):
-		if String(body.get_parent().name).begins_with("BuildingCell_"):
-			buildings.append((body as StaticBody3D).get_rid())
 	for lot: Dictionary in lots:
 		var rect := _rect(lot)
 		var c: Vector2 = rect["c"]
 		var base := float(lot["base"])
-		var top := base + float(lot["size"][1]) + 30.0
-		var hit := _ray(space, Vector3(c.x, top, c.y), Vector3(c.x, base - 5.0, c.y))
-		if not _roof(hit, base):
-			var grid := {}
-			for i in 5:
-				for j in 5:
-					var g: Vector2 = c + (rect["r"] as Vector2) * rect["h"].x * (-0.8 + 0.4 * i) + (rect["f"] as Vector2) * rect["h"].y * (-0.8 + 0.4 * j)
-					grid = _ray(space, Vector3(g.x, top, g.y), Vector3(g.x, base - 5.0, g.y))
-					if _roof(grid, base):
-						break
-				if _roof(grid, base):
-					break
-			if not _roof(grid, base):
-				var body: Node = null if hit.is_empty() else hit["collider"]
-				no_roof += 1
-				if first_roof == "":
-					first_roof = "%s (%.0f, %.0f) : %s" % [lot["name"], c.x, c.y, "rien" if body == null else "%s à %.1f m" % [body.name, (hit["position"] as Vector3).y]]
+		var hit := _ray(space, Vector3(c.x, base + float(lot["size"][1]) + 30.0, c.y), Vector3(c.x, base - 5.0, c.y))
+		var body: Node = null if hit.is_empty() else hit["collider"]
+		if body == null or not String(body.get_parent().name).begins_with("BuildingCell_") or (hit["position"] as Vector3).y < base + 2.0:
+			no_roof += 1
+			if first_roof == "":
+				first_roof = "%s (%.0f, %.0f) : %s" % [lot["name"], c.x, c.y, "rien" if body == null else "%s à %.1f m" % [body.name, (hit["position"] as Vector3).y]]
+		if lot["name"] in TRIMESH:
+			continue
 		for sx: float in [-0.35, 0.35]:
 			for sz: float in [-0.35, 0.35]:
 				var h: Vector2 = rect["h"]
 				var q: Vector2 = c + (rect["r"] as Vector2) * h.x * sx + (rect["f"] as Vector2) * h.y * sz
-				var ground := _ray(space, Vector3(q.x, base + 1.0, q.y), Vector3(q.x, base - 4.0, q.y), buildings)
+				var ground := _ray(space, Vector3(q.x, base + 1.0, q.y), Vector3(q.x, base - 4.0, q.y))
 				var gap := INF if ground.is_empty() else absf((ground["position"] as Vector3).y - base)
 				worst = maxf(worst, gap if gap != INF else 99.0)
 				if gap > GROUND_TOLERANCE:
@@ -236,14 +221,8 @@ func _check_physics(lots: Array) -> void:
 		_errors.append("%d points d'emprise hors niveau, premier %s" % [bad_ground, first_ground])
 
 
-func _ray(space: PhysicsDirectSpaceState3D, from: Vector3, to: Vector3, exclude: Array[RID] = []) -> Dictionary:
-	return space.intersect_ray(PhysicsRayQueryParameters3D.create(from, to, 1, exclude))
-
-
-# Collision d'une cellule de bâtiments touchée à 2 m au moins au-dessus du lot.
-func _roof(hit: Dictionary, base: float) -> bool:
-	return not hit.is_empty() and String((hit["collider"] as Node).get_parent().name).begins_with("BuildingCell_") \
-			and (hit["position"] as Vector3).y >= base + 2.0
+func _ray(space: PhysicsDirectSpaceState3D, from: Vector3, to: Vector3) -> Dictionary:
+	return space.intersect_ray(PhysicsRayQueryParameters3D.create(from, to, 1))
 
 
 func _finish() -> void:
