@@ -9,7 +9,6 @@ const CATALOG := "res://scenes/world/map/data/building_catalog.json"
 const PACK := "res://assets/building_pack_everythinglibrary/"
 const OUT := "res://scenes/world/map/generated/buildings"
 const Windows := preload("res://scenes/world/map/tools/BuildingWindows.gd")
-const Rampes := preload("res://scenes/world/map/tools/RampesEntree.gd")
 
 var catalog := {}                        # nom -> entrée du catalogue
 var material: StandardMaterial3D
@@ -84,16 +83,11 @@ func get_model(name: String) -> Dictionary:
 # Forme de collision EXACTE d'un modèle (2026-09-23, CLAUDE.md §12) : ses triangles dans son repère, à deux faces comme la
 # collision des lieux et des parkings (un joueur poussé derrière une face simple la traverserait). Enregistrée à côté de
 # son maillage : la carte (DistrictsBake) et le centre-ville (DowntownBuildingsBake) posent le même fichier, que Godot ne
-# charge et que Jolt ne construit qu'une fois pour tous les exemplaires. Les rampes invisibles des entrées trop hautes
-# pour StepClimb (RampesEntree) y sont ajoutées, et vérifiées contre le maillage à chaque cuisson.
+# charge et que Jolt ne construit qu'une fois pour tous les exemplaires.
 func collision_of(name: String) -> Shape3D:
 	if not _collisions.has(name):
-		var faces := (get_model(name)["mesh"] as Mesh).get_faces()
-		for faute: String in Rampes.verifier(name, faces):
-			push_error("RAMPES_ENTREE " + faute)
-		faces.append_array(Rampes.triangles(name))
 		var forme := ConcavePolygonShape3D.new()
-		forme.set_faces(faces)
+		forme.set_faces((get_model(name)["mesh"] as Mesh).get_faces())
 		forme.backface_collision = true
 		var chemin := OUT.path_join("models/%s_collision.res" % name)
 		ResourceSaver.save(forme, chemin)

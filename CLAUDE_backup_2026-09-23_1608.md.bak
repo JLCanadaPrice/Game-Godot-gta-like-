@@ -32,8 +32,7 @@ travail imposée, les commandes exactes, les pièges déjà payés et l'état d'
   matériaux), **617** depuis `LampGlass.gd`, **619** depuis `WheelSpinTest` (2026-09-21 au soir) et **622** depuis le
   parking à étages (`ParkingStructureKit.gd`, `ParkingStructureTest`, §11) et **625** depuis son éclairage
   intérieur du 2026-09-22 (`parking_glow_material.tres` et les deux `parking_lights.tres`), **626** depuis l'outil
-  d'export des enveloppes de véhicules du 2026-09-23 (`EnveloppesExport.gd`, §12), **627** depuis les rampes invisibles
-  des entrées (`RampesEntree.gd`, même jour).
+  d'export des enveloppes de véhicules du 2026-09-23 (`EnveloppesExport.gd`, §12).
 
 ## 2. Méthode de travail (imposée, non négociable)
 
@@ -212,7 +211,7 @@ attendu.
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/DowntownStreetsTest.tscn
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/DowntownBuildingsTest.tscn
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/ShopBuildingsTest.tscn     # échec ANTÉRIEUR connu
-"$GODOT" --headless --path "$PROJET" --script res://scenes/world/map/tools/ProjectLoadCheck.gd   # attendu : 627 fichiers, 0 échec
+"$GODOT" --headless --path "$PROJET" --script res://scenes/world/map/tools/ProjectLoadCheck.gd   # attendu : 626 fichiers, 0 échec
 ```
 
 Outil d'inspection, hors batterie : `res://scenes/tests/VehicleSortTest.tscn` aligne les véhicules du catalogue
@@ -587,11 +586,9 @@ débogage sur `V`.
   dans le cône de vue, avec ou sans collision exacte. Le rayon vise le point d'apparition AU SOL : parti de la caméra, il
   rase la chaussée et bute sur une bordure ou une bosse avant d'arriver, donc le point passe pour caché. Viser 1 m au-dessus,
   comme `SimulationCuller`, changerait ce comportement : à décider avec le joueur ;
-- ~~**marches trop hautes pour `StepClimb`** devant certaines entrées~~ **FAIT le 2026-09-23** : rampes de collision
-  invisibles devant 10 entrées (§12, « Rampes invisibles des entrées »), la limite de 0,40 m du joueur restant où elle est.
-  La première liste donnée au joueur était FAUSSE pour 3 modèles sur 6 : le cabinet médical, les petits commerces alt01 et
-  le DataCenter n'ont pas d'escalier d'entrée (c'étaient des socles le long des murs et des cônes décoratifs), et 7 autres
-  modèles en avaient un (les georgiennes alt01, 02, 03, 05, la pizzeria, le pub, la maison de ville) ;
+- **marches trop hautes pour `StepClimb`** (0,40 m au plus) devant certaines entrées, relevé le 2026-09-23 (§12) : il faut
+  sauter pour atteindre le palier des maisons georgiennes alt04 (dernière contremarche de 0,40 m), des supérettes (0,48),
+  du cabinet médical (0,44), des petits commerces alt01 (0,61), du DataCenter (0,64). À décider avec le joueur ;
 - ~~**bug : `PlayerCarPhysics` finit SUR LE TOIT**~~ **CORRIGÉ le 2026-09-21** (cause : §6, « le pack
   VitaVehicle compte en pieds »). Avant : `CarDrivingTest` `min_up_dot = -0,9977`, `final_speed =
   11,99` ; `CarDropTest` `up_dot = -0,9999` et 20,39 m de dérive (mêmes chiffres sur `0344b79`, donc
@@ -1874,50 +1871,3 @@ centre-ville, en commençant par les modèles à perron de la carte, chaque éta
     utiliser `du -b` ou `stat` ;
   - (f) **les temps de ce PC varient d'une course à l'autre** : 4,4 à 5,9 ms pour la même scène. Pour un avant/après, il
     faut alterner les modes plusieurs fois et prendre des médianes.
-
-### Rampes invisibles des entrées : faites le 2026-09-23
-
-Décision du joueur : NE PAS remonter la limite de 0,40 m de `StepClimb` (il grimperait sur des murets et des capots
-partout), mais poser, comme dans le parking à étages, une rampe de collision invisible là où l'escalier d'entrée est trop
-raide ; l'escalier visible reste.
-
-- **Relevé.**
-  - Audit de tous les modèles posés : une capsule du joueur par ligne de façade (tous les 0,25 m), et le palier de chaque
-    ligne mesuré au rayon, soit le plus haut plat de 0,40 m devant le mur à 1 m de haut.
-  - Chaque cas trouvé a été regardé à l'image (rendu du modèle seul, fenêtré, 800x450) : c'est ce qui sépare une entrée
-    d'un socle.
-  - Dix modèles ont une entrée qu'on n'atteint pas à pied :
-    - un bloc de pierre plein de 0,50 à 0,68 m devant la porte des georgiennes alt01, 02, 03 et 05 ;
-    - le perron de l'alt04, contremarche de 0,40 m sous un palier à 0,75 m ;
-    - le deck de 0,43 m des deux supérettes ;
-    - la terrasse de 0,68 m de la pizzeria ;
-    - l'escalier arrière du pub, trois marches de 0,24 m trop raides pour StepClimb, qui montent LE LONG de la façade ;
-    - la dernière marche de la maison de ville, trop peu profonde devant la porte.
-  - Ce ne sont PAS des entrées, et il n'y a pas de rampe :
-    - les socles le long des murs du cabinet médical, des petits commerces alt01, des lofts, de TraditionalSkyscraper_alt02,
-      d'IndustrialBuilding_alt03 et de Mk3 ;
-    - les cônes décoratifs du DataCenter ;
-    - l'arrière et les côtés des decks et terrasses ;
-    - les côtés des blocs de pierre.
-  - À part, non traité : la cour-parking d'IndustrialBuilding_alt06 est surélevée de 0,36 à 0,66 m (2 exemplaires).
-- **Code.**
-  - `RampesEntree.gd` : un quadrilatère par entrée, dans le repère du modèle, du pied (y = -0,05, le terrain aplani) au bord
-    avant du palier (5 mm au-dessus).
-  - `BuildingModels.collision_of` ajoute ces triangles à la forme exacte du modèle, donc sur la carte et au centre-ville, et
-    appelle `RampesEntree.verifier` à chaque cuisson. Le contrôle exige le palier au bord haut, et aucun dessus du modèle
-    au-dessus de la rampe.
-- **Pente.** 40° au plus, la limite de sol du joueur étant 45°. Moins si un nez de marche l'exige : la rampe passe au-dessus
-  de CHAQUE nez, leçon du parking. Cela donne 30,3° au pub (nez de la marche basse) et 27,5° à la maison de ville.
-- **Ce qu'on voit.**
-  - Les marches étant plus raides que 40°, la rampe commence devant la boîte du modèle, de 0,21 à 0,59 m selon le modèle
-    (0 pour le pub et la maison de ville).
-  - Le joueur y monte donc avec les pieds un peu au-dessus des marches visibles, 0,2 à 0,35 m au plus fort (perron de l'alt04).
-- **Vérifié.**
-  - Labo, de face : les lignes inatteignables tombent à 0 sur les façades équipées. Il ne reste que les côtés des blocs et
-    l'arrière des decks.
-  - Le VRAI joueur au clavier, un exemplaire de la carte et un du centre-ville par modèle : **19 montées sur 19 arrivent au
-    palier**, 0 ou 1 image hors sol (15 cm au plus).
-  - En situ sur 40 exemplaires : 0 capsule ni voiture enfermée ou coincée.
-  - Trajets : inchangés (PedGraph 3 points près de `building_06`, Circuit 0), donc les rampes qui débordent sur les trottoirs
-    du centre-ville ne touchent aucun trajet de PNJ.
-  - Tests : MapDistrictsTest, DowntownBuildingsTest, MapGateTest OK ; ProjectLoadCheck 627, 0 échec.
