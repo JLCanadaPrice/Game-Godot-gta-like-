@@ -10,7 +10,7 @@ extends SceneTree
 #  - place (Founders Plaza) : kiosque à musique au centre ; îlot civique : église ; îlots des boutiques : emprise des
 #    boutiques et une marge laissées libres ; îlot du casino : emprise du lieu (MapSpec.POIS, bâti par PlacesBake) libre.
 # Un seul matériau par famille de modèles (couleurs de sommet EverythingLibrary partagées avec la carte, palette du
-# pack urbain, façades des gratte-ciels), maillages à niveaux de détail ; collision exacte (cf. _forme) ; boîte d'occultation
+# pack urbain, façades des gratte-ciels), maillages à niveaux de détail ; collision en boîte ; boîte d'occultation
 # rentrée dans le volume plein du bâtiment, descendue au plus près du sol, vérifiée par rayons sur le maillage du modèle
 # (cf. _checked_occluders).
 # Tirages déterministes (graine fixe).
@@ -872,14 +872,10 @@ func _parking_praticable(mdl: Dictionary) -> void:
 	mdl["places"] = p["places"]
 	_stats["parking_lumieres"] = e["compte"]
 
-# Forme de collision d'un modèle : les triangles exacts de son maillage, à deux faces, dans son repère, enregistrés une
-# fois et partagés par ses exemplaires.
-#  - Parking à étages (2026-09-21) : ses triangles retaillés (ParkingStructureKit.collision), rampes invisibles de
-#    l'escalier comprises ; la boîte pleine en faisait un bloc de 22 m sur lequel on ne marchait que sur le toit.
-#  - Tous les autres (2026-09-23, décision du joueur, CLAUDE.md §12) : la boîte pleine avalait perrons, marches et socles
-#    (38,8 % des bâtiments du centre-ville) et bouchait arcades et renfoncements. Un modèle EverythingLibrary prend la
-#    forme de la carte (BuildingModels.collision_of, même fichier), un gratte-ciel ou un bâtiment du pack urbain la sienne,
-#    à côté de son maillage.
+# Forme de collision d'un modèle : sa boîte pleine, SAUF pour le parking à étages, qu'on doit pouvoir parcourir à pied
+# et en voiture à chaque niveau (2026-09-21) : les triangles exacts de son maillage (ParkingStructureKit.collision),
+# dans son repère, enregistrés une fois et partagés par ses exemplaires. La boîte pleine faisait de chaque parking
+# un bloc de 22 m sur lequel on ne marchait que sur le toit.
 func _forme(key: String, mdl: Dictionary) -> Shape3D:
 	if key == Parking.CLE:
 		var forme := ConcavePolygonShape3D.new()
@@ -889,18 +885,10 @@ func _forme(key: String, mdl: Dictionary) -> Shape3D:
 		ResourceSaver.save(forme, chemin)
 		_stats["parking_collision_triangles"] = (mdl["faces"] as PackedVector3Array).size() / 3
 		return load(chemin)
-	var exacte: Shape3D
-	if key.begins_with("el:"):
-		exacte = el.collision_of(key.get_slice(":", 1))
-	else:
-		var forme := ConcavePolygonShape3D.new()
-		forme.set_faces((mdl["mesh"] as Mesh).get_faces())
-		forme.backface_collision = true
-		var chemin := MODELS.path_join("models/%s_collision.res" % key.replace(":", "_"))
-		ResourceSaver.save(forme, chemin)
-		exacte = load(chemin)
-	_stats["collision_exacte_triangles"] = int(_stats.get("collision_exacte_triangles", 0)) + (exacte as ConcavePolygonShape3D).get_faces().size() / 3
-	return exacte
+	var aabb: AABB = mdl["aabb"]
+	var box := BoxShape3D.new()
+	box.size = Vector3(aabb.size.x, aabb.end.y, aabb.size.z)
+	return box
 
 
 func _write_scene() -> String:
@@ -927,6 +915,7 @@ func _write_scene() -> String:
 		mi.add_to_group(&"city_building", true)
 		node.add_child(mi)
 		mi.owner = root
+		var aabb: AABB = mdl["aabb"]
 		var shape_key: String = p["model"]
 		if not _shapes.has(shape_key):
 			_shapes[shape_key] = _forme(shape_key, mdl)
@@ -937,6 +926,8 @@ func _write_scene() -> String:
 		var cs := CollisionShape3D.new()
 		cs.name = "CollisionShape3D"
 		cs.shape = _shapes[shape_key]
+		if _shapes[shape_key] is BoxShape3D:
+			cs.position = Vector3(aabb.get_center().x, aabb.end.y * 0.5, aabb.get_center().z)
 		body.add_child(cs)
 		cs.owner = root
 		if String(p["model"]) == Parking.CLE:

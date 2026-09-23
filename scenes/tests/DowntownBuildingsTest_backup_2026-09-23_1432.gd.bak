@@ -2,10 +2,8 @@ extends Node
 
 # Test headless des bâtiments du centre-ville reconstruit (chantier centre-ville, étape D3), monde complet (World.tscn,
 # spawners coupés) :
-#  - chaque bâtiment de Downtown/Buildings : maillage, collision (un rayon descendant touche son toit, au centre de son
-#    emprise ou, à défaut, en un point d'une grille de 5 x 5 : depuis la collision exacte du 2026-09-23, CLAUDE.md §12, le
-#    centre d'un immeuble en L ou d'un bâtiment à puits de jour est vide), emprise dans l'intérieur de son îlot, hors des
-#    boutiques, des lieux (places.json) et des autres bâtiments ;
+#  - chaque bâtiment de Downtown/Buildings : maillage, collision (un rayon descendant au centre de son emprise touche
+#    son toit), emprise dans l'intérieur de son îlot, hors des boutiques, des lieux (places.json) et des autres bâtiments ;
 #  - silhouette : gratte-ciels du SkyScraperBundle au cœur (les six retenus présents et marqués sans boîte
 #    lointaine ; Scraper001 retiré le 2026-09-20, sans fenêtre, remplacé par un second Mk6), plus haut
 #    bâtiment du cœur au moins deux fois plus haut que la moyenne des îlots bas ;
@@ -100,14 +98,7 @@ func _ready() -> void:
 		occluders_low += 1 if low else 0
 		var c := foot.get_center()
 		var hit := space.intersect_ray(PhysicsRayQueryParameters3D.create(Vector3(c.x, box.end.y + 20.0, c.y), Vector3(c.x, box.position.y - 2.0, c.y), 1))
-		var roof := _roof(hit, building, box)
-		for i in 5:
-			for j in 5:
-				if roof:
-					break
-				var q := foot.position + foot.size * Vector2(0.1 + 0.2 * i, 0.1 + 0.2 * j)
-				roof = _roof(space.intersect_ray(PhysicsRayQueryParameters3D.create(Vector3(q.x, box.end.y + 20.0, q.y), Vector3(q.x, box.position.y - 2.0, q.y), 1)), building, box)
-		if not roof:
+		if hit.is_empty() or not (hit["collider"] as Node).get_parent() == building or (hit["position"] as Vector3).y < box.position.y + 2.0:
 			no_roof += 1
 			if first == "":
 				first = "%s sans toit touché (%s)" % [building.name, "rien" if hit.is_empty() else (hit["collider"] as Node).get_path()]
@@ -167,11 +158,6 @@ func _ready() -> void:
 	if casino_meshes == 0:
 		_errors.append("Scarlet Jack sans bâtiment")
 	_finish()
-
-
-# Collision du bâtiment touchée à 2 m au moins au-dessus de son pied.
-func _roof(hit: Dictionary, building: Node, box: AABB) -> bool:
-	return not hit.is_empty() and (hit["collider"] as Node).get_parent() == building and (hit["position"] as Vector3).y >= box.position.y + 2.0
 
 
 func _finish() -> void:

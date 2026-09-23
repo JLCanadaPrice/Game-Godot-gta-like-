@@ -73,9 +73,9 @@ const OCCLUDER_MIN_HEIGHT := 10.0
 const OCCLUDER_MIN_AREA := 250.0
 # COLLISION EXACTE (2026-09-23, décision du joueur, CLAUDE.md §12) : chaque bâtiment reçoit les triangles de son modèle,
 # à deux faces, au lieu de sa boîte englobante, qui avalait perrons, marches et socles (70 % des bâtiments de la carte)
-# et bouchait arcades et renfoncements. Une forme par modèle, enregistrée en .res et partagée par tous ses exemplaires, et
-# avec le centre-ville (BuildingModels.collision_of). Fait en deux étapes : les 33 modèles à perron (2534f55), puis tous
-# les autres. La station-service était seule exacte jusque-là (TRIMESH_MODELS, à une face, forme incrustée dans la scène).
+# et bouchait arcades et renfoncements. Une forme par modèle, enregistrée en .res et partagée par tous ses exemplaires
+# (_exact_shape). Fait en deux étapes : les 33 modèles à perron (2534f55), puis tous les autres. La station-service était
+# seule exacte jusque-là (TRIMESH_MODELS, à une face, forme incrustée dans la scène).
 
 # --- allées d'accès ---------------------------------------------------------------------------------------------
 # Chantier « relier les bâtiments à la route ». Rien n'est deviné : _try_lot pose le centre du lot à
@@ -786,8 +786,20 @@ func _baked_model(name: String) -> Dictionary:
 		return baked[name]
 	var source := models.get_model(name)
 	baked[name] = {"mesh": source["mesh"], "aabb": source["aabb"], "triangles": source["triangles"],
-			"shape": models.collision_of(name)}
+			"shape": _exact_shape(name, source["mesh"])}
 	return baked[name]
+
+
+# Triangles du modèle dans son repère, à deux faces comme la collision des lieux et des parkings (un joueur poussé
+# derrière une face simple la traverserait), enregistrés une fois par modèle : la scène ne garde que le chemin, et Jolt
+# ne construit la forme qu'une fois pour tous les exemplaires.
+func _exact_shape(name: String, mesh: Mesh) -> Shape3D:
+	var forme := ConcavePolygonShape3D.new()
+	forme.set_faces(mesh.get_faces())
+	forme.backface_collision = true
+	var chemin := OUT.path_join("models/%s_collision.res" % name)
+	ResourceSaver.save(forme, chemin)
+	return load(chemin)
 
 
 # --- scène ----------------------------------------------------------------------------------------------------------

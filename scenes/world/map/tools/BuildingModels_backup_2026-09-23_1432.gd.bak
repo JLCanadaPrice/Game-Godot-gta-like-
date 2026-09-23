@@ -12,8 +12,7 @@ const Windows := preload("res://scenes/world/map/tools/BuildingWindows.gd")
 
 var catalog := {}                        # nom -> entrée du catalogue
 var material: StandardMaterial3D
-var _baked := {}                         # nom -> {"mesh": Mesh, "aabb": AABB, "triangles": int}
-var _collisions := {}                    # nom -> forme de collision exacte (collision_of)
+var _baked := {}                         # nom -> {"mesh": Mesh, "aabb": AABB, "triangles": int, "trimesh": Shape3D}
 var _windows := {}                       # nom -> carreaux vitrés du modèle (BuildingWindows)
 var _mv := PackedVector3Array()
 var _mn := PackedVector3Array()
@@ -73,26 +72,14 @@ func size_of(name: String) -> Vector3:
 	return Vector3(float(entry["size"][0]), float(entry["size"][1]), float(entry["size"][2]))
 
 
-# {"mesh", "aabb" (repère du modèle), "triangles"}
-func get_model(name: String) -> Dictionary:
+# {"mesh", "aabb" (repère du modèle), "triangles", "trimesh" (forme de collision exacte, sur demande)}
+func get_model(name: String, with_trimesh := false) -> Dictionary:
 	if not _baked.has(name):
 		_bake(name)
-	return _baked[name]
-
-
-# Forme de collision EXACTE d'un modèle (2026-09-23, CLAUDE.md §12) : ses triangles dans son repère, à deux faces comme la
-# collision des lieux et des parkings (un joueur poussé derrière une face simple la traverserait). Enregistrée à côté de
-# son maillage : la carte (DistrictsBake) et le centre-ville (DowntownBuildingsBake) posent le même fichier, que Godot ne
-# charge et que Jolt ne construit qu'une fois pour tous les exemplaires.
-func collision_of(name: String) -> Shape3D:
-	if not _collisions.has(name):
-		var forme := ConcavePolygonShape3D.new()
-		forme.set_faces((get_model(name)["mesh"] as Mesh).get_faces())
-		forme.backface_collision = true
-		var chemin := OUT.path_join("models/%s_collision.res" % name)
-		ResourceSaver.save(forme, chemin)
-		_collisions[name] = load(chemin)
-	return _collisions[name]
+	var info: Dictionary = _baked[name]
+	if with_trimesh and info["trimesh"] == null:
+		info["trimesh"] = (info["mesh"] as Mesh).create_trimesh_shape()
+	return info
 
 
 func _bake(name: String) -> void:
@@ -122,7 +109,7 @@ func _bake(name: String) -> void:
 	importer.generate_lods(25.0, 60.0, [])
 	var path := OUT.path_join("models/%s.res" % name)
 	ResourceSaver.save(importer.get_mesh(), path)
-	_baked[name] = {"mesh": load(path), "aabb": aabb, "triangles": _mi.size() / 3}
+	_baked[name] = {"mesh": load(path), "aabb": aabb, "triangles": _mi.size() / 3, "trimesh": null}
 
 
 func _collect(node: Node, parent: Transform3D) -> void:
