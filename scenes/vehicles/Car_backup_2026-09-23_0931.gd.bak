@@ -1681,153 +1681,12 @@ func _on_crush_zone_entered(body: Node3D) -> void:
 		body.take_damage(999, body.global_position, Vector3.UP)   # réutilise la mort PNJ + sang au sol
 		_add_body_stain()
 
-# TACHE DE SANG SUR LA CAISSE RÉELLE (2026-09-23). La tache était posée à z = -2,02 fixe, le pare-chocs de la voiture
-# d'essai d'origine. Relevé sur les 72 modèles contre l'avant de leur boîte de collision : 62 l'avaient à plus de 5 cm
-# DERRIÈRE leur point le plus avancé (autocar 3,72 m, bus 3,24 : invisible dans la caisse), 5 à plus de 5 cm DEVANT,
-# dans le vide (micro-citadine 0,79 m). Et même au bon z, un quad vertical n'épouse pas un avant galbé : jugées sur la
-# vraie caisse (un point par centimètre), aucune des 1 728 taches tirées (24 par modèle) n'y était entièrement posée.
-# Elle est maintenant posée SUR la carrosserie, mesurée sur ses triangles comme les roues : un rayon tiré de devant vers
-# l'arrière, à une hauteur d'impact de piéton, touche le premier triangle du modèle ; la tache s'y couche selon la
-# normale, TACHE_DECOLLEMENT au-dessus, et n'est gardée que si son centre est vu de face et que ses points, un tous les
-# TACHE_PAS au plus, ont la carrosserie derrière eux, entre TACHE_JEU_MIN et TACHE_JEU_MAX, et rien de la voiture devant.
-# 9 points laissaient passer des taches derrière les barreaux d'une calandre ou à cheval sur un creux ; et les ROUES comptent
-# comme obstacle (jamais comme support) : sans elles, des taches se posaient sous un garde-boue, face à la roue,
-# invisibles. Sinon elle rétrécit, puis on tire un autre point. Rangée sous le modèle : elle suit son basculement.
-const TACHE_DECOLLEMENT := 0.015          # m au-dessus de la surface, contre le z-fighting
-const TACHE_JEU_MIN := 0.005              # m : un point plus près de la surface l'effleure (creux) et s'y enfonce vite
-const TACHE_JEU_MAX := 0.03               # m : un point de la tache plus loin de la surface flotte dans le vide
-const TACHE_DEVANT := 0.5                 # m devant la tache où rien de la voiture ne doit se trouver
-const TACHE_HAUTEUR := Vector2(0.25, 1.2) # m au-dessus du bas de la caisse : jambes et bassin d'un piéton
-const TACHE_LARGEUR := 0.4                # fraction de la largeur de la caisse, de part et d'autre de l'axe
-const TACHE_ESSAIS := 24
-const TACHE_REDUCTIONS := 4               # tailles essayées au même point : x 1, 0,7, 0,49, 0,34
-const TACHE_META := &"tache_de_sang"
-
-# Triangles du modèle dans son propre repère, une fois par modèle (toutes les voitures d'un même modèle ont la même
-# carrosserie) : [TriangleMesh, un octet par triangle, 1 s'il est à une roue]. TriangleMesh fait l'intersection en C++.
-static var _carrosseries := {}
-
 func _add_body_stain() -> void:
-	if _stains >= MAX_STAINS or _model == null:
+	if _stains >= MAX_STAINS:
 		return
-	var cs := get_node_or_null("CollisionShape3D") as CollisionShape3D
-	var boite: BoxShape3D = cs.shape as BoxShape3D if cs != null else null
-	var carrosserie := _carrosserie()
-	if boite == null or carrosserie.is_empty():
-		return
-	var vers_voiture := _xf_dans_voiture(_model)
-	var ctx := {"tm": carrosserie[0], "roues": carrosserie[1], "vers_modele": vers_voiture.affine_inverse(),
-			"vers_voiture": vers_voiture}
-	var bas := cs.position.y - boite.size.y * 0.5
-	var avant := cs.position.z - boite.size.z * 0.5
-	var haut := maxf(minf(TACHE_HAUTEUR.y, boite.size.y * 0.85), TACHE_HAUTEUR.x)
-	for essai in TACHE_ESSAIS:
-		var x := randf_range(-TACHE_LARGEUR, TACHE_LARGEUR) * boite.size.x
-		var y := bas + randf_range(TACHE_HAUTEUR.x, haut)
-		var impact := _toucher_carrosserie(ctx, Vector3(x, y, avant - 1.0), Vector3(x, y, avant + boite.size.z))
-		if impact.is_empty() or impact["roue"]:
-			continue
-		var n: Vector3 = impact["normal"]
-		if n.z > -0.35 or n.y < -0.6:
-			continue    # dessus du capot, flanc, dessous de caisse : une face qu'un piéton debout devant ne voit pas
-		var taille := Vector2(randf_range(0.25, 0.5), randf_range(0.25, 0.5))
-		var roulis := randf() * TAU
-		for reduction in TACHE_REDUCTIONS:
-			var xf := _pose_tache(impact["position"], n, roulis)
-			if _tache_sur_carrosserie(ctx, xf, taille):
-				_poser_tache(ctx["vers_modele"] * xf, taille)
-				return
-			taille *= 0.7
-
-func _carrosserie() -> Array:
-	if _carrosseries.has(model_path):
-		return _carrosseries[model_path]
-	var liste := _model.find_children("*", "MeshInstance3D", true, false)
-	if _model is MeshInstance3D:
-		liste.append(_model)
-	var faces := PackedVector3Array()
-	var roues := PackedByteArray()
-	for n in liste:
-		var mi := n as MeshInstance3D
-		if mi.mesh == null or mi.has_meta(TACHE_META) or not _visible_dans_modele(mi):
-			continue
-		var f := _xf_dans_modele(mi) * mi.mesh.get_faces()
-		faces.append_array(f)
-		var marque := PackedByteArray()
-		marque.resize(f.size() / 3)
-		marque.fill(1 if _dans_une_roue(mi) else 0)
-		roues.append_array(marque)
-	var resultat := []
-	if not faces.is_empty():
-		var tm := TriangleMesh.new()
-		if tm.create_from_faces(faces):
-			resultat = [tm, roues]
-	_carrosseries[model_path] = resultat
-	return resultat
-
-# Premier triangle du modèle sur le segment de -> a (repère de la voiture) : point et normale tournée vers `de`, dans le
-# repère de la voiture, et s'il est à une roue ; vide si rien.
-func _toucher_carrosserie(ctx: Dictionary, de: Vector3, a: Vector3) -> Dictionary:
-	var vers_modele: Transform3D = ctx["vers_modele"]
-	var vers_voiture: Transform3D = ctx["vers_voiture"]
-	var hit := (ctx["tm"] as TriangleMesh).intersect_segment(vers_modele * de, vers_modele * a)
-	if hit.is_empty():
-		return {}
-	var n := (vers_voiture.basis * (hit["normal"] as Vector3)).normalized()
-	if n.dot(a - de) > 0.0:
-		n = -n
-	var roues: PackedByteArray = ctx["roues"]
-	var i := int(hit["face_index"])
-	return {"position": vers_voiture * (hit["position"] as Vector3), "normal": n, "roue": i < roues.size() and roues[i] == 1}
-
-# Repère de la tache dans celui de la voiture : couchée sur la surface, sa face (+Z du quad) selon la normale n,
-# tournée de `roulis` autour d'elle.
-func _pose_tache(p: Vector3, n: Vector3, roulis: float) -> Transform3D:
-	var x := Vector3.UP.cross(n)
-	if x.length() < 0.01:
-		x = Vector3.RIGHT
-	x = x.normalized()
-	return Transform3D(Basis(n, roulis) * Basis(x, n.cross(x), n), p + n * TACHE_DECOLLEMENT)
-
-# La tache épouse-t-elle la caisse ? Son centre vu de face (rien de la voiture devant lui vers l'avant), puis une grille
-# de points à TACHE_PAS au plus, les coins d'abord (ce sont eux qui lâchent le plus souvent) : la carrosserie derrière
-# chacun, jamais une roue, entre TACHE_JEU_MIN et TACHE_JEU_MAX, tournée comme la tache, et rien de la voiture devant
-# sur TACHE_DEVANT. Un pas relatif (5 x 5 points, 12,5 cm sur une tache de 50) laissait un barreau de pare-buffle
-# passer entre deux points.
-const TACHE_PAS := 0.04
-
-func _tache_sur_carrosserie(ctx: Dictionary, xf: Transform3D, taille: Vector2) -> bool:
-	if not _toucher_carrosserie(ctx, xf.origin + Vector3(0, 0, -0.001), xf.origin + Vector3(0, 0, -5.0)).is_empty():
-		return false
-	for c in [Vector2(-0.5, -0.5), Vector2(0.5, -0.5), Vector2(-0.5, 0.5), Vector2(0.5, 0.5)]:
-		if not _point_sur_carrosserie(ctx, xf, c * taille):
-			return false
-	var nx := int(ceil(taille.x / TACHE_PAS)) + 1
-	var ny := int(ceil(taille.y / TACHE_PAS)) + 1
-	for i in nx:
-		for j in ny:
-			if (i == 0 or i == nx - 1) and (j == 0 or j == ny - 1):
-				continue
-			var local := Vector2((float(i) / (nx - 1) - 0.5) * taille.x, (float(j) / (ny - 1) - 0.5) * taille.y)
-			if not _point_sur_carrosserie(ctx, xf, local):
-				return false
-	return true
-
-func _point_sur_carrosserie(ctx: Dictionary, xf: Transform3D, local: Vector2) -> bool:
-	var n := xf.basis.z
-	var p := xf * Vector3(local.x, local.y, 0.0)
-	var dessous := _toucher_carrosserie(ctx, p + n * TACHE_DEVANT, p - n * TACHE_JEU_MAX)
-	if dessous.is_empty() or dessous["roue"]:
-		return false    # dans le vide, ou sur une roue
-	var jeu := (p - (dessous["position"] as Vector3)).dot(n)
-	# jeu trop petit : quelque chose de la voiture devant le point, ou la surface qui l'effleure ; normale trop
-	# écartée : une face qui ne porte pas la tache (flanc, arête)
-	return jeu >= TACHE_JEU_MIN and (dessous["normal"] as Vector3).dot(n) >= 0.5
-
-func _poser_tache(xf_modele: Transform3D, taille: Vector2) -> void:
 	_stains += 1
 	var q := QuadMesh.new()
-	q.size = taille
+	q.size = Vector2(randf_range(0.25, 0.5), randf_range(0.25, 0.5))
 	var mat := StandardMaterial3D.new()
 	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
@@ -1836,33 +1695,10 @@ func _poser_tache(xf_modele: Transform3D, taille: Vector2) -> void:
 	var mi := MeshInstance3D.new()
 	mi.mesh = q
 	mi.material_override = mat
-	mi.transform = xf_modele
-	mi.set_meta(TACHE_META, true)
-	_model.add_child(mi)
-
-func _dans_une_roue(n: Node) -> bool:
-	for w in _wheels:
-		if w == n or w.is_ancestor_of(n):
-			return true
-	return false
-
-func _visible_dans_modele(n: Node) -> bool:
-	var cur: Node = n
-	while cur != null and cur != _model:
-		if cur is Node3D and not (cur as Node3D).visible:
-			return false
-		cur = cur.get_parent()
-	return true
-
-# Transformation d'un noeud du modèle dans le repère du MODÈLE (cf. _xf_dans_voiture).
-func _xf_dans_modele(n: Node) -> Transform3D:
-	var t := Transform3D.IDENTITY
-	var cur: Node = n
-	while cur != null and cur != _model:
-		if cur is Node3D:
-			t = (cur as Node3D).transform * t
-		cur = cur.get_parent()
-	return t
+	# collé juste devant le pare-choc (la voiture faisant face à -Z)
+	mi.position = Vector3(randf_range(-0.7, 0.7), randf_range(0.1, 0.9), -2.02)
+	mi.rotation_degrees = Vector3(0, 180, randf_range(0.0, 360.0))
+	add_child(mi)
 
 
 # Feux de freinage allumés : la voiture décélère, ou elle est à l'arrêt. Lu par VehicleLights.

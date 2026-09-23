@@ -533,16 +533,10 @@ débogage sur `V`.
   et le corps de repli à +0,5. Sonde jetable, flaque - sol avant -> après : plateau de l'aéroport (sol 5,28) -5,18 ->
   +0,05 ; pont routier (-782 ; -693, sol 9,05) -8,95 -> +0,05 ; **trottoir à plat (sol 0,20) -0,10 -> +0,05 : même à
   plat, la flaque était enterrée partout où marchent les PNJ** ; chaussée (0,05) inchangée ; corps de repli à +0,50
-  partout. **`Car._add_body_stain` n'avait pas l'hypothèse de hauteur** (la tache vit dans le repère de la voiture),
-  mais la même famille EN LONGUEUR : tache à z = -2,02 fixe, le pare-chocs de la voiture d'essai ; 62 modèles sur 72
-  l'avaient à plus de 5 cm derrière leur avant (autocar 3,72 m), 5 dans le vide devant (micro-citadine 0,79 m).
-  **CORRIGÉ le même jour** : la tache est posée SUR la carrosserie mesurée (triangles du modèle, `TriangleMesh`, une
-  fois par modèle), couchée selon la normale, gardée seulement si ses points (un tous les 4 cm) ont la caisse derrière
-  eux à 0,5-3 cm et rien devant, roues comprises comme obstacle ; rangée sous le modèle. Sonde jetable, 24 taches par
-  modèle jugées un point par centimètre : **0 bonne sur 1 728 avant, 1 712 à 1 719 après** (trois tirages) ; restent
-  1 à 3 taches à un détail plus fin que 4 cm (rivet du blindé SWAT, tube de pare-buffle, fente de calandre) et 7 à 13
-  non posées (0,4 à 0,75 %, surtout la jeep lowpoly : aucun emplacement propre en 24 essais). Coût : 1,2 ms au pire
-  par tache, 2,1 ms à la première d'un modèle ;
+  partout. **`Car._add_body_stain` n'a pas l'hypothèse de hauteur** (la tache vit dans le repère de la voiture), mais
+  la même famille EN LONGUEUR : tache à z = -2,02 fixe, le pare-chocs de la voiture d'essai. Relevé sur les 72 modèles
+  contre l'avant de leur boîte de collision : 62 l'ont à plus de 5 cm DERRIÈRE (autocar 3,72 m, bus 3,24 : invisible),
+  5 à plus de 5 cm DEVANT, dans le vide (micro-citadine 0,79 m, `normalcar2` 0,34). **Pas encore corrigé** ;
 - **mode graphique léger**, plus tard, pour les PC à carte graphique Intel : c'est le gel des PC de l'école (§6)
   qui l'a fait inscrire. Réglages déjà en place qu'il pourra piloter : le bassin de vraies lumières
   (`StreetLights.pool`, 16, §9), les ombres du soleil (`DirectionalLight3D`, portée 240 m), le LOD des bâtiments
