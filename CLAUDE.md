@@ -3,8 +3,13 @@
 Fiche écrite pour être lue au début de chaque session : le contexte du projet, la méthode de
 travail imposée, les commandes exactes, les pièges déjà payés et l'état d'avancement.
 
-> **Série du 2026-09-23 terminée** (fin du §12) : régression des bâtiments creux corrigée, anti-apparition du
-> `LoopSpawner` réparée (refus sous 150 m). Le coût physique d'environ 2 ms reste NON TOUCHÉ : le joueur le teste en jeu.
+> **Deux séries du 2026-09-23 terminées.** La première (fin du §12) : régression des bâtiments creux corrigée,
+> anti-apparition du `LoopSpawner` réparée (refus sous 150 m). La seconde, le soir : lac du quai gardé tel que le joueur
+> l'a retouché dans `World.tscn` (§6) ; parkings à étages — escalier sorti de l'entrée, poteaux retirés, places en
+> créneau, lumières fixes toujours allumées, plus de fenêtre allumée (§11, étape 12) ; petite piste de l'aéroport et
+> serres de Greenfield rentrées dans leurs clôtures ; feu d'obstacle clignotant au sommet de Mk1 (§9) ; trois packs
+> d'accessoires convertis, prêts à poser mais PAS posés (§7). Le coût physique d'environ 2 ms reste NON TOUCHÉ : le
+> joueur le teste en jeu.
 
 ## 1. Le projet
 
