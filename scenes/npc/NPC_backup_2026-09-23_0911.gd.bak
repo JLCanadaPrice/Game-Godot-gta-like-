@@ -26,12 +26,7 @@ const EJECTED_EDGES_BUDGET := 14   # une fois sur le réseau piéton : même bud
 
 const MAX_HP := 100
 const CORPSE_DESPAWN := 5.0
-# Flaque et corps de repli posés sur le SOL MESURÉ sous le PNJ à sa mort (_ground_below), plus à une hauteur fixe du
-# monde d'essai plat (flaque à y = 0,1, corps à 0,5) : la carte a du relief (plateau de l'aéroport à 5,3 m, ponts,
-# parkings à étages), et même à plat un trottoir est à +0,20, où la flaque était enterrée de 10 cm (mesuré le
-# 2026-09-23). 5 cm : le décalage qu'elle avait au-dessus de la chaussée d'essai (dessus à 0,05), contre le z-fighting.
-const POOL_GROUND_OFFSET := 0.05
-const FALLBACK_BODY_HEIGHT := 0.5   # centre de la capsule couchée au-dessus du sol (repli sans animation de mort)
+const POOL_GROUND_Y := 0.1   # flaque légèrement au-dessus du pavé (top ~0.05) -> pas de z-fighting
 
 # Skins civils possibles (pack Quaternius, même squelette/anims que le Player).
 # JAMAIS Suit.gltf (réservé joueur). King/Spacesuit exclus (hors thème). Swat retiré : base de la
@@ -125,19 +120,6 @@ func _ground_ride_height(at: Vector3) -> float:
 	if hit.is_empty():
 		return DEFAULT_RIDE_HEIGHT
 	return (hit["position"] as Vector3).y + CAPSULE_HALF_HEIGHT + RIDE_MARGIN
-
-# Dessus du monde statique sous le PNJ au moment de sa mort : calque 1 seulement (ni PNJ, ni véhicules : un toit de
-# voiture n'est pas le sol, cf. CLAUDE.md §9). Le rayon part juste au-dessus de la tête, pas 5 m plus haut comme
-# celui de la marche : il ne peut pas toucher un tablier ou un plafond au-dessus du PNJ. Rien dessous : ses pieds.
-func _ground_below(at: Vector3) -> float:
-	var space_state := get_world_3d().direct_space_state
-	_ground_query.from = at + Vector3.UP * (CAPSULE_HALF_HEIGHT + 0.1)
-	_ground_query.to = at + Vector3.DOWN * 10.0
-	_ground_query.collision_mask = 1
-	var hit := space_state.intersect_ray(_ground_query)
-	if hit.is_empty():
-		return at.y - CAPSULE_HALF_HEIGHT - RIDE_MARGIN
-	return (hit["position"] as Vector3).y
 
 func _ready() -> void:
 	add_to_group("npc")
@@ -351,22 +333,21 @@ func _spawn_blood_burst(pos: Vector3, normal: Vector3) -> void:
 func _die() -> void:
 	_dead = true
 	var here := global_position   # capture avant de basculer / repositionner le corps
-	var ground := _ground_below(here)
 
 	# flaque de sang : à plat (orientée dans la scène BloodPool, pas sur le PNJ),
-	# sous le corps, un peu au-dessus du sol mesuré pour éviter le z-fighting.
+	# sous le corps, un peu au-dessus du sol pour éviter le z-fighting.
 	# Parentée à la scène (pas au PNJ) pour rester après le despawn du cadavre.
 	var pool: Node3D = BLOOD_POOL.instantiate()
-	pool.position = Vector3(here.x, ground + POOL_GROUND_OFFSET, here.z)
+	pool.position = Vector3(here.x, POOL_GROUND_Y, here.z)
 	get_tree().current_scene.add_child(pool)
 
 	if _anim != null and _anim.has_animation("Death"):
 		_cur_anim = "Death"
 		_anim.play("Death", 0.1)   # l'anim couche le corps ; le PNJ reste sur place
 	else:
-		# fallback (pas de modèle / pas d'anim) : bascule la capsule, couchée sur le sol mesuré
+		# fallback (pas de modèle / pas d'anim) : bascule la capsule
 		rotate_object_local(Vector3.RIGHT, deg_to_rad(90))
-		global_position = Vector3(here.x, ground + FALLBACK_BODY_HEIGHT, here.z)
+		global_position = Vector3(here.x, 0.5, here.z)
 
 	# despawn différé, comme un PNJ en fin de trajet (pas de cadavres à l'infini)
 	get_tree().create_timer(CORPSE_DESPAWN).timeout.connect(queue_free)
