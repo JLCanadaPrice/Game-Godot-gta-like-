@@ -1,0 +1,10 @@
+[gd_resource type="ShaderMaterial" format=3]
+
+[ext_resource type="Shader" path="res://scenes/world/feu_obstacle.gdshader" id="1_377ob"]
+
+[resource]
+resource_name = "FeuObstacle"
+render_priority = 0
+shader = ExtResource("1_377ob")
+shader_parameter/couleur = null
+shader_parameter/angle_min = null

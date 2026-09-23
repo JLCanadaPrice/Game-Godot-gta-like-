@@ -36,7 +36,8 @@ travail imposée, les commandes exactes, les pièges déjà payés et l'état d'
   parking à étages (`ParkingStructureKit.gd`, `ParkingStructureTest`, §11) et **625** depuis son éclairage
   intérieur du 2026-09-22 (`parking_glow_material.tres` et les deux `parking_lights.tres`), **626** depuis l'outil
   d'export des enveloppes de véhicules du 2026-09-23 (`EnveloppesExport.gd`, §12), **627** depuis les rampes invisibles
-  des entrées (`RampesEntree.gd`, même jour).
+  des entrées (`RampesEntree.gd`, même jour), **629** depuis le feu d'obstacle de Mk1 (`feu_obstacle.gdshader` et son
+  matériau, même jour, §9).
 
 ## 2. Méthode de travail (imposée, non négociable)
 
@@ -215,7 +216,7 @@ attendu.
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/DowntownStreetsTest.tscn
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/DowntownBuildingsTest.tscn
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/ShopBuildingsTest.tscn     # échec ANTÉRIEUR connu
-"$GODOT" --headless --path "$PROJET" --script res://scenes/world/map/tools/ProjectLoadCheck.gd   # attendu : 627 fichiers, 0 échec
+"$GODOT" --headless --path "$PROJET" --script res://scenes/world/map/tools/ProjectLoadCheck.gd   # attendu : 629 fichiers, 0 échec
 ```
 
 Outil d'inspection, hors batterie : `res://scenes/tests/VehicleSortTest.tscn` aligne les véhicules du catalogue
@@ -238,7 +239,8 @@ Captures et compteurs de rendu (fenêtré, pas headless : le rendu compte) :
 nuit), `--bassin=<n>` (taille du bassin de vraies lumières de lampadaire), `--toutes-lampes` (une vraie lumière par
 luminaire : mesure de l'option écartée, jamais un réglage de jeu) et `--sans-image` (mesure sans `get_image()`, donc
 sans le plafond de 800x450 du §6). Une vue peut imposer sa propre heure par un 5e champ : c'est ce que font les vues
-`nuit_*`, `crepuscule_*` et `aube_*`.
+`nuit_*`, `crepuscule_*` et `aube_*`. `--feu-obstacle=1` ou `0` fige le feu d'obstacle de Mk1 allumé ou éteint (§9) :
+sans cela, une capture tombe au hasard dans son clignotement.
 
 ## 6. Pièges connus (tous déjà payés)
 
@@ -920,6 +922,33 @@ côté parking, passait 20 m au-delà de la clôture (x = 640), seuils compris. 
 la voie de circulation qui la rejoint) à 1040, seuils vert et rouge à 651 et 654 : 11 m à l'intérieur. 271 feux au
 lieu de 273. **Relevé en passant, pas corrigé** : le bord sud de la piste principale (z -1372,5) et ses feux de bord
 dépassent de 0,5 m la clôture sud (z -1372), qui court donc sur le rebord de l'enrobé.
+
+### Feu d'obstacle de la plus haute tour (2026-09-23)
+
+Demande du joueur : le point rouge au sommet de l'antenne de **Mk1** (263,3 m, la plus haute tour) doit clignoter comme
+un vrai feu d'obstacle, visible de loin, surtout de nuit. Relevé sur les sept modèles du pack de gratte-ciels : c'est la
+seule surface rouge en haut d'une tour — `Material.003` (albédo 0,91 / 0,10 / 0,10), 222 triangles, une boule de 1,24 m
+de rayon centrée à 262,18 m ; Mk2 à Mk6 et Scraper001 n'en ont aucune.
+
+- **On allume la géométrie du modèle**, comme le verre des lampadaires : `DowntownBuildingsBake._feu_obstacle` recopie
+  ces 222 triangles 2 cm devant l'original (nœud `FeuObstacle` du bâtiment, groupe `feu_obstacle`). Aucune boîte
+  ajoutée. Un seul matériau, partagé (`scenes/world/feu_obstacle_material.tres`).
+- **Visible de loin.** Sans rien d'autre, la boule tombait sous le pixel : relevé à l'image à 1,3 km en 800x450, zéro
+  pixel rouge, allumée ou non. Le matériau est donc un petit shader (`feu_obstacle.gdshader`) : non éclairé, sans
+  brouillard, rouge à 0,62 (sous le seuil de délavage ACES), et la copie, recentrée sur la boule et mise à l'échelle de
+  son rayon, GROSSIT avec la distance pour ne jamais paraître plus petite que 0,004 rad de rayon — la taille exacte de
+  près (jusqu'à 310 m), quelques pixels de loin, comme l'éblouissement d'un vrai feu. Après : 2 x 2 pixels rouges en
+  800x450 à 1,3 km comme à 600 m (coin sud-est du centre-ville), 0 éteint ; vu à l'image, un point rouge net
+  au-dessus de la tour. `extra_cull_margin` 20 m, portée 6 000 m (au-delà du plan lointain).
+- **Clignotement** (`StreetLights`, `FEU_PERIODE` 2 s, `FEU_ALLUME` 0,75 s) : 30 éclats par minute, de jour comme de
+  nuit, tous les feux en phase — l'ordre de grandeur d'un feu rouge de moyenne intensité (FAA L-864, OACI type B : 20 à
+  40 éclats par minute). Éteint, on voit la boule rouge du modèle. Plus une `OmniLight3D` rouge sans ombre au centre
+  de la boule (14 m, énergie 3), qui clignote avec elle et rougit le haut du mât ; elle a son propre fondu (1 500 +
+  200 m), que `CityRenderOptimizer` respecte désormais (§6).
+- Vérifié : `DowntownBuildingsTest` (une copie de 222 triangles au-dessus de 261 m sur Mk1, matériau partagé, portée,
+  une lumière avec son fondu) ; `DayNightTest` (sur 4 s d'horloge, allumé 37 % du temps pour 37,5 % attendus,
+  5 bascules, aucun désaccord entre les nœuds). Captures, allumé et éteint : `D:/p-recree/ground_shots/feu_mk1_2026-09-23/`
+  (hors dépôt), vues `feu_mk1_*`.
 
 ### Feux arrière : deux niveaux, et le sol éclairé
 

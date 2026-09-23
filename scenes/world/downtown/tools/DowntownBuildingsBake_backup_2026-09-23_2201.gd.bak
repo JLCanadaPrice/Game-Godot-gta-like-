@@ -242,7 +242,6 @@ func model(key: String) -> Dictionary:
 					_parking_praticable(models[key])
 			"sky":
 				models[key] = _glb_model(key, [String(_sky_json[name]["path"])], _sky_material, true)
-				models[key]["feu"] = _feu_obstacle(key, String(_sky_json[name]["path"]))
 				var top: float = SKY_OCCLUDER[name]
 				models[key]["occluders"] = _checked_occluders(models[key]["mesh"], models[key]["aabb"], [top, top * 0.75, top * 0.5, 0.25], false)
 				models[key]["front_fixed"] = false
@@ -876,35 +875,6 @@ func _parking_praticable(mdl: Dictionary) -> void:
 	mdl["places"] = p["places"]
 	_stats["parking_lumieres"] = e["compte"]
 
-# Le feu d'obstacle d'un gratte-ciel (cf. _feu_obstacle) : la copie allumée et sa lumière, dans le groupe que
-# StreetLights fait clignoter. La lumière a son propre fondu, que CityRenderOptimizer respecte (CLAUDE.md §6).
-func _poser_feu(node: Node3D, f: Dictionary, root: Node) -> void:
-	var feu := MeshInstance3D.new()
-	feu.name = "FeuObstacle"
-	feu.mesh = f["mesh"]
-	feu.position = f["centre"]
-	feu.scale = Vector3.ONE * float(f["rayon"])
-	feu.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	feu.visibility_range_end = FEU_PORTEE
-	feu.extra_cull_margin = 20.0     # le shader la fait grossir au-delà de sa boîte, vue de loin
-	feu.add_to_group(&"feu_obstacle", true)
-	node.add_child(feu)
-	feu.owner = root
-	var lum := OmniLight3D.new()
-	lum.name = "FeuObstacleLumiere"
-	lum.position = f["centre"]
-	lum.light_color = FEU_LUMIERE_COULEUR
-	lum.light_energy = FEU_LUMIERE_ENERGIE
-	lum.omni_range = FEU_LUMIERE_PORTEE
-	lum.shadow_enabled = false
-	lum.distance_fade_enabled = true
-	lum.distance_fade_begin = 1500.0
-	lum.distance_fade_length = 200.0
-	lum.add_to_group(&"feu_obstacle", true)
-	node.add_child(lum)
-	lum.owner = root
-
-
 # Forme de collision d'un modèle : les triangles exacts de son maillage, à deux faces, dans son repère, enregistrés une
 # fois et partagés par ses exemplaires.
 #  - Parking à étages (2026-09-21) : ses triangles retaillés (ParkingStructureKit.collision), rampes invisibles de
@@ -936,130 +906,6 @@ func _forme(key: String, mdl: Dictionary) -> Shape3D:
 	return exacte
 
 
-# --- FEU D'OBSTACLE (2026-09-23, demande du joueur) -------------------------------------------------------------------
-#
-# Le point rouge au sommet de l'antenne de Mk1, la plus haute tour (263,3 m) : une surface à part dans le modèle
-# (`Material.003`, albédo 0,91 / 0,10 / 0,10), 222 triangles, une boule de 1,7 x 2,2 x 1,7 m entre 261,09 et 263,25 m.
-# Relevé sur les sept modèles du pack : c'est la seule surface rouge en haut d'une tour, Mk2 à Mk6 et Scraper001 n'en ont
-# aucune. On ALLUME CETTE GÉOMÉTRIE-LÀ, comme le verre des lampadaires et les optiques des véhicules : ses triangles
-# recopiés 2 cm devant l'original, sur un matériau non éclairé PARTAGÉ, dans un nœud à part que StreetLights fait
-# clignoter (groupe « feu_obstacle »). Aucune boîte ajoutée. Plus une petite lumière rouge sans ombre au centre de la
-# boule, qui rougit le haut du mât la nuit et clignote avec elle.
-# VISIBLE DE LOIN : la copie est recentrée sur la boule et ramenée à un rayon de 1, le nœud posé au centre et mis à
-# l'échelle du vrai rayon, et son shader (feu_obstacle.gdshader) la fait grossir avec la distance pour qu'elle ne
-# paraisse jamais plus petite que quelques pixels. Sans cela, relevé à l'image : à 1,3 km en 800x450, zéro pixel rouge.
-const FEU_MATERIAU := "res://scenes/world/feu_obstacle_material.tres"
-const FEU_SHADER := "res://scenes/world/feu_obstacle.gdshader"
-const FEU_DECALAGE := 0.02                    # la copie allumée, devant la surface d'origine
-const FEU_HAUT := 0.95                        # surfaces rouges gardées si tous leurs sommets sont dans les 5 % du haut
-const FEU_PORTEE := 6000.0                    # au-delà du plan lointain de la caméra (4 000 m) : visible de partout
-const FEU_LUMIERE_PORTEE := 14.0
-const FEU_LUMIERE_ENERGIE := 3.0
-const FEU_LUMIERE_COULEUR := Color(1.0, 0.08, 0.04)
-
-
-# Le matériau partagé, créé par la première cuisson qui en a besoin : le shader du feu (non éclairé, SANS BROUILLARD —
-# un feu se voit à travers la brume du soir bien mieux qu'une façade, c'est à cela qu'il sert —, taille apparente
-# minimale). Sa couleur et son angle minimal sont dans le shader.
-func _materiau_feu() -> ShaderMaterial:
-	if ResourceLoader.exists(FEU_MATERIAU):
-		return load(FEU_MATERIAU)
-	var m := ShaderMaterial.new()
-	m.resource_name = "FeuObstacle"
-	m.shader = load(FEU_SHADER)
-	ResourceSaver.save(m, FEU_MATERIAU)
-	return load(FEU_MATERIAU)
-
-
-# La copie allumée du feu d'obstacle d'un gratte-ciel — {"mesh": maillage de rayon 1 centré sur la boule, "centre",
-# "rayon"} dans le repère du modèle —, ou null s'il n'en a pas.
-func _feu_obstacle(key: String, chemin: String) -> Variant:
-	var inst: Node = (load(chemin) as PackedScene).instantiate()
-	var surfaces: Array = []      # [sommets, normales, indices], repère du modèle
-	var sommet := [-INF]          # tableau : un flottant passé à une fonction est une copie
-	_feu_collect(inst, Transform3D.IDENTITY, surfaces, sommet)
-	inst.free()
-	var v := PackedVector3Array()
-	var n := PackedVector3Array()
-	for s: Array in surfaces:
-		var sv: PackedVector3Array = s[0]
-		var sn: PackedVector3Array = s[1]
-		var si: PackedInt32Array = s[2]
-		for t in range(0, si.size() - 2, 3):
-			var en_haut := true
-			for k in 3:
-				if sv[si[t + k]].y < float(sommet[0]) * FEU_HAUT:
-					en_haut = false
-			if not en_haut:
-				continue
-			for k in 3:
-				v.append(sv[si[t + k]] + sn[si[t + k]] * FEU_DECALAGE)
-				n.append(sn[si[t + k]])
-	if v.is_empty():
-		return null
-	# recentrée sur la boule, ramenée à un rayon de 1 (le rayon : le sommet le plus éloigné du centre de sa boîte)
-	var boite := AABB(v[0], Vector3.ZERO)
-	for p in v:
-		boite = boite.expand(p)
-	var centre := boite.get_center()
-	var rayon := 0.0
-	for p in v:
-		rayon = maxf(rayon, p.distance_to(centre))
-	var unit := PackedVector3Array()
-	for p in v:
-		unit.append((p - centre) / rayon)
-	var arrays := []
-	arrays.resize(Mesh.ARRAY_MAX)
-	arrays[Mesh.ARRAY_VERTEX] = unit
-	arrays[Mesh.ARRAY_NORMAL] = n
-	var mesh := ArrayMesh.new()
-	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
-	mesh.surface_set_material(0, _materiau_feu())
-	var path := MODELS.path_join("models/%s_feu.res" % key.replace(":", "_"))
-	ResourceSaver.save(mesh, path)
-	_stats["feux_obstacle"] = int(_stats.get("feux_obstacle", 0)) + 1
-	_stats["feux_obstacle_triangles"] = int(_stats.get("feux_obstacle_triangles", 0)) + v.size() / 3
-	_stats["feu_obstacle_" + key] = "centre %s, rayon %.2f m" % [str(centre.snappedf(0.01)), rayon]
-	return {"mesh": load(path), "centre": centre, "rayon": rayon}
-
-
-func _feu_collect(node: Node, parent: Transform3D, surfaces: Array, sommet: Array) -> void:
-	var xform := parent
-	if node is Node3D:
-		xform = parent * (node as Node3D).transform
-	if node is MeshInstance3D and (node as MeshInstance3D).mesh != null:
-		var mi := node as MeshInstance3D
-		var nb := xform.basis.inverse().transposed()
-		for s in mi.mesh.get_surface_count():
-			if mi.mesh.surface_get_primitive_type(s) != Mesh.PRIMITIVE_TRIANGLES:
-				continue
-			var arrays := mi.mesh.surface_get_arrays(s)
-			var verts: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
-			for p in verts:
-				sommet[0] = maxf(float(sommet[0]), (xform * p).y)
-			var mat := mi.get_active_material(s) as BaseMaterial3D
-			if mat == null or mat.albedo_texture != null:
-				continue
-			var c := mat.albedo_color
-			if not (c.r > 0.6 and c.g < 0.3 and c.b < 0.3):
-				continue
-			var norms: PackedVector3Array = arrays[Mesh.ARRAY_NORMAL]
-			var idx := PackedInt32Array()
-			if arrays[Mesh.ARRAY_INDEX] != null:
-				idx = arrays[Mesh.ARRAY_INDEX]
-			if idx.is_empty():
-				for k in verts.size():
-					idx.append(k)
-			var tv := PackedVector3Array()
-			var tn := PackedVector3Array()
-			for k in verts.size():
-				tv.append(xform * verts[k])
-				tn.append((nb * norms[k]).normalized())
-			surfaces.append([tv, tn, idx])
-	for enfant in node.get_children():
-		_feu_collect(enfant, xform, surfaces, sommet)
-
-
 func _write_scene() -> String:
 	var root := Node3D.new()
 	root.name = "Buildings"
@@ -1078,8 +924,6 @@ func _write_scene() -> String:
 			node.set_meta("no_hlod", true)   # silhouette propre (niveaux de détail), pas de boîte lointaine
 		root.add_child(node)
 		node.owner = root
-		if mdl.get("feu") != null:
-			_poser_feu(node, mdl["feu"], root)   # après add_child : le propriétaire doit être un ancêtre
 		var mi := MeshInstance3D.new()
 		mi.name = "Mesh"
 		mi.mesh = mdl["mesh"]

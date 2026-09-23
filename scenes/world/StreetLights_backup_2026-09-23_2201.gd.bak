@@ -45,18 +45,11 @@ const INT_COLOR := Color(1.00, 0.95, 0.84)
 # bassin de 8 ne se posait que sur les luminaires les plus proches de la caméra : vu du bout d'un plateau, le reste du
 # parking restait sans lumière réelle. Maintenant une OmniLight3D sans ombre par luminaire, posée une fois pour toutes
 # et FONDUE PAR LA DISTANCE (Light3D.distance_fade_*) : au-delà de INT_FONDU_DEBUT + INT_FONDU_LONGUEUR de la caméra,
-# le moteur ne la compte plus. Les parkings sont à 458 m au moins l'un de l'autre, donc au plus UN parking — 43
+# le moteur ne la compte plus. Les parkings sont à 458 m au moins l'un de l'autre, donc au plus UN parking — 47
 # lumières — est actif à la fois. Coût mesuré avec RenderPerfTest --parking (CLAUDE.md §11). `interieur_fixe = false`
 # rend le bassin borné d'avant (`pool_interieur`) : c'est le réglage à baisser pour le mode graphique léger (§7).
 const INT_FONDU_DEBUT := 80.0
 const INT_FONDU_LONGUEUR := 20.0
-
-# FEU D'OBSTACLE (2026-09-23) : le point rouge au sommet de l'antenne de Mk1, la plus haute tour, et sa lumière (groupe
-# « feu_obstacle », posés par DowntownBuildingsBake). Il clignote comme un feu d'obstacle rouge de moyenne intensité
-# (FAA L-864, OACI moyenne intensité type B : 20 à 40 éclats par minute ; ici 30) : 0,75 s allumé toutes les 2 s, de
-# jour comme de nuit, tous les feux EN PHASE sur un seul matériau partagé. Éteint, on voit la boule rouge du modèle.
-const FEU_PERIODE := 2.0
-const FEU_ALLUME := 0.75
 
 const GLOW_ON := Color(1.00, 0.88, 0.62)
 const GLOW_OFF := Color(0.26, 0.25, 0.23)    # capot éteint, gris tiède : le halo reste un objet le jour
@@ -96,7 +89,6 @@ const REASSIGN_MOVE := 4.0                   # ...ou dès que la caméra a boug�
 # d'un coup. D'où un simple seuil sur le facteur nuit, et des matériaux à couleur fixe (un par
 # couleur de feu) que ce nœud ne touche jamais.
 @export var airport := true
-@export var feu_force := -1                  # feu d'obstacle : -1 clignote, 0 éteint, 1 allumé (captures)
 const AIRPORT_ON_AT := 0.35
 
 var _heads := PackedVector3Array()
@@ -111,8 +103,6 @@ var _airport_on := false
 var _night := -1.0
 var _int_heads := PackedVector3Array()
 var _int_lights: Array[OmniLight3D] = []
-var _feux: Array[Node] = []
-var _feu_allume := true
 var _next_reassign := 0.0
 var _last_cam := Vector3(1e9, 1e9, 1e9)
 
@@ -134,7 +124,6 @@ func _ready() -> void:
 	_glow_nodes = get_tree().get_nodes_in_group(&"lamp_glow")
 	_window_nodes = get_tree().get_nodes_in_group(&"window_glow")
 	_airport_nodes = get_tree().get_nodes_in_group(&"airport_glow")
-	_feux = get_tree().get_nodes_in_group(&"feu_obstacle")
 	var cycle := _find_cycle()
 	if cycle != null:
 		cycle.hour_changed.connect(_on_hour_changed)
@@ -146,7 +135,6 @@ func _ready() -> void:
 			% [_heads.size(), _glow_nodes.size(), _window_nodes.size(), _airport_nodes.size(),
 			(_heads.size() if all_lights else pool),
 			" [MESURE : une lumière par luminaire]" if all_lights else ""])
-	print("STREET_LIGHTS_FEU_OBSTACLE %d noeud(s), %d éclats par minute, %.2f s allumé" % [_feux.size(), roundi(60.0 / FEU_PERIODE), FEU_ALLUME])
 	print("STREET_LIGHTS_INTERIEUR %d luminaire(s) de parking couvert, %d vraie(s) lumière(s), %s"
 			% [_int_heads.size(), _int_lights.size(),
 			"une par luminaire, fixes, fondues au-delà de %.0f m" % (INT_FONDU_DEBUT + INT_FONDU_LONGUEUR) if interieur_fixe
@@ -154,12 +142,6 @@ func _ready() -> void:
 
 
 func _process(_delta: float) -> void:
-	if not _feux.is_empty():
-		var allume := fmod(Time.get_ticks_msec() * 0.001, FEU_PERIODE) < FEU_ALLUME if feu_force < 0 else feu_force == 1
-		if allume != _feu_allume:
-			_feu_allume = allume
-			for f in _feux:
-				(f as Node3D).visible = allume
 	var cam := get_viewport().get_camera_3d()
 	if cam == null:
 		return

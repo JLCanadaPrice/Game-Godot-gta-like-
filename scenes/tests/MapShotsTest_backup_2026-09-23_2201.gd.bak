@@ -129,13 +129,6 @@ const VIEWS := [
 	# Vue au sol depuis l'exterieur de cette cloture, et le long de la cloture ouest.
 	["greenfield_serres_nord_sol", Vector3(-509.0, 1.7, -928.0), Vector3(-509.0, 1.5, -975.0), "sol", 12.0],
 	["greenfield_serres_ouest_sol", Vector3(-548.0, 1.7, -930.0), Vector3(-520.0, 1.5, -990.0), "sol", 12.0],
-	# Feu d'obstacle au sommet de Mk1 (2026-09-23) : Mk1 en (-566,15 ; 0,2 ; -278,36), boule rouge entre 261,3 et 263,5 m.
-	# Au sol au coin sud-est du centre-ville (600 m), de loin (1,3 km a l'est) et de pres ; allume ou eteint selon
-	# --feu-obstacle=1 ou 0.
-	["feu_mk1_rue_nuit", Vector3(-20.5, 1.7, -467.5), Vector3(-565.6, 262.0, -278.4), "sol", 1.0],
-	["feu_mk1_rue_jour", Vector3(-20.5, 1.7, -467.5), Vector3(-565.6, 262.0, -278.4), "sol", 12.0],
-	["feu_mk1_loin_nuit", Vector3(700.0, 1.7, -300.0), Vector3(-565.6, 262.0, -278.4), "sol", 1.0],
-	["feu_mk1_proche_nuit", Vector3(-548.0, 268.0, -262.0), Vector3(-565.6, 258.0, -278.4), "", 1.0],
 	["lieu_commissariat", Vector3(-690, 6, 115), Vector3(-713, 6, 158)],
 	["lieu_liberty_motors", Vector3(40, 10, -440), Vector3(15, 2, -395)],
 	["lieu_casino", Vector3(-520, 45, -300), Vector3(-586, 30, -365)],
@@ -316,7 +309,6 @@ func _ready() -> void:
 			_out = arg.substr(6)
 	var only: PackedStringArray = []
 	var bassin := -1
-	var feu_obstacle := -1
 	var toutes := false
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--views="):
@@ -325,9 +317,6 @@ func _ready() -> void:
 			_hour = arg.substr(8).to_float()
 		elif arg.begins_with("--bassin="):
 			bassin = arg.substr(9).to_int()
-		elif arg.begins_with("--feu-obstacle="):
-			# fige le feu d'obstacle de Mk1 (StreetLights.feu_force) : 1 allume, 0 eteint ; sans l'option, il clignote
-			feu_obstacle = arg.substr(15).to_int()
 		elif arg == "--toutes-lampes":
 			toutes = true
 		elif arg.begins_with("--trafic="):
@@ -398,8 +387,6 @@ func _ready() -> void:
 			lights.set("pool", bassin)
 		if toutes:
 			lights.set("all_lights", true)
-		if feu_obstacle >= 0:
-			lights.set("feu_force", feu_obstacle)
 	add_child(world)
 	_cycle = world.get_node_or_null("DayNight")
 	if _cycle != null:

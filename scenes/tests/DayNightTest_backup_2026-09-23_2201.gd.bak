@@ -73,7 +73,6 @@ func _ready() -> void:
 	await _luminaires(world)
 	await _bassin(cycle, lights)
 	_parkings(lights)
-	await _feu_obstacle()
 	_verdict()
 
 
@@ -82,44 +81,6 @@ func _ready() -> void:
 # différé de CityRenderOptimizer, qui imposait jusque-là son propre fondu (180 + 30 m) à toutes les lumières du monde.
 
 const LAMPES := preload("res://scenes/world/StreetLights.gd")
-
-
-# --- le feu d'obstacle de la plus haute tour (2026-09-23) -------------------------------------------------------------
-# Il clignote : sur 4 s d'horloge, allumé environ FEU_ALLUME / FEU_PERIODE du temps (0,375), éteint le reste, et tous
-# les nœuds du groupe (copie allumée et lumière) toujours dans le même état.
-func _feu_obstacle() -> void:
-	var feux := get_tree().get_nodes_in_group(&"feu_obstacle")
-	if feux.is_empty():
-		_fautes.append("feu d'obstacle : aucun nœud du groupe feu_obstacle")
-		return
-	var allume := 0.0
-	var total := 0.0
-	var desaccords := 0
-	var bascules := 0
-	var avant := (feux[0] as Node3D).visible
-	var t0 := Time.get_ticks_usec()
-	var prec := t0
-	while Time.get_ticks_usec() - t0 < 4000000:
-		await get_tree().process_frame
-		var now := Time.get_ticks_usec()
-		var etat := (feux[0] as Node3D).visible
-		for f in feux:
-			if (f as Node3D).visible != etat:
-				desaccords += 1
-		var dt := (now - prec) / 1000000.0
-		total += dt
-		if etat:
-			allume += dt
-		if etat != avant:
-			bascules += 1
-		avant = etat
-		prec = now
-	var part := allume / maxf(total, 0.001)
-	var attendu := LAMPES.FEU_ALLUME / LAMPES.FEU_PERIODE
-	print("DAY_NIGHT_FEU_OBSTACLE %d noeud(s), allume %.0f %% du temps (attendu %.1f %%), %d bascules en %.1f s, %d desaccord(s)"
-			% [feux.size(), part * 100.0, attendu * 100.0, bascules, total, desaccords])
-	if absf(part - attendu) > 0.08 or bascules < 3 or desaccords > 0:
-		_fautes.append("feu d'obstacle : allumé %.0f %% du temps (attendu %.1f %%), %d bascules, %d désaccords" % [part * 100.0, attendu * 100.0, bascules, desaccords])
 
 
 func _parkings(lights: Node) -> void:

@@ -26,7 +26,6 @@ const PLACES_JSON := "res://scenes/world/map/generated/places/places.json"
 # le pack et reutilisable ; il ne doit simplement plus etre pose.
 const SKY_MODELS := ["Mk1", "Mk2", "Mk3", "Mk4", "Mk5", "Mk6"]
 const SKY_INTERDITS := ["Scraper001"]
-const FEU_MATERIAU := "res://scenes/world/feu_obstacle_material.tres"
 
 var _errors: Array[String] = []
 
@@ -158,31 +157,6 @@ func _ready() -> void:
 	# boîtes au ras du sol : sans elles, rien de ce qui roule ou marche derrière un bâtiment n'est masqué vu de la rue
 	if occluders_low < batiments * 0.7 or occluders_outside > 0 or lod_count < batiments or hlod == null or hlod.buildings < batiments / 2:
 		_errors.append("optimisations : %d occulteurs (%d au sol, %d hors du bâtiment), %d maillages LOD, silhouettes %s" % [occluders, occluders_low, occluders_outside, lod_count, hlod.buildings if hlod != null else "absentes"])
-	# FEU D'OBSTACLE (2026-09-23) : la boule rouge du modèle Mk1 recopiée (222 triangles, relevés sur le modèle), tout en
-	# haut, sur le matériau partagé, visible de partout, et sa lumière avec son propre fondu ; un seul, sur Mk1.
-	var feu_mi := 0
-	var feu_lum := 0
-	var feu_tri := 0
-	var feu_bas := INF
-	var feu_faute := ""
-	for f in get_tree().get_nodes_in_group(&"feu_obstacle"):
-		var porteur := f.get_parent()
-		if String(porteur.get_meta("model", "")) != "sky:Mk1":
-			feu_faute = "feu sur %s" % porteur.name
-		if f is MeshInstance3D:
-			feu_mi += 1
-			var mi := f as MeshInstance3D
-			feu_tri += mi.mesh.surface_get_array_len(0) / 3
-			feu_bas = minf(feu_bas, (mi.transform * mi.get_aabb()).position.y)   # repère du bâtiment
-			if String(mi.mesh.surface_get_material(0).resource_path) != FEU_MATERIAU or mi.visibility_range_end < 4000.0:
-				feu_faute = "materiau %s, portee %.0f m" % [mi.mesh.surface_get_material(0).resource_path, mi.visibility_range_end]
-		elif f is OmniLight3D:
-			feu_lum += 1
-			if not (f as OmniLight3D).distance_fade_enabled or (f as OmniLight3D).distance_fade_begin < 1000.0:
-				feu_faute = "lumiere du feu sans son propre fondu"
-	print("DOWNTOWN_BUILDINGS_FEU %d copie(s) allumee(s) (%d triangles, bas a %.2f m), %d lumiere(s) %s" % [feu_mi, feu_tri, feu_bas, feu_lum, feu_faute])
-	if feu_mi != 1 or feu_lum != 1 or feu_tri != 222 or feu_bas < 261.0 or feu_faute != "":
-		_errors.append("feu d'obstacle : %d copie(s), %d lumiere(s), %d triangles, bas a %.2f m %s" % [feu_mi, feu_lum, feu_tri, feu_bas, feu_faute])
 	var casino := world.get_node_or_null("Map/Places/Place_casino")
 	var casino_meshes := 0
 	if casino != null:
