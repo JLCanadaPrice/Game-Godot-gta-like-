@@ -512,8 +512,7 @@ débogage sur `V`.
 
 **Reste à faire** (liste du joueur, par ordre d'importance qu'il donnera lui-même) :
 
-- **combat** ; y faire les **zones de touche par os des PNJ** (tête, torse, membres), décidé le 2026-09-23 (§12) : la
-  capsule de 0,4 x 1,8 m reste leur forme de déplacement ;
+- **combat** ;
 - **gangs rivaux** ;
 - **labo de drogue** (les modèles sont dans `assets/drug_lab`) ;
 - **porte d'entrepôt** ;
@@ -1563,68 +1562,3 @@ borné lui aussi, toujours actif.
   chaque fiche de véhicule garé retombe sur une place (**63 sur 63**).
 
 **Le chantier du parking à étages est terminé.**
-
-## 12. Collisions : inventaire mesuré et décisions (2026-09-23)
-
-Le joueur voulait refaire TOUTES les collisions « à la forme réelle » (combat, poursuites, missions). L'inventaire mesuré a
-changé la demande : **92 % des façades collent déjà à leur boîte à hauteur d'homme, on ne refait que ce qui rapporte.**
-Mesures faites par sondes jetables (hors dépôt), sur le monde chargé et sur les scènes cuites chargées seules.
-
-**Ce qui existe.**
-
-| catégorie | objets | collision | triangles de collision | triangles visibles |
-|---|---|---|---|---|
-| bâtiments de la carte | 1 196 | 1 191 boîtes englobantes + 5 exactes (station-service, `TRIMESH_MODELS`) | 32 842 | 7,47 M |
-| bâtiments du centre-ville | 441 | 438 boîtes + 3 exactes (parkings, `_forme()`) | 29 367 | 2,18 M |
-| lieux nommés (12) | 94 formes | 85 boîtes + 9 surfaces exactes (dalles, parking de l'aérogare) | 9 269 | 115 k |
-| véhicules (72 modèles) | 252 en circulation + 179 garés | 1 boîte ajustée au modèle (`_fit_collision_to_model`) | 12 | ~690 par voiture |
-| PNJ | 315 au plus | capsule 0,4 x 1,8 m | analytique | — |
-| mobilier du centre-ville | 1 775 | 1 768 cylindres (lampadaires, troncs, poteaux, fontaine) + 7 boîtes (abribus) | analytique | 593 k |
-| lampadaires de la carte | 505 | cylindres | analytique | — |
-| trottoirs du centre-ville | 1 418 | boîtes (dalles : exactes par nature) | 17 016 | 371 k |
-| routes / terrain / troncs | 133 / 242 / 308 | exactes (trimesh, heightmaps) | 0,21 M / 1,84 M / 0,16 M | — |
-
-**Écarts mesurés.** Bâtiments : rayons tous les 0,25 m à 0,3 / 1,0 / 1,7 m du sol, depuis 5 cm HORS de la boîte. La boîte
-déborde du vrai mur sur **7,9 % des façades de la carte et 7,2 % du centre-ville**, et c'est le même pourcentage à 0,5, 1 et
-2 m : ailleurs le mur est au ras de la boîte, et là où il ne l'est pas c'est profond (porche, arcade, baie ouverte, passage).
-Pires modèles (part des façades avec plus de 1 m de vide) : éolienne en treillis 92 % (x6), kiosque 44 %, IndustrialBuilding_alt03
-23 % (x7), GeneralStore 21 % (x14), Courthouse 15 % (x7), Restaurant 15 % (x11), CommercialBuilding alt01/03/04/05 13 à 16 %
-(x73), StorageFacility 12 % (x8). Lieux (faces de boîte à 1 m du sol avec plus de 1 m de vide) : commissariat 80 %, hôpital
-72 % (ses arcades), grange du ranch 56 %, casino 52 %, planque 27 %, hôtel 20 % ; **l'avion de l'aéroport n'a AUCUNE
-collision.** Véhicules (72 modèles, rayons tous les 5 cm) : au pare-chocs la boîte colle (0,08 m en médiane), mais devant la
-bande capot / pare-brise elle déborde de **1,44 m en médiane, 3,22 m au pire** ; une enveloppe convexe unique
-(`create_convex_shape`, 20 à 160 points) ramène ça à **0,32 m (0,73 au pire)**.
-
-**Coût mesuré d'une collision exacte sur les 1 637 bâtiments** : 93 modèles, 356 229 triangles uniques ; **+22 Mo dans Jolt**
-(mémoire privée du processus : Jolt alloue hors du compteur de Godot) et ~14 Mo de faces côté Godot, ~12 Mo sur disque ;
-construction +211 ms ; 50 000 rayons 119 -> 144 ms (+21 %), 20 000 balayages de capsule 70 -> 44 ms (moins de départs en
-pénétration). Banc synthétique (espaces physiques dédiés), pas une image de jeu.
-
-**Chemins.** **0 point sur 29 510 du PedGraph et 0 sur 19 534 du graphe de circulation** (tous les 1 m) dans une boîte de
-bâtiment : des collisions de bâtiment exactes ne changent aucun trajet de PNJ ni de circulation. Restent concernés le joueur (à
-pied et en voiture), les PNJ hors graphe (éjectés, esquive) et tout ce qui tire des rayons sur la couche 1 (`SimulationCuller`,
-anti-apparition de `LoopSpawner`, dégagement des lampadaires, caméra « sol » de `MapShotsTest`).
-
-**Jolt et outils, mesuré.** Deux maillages concaves ne se touchent pas : **une voiture en trimesh traverse une route en trimesh**
-(-12,7 m en 1,5 s) ; en enveloppe convexe elle tient. Un trimesh sur un `CharacterBody3D` bute bien contre des boîtes. V-HACD :
-`Mesh.convex_decompose` n'est PAS exposé au script ; `MeshInstance3D.create_multiple_convex_collisions` l'est, mais a rendu
-UNE coque pour la berline avec ses réglages par défaut. Blender 5.2 en ligne de commande : `convex_hull`, décimation, remesh,
-shrinkwrap, bisect ; aucune décomposition convexe installée. `TriangleMesh` (`create_from_faces`, `intersect_segment`,
-`face_index` dans l'ordre des triangles fournis) est exposé au script et sert de maillage de mesure.
-
-**Pièges payés en mesurant.** (1) La boîte est la boîte englobante : un mur est AU RAS de sa face. Un rayon qui part 1 mm à
-l'intérieur passe derrière le mur et compte toute la profondeur comme du vide — première mesure à 37 % au lieu de 8 %. Partir
-HORS de la boîte. (2) En jeu, `CityRenderOptimizer` convertit une partie des bâtiments du centre-ville en MultiMesh au démarrage :
-mesurer sur les scènes cuites chargées seules. (3) En GDScript, un `PackedFloat32Array` rangé dans un `Array` est COPIÉ : lui
-ajouter des valeurs via le tableau ne touche pas l'original.
-
-**Décisions du joueur (2026-09-23).**
-- **Véhicules** : forme de déplacement = enveloppe convexe qui suit la SILHOUETTE (capot penché, toit, coffre ; rétroviseurs et
-  petits détails sans importance), plus de boîte ; **collision exacte réservée aux tirs** (c'est ce qui débloque le combat) ;
-  camions, bus et pick-up : **enveloppes par pièce faites dans Blender**. Jamais de trimesh pour le déplacement (mesure ci-dessus).
-- **Bâtiments** : son problème principal, ce sont les ESCALIERS et PERRONS devant les entrées, que la boîte engloutit. Mesure à
-  faire de 0 à 1,2 m tous les 10 cm AVANT de décider : si beaucoup de bâtiments sont concernés, collision exacte partout ; sinon,
-  les modèles concernés seulement.
-- **Lieux de mission**, dans tous les cas : collision exacte sur l'hôpital, le commissariat, le casino, le ranch, la planque,
-  l'hôtel et l'aéroport (arcades de l'hôpital et du commissariat praticables), et une collision pour l'avion de l'aéroport.
-- **On ne fait pas** : le mobilier, les poteaux et lampadaires ; les zones par os des PNJ vont au chantier combat (§7).
