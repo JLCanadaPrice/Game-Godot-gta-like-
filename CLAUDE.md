@@ -373,6 +373,13 @@ sans le plafond de 800x450 du §6). Une vue peut imposer sa propre heure par un 
   gadget qu'un instant. Sans ce fil de fer, le jeu ne coûte que **+0,8 ms par image (+10 %)** de plus qu'avant le
   chantier, moitié les véhicules, moitié les bâtiments exacts, et aucun des suspects vérifiés n'a changé (anti-apparition,
   contrôle « enfermé » du noclip, rayons du culler) : sonde et journaux dans `D:/p-recree/sondes/2026-09-23_perf/`.
+- **`CityRenderOptimizer` imposait SON fondu à toutes les lumières du monde** (payé le 2026-09-23). Son passage est
+  différé au démarrage (`_optimize.call_deferred()`), donc APRÈS les `_ready` : toute `Light3D` créée dans un `_ready`
+  recevait `distance_fade` 180 + 30 m, quel que soit le réglage qu'on lui avait donné. Les 172 lumières fixes des
+  parkings (réglées à 80 + 20 m) se fondaient donc à 210 m en jeu — et `RenderPerfTest --parking`, qui les recrée après
+  ce passage, mesurait bien 80 + 20 : la mesure et le jeu ne voyaient pas la même chose. Il laisse maintenant une
+  lumière qui règle déjà son fondu ; `DayNightTest` vérifie le réglage des lumières de parking dans le vrai monde,
+  après ce passage (il échoue sur l'ancien optimiseur : 172 lumières sur 172 hors réglage).
 - **Un objet posé EN PERMANENCE sur la carte sans portée de visibilité se paie partout ailleurs.** Payé le
   2026-09-22 sur les véhicules garés : 43 voitures dans trois parkings du centre-ville ajoutaient 25 appels de
   dessin à une vue prise à 2 km de là, parce que leur maillage n'avait aucun `visibility_range_end`. Ce qui

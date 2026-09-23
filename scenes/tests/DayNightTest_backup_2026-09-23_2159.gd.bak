@@ -72,37 +72,7 @@ func _ready() -> void:
 	await _fenetres(cycle)
 	await _luminaires(world)
 	await _bassin(cycle, lights)
-	_parkings(lights)
 	_verdict()
-
-
-# --- les vraies lumières des parkings à étages (2026-09-23) -------------------------------------
-# Une par luminaire, fixes, toujours allumées, avec LEUR fondu (StreetLights.INT_FONDU_*). Vérifié après le passage
-# différé de CityRenderOptimizer, qui imposait jusque-là son propre fondu (180 + 30 m) à toutes les lumières du monde.
-
-const LAMPES := preload("res://scenes/world/StreetLights.gd")
-
-
-func _parkings(lights: Node) -> void:
-	var tetes := 0
-	for chemin: String in LAMPES.PARKING_LIGHTS:
-		if ResourceLoader.exists(chemin):
-			tetes += (load(chemin) as MapLampHeads).heads.size()
-	var int_lights: Array = lights.get("_int_lights")
-	var debut: float = LAMPES.INT_FONDU_DEBUT
-	var longueur: float = LAMPES.INT_FONDU_LONGUEUR
-	var mauvaises := 0
-	for l: Light3D in int_lights:
-		if not l.visible or l.shadow_enabled or not l.distance_fade_enabled 				or not is_equal_approx(l.distance_fade_begin, debut) or not is_equal_approx(l.distance_fade_length, longueur):
-			mauvaises += 1
-	if not bool(lights.get("interieur_fixe")):
-		_fautes.append("parkings : StreetLights n'est pas en lumières fixes")
-	if int_lights.size() != tetes or tetes == 0:
-		_fautes.append("parkings : %d vraie(s) lumière(s) pour %d luminaire(s)" % [int_lights.size(), tetes])
-	if mauvaises > 0:
-		_fautes.append("parkings : %d lumière(s) éteinte(s), à ombre ou sans leur fondu de %.0f + %.0f m" % [mauvaises, debut, longueur])
-	print("DAY_NIGHT_PARKINGS %d vraies lumières pour %d luminaires, %d hors réglage (fondu %.0f + %.0f m attendu)"
-			% [int_lights.size(), tetes, mauvaises, debut, longueur])
 
 
 # --- l'heure et le facteur nuit ------------------------------------------------------------------

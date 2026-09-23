@@ -164,12 +164,6 @@ func apply_distance_culling(world: Node) -> void:
 			distance_culled["decal"] = int(distance_culled.get("decal", 0)) + 1
 		elif node is Light3D and not node is DirectionalLight3D:
 			var light := node as Light3D
-			# Une lumière qui règle déjà son propre fondu le garde (2026-09-23) : les lumières fixes des parkings à étages
-			# (StreetLights, 80 + 20 m), créées dans le _ready de StreetLights donc AVANT ce passage différé, se voyaient
-			# imposer 180 + 30 m sans que rien ne le dise.
-			if light.distance_fade_enabled:
-				distance_culled["light_fondu_propre"] = int(distance_culled.get("light_fondu_propre", 0)) + 1
-				continue
 			light.distance_fade_enabled = true
 			light.distance_fade_begin = light_fade_distance
 			light.distance_fade_length = 30.0
