@@ -144,11 +144,6 @@ GODOT="D:/p-recree/Godot_v4.7.2-stable/Godot_v4.7.2-stable_win64_console.exe"; P
 La passe `--import` finale n'est pas facultative : `MapBackgroundBake` réécrit
 `map_background.png` et, sans réimport, le jeu affiche « Failed loading resource ».
 
-Durée mesurée le 2026-09-23 (PC où le disque est en `D:`) : **106 s pour la chaîne entière**, `--import` compris
-(RoadBake 18, DistrictsBake 16, PlacesBake 7, VegetationBake 9, MapBackgroundBake 6, TerrainBake 16, import 32). Elle
-reste donc sous la limite de 10 minutes du §2. Une recuisson sans changement de code ne change les scènes cuites que par
-leurs `unique_id`, tirés au hasard : leurs ressources `.res` ressortent identiques au bit près.
-
 Autres cuissons, plus rares, hors de cette chaîne : `RoadTexturesBake`, `TerrainTexturesBake`,
 `BuildingCatalogBake`, `TrainsBake` (fusionne les caisses du pack de trains en un maillage chacune dans
 `generated/trains/`, à relancer seulement si le pack change), `DowntownFurnitureBake` (mobilier du centre-ville :
@@ -427,16 +422,6 @@ sans le plafond de 800x450 du §6). Une vue peut imposer sa propre heure par un 
   disposition du monde d'essai d'origine — et **il n'était attaché à aucun nœud de `World.tscn`**, donc
   il ne tournait plus du tout. **Supprimé le 2026-09-19** (avec son `.uid`) ; il ne reste que dans
   l'historique git et dans `World_backup_avant_integration.tscn.bak`. Ne pas le ressusciter.
-- **À PIED, `StepClimb` SOULEVAIT TOUJOURS DE 0,40 m, ET LE SNAP DU JOUEUR FAIT 0,40 m** (corrigé le 2026-09-23,
-  `4ee4532`). Quand la capsule n'avait pas encore passé l'arête (marche vue à 0,2 m) ou ne pouvait pas monter dessus
-  (socle de 9 cm au pied d'un mur), `floor_snap_length` ne retrouvait plus le sol resté 0,40 m plus bas : le joueur
-  retombait en ~0,25 s. Saut parasite de 40 cm à chaque bordure de trottoir, défaut antérieur, trahi par la collision
-  exacte des lieux (murs à socle de l'hôpital, perron du commissariat). `StepClimb` lit maintenant le dessus de la marche
-  (rayon vertical 3 cm derrière le point touché par le rayon bas) et ne soulève que de sa hauteur + 2 cm. **Règle : ce
-  qui soulève un personnage doit rester SOUS la portée de ce qui le recale** (snap du joueur ; les PNJ, eux, sont recalés
-  par `_ground_ride_height` et n'avaient pas le défaut). Pour le mesurer : le rayon vertical tiré du CENTRE d'une capsule
-  posée sur une arête voit la marche d'en bas, un écart pied-sol de 10 à 18 cm n'y est pas un saut. Compter les images
-  où `is_on_floor()` est faux, et leur hauteur.
 - **Les autoloads ne sont pas enregistrés en mode `--script`** : une sonde qui instancie
   `PlayerCarPhysics` échoue sur « Identifier not found: VitaVehicleSimulation ». La lancer comme
   **scène**, pas comme script.
@@ -1667,7 +1652,7 @@ parking.
 
 | catégorie | outil | pourquoi | état |
 |---|---|---|---|
-| bâtiments et lieux (statiques) | **Godot seul** | Les cuiseurs versent les triangles du modèle dans une forme concave, comme ils le font déjà pour la station-service (`TRIMESH_MODELS`) et les parkings. Coût mesuré faible. Blender seulement au cas par cas : escalier changé en rampe, éolienne en treillis, simplification si le joueur accroche des détails. | lieux : fait (fin du §12) ; tous les bâtiments : attend l'accord du joueur |
+| bâtiments et lieux (statiques) | **Godot seul** | Les cuiseurs versent les triangles du modèle dans une forme concave, comme ils le font déjà pour la station-service (`TRIMESH_MODELS`) et les parkings. Coût mesuré faible. Blender seulement au cas par cas : escalier changé en rampe, éolienne en treillis, simplification si le joueur accroche des détails. | lieux : EN COURS (fin du §12) ; tous les bâtiments : attend l'accord du joueur |
 | véhicules, déplacement | **Godot** (`create_convex_shape`) ; **Blender** pour camions, bus et pick-up | Une enveloppe unique relie la cabine et la benne. Blender coupe donc la caisse aux marches de son profil et fait une enveloppe par pièce. Aucune décomposition convexe automatique n'est utilisable : le V-HACD de Godot rend UNE coque pour la berline, et Blender n'en a pas. | fait |
 | véhicules, tirs | **Godot** (triangles du modèle, couche 4) | La forme concave est statique et seuls les rayons l'interrogent : Jolt n'a jamais à la faire collisionner. | fait |
 | PNJ | **Godot seul** | Capsule pour marcher ; zones par os (tête, torse, membres) pour le combat. | zones par os : chantier combat (§7) |
@@ -1685,7 +1670,7 @@ et la collision exacte partout coûte peu : +22 Mo dans Jolt, +211 ms au chargem
 
 Ordre en vigueur :
 1. véhicules : fait ;
-2. lieux de mission : fait, le joueur regarde en jeu ;
+2. lieux de mission : en cours ;
 3. tous les bâtiments en exact, si le joueur confirme ;
 4. le combat : zones par os des PNJ, dégâts aux véhicules.
 
@@ -1724,7 +1709,7 @@ Restent en boîte ou en cylindre : poteaux, lampadaires, troncs, bancs, abribus,
   chiffre lui est donné avant, avec l'erratum ci-dessus. EN ATTENTE DE SON ACCORD.**
 - **Lieux de mission**, dans tous les cas : collision exacte sur l'hôpital, le commissariat, le casino, le ranch, la planque,
   l'hôtel et l'aéroport (arcades de l'hôpital et du commissariat praticables), et une collision pour l'avion de l'aéroport.
-  **FAIT** (`bca191b`), voir la dernière sous-section ; PAUSE, le joueur regarde en jeu.
+  **EN COURS**, voir la dernière sous-section ; pause ensuite pour que le joueur regarde en jeu.
 - **On ne fait pas** : le mobilier, les poteaux et lampadaires ; les zones par os des PNJ vont au chantier combat (§7).
 
 ### Véhicules : fait le 2026-09-23
@@ -1756,33 +1741,14 @@ Restent en boîte ou en cylindre : poteaux, lampadaires, troncs, bancs, abribus,
   (joue maintenant, en plus du modèle tiré au sort, un pick-up, un camion et un bus), `WorldTrafficSmokeTest` (même voie
   dans les deux repères).
 
-### Lieux de mission : fait le 2026-09-23 (vérifié ; PAUSE, le joueur regarde en jeu)
+### Lieux de mission : EN COURS, arrêté le 2026-09-23 à 11 h 57 (changement de PC)
 
-- **Code** (`e168b60`, `PlacesBake.gd` seul) : `LIEUX_EXACTS` (hospital, precinct, casino, ranch, safehouse, hotel, airport) ;
-  `_model()` y verse les triangles du modèle dans la forme exacte « Surfaces » du lieu au lieu de sa boîte ;
-  `_prop(..., collision = true)` pour les deux avions ; `stats["collision_exacte_triangles"]`. Aucune correction n'a été
-  nécessaire dans ce code.
-- **Cuisson** (`bca191b`) : **39 579 triangles** exacts. Hôpital 9 512, commissariat 13 052, casino 380, ranch 6 852,
-  planque 1 565, hôtel 1 610, aéroport 14 823 (surfaces, 5 hangars et 2 avions). L'hôtel et le casino ont maintenant une
-  forme « Surfaces » (`hotel_shape.res`, `casino_shape.res`).
-- **Sonde** (jetable, hors dépôt) : des capsules au gabarit et au code de marche du joueur partent vers chaque face de chaque
-  bâtiment, puis le VRAI joueur, piloté au clavier, fait six trajets.
-  - **Hôpital** : on entre sous l'auvent d'entrée, sous les arcades arrière (61 lignes sur 95, jusqu'à 11 m) et sous
-    l'auvent ouest. Il n'a pas d'escalier : ses entrées sont de plain-pied.
-  - **Commissariat** : on monte le perron de face (38 lignes sur 50), le palier est à 0,76 m. On le monte aussi par les
-    côtés, et on s'arrête aux portes, sous le portique, 5,3 m derrière l'ancienne face.
-  - **Avions** : 0 -> 77 rayons horizontaux arrêtés sur 185, et les capsules ne les traversent plus. Ils ont un fuselage,
-    des ailes à 0,97-1,17 m et 3,31-3,51 m, et des roues. Une capsule qui marche dans l'envergure bute sur le bout d'aile ;
-    celle qui touche l'aile en biais glisse le long du bord effilé et la contourne.
-- **Aucun modèle n'avale le joueur.** Les intérieurs sont creux mais fermés. Les plans en coupe le montrent (sol et
-  obstacles par case de 0,2 m, trajets par-dessus) : les capsules qui dépassent la moitié de la boîte longent des bandes
-  ouvertes (auvents, perron, encoches en L) et s'arrêtent aux murs. **Piège de lecture : « au-delà de la moitié de la boîte »
-  ne veut pas dire « dans le bâtiment », regarder le plan.** L'éolienne du ranch se traverse entre ses pieds, et
-  MapPlacesTest la voit quand même.
-- **Défaut révélé, antérieur** : le saut parasite de `StepClimb`, voir le §6 (`4ee4532`).
-- **Tests** : MapPlacesTest, MapGateTest, ParkingStructureTest OK ; ProjectLoadCheck donne 626 fichiers et 0 échec.
-- **Seuil du §3** : non concerné, et non mesuré. Une forme de collision ne fait aucun appel de dessin, et les 6 vues de
-  référence ont une caméra fixe (aucune n'est en mode « sol »).
-- **Reste** : le joueur regarde en jeu. **En attente de son accord** : collision exacte sur TOUS les bâtiments (perrons
-  engloutis : 70,8 % à la carte, 38,8 % au centre-ville). Avant de s'y mettre, il faut rejouer la sonde des lieux sur un
-  échantillon de modèles de la ville : les socles et perrons y sont nombreux.
+**Fait (commit e168b60, NON TESTÉ)** : `PlacesBake.gd` seul. `LIEUX_EXACTS` (hospital, precinct, casino, ranch, safehouse,
+hotel, airport) : `_model()` y verse les triangles du modèle dans la forme exacte « Surfaces » du lieu au lieu de sa boîte ;
+`_prop(..., collision = true)` pour les deux avions ; `stats["collision_exacte_triangles"]`. Le script se charge
+(`--check-only`). **Chaîne de cuisson PAS relancée : le jeu a encore les anciennes boîtes.**
+
+**Reste, dans l'ordre** : (1) chaîne du §4 entière + `--import`, prévenir le joueur si plus de 10 min ; (2) sonde : capsule
+sous les arcades de l'hôpital et du commissariat (doit entrer), contre les avions (doit bloquer) ; (3) MapPlacesTest,
+MapGateTest, ProjectLoadCheck ; (4) commit des fichiers régénérés ; (5) PAUSE, le joueur regarde en jeu.
+**En attente de son accord** : collision exacte sur TOUS les bâtiments (perrons engloutis : 70,8 % carte, 38,8 % centre).
