@@ -11,7 +11,8 @@ extends SceneTree
 #  - modèles : sous-maillages fusionnés avec leurs transformations en un seul maillage à niveaux de détail et un seul
 #    matériau partagé (tous les matériaux du pack sont identiques : couleurs de sommet, rugosité 0,55) ;
 #  - generated/Buildings.tscn : cellules de 256 m, BuildingField (instanciation GPU au démarrage, portée de visibilité par
-#    modèle), collision exacte (triangles du modèle), occulteurs pour les grands volumes ; instanciée dans Map.tscn ;
+#    modèle), collision en boîtes ou exacte (EXACT_MODELS), occulteurs pour les grands volumes ; instanciée dans
+#    Map.tscn ;
 #  - generated/buildings/lots.json : emprises pour le fond de carte et les tests.
 #
 # Lancer après RoadBake et avant MapBackgroundBake puis TerrainBake --from-heights :
@@ -71,11 +72,21 @@ const BLEND := 8.0                          # raccord du terrain aplani
 const OCCLUDER_FAMILIES := ["CommercialBuilding", "OfficeBuilding", "Warehouse", "Loft", "IndustrialBuilding", "StorageFacility"]
 const OCCLUDER_MIN_HEIGHT := 10.0
 const OCCLUDER_MIN_AREA := 250.0
-# COLLISION EXACTE (2026-09-23, décision du joueur, CLAUDE.md §12) : chaque bâtiment reçoit les triangles de son modèle,
-# à deux faces, au lieu de sa boîte englobante, qui avalait perrons, marches et socles (70 % des bâtiments de la carte)
-# et bouchait arcades et renfoncements. Une forme par modèle, enregistrée en .res et partagée par tous ses exemplaires
-# (_exact_shape). Fait en deux étapes : les 33 modèles à perron (2534f55), puis tous les autres. La station-service était
-# seule exacte jusque-là (TRIMESH_MODELS, à une face, forme incrustée dans la scène).
+# COLLISION EXACTE (2026-09-23, décision du joueur, CLAUDE.md §12) : les triangles du modèle, à deux faces, au lieu de sa
+# boîte englobante, qui avalait perrons, marches et socles et bouchait arcades et renfoncements. Une forme par modèle,
+# enregistrée en .res et partagée par tous ses exemplaires (_exact_shape). ÉTAPE 1 : les 33 modèles de la carte dont une
+# face de boîte avale un perron, une marche ou un socle, relevés par rayons sur le maillage avec la méthode de l'erratum
+# du §12 (869 bâtiments sur 1 196 ; l'erratum en comptait 29 et 843, sa sonde est perdue). La station-service, seule
+# exacte jusqu'ici (TRIMESH_MODELS, à une face, forme incrustée dans la scène), en fait partie.
+const EXACT_MODELS := ["Business_CommercialBuilding_alt01", "Business_CommercialBuilding_alt02", "Business_CommercialBuilding_alt04",
+		"Business_CommercialBuilding_alt05", "Business_ConvenienceStore_alt01", "Business_ConvenienceStore_alt02", "Business_DoctorsOffice",
+		"Business_FastFoodRestaurant", "Business_GasStation", "Business_GeneralStore", "Business_Pub", "Business_Restaurant",
+		"Business_SmallBusiness_alt01", "Business_SmallBusiness_alt02", "Industrial_DataCenter", "Industrial_Factory_alt01",
+		"Industrial_Factory_alt04", "Industrial_IndustrialBuilding_alt03", "Industrial_IndustrialBuilding_alt06",
+		"Residential_FamilyHome_alt01", "Residential_FamilyHome_alt02", "Residential_FamilyHome_alt03", "Residential_FamilyHome_alt04",
+		"Residential_GeorgianHome_alt01", "Residential_GeorgianHome_alt02", "Residential_GeorgianHome_alt03", "Residential_GeorgianHome_alt04",
+		"Residential_GeorgianHome_alt05", "Residential_LargeFamilyHome_alt01", "Residential_LargeFamilyHome_alt02",
+		"Residential_LargeFamilyHome_alt03", "Residential_LargeFamilyHome_alt04", "Residential_Townhouse"]
 
 # --- allées d'accès ---------------------------------------------------------------------------------------------
 # Chantier « relier les bâtiments à la route ». Rien n'est deviné : _try_lot pose le centre du lot à
@@ -780,13 +791,13 @@ func _mask_index(p: Vector2) -> int:
 
 
 # --- modèles ------------------------------------------------------------------------------------------------------
-# Modèle fusionné (BuildingModels) et sa forme de collision exacte.
+# Modèle fusionné (BuildingModels) ; forme de collision exacte pour les EXACT_MODELS.
 func _baked_model(name: String) -> Dictionary:
 	if baked.has(name):
 		return baked[name]
 	var source := models.get_model(name)
 	baked[name] = {"mesh": source["mesh"], "aabb": source["aabb"], "triangles": source["triangles"],
-			"shape": _exact_shape(name, source["mesh"])}
+			"shape": _exact_shape(name, source["mesh"]) if name in EXACT_MODELS else null}
 	return baked[name]
 
 
@@ -812,10 +823,11 @@ func _write_scene() -> Dictionary:
 		if not cells.has(key):
 			cells[key] = []
 		cells[key].append(lot)
+	var boxes := {}
 	var exact_counted := {}
 	var keys := cells.keys()
 	keys.sort()
-	var stats := {"cellules": keys.size(), "exactes": 0, "occulteurs": 0, "triangles": 0}
+	var stats := {"cellules": keys.size(), "boîtes": 0, "occulteurs": 0, "triangles": 0}
 	for key: Vector2i in keys:
 		var cell := Node3D.new()
 		cell.name = "BuildingCell_%02d_%02d" % [key.x + 10, key.y + 10]
@@ -865,12 +877,23 @@ func _write_scene() -> Dictionary:
 			var above := aabb.end.y
 			var cs := CollisionShape3D.new()
 			cs.name = "Shape_%d" % body.get_child_count()
-			cs.shape = info["shape"]
-			cs.transform = Transform3D(basis, origin)
-			stats["exactes"] += 1
-			if not exact_counted.has(name):
-				exact_counted[name] = true
-				stats["triangles_collision_exacte"] = int(stats.get("triangles_collision_exacte", 0)) + int(info["triangles"])
+			if info["shape"] != null:
+				cs.shape = info["shape"]
+				cs.transform = Transform3D(basis, origin)
+				stats["exactes"] = int(stats.get("exactes", 0)) + 1
+				if not exact_counted.has(name):
+					exact_counted[name] = true
+					stats["triangles_collision_exacte"] = int(stats.get("triangles_collision_exacte", 0)) + int(info["triangles"])
+			else:
+				var size := Vector3(aabb.size.x, above, aabb.size.z)
+				var shape_key := "%.2f_%.2f_%.2f" % [size.x, size.y, size.z]
+				if not boxes.has(shape_key):
+					var box := BoxShape3D.new()
+					box.size = size
+					boxes[shape_key] = box
+				cs.shape = boxes[shape_key]
+				cs.transform = Transform3D(basis, center + Vector3(0.0, above * 0.5, 0.0))
+				stats["boîtes"] += 1
 			body.add_child(cs)
 			var family := name.get_slice("_", 1)
 			if above >= OCCLUDER_MIN_HEIGHT and aabb.size.x * aabb.size.z >= OCCLUDER_MIN_AREA and family in OCCLUDER_FAMILIES:
