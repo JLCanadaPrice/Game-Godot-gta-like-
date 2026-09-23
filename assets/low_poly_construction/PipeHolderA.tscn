@@ -1,0 +1,16 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/low_poly_construction/models/PipeHolderA.res" id="1_msvxd"]
+[ext_resource type="Shape3D" path="res://assets/low_poly_construction/models/PipeHolderA_collision.res" id="2_3bx38"]
+
+[node name="PipeHolderA" type="StaticBody3D" unique_id=2138111182]
+metadata/taille = Vector3(4.538156, 1.352462, 1.9258369)
+metadata/echelle = 1.0
+metadata/categorie = "fixe"
+
+[node name="Mesh" type="MeshInstance3D" parent="." unique_id=1348994917]
+visibility_range_end = 221.72299
+mesh = ExtResource("1_msvxd")
+
+[node name="Collision" type="CollisionShape3D" parent="." unique_id=1761522409]
+shape = ExtResource("2_3bx38")

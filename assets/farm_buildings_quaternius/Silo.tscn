@@ -1,0 +1,16 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/farm_buildings_quaternius/models/Silo.res" id="1_n7qia"]
+[ext_resource type="Shape3D" path="res://assets/farm_buildings_quaternius/models/Silo_collision.res" id="2_dllfl"]
+
+[node name="Silo" type="StaticBody3D" unique_id=721181914]
+metadata/taille = Vector3(4.7677703, 11.789222, 4.562991)
+metadata/echelle = 1.3
+metadata/categorie = "fixe"
+
+[node name="Mesh" type="MeshInstance3D" parent="." unique_id=273609858]
+visibility_range_end = 562.29144
+mesh = ExtResource("1_n7qia")
+
+[node name="Collision" type="CollisionShape3D" parent="." unique_id=835467811]
+shape = ExtResource("2_dllfl")

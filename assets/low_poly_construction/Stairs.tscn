@@ -1,0 +1,16 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/low_poly_construction/models/Stairs.res" id="1_umi85"]
+[ext_resource type="Shape3D" path="res://assets/low_poly_construction/models/Stairs_collision.res" id="2_xg7k0"]
+
+[node name="Stairs" type="StaticBody3D" unique_id=182763134]
+metadata/taille = Vector3(1.794112, 2.9999998, 3.1999998)
+metadata/echelle = 1.0
+metadata/categorie = "fixe"
+
+[node name="Mesh" type="MeshInstance3D" parent="." unique_id=299330242]
+visibility_range_end = 232.37898
+mesh = ExtResource("1_umi85")
+
+[node name="Collision" type="CollisionShape3D" parent="." unique_id=1511485385]
+shape = ExtResource("2_xg7k0")

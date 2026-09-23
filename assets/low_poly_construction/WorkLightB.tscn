@@ -1,0 +1,18 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/low_poly_construction/models/WorkLightB.res" id="1_jpimm"]
+
+[sub_resource type="ConvexPolygonShape3D" id="ConvexPolygonShape3D_tihg4"]
+points = PackedVector3Array(0.015587202, 0.07755208, 0.5920167, 0.19229183, 1.9234308, 0.5352399, 0.5739056, 0.07755208, -0.27622762, -0.015299451, 1.9379274, -0.5553762, -0.015299451, 1.9379274, 0.56098735, 0.19214414, 1.922703, -0.5587946, 0.20158102, 1.565697, -0.5864055, -0.04629842, -0.015505552, 0.5920167, -0.5735055, 0.07755208, -0.2451983, 0.5739056, -0.015505552, -0.21416898, -0.4803963, -0.015505552, -0.30725694, 0.23257998, 1.5967808, 0.52995807, 0.542682, 0.015578449, -0.30725694, 0.04658617, 0.015578449, 0.5920167, 0.015587202, 1.565697, -0.5864055, -0.5735055, 0.07755208, -0.30725694, 0.20158102, 1.565697, 0.56098735, -0.5735055, -0.015505552, -0.2451983, 0.23257998, 1.6900327, 0.52995807, -0.04629842, 0.04666239, 0.5920167, 0.015587202, -0.015505552, 0.5920167, 0.5739056, 0.07755208, -0.2451983, 0.5739056, 0.04666239, -0.21416898, 0.04658617, 0.04666239, 0.5920167)
+
+[node name="WorkLightB" type="StaticBody3D" unique_id=1803752095]
+metadata/taille = Vector3(1.1160929, 1.9537416, 1.1418598)
+metadata/echelle = 1.0
+metadata/categorie = "mobile"
+
+[node name="Mesh" type="MeshInstance3D" parent="." unique_id=1751305970]
+visibility_range_end = 112.021454
+mesh = ExtResource("1_jpimm")
+
+[node name="Collision" type="CollisionShape3D" parent="." unique_id=2119223174]
+shape = SubResource("ConvexPolygonShape3D_tihg4")

@@ -1,0 +1,16 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/low_poly_construction/models/CementBagB.res" id="1_r50p5"]
+[ext_resource type="Shape3D" path="res://assets/low_poly_construction/models/CementBagB_collision.res" id="2_a184g"]
+
+[node name="CementBagB" type="StaticBody3D" unique_id=1727445503]
+metadata/taille = Vector3(1.4011824, 0.63214064, 1.1622566)
+metadata/echelle = 0.5
+metadata/categorie = "fixe"
+
+[node name="Mesh" type="MeshInstance3D" parent="." unique_id=1952481560]
+visibility_range_end = 95.7105
+mesh = ExtResource("1_r50p5")
+
+[node name="Collision" type="CollisionShape3D" parent="." unique_id=678045178]
+shape = ExtResource("2_a184g")

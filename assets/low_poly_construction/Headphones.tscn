@@ -1,0 +1,12 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/low_poly_construction/models/Headphones.res" id="1_0tm8a"]
+
+[node name="Headphones" type="Node3D" unique_id=94059241]
+metadata/taille = Vector3(0.117903344, 0.2043485, 0.20274317)
+metadata/echelle = 0.35
+metadata/categorie = "outil"
+
+[node name="Mesh" type="MeshInstance3D" parent="." unique_id=2107860043]
+visibility_range_end = 25.0
+mesh = ExtResource("1_0tm8a")

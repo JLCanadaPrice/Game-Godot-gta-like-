@@ -1,0 +1,18 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/low_poly_construction/models/PlankA.res" id="1_5ms4a"]
+
+[sub_resource type="ConvexPolygonShape3D" id="ConvexPolygonShape3D_boyfi"]
+points = PackedVector3Array(2.2619586, 0.017541483, 0.21839616, -2.2970347, 0.017541483, -0.20243463, -2.2970347, 0.15780467, -0.20243463, 2.2970347, 0.15780467, -0.20243463, -2.2619586, 0.19288076, 0.18329947, -2.2970347, -0.017534614, 0.18329947, 2.2619586, -0.017534614, -0.20243463, 2.2619586, 0.19288076, 0.18329947, 2.2619586, 0.19288076, -0.16733794, 2.2970347, -0.017534614, 0.18329947, -2.2619586, -0.017534614, -0.20243463, -2.2619586, 0.15780467, 0.21839616, -2.2619586, 0.19288076, -0.16733794, 2.2619586, 0.15780467, 0.21839616, -2.2619586, 0.017541483, 0.21839616, -2.2970347, 0.15780467, 0.18329947, 2.2970347, 0.15780467, 0.18329947, 2.2970347, -0.017534614, -0.16733794, -2.2970347, -0.017534614, -0.16733794, 2.2970347, 0.017541483, -0.20243463)
+
+[node name="PlankA" type="StaticBody3D" unique_id=668320101]
+metadata/taille = Vector3(4.5590167, 0.16075596, 0.36981133)
+metadata/echelle = 1.0
+metadata/categorie = "mobile"
+
+[node name="Mesh" type="MeshInstance3D" parent="." unique_id=2017106158]
+visibility_range_end = 97.38386
+mesh = ExtResource("1_5ms4a")
+
+[node name="Collision" type="CollisionShape3D" parent="." unique_id=1602454579]
+shape = SubResource("ConvexPolygonShape3D_boyfi")

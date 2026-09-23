@@ -1,0 +1,16 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/farm_buildings_quaternius/models/ChickenCoop.res" id="1_r08il"]
+[ext_resource type="Shape3D" path="res://assets/farm_buildings_quaternius/models/ChickenCoop_collision.res" id="2_h7crf"]
+
+[node name="ChickenCoop" type="StaticBody3D" unique_id=1301179956]
+metadata/taille = Vector3(2.4072094, 1.8508588, 2.153996)
+metadata/echelle = 1.0
+metadata/categorie = "fixe"
+
+[node name="Mesh" type="MeshInstance3D" parent="." unique_id=497376341]
+visibility_range_end = 170.78143
+mesh = ExtResource("1_r08il")
+
+[node name="Collision" type="CollisionShape3D" parent="." unique_id=1955436674]
+shape = ExtResource("2_h7crf")

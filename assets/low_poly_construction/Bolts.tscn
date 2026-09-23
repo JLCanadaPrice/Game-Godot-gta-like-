@@ -1,0 +1,12 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/low_poly_construction/models/Bolts.res" id="1_h4lgp"]
+
+[node name="Bolts" type="Node3D" unique_id=1082837757]
+metadata/taille = Vector3(0.100984335, 0.04640247, 0.06054186)
+metadata/echelle = 0.6
+metadata/categorie = "outil"
+
+[node name="Mesh" type="MeshInstance3D" parent="." unique_id=175128625]
+visibility_range_end = 25.0
+mesh = ExtResource("1_h4lgp")

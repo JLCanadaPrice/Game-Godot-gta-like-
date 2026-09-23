@@ -1,0 +1,16 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/farm_buildings_quaternius/models/Fence.res" id="1_u8m7y"]
+[ext_resource type="Shape3D" path="res://assets/farm_buildings_quaternius/models/Fence_collision.res" id="2_l0i4j"]
+
+[node name="Fence" type="StaticBody3D" unique_id=669357]
+metadata/taille = Vector3(5.8901258, 1.0970628, 0.16550827)
+metadata/echelle = 1.0
+metadata/categorie = "fixe"
+
+[node name="Mesh" type="MeshInstance3D" parent="." unique_id=1098054323]
+visibility_range_end = 190.6511
+mesh = ExtResource("1_u8m7y")
+
+[node name="Collision" type="CollisionShape3D" parent="." unique_id=300153076]
+shape = ExtResource("2_l0i4j")

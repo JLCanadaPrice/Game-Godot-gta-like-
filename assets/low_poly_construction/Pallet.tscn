@@ -1,0 +1,18 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/low_poly_construction/models/Pallet.res" id="1_mmqxe"]
+
+[sub_resource type="ConvexPolygonShape3D" id="ConvexPolygonShape3D_av0k5"]
+points = PackedVector3Array(0.5840908, 0.1581, 0.56394744, -0.6076952, -0.009478502, -0.59059525, -0.6076952, -0.009478502, 0.58681417, 0.6076952, -0.009478502, -0.59059525, -0.5840908, 0.1581, -0.5677285, 0.6076952, -0.009478502, 0.58681417, -0.5840908, 0.1581, 0.56394744, 0.5840908, 0.1581, -0.5677285)
+
+[node name="Pallet" type="StaticBody3D" unique_id=289609849]
+metadata/taille = Vector3(1.1963634, 0.15806973, 1.1622565)
+metadata/echelle = 0.5
+metadata/categorie = "mobile"
+
+[node name="Mesh" type="MeshInstance3D" parent="." unique_id=1557837450]
+visibility_range_end = 88.439
+mesh = ExtResource("1_mmqxe")
+
+[node name="Collision" type="CollisionShape3D" parent="." unique_id=1083336042]
+shape = SubResource("ConvexPolygonShape3D_av0k5")

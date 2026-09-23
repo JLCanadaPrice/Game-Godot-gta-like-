@@ -1,0 +1,16 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/low_poly_construction/models/SteelHolder.res" id="1_m0p67"]
+[ext_resource type="Shape3D" path="res://assets/low_poly_construction/models/SteelHolder_collision.res" id="2_af4xh"]
+
+[node name="SteelHolder" type="StaticBody3D" unique_id=2084529309]
+metadata/taille = Vector3(4.274374, 1.696778, 2.0117645)
+metadata/echelle = 1.0
+metadata/categorie = "fixe"
+
+[node name="Mesh" type="MeshInstance3D" parent="." unique_id=1595790800]
+visibility_range_end = 219.93082
+mesh = ExtResource("1_m0p67")
+
+[node name="Collision" type="CollisionShape3D" parent="." unique_id=1046408523]
+shape = ExtResource("2_af4xh")

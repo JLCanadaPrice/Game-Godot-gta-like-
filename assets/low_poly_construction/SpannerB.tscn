@@ -1,0 +1,12 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/low_poly_construction/models/SpannerB.res" id="1_l6lne"]
+
+[node name="SpannerB" type="Node3D" unique_id=134355628]
+metadata/taille = Vector3(0.013157335, 0.17066406, 0.041336477)
+metadata/echelle = 0.5
+metadata/categorie = "outil"
+
+[node name="Mesh" type="MeshInstance3D" parent="." unique_id=227484627]
+visibility_range_end = 25.0
+mesh = ExtResource("1_l6lne")

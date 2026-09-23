@@ -1,0 +1,16 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/low_poly_construction/models/Crane.res" id="1_g0e0x"]
+[ext_resource type="Shape3D" path="res://assets/low_poly_construction/models/Crane_collision.res" id="2_653eo"]
+
+[node name="Crane" type="StaticBody3D" unique_id=585835815]
+metadata/taille = Vector3(39.806625, 36.74246, 5.9219465)
+metadata/echelle = 1.0
+metadata/categorie = "fixe"
+
+[node name="Mesh" type="MeshInstance3D" parent="." unique_id=2116060055]
+visibility_range_end = 2500.0
+mesh = ExtResource("1_g0e0x")
+
+[node name="Collision" type="CollisionShape3D" parent="." unique_id=27005775]
+shape = ExtResource("2_653eo")

@@ -1,0 +1,16 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/low_poly_construction/models/Skip.res" id="1_5cv0v"]
+[ext_resource type="Shape3D" path="res://assets/low_poly_construction/models/Skip_collision.res" id="2_fktc4"]
+
+[node name="Skip" type="StaticBody3D" unique_id=348727087]
+metadata/taille = Vector3(4.632674, 2.0067377, 2.3198116)
+metadata/echelle = 0.8
+metadata/categorie = "fixe"
+
+[node name="Mesh" type="MeshInstance3D" parent="." unique_id=412100591]
+visibility_range_end = 245.86885
+mesh = ExtResource("1_5cv0v")
+
+[node name="Collision" type="CollisionShape3D" parent="." unique_id=1427327662]
+shape = ExtResource("2_fktc4")

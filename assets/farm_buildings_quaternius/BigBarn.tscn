@@ -1,0 +1,16 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/farm_buildings_quaternius/models/BigBarn.res" id="1_t1505"]
+[ext_resource type="Shape3D" path="res://assets/farm_buildings_quaternius/models/BigBarn_collision.res" id="2_bule7"]
+
+[node name="BigBarn" type="StaticBody3D" unique_id=679630396]
+metadata/taille = Vector3(10.044961, 10.252804, 10.689181)
+metadata/echelle = 1.3
+metadata/categorie = "fixe"
+
+[node name="Mesh" type="MeshInstance3D" parent="." unique_id=2021808379]
+visibility_range_end = 785.15393
+mesh = ExtResource("1_t1505")
+
+[node name="Collision" type="CollisionShape3D" parent="." unique_id=263480736]
+shape = ExtResource("2_bule7")

@@ -1,0 +1,12 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/low_poly_construction/models/Clipboard.res" id="1_wvjsr"]
+
+[node name="Clipboard" type="Node3D" unique_id=1536243492]
+metadata/taille = Vector3(0.31295213, 0.022643406, 0.2058621)
+metadata/echelle = 0.4
+metadata/categorie = "outil"
+
+[node name="Mesh" type="MeshInstance3D" parent="." unique_id=2101080798]
+visibility_range_end = 25.0
+mesh = ExtResource("1_wvjsr")

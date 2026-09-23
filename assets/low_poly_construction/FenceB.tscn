@@ -1,0 +1,16 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/low_poly_construction/models/FenceB.res" id="1_tdtme"]
+[ext_resource type="Shape3D" path="res://assets/low_poly_construction/models/FenceB_collision.res" id="2_87u10"]
+
+[node name="FenceB" type="StaticBody3D" unique_id=1601081338]
+metadata/taille = Vector3(0.08810593, 1.822052, 2.5152793)
+metadata/echelle = 0.66
+metadata/categorie = "fixe"
+
+[node name="Mesh" type="MeshInstance3D" parent="." unique_id=1561510636]
+visibility_range_end = 160.55904
+mesh = ExtResource("1_tdtme")
+
+[node name="Collision" type="CollisionShape3D" parent="." unique_id=880409491]
+shape = ExtResource("2_87u10")

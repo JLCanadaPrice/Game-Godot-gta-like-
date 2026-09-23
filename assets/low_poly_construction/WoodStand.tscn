@@ -1,0 +1,18 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/low_poly_construction/models/WoodStand.res" id="1_umbm3"]
+
+[sub_resource type="ConvexPolygonShape3D" id="ConvexPolygonShape3D_7jj2f"]
+points = PackedVector3Array(-0.7145621, 0.0073366766, -0.35086364, 0.7061885, 0.8509074, 0.13869259, 0.7231801, 0.1050542, 0.35686982, -0.7231801, 0.1050542, 0.35686982, 0.7231801, 0.058366477, -0.36636508, -0.6834283, 0.83739346, -0.1435, -0.7061885, 0.8509074, 0.13869259, 0.6834283, 0.83739346, -0.1435, 0.7174324, 0.0056324354, 0.34275866, -0.7188128, 0.0048128245, 0.3434273, 0.7174324, 0.0056324354, -0.32973543, -0.7231801, 0.15165514, -0.34293216, 0.7231801, 0.15165514, -0.34293216, -0.7231801, 0.058366477, -0.36636508, 0.69277877, 0.006969374, -0.35116327)
+
+[node name="WoodStand" type="StaticBody3D" unique_id=584955702]
+metadata/taille = Vector3(1.4698576, 0.8568815, 0.70940596)
+metadata/echelle = 0.6
+metadata/categorie = "mobile"
+
+[node name="Mesh" type="MeshInstance3D" parent="." unique_id=1202521890]
+visibility_range_end = 84.17038
+mesh = ExtResource("1_umbm3")
+
+[node name="Collision" type="CollisionShape3D" parent="." unique_id=413438088]
+shape = SubResource("ConvexPolygonShape3D_7jj2f")

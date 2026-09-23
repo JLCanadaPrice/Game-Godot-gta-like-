@@ -1,0 +1,12 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/low_poly_construction/models/Shovel.res" id="1_xfjqw"]
+
+[node name="Shovel" type="Node3D" unique_id=263667185]
+metadata/taille = Vector3(0.0704892, 1.3683194, 0.29326707)
+metadata/echelle = 0.9
+metadata/categorie = "outil"
+
+[node name="Mesh" type="MeshInstance3D" parent="." unique_id=1477779963]
+visibility_range_end = 47.510178
+mesh = ExtResource("1_xfjqw")

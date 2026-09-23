@@ -1,0 +1,12 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/low_poly_construction/models/Radio.res" id="1_qxlsm"]
+
+[node name="Radio" type="Node3D" unique_id=1504042129]
+metadata/taille = Vector3(0.047658086, 0.23212487, 0.068999544)
+metadata/echelle = 0.5
+metadata/categorie = "outil"
+
+[node name="Mesh" type="MeshInstance3D" parent="." unique_id=1897605410]
+visibility_range_end = 25.0
+mesh = ExtResource("1_qxlsm")

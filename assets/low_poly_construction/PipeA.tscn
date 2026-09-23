@@ -1,0 +1,18 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/low_poly_construction/models/PipeA.res" id="1_o06u0"]
+
+[sub_resource type="ConvexPolygonShape3D" id="ConvexPolygonShape3D_yb3b6"]
+points = PackedVector3Array(-2.2445712, -0.035071433, -0.12070111, 2.2445712, 0.31564283, 0.15984283, 2.2445712, 0.31564283, -0.19087143, -2.2445712, 0.31564283, 0.15984283, 2.2445712, -0.035071433, 0.15984283, -2.2445712, 0.31564283, -0.19087143, 2.2445712, 0.035098888, -0.19087143, -2.2445712, -0.035071433, 0.15984283, 2.2445712, -0.035071433, -0.12070111, -2.2445712, 0.035098888, -0.19087143)
+
+[node name="PipeA" type="StaticBody3D" unique_id=1224195028]
+metadata/taille = Vector3(4.418987, 0.3116936, 0.31169376)
+metadata/echelle = 1.0
+metadata/categorie = "mobile"
+
+[node name="Mesh" type="MeshInstance3D" parent="." unique_id=830482865]
+visibility_range_end = 88.02107
+mesh = ExtResource("1_o06u0")
+
+[node name="Collision" type="CollisionShape3D" parent="." unique_id=1877506513]
+shape = SubResource("ConvexPolygonShape3D_yb3b6")

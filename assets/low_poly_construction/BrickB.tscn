@@ -1,0 +1,16 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/low_poly_construction/models/BrickB.res" id="1_is0yq"]
+[ext_resource type="Shape3D" path="res://assets/low_poly_construction/models/BrickB_collision.res" id="2_ue4u0"]
+
+[node name="BrickB" type="StaticBody3D" unique_id=439899189]
+metadata/taille = Vector3(1.1963634, 0.6424123, 1.1622565)
+metadata/echelle = 0.5
+metadata/categorie = "fixe"
+
+[node name="Mesh" type="MeshInstance3D" parent="." unique_id=868088722]
+visibility_range_end = 88.439
+mesh = ExtResource("1_is0yq")
+
+[node name="Collision" type="CollisionShape3D" parent="." unique_id=1810143904]
+shape = ExtResource("2_ue4u0")

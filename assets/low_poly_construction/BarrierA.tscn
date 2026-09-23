@@ -1,0 +1,18 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/low_poly_construction/models/BarrierA.res" id="1_pt6us"]
+
+[sub_resource type="ConvexPolygonShape3D" id="ConvexPolygonShape3D_yi6os"]
+points = PackedVector3Array(-0.041728716, 1.001035, -0.8993462, -0.2739095, -0.014305115, 0.72522056, 0.2774524, -0.014305115, 0.72522056, 0.045271616, 1.001035, -0.87026465, -0.041728716, 1.001035, 0.8993462, 0.045271616, 0.24684075, -0.9284277, -0.2739095, 0.043670475, -0.6963208, 0.045271616, 0.24684075, 0.9284277, 0.2774524, -0.014305115, -0.6963208, 0.045271616, 1.001035, 0.87026465, -0.2739095, -0.014305115, -0.6963208, 0.2774524, 0.01463154, 0.72522056, -0.2739095, 0.043670475, 0.6963208, -0.041728716, 0.24684075, -0.9284277, 0.045271616, 0.9429571, -0.9284277, -0.041728716, 0.24684075, 0.9284277, 0.045271616, 0.9429571, 0.9284277, 0.2774524, 0.01463154, -0.6963208, -0.041728716, 0.9429571, 0.9284277, -0.041728716, 0.9429571, -0.9284277, -0.2739095, 0.01463154, 0.72522056)
+
+[node name="BarrierA" type="StaticBody3D" unique_id=1231656188]
+metadata/taille = Vector3(0.51878834, 1.0035087, 1.828281)
+metadata/echelle = 0.8
+metadata/categorie = "mobile"
+
+[node name="Mesh" type="MeshInstance3D" parent="." unique_id=1755483295]
+visibility_range_end = 101.58821
+mesh = ExtResource("1_pt6us")
+
+[node name="Collision" type="CollisionShape3D" parent="." unique_id=1416160790]
+shape = SubResource("ConvexPolygonShape3D_yi6os")

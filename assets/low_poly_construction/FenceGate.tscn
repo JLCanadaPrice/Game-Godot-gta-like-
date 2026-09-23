@@ -1,0 +1,16 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/low_poly_construction/models/FenceGate.res" id="1_v75n5"]
+[ext_resource type="Shape3D" path="res://assets/low_poly_construction/models/FenceGate_collision.res" id="2_h1f88"]
+
+[node name="FenceGate" type="StaticBody3D" unique_id=969832287]
+metadata/taille = Vector3(0.7347736, 2.0030835, 1.2204986)
+metadata/echelle = 0.66
+metadata/categorie = "fixe"
+
+[node name="Mesh" type="MeshInstance3D" parent="." unique_id=442326832]
+visibility_range_end = 117.267975
+mesh = ExtResource("1_v75n5")
+
+[node name="Collision" type="CollisionShape3D" parent="." unique_id=51236545]
+shape = ExtResource("2_h1f88")

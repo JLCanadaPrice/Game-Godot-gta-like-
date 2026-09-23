@@ -1,0 +1,22 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/farm_buildings_quaternius/models/Windmill.res" id="1_8ai2t"]
+[ext_resource type="Shape3D" path="res://assets/farm_buildings_quaternius/models/Windmill_collision.res" id="2_quyqx"]
+[ext_resource type="ArrayMesh" path="res://assets/farm_buildings_quaternius/models/Windmill_pales.res" id="3_xdmd2"]
+
+[node name="Windmill" type="StaticBody3D" unique_id=428422710]
+metadata/taille = Vector3(8.459969, 14.555006, 2.4672065)
+metadata/echelle = 1.3
+metadata/categorie = "fixe"
+
+[node name="Mesh" type="MeshInstance3D" parent="." unique_id=1546220475]
+visibility_range_end = 832.2462
+mesh = ExtResource("1_8ai2t")
+
+[node name="Collision" type="CollisionShape3D" parent="." unique_id=471743448]
+shape = ExtResource("2_quyqx")
+
+[node name="Pales" type="MeshInstance3D" parent="." unique_id=70766956]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.2928889, 11.617909, 0.78477967)
+visibility_range_end = 832.2462
+mesh = ExtResource("3_xdmd2")

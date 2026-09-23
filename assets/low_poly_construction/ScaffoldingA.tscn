@@ -1,0 +1,16 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/low_poly_construction/models/ScaffoldingA.res" id="1_7l7so"]
+[ext_resource type="Shape3D" path="res://assets/low_poly_construction/models/ScaffoldingA_collision.res" id="2_nm4db"]
+
+[node name="ScaffoldingA" type="StaticBody3D" unique_id=1090265250]
+metadata/taille = Vector3(1.1663525, 2.338198, 2.8545597)
+metadata/echelle = 0.6
+metadata/categorie = "fixe"
+
+[node name="Mesh" type="MeshInstance3D" parent="." unique_id=1999137217]
+visibility_range_end = 193.76328
+mesh = ExtResource("1_7l7so")
+
+[node name="Collision" type="CollisionShape3D" parent="." unique_id=2067079843]
+shape = ExtResource("2_nm4db")

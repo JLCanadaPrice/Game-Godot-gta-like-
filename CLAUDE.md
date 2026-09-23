@@ -37,7 +37,9 @@ travail imposée, les commandes exactes, les pièges déjà payés et l'état d'
   intérieur du 2026-09-22 (`parking_glow_material.tres` et les deux `parking_lights.tres`), **626** depuis l'outil
   d'export des enveloppes de véhicules du 2026-09-23 (`EnveloppesExport.gd`, §12), **627** depuis les rampes invisibles
   des entrées (`RampesEntree.gd`, même jour), **629** depuis le feu d'obstacle de Mk1 (`feu_obstacle.gdshader` et son
-  matériau, même jour, §9).
+  matériau, même jour, §9), **630** depuis l'outil de conversion des packs d'accessoires (`ConversionPacks.gd`, même
+  jour, §7). **`ProjectLoadCheck` ne parcourt pas `res://assets`** (seulement scenes, scripts, resources, shaders) : les
+  98 scènes d'accessoires n'entrent pas dans son compte.
 
 ## 2. Méthode de travail (imposée, non négociable)
 
@@ -216,7 +218,7 @@ attendu.
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/DowntownStreetsTest.tscn
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/DowntownBuildingsTest.tscn
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/ShopBuildingsTest.tscn     # échec ANTÉRIEUR connu
-"$GODOT" --headless --path "$PROJET" --script res://scenes/world/map/tools/ProjectLoadCheck.gd   # attendu : 629 fichiers, 0 échec
+"$GODOT" --headless --path "$PROJET" --script res://scenes/world/map/tools/ProjectLoadCheck.gd   # attendu : 630 fichiers, 0 échec
 ```
 
 Outil d'inspection, hors batterie : `res://scenes/tests/VehicleSortTest.tscn` aligne les véhicules du catalogue
@@ -644,6 +646,19 @@ débogage sur `V`.
   en 2,57 s. Rappel : ce `RigidBody3D` n'est placé dans aucune scène de jeu (les 252 voitures de la
   circulation et la voiture prise dans la rue sont des `Car.gd` arcade) ;
 - **chantier « relier tous les bâtiments à la route »** (cf. ci-dessous).
+- **ACCESSOIRES PRÊTS À POSER, pas encore posés** (2026-09-23) : trois packs reçus en FBX, convertis en une scène par
+  modèle par `scenes/world/props/tools/ConversionPacks.gd` — `assets/airport_ground_vehicles/` (4 véhicules de piste),
+  `assets/farm_buildings_quaternius/` (13 bâtiments et objets de ferme), `assets/low_poly_construction/` (81 éléments et
+  outils de chantier). Chaque scène : maillage fusionné sur un matériau partagé par pack (un appel de dessin), échelle
+  RÉELLE cuite dans les sommets, posée au sol et centrée, portée de visibilité (75 x taille apparente), collision
+  EXACTE pour ce qui est fixe (39), une enveloppe CONVEXE par pièce pour ce qui pourrait bouger (40 ; changer la racine
+  en RigidBody3D suffit), aucune pour les outils à main (19). Échelles relevées sur les sommets et vérifiées à l'image à
+  côté d'une capsule de 1,80 m : véhicules d'aéroport à 1 ; bâtiments de ferme à 1,3 (la porte de la petite grange
+  faisait 1,69 m) ; chantier au cas par cas, le pack étant incohérent (murs de 3 m justes, outils 1,5 à 4 fois trop
+  gros). L'escalier de piste est en couleurs unies : sa texture palette manque au pack. Sources brutes dans le dépôt
+  PRIVÉ (`D:/p-recree/sources-brutes/assets/`), licences NON VÉRIFIÉES (`LICENSE_ATTRIBUTION.txt` de chaque dossier).
+  Rien n'est posé sur la carte : à décider avec le joueur (proposition : véhicules sur l'aire de trafic de l'aéroport,
+  ferme au ranch et à Greenfield, chantier à Northgate Rise et en travaux de voirie).
 
 ### Chantier à prévoir : relier les bâtiments à la route
 

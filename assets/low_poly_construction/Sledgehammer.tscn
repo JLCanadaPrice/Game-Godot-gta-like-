@@ -1,0 +1,12 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/low_poly_construction/models/Sledgehammer.res" id="1_ipw12"]
+
+[node name="Sledgehammer" type="Node3D" unique_id=708505856]
+metadata/taille = Vector3(0.09942718, 0.8835105, 0.27326822)
+metadata/echelle = 0.6
+metadata/categorie = "outil"
+
+[node name="Mesh" type="MeshInstance3D" parent="." unique_id=1940640177]
+visibility_range_end = 36.85205
+mesh = ExtResource("1_ipw12")

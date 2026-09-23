@@ -1,0 +1,16 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/low_poly_construction/models/Floor.res" id="1_fwx1j"]
+[ext_resource type="Shape3D" path="res://assets/low_poly_construction/models/Floor_collision.res" id="2_ddma5"]
+
+[node name="Floor" type="StaticBody3D" unique_id=516515299]
+metadata/taille = Vector3(2.4, 0.20000044, 2.3999996)
+metadata/echelle = 1.0
+metadata/categorie = "fixe"
+
+[node name="Mesh" type="MeshInstance3D" parent="." unique_id=2132241408]
+visibility_range_end = 179.99998
+mesh = ExtResource("1_fwx1j")
+
+[node name="Collision" type="CollisionShape3D" parent="." unique_id=1696179956]
+shape = ExtResource("2_ddma5")

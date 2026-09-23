@@ -1,0 +1,12 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/low_poly_construction/models/TapeMeasure.res" id="1_7dty5"]
+
+[node name="TapeMeasure" type="Node3D" unique_id=1488452782]
+metadata/taille = Vector3(0.027311482, 0.059907414, 0.0958035)
+metadata/echelle = 0.3
+metadata/categorie = "outil"
+
+[node name="Mesh" type="MeshInstance3D" parent="." unique_id=928093346]
+visibility_range_end = 25.0
+mesh = ExtResource("1_7dty5")

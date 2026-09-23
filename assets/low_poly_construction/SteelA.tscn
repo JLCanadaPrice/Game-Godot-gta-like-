@@ -1,0 +1,18 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/low_poly_construction/models/SteelA.res" id="1_ggd8s"]
+
+[sub_resource type="ConvexPolygonShape3D" id="ConvexPolygonShape3D_sdttn"]
+points = PackedVector3Array(-2.0640252, -0.016125202, -0.16112518, 2.0640252, 0.30637872, 0.16137874, 2.0640252, 0.30637872, -0.16112518, -2.0640252, 0.30637872, 0.16137874, 2.0640252, -0.016125202, 0.16137874, 2.0640252, -0.016125202, -0.16112518, -2.0640252, 0.30637872, -0.16112518, -2.0640252, -0.016125202, 0.16137874)
+
+[node name="SteelA" type="StaticBody3D" unique_id=1014295500]
+metadata/taille = Vector3(4.095858, 0.27999997, 0.28999996)
+metadata/echelle = 1.0
+metadata/categorie = "mobile"
+
+[node name="Mesh" type="MeshInstance3D" parent="." unique_id=2017704631]
+visibility_range_end = 81.73963
+mesh = ExtResource("1_ggd8s")
+
+[node name="Collision" type="CollisionShape3D" parent="." unique_id=2117391003]
+shape = SubResource("ConvexPolygonShape3D_sdttn")

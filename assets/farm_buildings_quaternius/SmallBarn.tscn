@@ -1,0 +1,16 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/farm_buildings_quaternius/models/SmallBarn.res" id="1_adjpx"]
+[ext_resource type="Shape3D" path="res://assets/farm_buildings_quaternius/models/SmallBarn_collision.res" id="2_agxsc"]
+
+[node name="SmallBarn" type="StaticBody3D" unique_id=49673124]
+metadata/taille = Vector3(7.9023333, 6.4494452, 8.15605)
+metadata/echelle = 1.3
+metadata/categorie = "fixe"
+
+[node name="Mesh" type="MeshInstance3D" parent="." unique_id=534874052]
+visibility_range_end = 602.1142
+mesh = ExtResource("1_adjpx")
+
+[node name="Collision" type="CollisionShape3D" parent="." unique_id=1041017551]
+shape = ExtResource("2_agxsc")

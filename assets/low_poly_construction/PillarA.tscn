@@ -1,0 +1,16 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/low_poly_construction/models/PillarA.res" id="1_vhyfm"]
+[ext_resource type="Shape3D" path="res://assets/low_poly_construction/models/PillarA_collision.res" id="2_hlwxy"]
+
+[node name="PillarA" type="StaticBody3D" unique_id=1879956291]
+metadata/taille = Vector3(0.5975569, 2.9999998, 0.5975572)
+metadata/echelle = 1.0
+metadata/categorie = "fixe"
+
+[node name="Mesh" type="MeshInstance3D" parent="." unique_id=1399764857]
+visibility_range_end = 100.41801
+mesh = ExtResource("1_vhyfm")
+
+[node name="Collision" type="CollisionShape3D" parent="." unique_id=480757870]
+shape = ExtResource("2_hlwxy")

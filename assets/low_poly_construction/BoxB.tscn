@@ -1,0 +1,18 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/low_poly_construction/models/BoxB.res" id="1_g8ffo"]
+
+[sub_resource type="ConvexPolygonShape3D" id="ConvexPolygonShape3D_54e8v"]
+points = PackedVector3Array(-0.5944075, 0.003816477, -0.5777227, -0.2232152, 1.1747999, 0.51889145, -0.22223248, 1.1722201, -0.5203798, 0.59525335, 0.0029839808, 0.5747611, 0.5186736, 1.1721663, -0.52043355, -0.59605056, 0.0021994116, 0.5755334, 0.59385246, 0.0043627415, -0.57718503, 0.520401, 1.1741092, 0.51837945, -0.52025497, 1.173945, 0.5182334, -0.5186736, 1.1721663, -0.52043355, 0.6076952, 0.16158628, -0.59059525, -0.6076952, 0.16158628, 0.58681417, -0.6076952, 0.16158628, -0.59059525, 0.6076952, 0.16158628, 0.58681417, -0.46508023, 1.1747999, 0.51889145)
+
+[node name="BoxB" type="StaticBody3D" unique_id=1746329413]
+metadata/taille = Vector3(1.1963634, 1.1747768, 1.1622567)
+metadata/echelle = 0.5
+metadata/categorie = "mobile"
+
+[node name="Mesh" type="MeshInstance3D" parent="." unique_id=716041711]
+visibility_range_end = 88.91408
+mesh = ExtResource("1_g8ffo")
+
+[node name="Collision" type="CollisionShape3D" parent="." unique_id=1316724553]
+shape = SubResource("ConvexPolygonShape3D_54e8v")

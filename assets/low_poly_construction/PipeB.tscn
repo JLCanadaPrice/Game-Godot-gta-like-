@@ -1,0 +1,16 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/low_poly_construction/models/PipeB.res" id="1_y84vx"]
+[ext_resource type="Shape3D" path="res://assets/low_poly_construction/models/PipeB_collision.res" id="2_bvayn"]
+
+[node name="PipeB" type="StaticBody3D" unique_id=845257711]
+metadata/taille = Vector3(4.415431, 0.73454326, 5.1438007)
+metadata/echelle = 1.0
+metadata/categorie = "fixe"
+
+[node name="Mesh" type="MeshInstance3D" parent="." unique_id=1530166812]
+visibility_range_end = 357.42908
+mesh = ExtResource("1_y84vx")
+
+[node name="Collision" type="CollisionShape3D" parent="." unique_id=147934679]
+shape = ExtResource("2_bvayn")

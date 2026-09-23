@@ -1,0 +1,16 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/low_poly_construction/models/ToiletB.res" id="1_lqst7"]
+[ext_resource type="Shape3D" path="res://assets/low_poly_construction/models/ToiletB_collision.res" id="2_roste"]
+
+[node name="ToiletB" type="StaticBody3D" unique_id=1125599411]
+metadata/taille = Vector3(2.0691717, 2.2786014, 1.152426)
+metadata/echelle = 0.78
+metadata/categorie = "fixe"
+
+[node name="Mesh" type="MeshInstance3D" parent="." unique_id=745216921]
+visibility_range_end = 162.85223
+mesh = ExtResource("1_lqst7")
+
+[node name="Collision" type="CollisionShape3D" parent="." unique_id=739780885]
+shape = ExtResource("2_roste")

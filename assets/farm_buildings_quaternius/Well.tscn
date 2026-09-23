@@ -1,0 +1,16 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/farm_buildings_quaternius/models/Well.res" id="1_slfth"]
+[ext_resource type="Shape3D" path="res://assets/farm_buildings_quaternius/models/Well_collision.res" id="2_3mk5f"]
+
+[node name="Well" type="StaticBody3D" unique_id=907433680]
+metadata/taille = Vector3(1.2767435, 2.1455517, 1.486883)
+metadata/echelle = 1.0
+metadata/categorie = "fixe"
+
+[node name="Mesh" type="MeshInstance3D" parent="." unique_id=1609482715]
+visibility_range_end = 133.95816
+mesh = ExtResource("1_slfth")
+
+[node name="Collision" type="CollisionShape3D" parent="." unique_id=1635744813]
+shape = ExtResource("2_3mk5f")

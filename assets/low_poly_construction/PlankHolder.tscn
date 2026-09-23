@@ -1,0 +1,16 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/low_poly_construction/models/PlankHolder.res" id="1_hg8q5"]
+[ext_resource type="Shape3D" path="res://assets/low_poly_construction/models/PlankHolder_collision.res" id="2_7pc3o"]
+
+[node name="PlankHolder" type="StaticBody3D" unique_id=771437455]
+metadata/taille = Vector3(4.677186, 1.696778, 2.0117645)
+metadata/echelle = 1.0
+metadata/categorie = "fixe"
+
+[node name="Mesh" type="MeshInstance3D" parent="." unique_id=1730575232]
+visibility_range_end = 230.06055
+mesh = ExtResource("1_hg8q5")
+
+[node name="Collision" type="CollisionShape3D" parent="." unique_id=498299920]
+shape = ExtResource("2_7pc3o")

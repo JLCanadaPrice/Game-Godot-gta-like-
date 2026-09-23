@@ -1,0 +1,18 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/low_poly_construction/models/LadderC.res" id="1_17y5k"]
+
+[sub_resource type="ConvexPolygonShape3D" id="ConvexPolygonShape3D_yiqkr"]
+points = PackedVector3Array(-0.06403492, -0.02183485, -0.33093488, 0.0669746, 2.7730348, 0.32411265, -0.06403492, 2.7730348, 0.32411265, 0.0669746, -0.02183485, 0.32411265, 0.0669746, 2.7730348, -0.33093488, -0.06403492, 2.7730348, -0.33093488, -0.06403492, -0.02183485, 0.32411265, 0.0669746, -0.02183485, -0.33093488)
+
+[node name="LadderC" type="StaticBody3D" unique_id=1443909126]
+metadata/taille = Vector3(0.08449964, 2.7512074, 0.6181902)
+metadata/echelle = 0.8
+metadata/categorie = "mobile"
+
+[node name="Mesh" type="MeshInstance3D" parent="." unique_id=886939290]
+visibility_range_end = 97.810165
+mesh = ExtResource("1_17y5k")
+
+[node name="Collision" type="CollisionShape3D" parent="." unique_id=1061923471]
+shape = SubResource("ConvexPolygonShape3D_yiqkr")

@@ -1,0 +1,12 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/low_poly_construction/models/Goggles.res" id="1_m0gwu"]
+
+[node name="Goggles" type="Node3D" unique_id=656446261]
+metadata/taille = Vector3(0.112562776, 0.081209764, 0.17888075)
+metadata/echelle = 0.3
+metadata/categorie = "outil"
+
+[node name="Mesh" type="MeshInstance3D" parent="." unique_id=1634945508]
+visibility_range_end = 25.0
+mesh = ExtResource("1_m0gwu")

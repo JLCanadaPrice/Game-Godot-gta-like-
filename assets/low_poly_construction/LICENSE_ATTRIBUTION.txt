@@ -1,0 +1,31 @@
+Low Poly Construction — LICENCE NON VÉRIFIÉE
+============================================
+
+Pack reçu le 2026-09-23 : 81 modèles FBX de chantier, sans texture. Aucun fichier de
+licence, aucun README, aucune mention d'auteur : l'origine et les conditions
+d'utilisation n'ont PAS été vérifiées. Gardé pour le développement ; à remplacer ou
+licence à confirmer avant toute diffusion publique du jeu.
+
+Sources brutes (FBX) : dépôt PRIVÉ des sources,
+D:/p-recree/sources-brutes/assets/Low Poly Construction/ — jamais dans ce dépôt.
+Converties par scenes/world/props/tools/ConversionPacks.gd (le détail de chaque
+facteur d'échelle, avec la dimension réelle de référence, est dans sa table CHANTIER).
+
+ÉCHELLE : le pack est INCOHÉRENT. Ses pièces de structure sont justes (mur, fenêtre,
+poteaux, escalier de 3,00 m, dalle de 2,40 m, poutrelles, tuyaux et râteliers, grue
+de 36,7 m : facteur 1), mais tout le reste est 1,5 à 4 fois trop gros (fût de 1,48 m
+de haut au lieu de 0,88, casque de 0,90 m, mètre ruban de 0,32 m). Chaque modèle a
+été ramené à sa taille réelle, cuite dans les sommets, et vérifié à l'image à côté
+d'une capsule de 1,80 m. Exemples : fût 0,88 m, cône 0,36 et 0,89 m, palette
+1,20 x 1,16 m, brouette 1,48 m, conteneur de 20 pieds 6,06 m, toilettes de chantier
+2,28 m, clôture de chantier 2,00 m, échafaudage 2,34 m par levée.
+
+Collision, selon ce que l'objet est :
+  fixe (26)   : forme EXACTE, triangles du modèle — structure, clôtures, échafaudages,
+                grue, conteneur, benne, toilettes, cuve, piles et râteliers ;
+  mobile (36) : une enveloppe CONVEXE (fûts, barrières, caisses, cônes, seaux, sacs,
+                bouteilles, échelles, palette, brouette, bétonnière, tourets, pièces
+                de bois et d'acier seules, projecteurs) — prête pour un RigidBody3D ;
+  outil (19)  : AUCUNE — outils à main et petits objets posés au sol (marteau,
+                perceuse, niveau, clés, mètre, casque, lunettes, radio, clous...),
+                on marche dessus sans buter.

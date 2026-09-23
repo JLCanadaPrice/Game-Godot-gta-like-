@@ -1,0 +1,18 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/low_poly_construction/models/LadderB.res" id="1_wei71"]
+
+[sub_resource type="ConvexPolygonShape3D" id="ConvexPolygonShape3D_p143i"]
+points = PackedVector3Array(0.18497096, 0.41378185, 0.14634591, -0.18295085, 0.001620817, -0.23675889, -0.1881, 0.011437239, -0.23392287, -0.18295085, 0.001620817, 0.23675889, 0.18701819, 0.001620817, -0.23675889, -0.18353558, 0.4166983, -0.14842837, 0.18701819, 0.001620817, 0.23675889, -0.19628134, 0.39972344, 0.14682831, 0.19290625, 0.39969102, -0.15416192, -0.18098402, 0.41378185, 0.14634591, 0.18596652, 0.41487512, -0.14712653, 0.19219999, 0.0113135455, 0.23406945, -0.19494542, 0.398413, -0.15312967, 0.191885, 0.39140218, 0.15335278, 0.19219999, 0.0113135455, -0.23406945, -0.1881, 0.011437239, 0.23392287, 0.19426334, 0.40102223, 0.14782725, -0.18702215, 0.39778033, 0.15261865, 0.18368012, 0.39778033, 0.15261865)
+
+[node name="LadderB" type="StaticBody3D" unique_id=554584034]
+metadata/taille = Vector3(0.39812455, 0.4182569, 0.478302)
+metadata/echelle = 0.8
+metadata/categorie = "mobile"
+
+[node name="Mesh" type="MeshInstance3D" parent="." unique_id=782558960]
+visibility_range_end = 33.545475
+mesh = ExtResource("1_wei71")
+
+[node name="Collision" type="CollisionShape3D" parent="." unique_id=537401869]
+shape = SubResource("ConvexPolygonShape3D_p143i")

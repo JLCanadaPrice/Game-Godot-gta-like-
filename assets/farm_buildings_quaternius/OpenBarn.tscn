@@ -1,0 +1,16 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/farm_buildings_quaternius/models/OpenBarn.res" id="1_p0n3l"]
+[ext_resource type="Shape3D" path="res://assets/farm_buildings_quaternius/models/OpenBarn_collision.res" id="2_qtypt"]
+
+[node name="OpenBarn" type="StaticBody3D" unique_id=99791420]
+metadata/taille = Vector3(7.4668818, 6.1664915, 8.03665)
+metadata/echelle = 1.3
+metadata/categorie = "fixe"
+
+[node name="Mesh" type="MeshInstance3D" parent="." unique_id=1516814517]
+visibility_range_end = 580.9897
+mesh = ExtResource("1_p0n3l")
+
+[node name="Collision" type="CollisionShape3D" parent="." unique_id=1843285622]
+shape = ExtResource("2_qtypt")

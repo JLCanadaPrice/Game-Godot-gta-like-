@@ -1,0 +1,16 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/low_poly_construction/models/Container.res" id="1_2yswq"]
+[ext_resource type="Shape3D" path="res://assets/low_poly_construction/models/Container_collision.res" id="2_7ku74"]
+
+[node name="Container" type="StaticBody3D" unique_id=2049254574]
+metadata/taille = Vector3(6.0600743, 2.8427444, 2.5757008)
+metadata/echelle = 0.86
+metadata/categorie = "fixe"
+
+[node name="Mesh" type="MeshInstance3D" parent="." unique_id=1788260382]
+visibility_range_end = 311.29285
+mesh = ExtResource("1_2yswq")
+
+[node name="Collision" type="CollisionShape3D" parent="." unique_id=1090049308]
+shape = ExtResource("2_7ku74")

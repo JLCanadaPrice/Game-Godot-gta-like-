@@ -1,0 +1,16 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/low_poly_construction/models/SteelB.res" id="1_qu2nc"]
+[ext_resource type="Shape3D" path="res://assets/low_poly_construction/models/SteelB_collision.res" id="2_jv00f"]
+
+[node name="SteelB" type="StaticBody3D" unique_id=2000755348]
+metadata/taille = Vector3(5.2189274, 0.62210774, 3.8481474)
+metadata/echelle = 1.0
+metadata/categorie = "fixe"
+
+[node name="Mesh" type="MeshInstance3D" parent="." unique_id=1919618029]
+visibility_range_end = 336.10715
+mesh = ExtResource("1_qu2nc")
+
+[node name="Collision" type="CollisionShape3D" parent="." unique_id=1505407644]
+shape = ExtResource("2_jv00f")

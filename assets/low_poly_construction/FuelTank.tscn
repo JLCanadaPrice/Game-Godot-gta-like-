@@ -1,0 +1,16 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/low_poly_construction/models/FuelTank.res" id="1_c6uf3"]
+[ext_resource type="Shape3D" path="res://assets/low_poly_construction/models/FuelTank_collision.res" id="2_qct67"]
+
+[node name="FuelTank" type="StaticBody3D" unique_id=1635924592]
+metadata/taille = Vector3(2.3327045, 2.546487, 5.0088716)
+metadata/echelle = 0.8
+metadata/categorie = "fixe"
+
+[node name="Mesh" type="MeshInstance3D" parent="." unique_id=1633470070]
+visibility_range_end = 267.85635
+mesh = ExtResource("1_c6uf3")
+
+[node name="Collision" type="CollisionShape3D" parent="." unique_id=1584683053]
+shape = ExtResource("2_qct67")

@@ -1,0 +1,16 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/low_poly_construction/models/Window.res" id="1_emt6v"]
+[ext_resource type="Shape3D" path="res://assets/low_poly_construction/models/Window_collision.res" id="2_8ho7b"]
+
+[node name="Window" type="StaticBody3D" unique_id=2140181626]
+metadata/taille = Vector3(0.3, 3.0000005, 4)
+metadata/echelle = 1.0
+metadata/categorie = "fixe"
+
+[node name="Mesh" type="MeshInstance3D" parent="." unique_id=856839946]
+visibility_range_end = 259.80765
+mesh = ExtResource("1_emt6v")
+
+[node name="Collision" type="CollisionShape3D" parent="." unique_id=1934063383]
+shape = ExtResource("2_8ho7b")

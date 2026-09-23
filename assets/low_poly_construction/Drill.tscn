@@ -1,0 +1,12 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/low_poly_construction/models/Drill.res" id="1_qaiop"]
+
+[node name="Drill" type="Node3D" unique_id=539062526]
+metadata/taille = Vector3(0.08089824, 0.23455559, 0.28759593)
+metadata/echelle = 0.4
+metadata/categorie = "outil"
+
+[node name="Mesh" type="MeshInstance3D" parent="." unique_id=1537716075]
+visibility_range_end = 25.0
+mesh = ExtResource("1_qaiop")

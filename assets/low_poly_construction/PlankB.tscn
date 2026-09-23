@@ -1,0 +1,16 @@
+[gd_scene format=3]
+
+[ext_resource type="ArrayMesh" path="res://assets/low_poly_construction/models/PlankB.res" id="1_2vigi"]
+[ext_resource type="Shape3D" path="res://assets/low_poly_construction/models/PlankB_collision.res" id="2_ulsx3"]
+
+[node name="PlankB" type="StaticBody3D" unique_id=566448224]
+metadata/taille = Vector3(7.214863, 0.32683513, 2.7165942)
+metadata/echelle = 1.0
+metadata/categorie = "fixe"
+
+[node name="Mesh" type="MeshInstance3D" parent="." unique_id=98274548]
+visibility_range_end = 332.03793
+mesh = ExtResource("1_2vigi")
+
+[node name="Collision" type="CollisionShape3D" parent="." unique_id=1219548567]
+shape = ExtResource("2_ulsx3")
