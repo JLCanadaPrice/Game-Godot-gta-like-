@@ -157,7 +157,7 @@ func _spawn_at(node: int) -> bool:
 		if e is Node3D and e.global_position.distance_to(spawn_pos) < min_gap:
 			return false   # ce point d'apparition est encore occupé
 
-	if _naissance_visible(node, spawn_pos, lateral):
+	if _is_visible_to_player(spawn_pos):
 		return false   # anti-spawn visible : le joueur regarde déjà ce point, on retente au prochain cooldown
 
 	var ent := spawn_scene.instantiate()
@@ -172,24 +172,6 @@ func _spawn_at(node: int) -> bool:
 		ent.setup(_graph, node, 0.0, 0.0, npc_edges_budget)
 	return true
 
-# OÙ LA VOITURE NAÎT VRAIMENT (2026-09-23). Une voiture ne naît pas sur le noeud mais DANS SA VOIE : Car.setup prend une
-# arête qui part du noeud et se pose en `sample_offset(arête, noeud, 0, voie)`, 1,8 à 2,8 m à côté de l'axe. Tester le
-# noeud seul laissait naître des voitures dont la voie était en vue alors que l'axe, lui, passait derrière un angle de
-# bâtiment : relevé par un contrôle indépendant (frustum réel de la caméra + ligne de vue vers la voiture née), toutes
-# les naissances vues sous 150 m qui restaient après la visée à 1 m étaient de ce type. On teste donc le noeud ET chaque
-# position de naissance possible — chaque arête du noeud, les deux voies — et on refuse si UNE est vue. Les PNJ
-# naissent sur le noeud lui-même.
-func _naissance_visible(node: int, spawn_pos: Vector3, lateral: float) -> bool:
-	if _is_visible_to_player(spawn_pos):
-		return true
-	if kind != "vehicle":
-		return false
-	for e in _circuit.node_edges(node):
-		for l: float in [lateral, -lateral]:
-			if _is_visible_to_player(_circuit.sample_offset(int(e), node, 0.0, _circuit.lane_offset(int(e), l))):
-				return true
-	return false
-
 # Tirage pondéré dans npc_faction_weights ; civil si la table est vide ou à zéro.
 func _pick_faction() -> StringName:
 	var total := 0.0
@@ -202,32 +184,13 @@ func _pick_faction() -> StringName:
 			return StringName(f)
 	return &"civil"
 
-# Anti-spawn visible : vrai si le point d'apparition est à la fois dans le cône de
-# vision du joueur (devant la caméra, cos > 0.5 ~ 60° de demi-angle), à moins de
-# VISEE_DISTANCE, ET en ligne de vue directe (aucun obstacle -- calque 1 = décor
-# statique : route/trottoir/terrain/bâtiments -- entre les deux). Si un bâtiment
-# (ou autre décor) masque déjà le point, ce n'est PAS considéré visible -> le
+# Anti-spawn visible : vrai si `spawn_pos` est à la fois dans le cône de
+# vision du joueur (devant la caméra, cos > 0.5 ~ 60° de demi-angle) ET en
+# ligne de vue directe (aucun obstacle -- calque 1 = décor statique :
+# route/trottoir/terrain/bâtiments -- entre les deux). Si un bâtiment (ou
+# autre décor) masque déjà le point, ce n'est PAS considéré visible -> le
 # spawn est autorisé, conformément à la consigne.
-#
-# ON VISE 1 M AU-DESSUS DU POINT, comme `SimulationCuller.target_height` (2026-09-23). Le rayon visait le point AU SOL :
-# parti de l'oeil du joueur, il rasait la chaussée sur des dizaines de mètres et butait sur une bordure, un ressaut de
-# trottoir ou une bosse AVANT d'arriver — le point passait pour masqué presque partout. Mesuré sur 165 poses de caméra
-# et tous les noeuds des deux graphes : 14 refus sur 37 007 points dans le cône, 0,0 % ; en visant 1 m au-dessus, 5 946,
-# soit 16,1 %, du même ordre que les 19,8 % de cibles que le culler juge visibles.
-#
-# ET ON NE REFUSE QUE SOUS 150 M — décision du joueur, sur mesure. SimulationCuller gèle tout ce qui est à plus de 50 m
-# et hors de la vue ; une anti-apparition TOTALE ne fait donc naître que des voitures aussitôt gelées, et un joueur
-# immobile ne voit plus jamais rien arriver : sur l'îlot d'Echo Circle, 42 voitures, toutes gelées, 0 éveillée en une
-# minute, et RoundaboutTrafficTest à 0 sortie en 300 s. La circulation d'avant tenait parce que des voitures naissaient
-# SOUS SES YEUX. Au-delà de 150 m une voiture fait moins de 6 pixels : on la laisse naître en vue, éveillée, et c'est
-# elle qui amène la circulation jusqu'au joueur. La vraie solution d'une anti-apparition totale est un GEL EN DEUX
-# TEMPS (les voitures gelées avancent le long de leur trajet sans physique), noté au §7 du CLAUDE.md.
-const VISEE_HAUTEUR := 1.0
-const VISEE_DISTANCE := 150.0
-
-
-func _is_visible_to_player(spawn_pos_sol: Vector3) -> bool:
-	var spawn_pos := spawn_pos_sol + Vector3.UP * VISEE_HAUTEUR
+func _is_visible_to_player(spawn_pos: Vector3) -> bool:
 	var player := get_tree().get_first_node_in_group("player")
 	if player == null:
 		return false
@@ -244,8 +207,6 @@ func _is_visible_to_player(spawn_pos_sol: Vector3) -> bool:
 
 	if dir.dot(forward) < 0.5:
 		return false   # hors du cône de vision -> inutile de raycaster
-	if dist > VISEE_DISTANCE:
-		return false   # trop loin pour qu'une naissance se remarque, et nécessaire à la circulation (cf. plus haut)
 
 	var space_state := get_world_3d().direct_space_state
 	var params := PhysicsRayQueryParameters3D.create(eye_pos, spawn_pos)

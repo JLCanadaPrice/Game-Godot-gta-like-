@@ -3,8 +3,8 @@
 Fiche écrite pour être lue au début de chaque session : le contexte du projet, la méthode de
 travail imposée, les commandes exactes, les pièges déjà payés et l'état d'avancement.
 
-> **Série du 2026-09-23 terminée** (fin du §12) : régression des bâtiments creux corrigée, anti-apparition du
-> `LoopSpawner` réparée (refus sous 150 m). Le coût physique d'environ 2 ms reste NON TOUCHÉ : le joueur le teste en jeu.
+> **EN COURS (2026-09-23, 17 h 50) : lire d'abord la fin du §12, « EN COURS : reprendre ici ».** La régression
+> des bâtiments creux est CORRIGÉE ; reste l'anti-apparition du `LoopSpawner` (point B).
 
 ## 1. Le projet
 
@@ -250,11 +250,6 @@ sans le plafond de 800x450 du §6). Une vue peut imposer sa propre heure par un 
   chaque maillage était stocké en double. La bonne réponse : fusionner le modèle en un maillage,
   l'enregistrer en `.res` dans `generated/places/`, poser un `MeshInstance3D` par exemplaire et
   régler la portée dessus (cf. `_fbx_model`). `_prop()` a encore le même défaut.
-- **`RoundaboutTrafficTest` n'a plus que peu de marge sur ses 20 sorties** depuis que l'anti-apparition marche
-  (2026-09-23, §12) : 25 puis 21 sorties en 300 s, contre 40 à 59 avant. Ce n'est pas un défaut de circulation : le
-  joueur est IMMOBILE sur l'îlot, et SimulationCuller gèle tout ce qui naît hors de sa vue ; seules les voitures nées
-  en vue au-delà de 150 m arrivent éveillées. S'il tombe sous 20, rejouer une fois avant d'accuser une modification.
-  Ne PAS baisser le seuil pour le faire passer : la vraie réponse est le gel en deux temps (§7).
 - **`WorldTrafficSmokeTest` et `NoclipTest` ont un aléa** : le premier signale parfois « 1 paires
   avec véhicule long », le second a lâché une fois sur trois sur « voiture à portée » (la voiture
   du trafic n'était pas encore arrivée). Avant d'accuser une modification, rejouer le test deux
@@ -591,16 +586,10 @@ débogage sur `V`.
   utilisée aujourd'hui). Ni SSAO ni glow ne sont activés, rien à gagner de ce côté. La mesure qui décidera est le
   temps GPU (`RenderPerfTest`) sur une carte Intel, pas les appels de dessin (§3) ;
 - **bug : 0 voiture exposée** chez le concessionnaire ;
-- ~~**bug : l'anti-apparition de `LoopSpawner` ne refuse presque rien**~~ **CORRIGÉ le 2026-09-23** (§12, fin) : plus
-  aucune voiture ne naît en vue à moins de 150 m (31 avant, en marchant depuis Founders Plaza) ; au-delà, on la laisse
-  naître, faute de quoi un joueur immobile ne voit plus rien arriver. Voir la puce suivante ;
-- **gel en deux temps pour la circulation**, chantier futur, décidé par le joueur le 2026-09-23 : c'est la vraie
-  solution d'une anti-apparition TOTALE. `SimulationCuller` gèle tout ce qui est à plus de 50 m et hors de la vue ; une
-  voiture qui naît hors de la vue est donc aussitôt gelée et n'arrive jamais. Mesuré sur l'îlot d'Echo Circle avec une
-  anti-apparition totale : 42 voitures, TOUTES gelées, 0 éveillée en une minute, et RoundaboutTrafficTest à 0 sortie. Il
-  faudrait que les voitures gelées AVANCENT le long de leur trajet sans physique (abscisse sur l'arête, pas de
-  `move_and_slide`, pas de visuel), comme c'est déjà prévu pour les trains (§8, étape 5). On pourrait alors refuser
-  toute naissance en vue, à toute distance, et relever `RoundaboutTrafficTest` à ses 40-59 sorties d'avant ;
+- **bug : l'anti-apparition de `LoopSpawner` ne refuse presque rien** (relevé le 2026-09-23, §12) : 14 points sur 37 007
+  dans le cône de vue, avec ou sans collision exacte. Le rayon vise le point d'apparition AU SOL : parti de la caméra, il
+  rase la chaussée et bute sur une bordure ou une bosse avant d'arriver, donc le point passe pour caché. Viser 1 m au-dessus,
+  comme `SimulationCuller`, changerait ce comportement : à décider avec le joueur ;
 - ~~**marches trop hautes pour `StepClimb`** devant certaines entrées~~ **FAIT le 2026-09-23** : rampes de collision
   invisibles devant 10 entrées (§12, « Rampes invisibles des entrées »), la limite de 0,40 m du joueur restant où elle est.
   La première liste donnée au joueur était FAUSSE pour 3 modèles sur 6 : le cabinet médical, les petits commerces alt01 et
@@ -1985,45 +1974,20 @@ creuse n'expulse plus un joueur posé dedans ; une boîte pleine le faisait (Jol
   elle-même du décor qu'elle mesure.** Et, comme pour les captures : le relevé qui compte est pris AU DÉCLENCHEMENT
   (la sonde imprime maintenant la place où le joueur est POSÉ, avant que la gravité ne le fasse glisser).
 
-**B. ANTI-APPARITION RÉPARÉE** (`LoopSpawner.gd` seul). Trois changements, tous tranchés par le joueur sur mesure :
+**B. Point 2, anti-apparition : PAS COMMENCÉ dans le code.** Mesures « avant » faites sur ce PC (déterministes) :
+- `sonde_vue` : critère actuel du LoopSpawner (rayon vers le point AU SOL) : **14 refus sur 37 007** poses dans le
+  cône (`vue_avant.log`).
+- `sonde_remplissage` (World.tscn, spawners actifs) : Founders Plaza 86 voitures / 315 PNJ à 5 s, puis 93 (10 s),
+  106 (20 s), 118 (30 s), 142 (45 s), 163 voitures à 60 s (PNJ 315) ; Echo Circle 49 voitures / 78 PNJ tout du long ;
+  artère de l'aéroport 2 puis 3 voitures, 0 PNJ (`remplissage_avant*.log`).
+- RoundaboutTrafficTest : OK, « 300 s : 45 sorties, au plus 0 voiture(s) figée(s) 40 s, échantillons voie intérieure
+  106 / extérieure 147 » (222 s de lancement) ; WorldTrafficSmokeTest : OK (62 s) ; NoclipTest : ÉCHEC (A).
+- À faire : sauvegarder `LoopSpawner.gd` ; dans `_is_visible_to_player`, viser `spawn_pos + Vector3.UP * 1.0` (comme
+  `SimulationCuller.target_height`) ; faire calculer à `sonde_vue` l'ancien ET le nouveau critère ; relancer
+  `sonde_remplissage`, RoundaboutTrafficTest, WorldTrafficSmokeTest, NoclipTest (après A) ; mettre à jour la puce
+  anti-apparition du §7 ; un commit.
 
-1. **Viser 1 m au-dessus du point, comme le culler.** Le rayon visait le point AU SOL, rasait la chaussée et butait sur
-   une bordure avant d'arriver : **14 refus sur 37 007** points dans le cône (0,0 %, `sonde_vue`, 165 poses x 4 caps).
-   À 1 m : **5 946, soit 16,1 %**, du même ordre que les 19,8 % de cibles que le culler juge visibles.
-2. **Tester la VOIE, pas le noeud.** Une voiture naît 1,8 à 2,8 m à côté du noeud, dans sa voie
-   (`sample_offset(arête, noeud, 0, voie)`) ; on teste maintenant chaque position de naissance possible (chaque arête,
-   les deux voies). Trouvé par un contrôle INDÉPENDANT du spawner (frustum réel de la caméra + ligne de vue vers la
-   voiture née) : avec la seule visée à 1 m, 20 naissances sur 159 restaient dans le champ, et pour chacune le critère
-   du spawner jugeait le NOEUD caché.
-3. **Ne refuser que sous 150 m.** Une anti-apparition totale TUE la circulation autour d'un joueur immobile :
-   `SimulationCuller` gèle tout ce qui naît hors de sa vue. Sur l'îlot d'Echo Circle, 42 voitures toutes gelées, 0
-   éveillée en une minute, **RoundaboutTrafficTest à 0 sortie** (45 avant). La circulation d'avant tenait parce que des
-   voitures naissaient sous ses yeux. Au-delà de 150 m une voiture fait moins de 6 pixels : on la laisse naître en
-   vue, éveillée, et c'est elle qui amène la circulation. La vraie réponse, le gel en deux temps, est au §7.
-
-Mesures, même graine, même PC. « Marche » = le vrai joueur suit les trottoirs du PedGraph à 5 m/s depuis Founders
-Plaza, 449 m en 90 s (`sonde_remplissage_marche`, nouvelle) ; « vues » = voitures nées à l'écran et en vue directe,
-jugées par le contrôle indépendant ; « immobile » = `sonde_remplissage`, joueur planté à Founders Plaza.
-
-| variante | marche, 60 s / 90 s | vues en marchant, dont sous 150 m | immobile, 60 s | Echo Circle, éveillées à 60 s |
-|---|---|---|---|---|
-| avant (point au sol) | 183 / 201 | 63 sur 215, **31** | 163 | 34 |
-| 1 m seul (essai) | 139 / 145 | 20 sur 159, 5 | 80, plafonné dès 5 s | **0** (test à 0 sortie) |
-| 1 m + voies, avec report (essai) | 116 / 115 | **0** sur 129 | — | — |
-| 1 m + report sur points cachés (essai) | 151 / 163 | 32 sur 177 | — | — |
-| **retenu : 1 m, voies, refus sous 150 m** | **159 / 171** | 41 sur 185, **0** | **108**, en croissance | **31** |
-
-Deux essais écartés, à ne pas refaire : **REPORTER une tentative refusée sur un point caché** (dette de tentatives
-soldée dans la même image) ne rend PAS la densité — le goulot n'est pas le rythme mais l'OCCUPATION : 91 % des refus
-sont « une voiture à moins de 12 m » (`min_gap`), 7 % seulement « visible », et une dette portée à 64 tentatives et 12
-essais par image n'a rien changé (118 contre 116). Et **ne refuser que sous 150 m SANS tester les voies** laissait 7
-naissances vues sous 150 m.
-
-Tests : RoundaboutTrafficTest OK deux fois (**25 puis 21 sorties** pour 20 exigées, 0 file figée, les deux voies
-servent — marge mince, cf. §6), WorldTrafficSmokeTest OK, NoclipTest OK.
-
-**C. Sondes** : hors du dépôt dans `D:/p-recree/sondes/2026-09-23_collision_exacte/`, avec leurs logs. Leurs `.tscn`
-pointent maintenant vers ce dossier (corrigé le 2026-09-23). Ajoutées dans la série : `sonde_enferme` (critère
-d'enfermement du noclip), `sonde_remplissage_marche` (joueur qui marche, naissances dans le champ jugées par un contrôle
-indépendant), `sonde_rond_point` (voitures gelées et éveillées sur l'îlot). Toujours sous `timeout` : une erreur
-d'analyse laisse Godot bloqué — payé encore une fois dans cette série.
+**C. Sondes** : copiées hors du dépôt dans `D:/p-recree/sondes/2026-09-23_collision_exacte/` avec leurs logs « avant ».
+Leurs `.tscn` pointent encore vers le dossier temporaire de la session
+(`C:/Users/pa30oie/AppData/Local/Temp/claude/D--p-recree/<session>/scratchpad/sonde/`) : corriger le `path=` du script
+avant de les relancer. Toujours sous `timeout` : une erreur d'analyse laisse Godot bloqué.
