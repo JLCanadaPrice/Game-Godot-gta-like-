@@ -908,6 +908,12 @@ Le balisage **ne se fond pas au crépuscule, il s'allume** : un balisage de pist
 interrupteur. `StreetLights` montre ou cache le groupe `airport_glow` au passage de `AIRPORT_ON_AT`.
 Un matériau par couleur, partagé, donc **un appel de dessin par couleur visible**, zéro le jour.
 
+**Piste secondaire raccourcie le 2026-09-23** (demande du joueur) : elle allait de x 620 à 1040, et son bout ouest,
+côté parking, passait 20 m au-delà de la clôture (x = 640), seuils compris. Elle va maintenant de x 651 (le bord ouest de
+la voie de circulation qui la rejoint) à 1040, seuils vert et rouge à 651 et 654 : 11 m à l'intérieur. 271 feux au
+lieu de 273. **Relevé en passant, pas corrigé** : le bord sud de la piste principale (z -1372,5) et ses feux de bord
+dépassent de 0,5 m la clôture sud (z -1372), qui court donc sur le rebord de l'enrobé.
+
 ### Feux arrière : deux niveaux, et le sol éclairé
 
 - **La nuit, tout véhicule qui roule porte ses feux rouges en permanence** (matériau `vehicle_tail`,

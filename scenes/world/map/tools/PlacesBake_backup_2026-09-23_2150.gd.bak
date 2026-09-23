@@ -214,10 +214,7 @@ func _airport() -> void:
 	_vitrage_uniforme = true
 	# pistes (09/27 principale au nord, secondaire au sud-est), voies de circulation, aire de trafic
 	var ra := _runway(Vector2(590, -1350), 900.0, 45.0, top, "09", "27")
-	# Piste secondaire, x 651..1040 (2026-09-23). Elle allait de x 620 à 1040 : son bout ouest, côté parking, passait
-	# 20 m au-delà de la clôture (x = 640), seuils vert et rouge compris. Raccourcie par ce bout, jusqu'au bord ouest de
-	# la voie de circulation qui la rejoint (x 651..669) : 11 m à l'intérieur de la clôture, voie toujours raccordée.
-	var rb := _runway(Vector2(845.5, -1020), 389.0, 30.0, top, "", "")
+	var rb := _runway(Vector2(830, -1020), 420.0, 30.0, top, "", "")
 	_paved(Vector2(590, -1300), Vector2(820, 18), top, "plain", YELLOW)
 	for x: float in [180.0, 590.0, 1000.0]:
 		_paved(Vector2(x, -1318.25), Vector2(18, 18.5), top, "plain", YELLOW, true)
@@ -486,7 +483,7 @@ func _barre_feux(centre: Vector3, axe: Vector3, largeur: float, pas: float, coul
 
 # Balisage complet de Prairie Wind. Les coordonnées viennent de la géométrie posée juste au-dessus,
 # pas d'un relevé séparé : piste 09/27 en (590, -1350) sur 900 x 45 m, piste secondaire en
-# (845,5 ; -1020) sur 389 x 30 m, voies de circulation et aire de trafic aux emprises de _paved.
+# (830, -1020) sur 420 x 30 m, voies de circulation et aire de trafic aux emprises de _paved.
 func _balisage_aeroport(top: float) -> void:
 	var y := top + 0.35
 	# --- piste principale 09/27 : bords blancs, tiers ouest en jaune (zone de prudence du seuil 09)
@@ -519,8 +516,8 @@ func _balisage_aeroport(top: float) -> void:
 			break
 		_barre_feux(Vector3(x, y, zc), Vector3(0, 0, 1), 8.0, 2.0, "blanc")
 		stats_air["rampe_barres"] += 1
-	# --- piste secondaire : bords blancs, seuils verts et rouges, pas de rampe (seuil ouest à 651 : cf. _airport)
-	var xc := 651.0
+	# --- piste secondaire : bords blancs, seuils verts et rouges, pas de rampe
+	var xc := 620.0
 	var xd := 1040.0
 	var zs := -1020.0
 	for cote: float in [-1.0, 1.0]:
