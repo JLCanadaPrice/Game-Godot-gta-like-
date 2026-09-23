@@ -251,8 +251,8 @@ func _airport() -> void:
 	for x: float in [705.0, 750.0, 795.0, 840.0, 885.0]:
 		_model("Industrial_Warehouse_alt02", Vector2(x, -1265), PI, top, 1.6)
 		footprints.append(_rect_footprint("building", Vector2(x, -1265), Vector2(38, 38)))
-	_prop(PLANE, Vector3(612, top, -1277), -PI * 0.5, true)
-	_prop(PLANE, Vector3(630, top, -1256), -PI * 0.5, true)
+	_prop(PLANE, Vector3(612, top, -1277), -PI * 0.5)
+	_prop(PLANE, Vector3(630, top, -1256), -PI * 0.5)
 	# parking de l'aérogare
 	# clôture du côté piste, l'aérogare fait la limite
 	_fence(PackedVector2Array([Vector2(370, -1214), Vector2(70, -1214), Vector2(70, -1372), Vector2(1070, -1372), Vector2(1070, -970),
@@ -1310,15 +1310,7 @@ func _flat_label(text: String, pos: Vector3, yaw: float) -> void:
 	stats["étiquettes"] += 1
 
 
-# LIEUX DE MISSION EN COLLISION EXACTE (2026-09-23, décision du joueur, CLAUDE.md §12). Dans ces lieux, un bâtiment du pack
-# ne reçoit plus sa boîte englobante : ses triangles vont dans la collision exacte du lieu (`faces`, la forme « Surfaces »,
-# à deux faces), comme le parking à étages de l'aérogare. Mesuré avant : à 1 m du sol, 72 % des faces de la boîte de
-# l'hôpital (ses arcades), 80 % du commissariat, 52 % du casino avaient plus de 1 m de vide derrière elles. Les autres lieux
-# gardent leurs boîtes.
-const LIEUX_EXACTS := ["hospital", "precinct", "casino", "ranch", "safehouse", "hotel", "airport"]
-
-# Bâtiment du pack posé au sol (centre de l'emprise en `center`), façade vers `yaw`, collision en boîte (triangles exacts
-# dans les LIEUX_EXACTS).
+# Bâtiment du pack posé au sol (centre de l'emprise en `center`), façade vers `yaw`, collision en boîte.
 func _model(name: String, center: Vector2, yaw: float, base_y: float, scale := 1.0) -> void:
 	var info := models.get_model(name)
 	var aabb: AABB = info["aabb"]
@@ -1330,18 +1322,13 @@ func _model(name: String, center: Vector2, yaw: float, base_y: float, scale := 1
 	mi.transform = Transform3D(basis, origin)
 	mi.visibility_range_end = 2500.0 if scale > 1.2 or aabb.size.y > 30.0 else 1200.0
 	place.add_child(mi)
-	if String(place.get_meta("place_id")) in LIEUX_EXACTS:
-		var exacts := Transform3D(basis, origin) * (info["mesh"] as Mesh).get_faces()
-		faces.append_array(exacts)
-		stats["collision_exacte_triangles"] = int(stats.get("collision_exacte_triangles", 0)) + exacts.size() / 3
-	else:
-		var cs := CollisionShape3D.new()
-		cs.name = "Model_%d" % body.get_child_count()
-		var shape := BoxShape3D.new()
-		shape.size = Vector3(aabb.size.x, aabb.end.y, aabb.size.z) * scale
-		cs.shape = shape
-		cs.transform = Transform3D(Basis(Vector3.UP, yaw), Vector3(center.x, base_y + aabb.end.y * scale * 0.5, center.y))
-		body.add_child(cs)
+	var cs := CollisionShape3D.new()
+	cs.name = "Model_%d" % body.get_child_count()
+	var shape := BoxShape3D.new()
+	shape.size = Vector3(aabb.size.x, aabb.end.y, aabb.size.z) * scale
+	cs.shape = shape
+	cs.transform = Transform3D(Basis(Vector3.UP, yaw), Vector3(center.x, base_y + aabb.end.y * scale * 0.5, center.y))
+	body.add_child(cs)
 	_flatten_rect(center, Vector2(cos(yaw), -sin(yaw)), Vector2(sin(yaw), cos(yaw)), Vector2(aabb.size.x, aabb.size.z) * scale * 0.5 + Vector2(1, 1), base_y - 0.05)
 	stats["modèles"] += 1
 	stats["triangles"] += int(info["triangles"])
@@ -1462,27 +1449,12 @@ func _parked_vehicle(path: String, center: Vector2, yaw: float, base_y: float) -
 			% [path.get_file(), center.x, center.y, rad_to_deg(yaw)])
 
 
-func _prop(path: String, pos: Vector3, yaw: float, collision := false) -> void:
+func _prop(path: String, pos: Vector3, yaw: float) -> void:
 	var inst := (load(path) as PackedScene).instantiate() as Node3D
 	inst.name = "Prop_%d" % place.get_child_count()
 	inst.transform = Transform3D(Basis(Vector3.UP, yaw), pos)
 	for gi in inst.find_children("*", "GeometryInstance3D", true, false):
 		(gi as GeometryInstance3D).visibility_range_end = 700.0
-	# collision exacte (avion de l'aéroport, qui n'en avait AUCUNE : on le traversait) : ses triangles dans celle du lieu
-	if collision:
-		for n in inst.find_children("*", "MeshInstance3D", true, false):
-			var mi := n as MeshInstance3D
-			if mi.mesh == null:
-				continue
-			var t := mi.transform
-			var cur := mi.get_parent()
-			while cur != null and cur != inst:
-				if cur is Node3D:
-					t = (cur as Node3D).transform * t
-				cur = cur.get_parent()
-			var exacts := (inst.transform * t) * mi.mesh.get_faces()
-			faces.append_array(exacts)
-			stats["collision_exacte_triangles"] = int(stats.get("collision_exacte_triangles", 0)) + exacts.size() / 3
 	place.add_child(inst)
 
 
