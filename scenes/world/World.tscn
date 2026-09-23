@@ -1,10 +1,6 @@
 [gd_scene format=3 uid="uid://c1wxwcjet2fhj"]
 
 [ext_resource type="PackedScene" uid="uid://csryoo0wwc28y" path="res://scenes/player/Player.tscn" id="1"]
-[ext_resource type="Script" path="res://scenes/world/DayNightCycle.gd" id="cycle_jour_nuit"]
-[ext_resource type="Script" path="res://scenes/world/StreetLights.gd" id="lampadaires_nuit"]
-[ext_resource type="Script" path="res://scenes/world/ParkedVehicles.gd" id="vehicules_gares"]
-[ext_resource type="Script" path="res://scenes/world/VehicleLights.gd" id="phares_vehicules"]
 [ext_resource type="PackedScene" uid="uid://c3au1f1btxufy" path="res://scenes/ui/HUD.tscn" id="2"]
 [ext_resource type="PackedScene" path="res://scenes/ui/MapMenu.tscn" id="3"]
 [ext_resource type="PackedScene" uid="uid://ujk3wq5k15fd" path="res://scenes/ui/BuildingPurchaseUI.tscn" id="6"]
@@ -29,8 +25,12 @@
 [ext_resource type="Script" uid="uid://t6rv8jlqkhf2" path="res://scripts/world/CityRenderOptimizer.gd" id="56_crdopt"]
 [ext_resource type="PackedScene" uid="uid://bip2wv2ye3bia" path="res://assets/dock_models/FBX/Dock_Wide.fbx" id="71_h0frk"]
 [ext_resource type="PackedScene" path="res://scenes/buildings/AgencyBuilding.tscn" id="agency_building_tscn"]
+[ext_resource type="Script" uid="uid://b3cbxl4xplwak" path="res://scenes/world/DayNightCycle.gd" id="cycle_jour_nuit"]
 [ext_resource type="PackedScene" path="res://scenes/buildings/DealershipBuilding.tscn" id="dealership_building_tscn"]
+[ext_resource type="Script" uid="uid://bdwcb5ajqjho3" path="res://scenes/world/StreetLights.gd" id="lampadaires_nuit"]
 [ext_resource type="PackedScene" path="res://scenes/world/map/Map.tscn" id="map_carte3d"]
+[ext_resource type="Script" uid="uid://b7ljcy16s2cts" path="res://scenes/world/VehicleLights.gd" id="phares_vehicules"]
+[ext_resource type="Script" uid="uid://b7bol5o3ab5sy" path="res://scenes/world/ParkedVehicles.gd" id="vehicules_gares"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_1"]
 
@@ -87,16 +87,16 @@ transform = Transform3D(0.707, -0.5, 0.5, 0, 0.707, 0.707, -0.707, -0.5, 0.5, 0,
 shadow_enabled = true
 directional_shadow_max_distance = 240.0
 
-[node name="DayNight" type="Node3D" parent="."]
+[node name="DayNight" type="Node3D" parent="." unique_id=1129534708]
 script = ExtResource("cycle_jour_nuit")
 
-[node name="StreetLights" type="Node3D" parent="."]
+[node name="StreetLights" type="Node3D" parent="." unique_id=88457899]
 script = ExtResource("lampadaires_nuit")
 
-[node name="ParkedVehicles" type="Node3D" parent="."]
+[node name="ParkedVehicles" type="Node3D" parent="." unique_id=669365249]
 script = ExtResource("vehicules_gares")
 
-[node name="VehicleLights" type="Node3D" parent="."]
+[node name="VehicleLights" type="Node3D" parent="." unique_id=1482429320]
 script = ExtResource("phares_vehicules")
 
 [node name="Ground" type="Node3D" parent="." unique_id=820883506]
@@ -2359,7 +2359,7 @@ shape = SubResource("BoxShape3D_gttih")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -250, -1.3, -575)
 
 [node name="Mesh" parent="Downtown/Quay/Water" unique_id=1783555869 instance=ExtResource("26_ekb8v")]
-transform = Transform3D(15.656336, 0, 0, 0, 1, 0, 0, 0, 3.3066711, 0, -0.91656876, 6.4489746)
+transform = Transform3D(16.830091, 0, 0, 0, 1.0000005, 0, 0, 0, 3.7011342, 0.60357666, -0.91656876, 2.880371)
 script = ExtResource("27_7vsg4")
 water_material = ExtResource("26_sadf8")
 
@@ -2428,5 +2428,6 @@ script = ExtResource("55_h1p51")
 
 [node name="CityRenderOptimizer" type="Node3D" parent="." unique_id=1418350213]
 script = ExtResource("56_crdopt")
+batched_scenes = PackedStringArray("*/Sidewalk_Straight_3m.gltf", "res://assets/modular_roads/Road*.glb", "res://assets/modular_roads/lamp_*.glb")
 
 [node name="Map" parent="." unique_id=431075310 instance=ExtResource("map_carte3d")]

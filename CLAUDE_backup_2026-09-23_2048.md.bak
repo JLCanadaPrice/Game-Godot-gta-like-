@@ -354,13 +354,6 @@ sans le plafond de 800x450 du §6). Une vue peut imposer sa propre heure par un 
   Payé le 2026-09-21 sur la séquence de l'hélice : des vues de travers et plongeantes, prises d'abord pour un défaut de
   la caméra de conduite. `Input.mouse_mode = MOUSE_MODE_VISIBLE` après l'instanciation du monde : le gestionnaire du
   joueur ne lit la souris qu'en mode capturé. (`MapShotsTest` n'est pas concerné : il rend avec sa propre caméra.)
-- **LE LAC DU QUAI N'EST PAS CUIT : il vit dans `World.tscn`, et c'est le joueur qui le règle** (2026-09-23). L'eau au
-  sud du centre-ville est le noeud `Downtown/Quay/Water/Mesh` (un `ocean_mesh.glb` mis à l'échelle), posé à la main :
-  aucune cuisson n'écrit `World.tscn` (le seul outil qui l'ait jamais fait, `DowntownInstall`, est l'installateur ponctuel
-  du centre-ville, hors de toute chaîne), et `TerrainBake` ne le lit pas — le bassin qu'il creuse est une constante,
-  `TerrainModel.HARBOR_WATER = Rect2(-500, -650, 500, 156)`. Le joueur l'a agrandi et décalé dans l'éditeur le 2026-09-23
-  (échelle 15,66 x 3,31 -> 16,83 x 3,70) : une recuisson ne peut pas l'écraser. Ne pas le « remettre » sur la constante du
-  terrain. À distinguer de la rivière, elle CUITE par `TerrainBake` (`generated/Water.tscn`, `water/river_water.tres`).
 - **LE GADGET `CollisionShape3D` DE L'ÉDITEUR LE REND INUTILISABLE DEPUIS LA COLLISION EXACTE DES BÂTIMENTS**
   (2026-09-23, cause confirmée par le joueur). Godot dessine un gadget en fil de fer pour CHAQUE `CollisionShape3D` de
   la scène ouverte, sous-scènes instanciées comprises : avec `World.tscn` ouvert, **26,4 millions de segments**, contre
