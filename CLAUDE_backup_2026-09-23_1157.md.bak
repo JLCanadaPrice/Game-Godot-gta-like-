@@ -1647,58 +1647,6 @@ sa trace montrait 0,00 m à toutes les hauteurs. (5) Des rayons horizontaux à 1
 l'appui passe pour un perron. (6) Un rayon VERTICAL ne rencontre jamais un mur vertical : une marche verticale « jusqu'au mur »
 entre dans le bâtiment et prend son plancher surélevé pour un perron. Trois chiffres faux (28 %, 82 %, 0 %) avant le bon.
 
-**Godot seul ou Blender, par catégorie.** Les deux sont disponibles, comme pour les 24 modèles du labo et les pièces du
-parking.
-
-| catégorie | outil | pourquoi | état |
-|---|---|---|---|
-| bâtiments et lieux (statiques) | **Godot seul** | Les cuiseurs versent les triangles du modèle dans une forme concave, comme ils le font déjà pour la station-service (`TRIMESH_MODELS`) et les parkings. Coût mesuré faible. Blender seulement au cas par cas : escalier changé en rampe, éolienne en treillis, simplification si le joueur accroche des détails. | lieux : EN COURS (fin du §12) ; tous les bâtiments : attend l'accord du joueur |
-| véhicules, déplacement | **Godot** (`create_convex_shape`) ; **Blender** pour camions, bus et pick-up | Une enveloppe unique relie la cabine et la benne. Blender coupe donc la caisse aux marches de son profil et fait une enveloppe par pièce. Aucune décomposition convexe automatique n'est utilisable : le V-HACD de Godot rend UNE coque pour la berline, et Blender n'en a pas. | fait |
-| véhicules, tirs | **Godot** (triangles du modèle, couche 4) | La forme concave est statique et seuls les rayons l'interrogent : Jolt n'a jamais à la faire collisionner. | fait |
-| PNJ | **Godot seul** | Capsule pour marcher ; zones par os (tête, torse, membres) pour le combat. | zones par os : chantier combat (§7) |
-| mobilier, poteaux, lampadaires, trottoirs, routes, terrain | **rien** | Déjà adaptés ou déjà exacts. Décision du joueur : on ne les fait pas. | — |
-
-**Ce qui vaut le coup, et l'ordre.** L'inventaire proposait quatre étapes :
-1. les lieux de mission et l'avion ;
-2. « la dizaine de modèles à porches ou arcades (~140 exemplaires), les ~80 autres modèles collent déjà » ;
-3. la silhouette des véhicules pour les tirs ;
-4. la forme de déplacement des véhicules, en dernier.
-
-**Le point 2 reposait sur le faux 7,9 %.** Mesure corrigée : 29 modèles et 843 bâtiments de la carte ont une entrée
-engloutie, et un tiers des façades a plus de 1 m de vide. « Les modèles concernés » couvrent donc presque toute la ville,
-et la collision exacte partout coûte peu : +22 Mo dans Jolt, +211 ms au chargement, rayons +21 %.
-
-Ordre en vigueur :
-1. véhicules : fait ;
-2. lieux de mission : en cours ;
-3. tous les bâtiments en exact, si le joueur confirme ;
-4. le combat : zones par os des PNJ, dégâts aux véhicules.
-
-Restent en boîte ou en cylindre : poteaux, lampadaires, troncs, bancs, abribus, clôtures.
-
-**Risques.**
-- **JOLT : DEUX FORMES CONCAVES NE SE TOUCHENT PAS.** Une voiture en trimesh traverse la route, qui est aussi un trimesh
-  (mesuré : -12,7 m en 1,5 s). Règle : jamais de `ConcavePolygonShape3D` sur ce qui bouge. Tout corps mobile est convexe
-  (enveloppe, boîte, capsule) ; le concave est réservé au décor statique et aux zones de tir (masque vide). Une fois les
-  bâtiments exacts, un corps mobile en trimesh les traverserait aussi, alors qu'aujourd'hui il bute contre leurs boîtes.
-- PNJ et circulation : aucun risque pour leurs trajets. Aucun point du PedGraph ni du graphe routier n'est dans une boîte
-  de bâtiment.
-- Le joueur, à pied ou en voiture, entre dans ce que la boîte bouchait :
-  - des marches à franchir (`_try_step_up`) ;
-  - les plafonds bas des arcades, pour la voiture ;
-  - à vérifier : un modèle creux (des façades sans intérieur) ne doit pas l'avaler.
-- Les rayons sur la couche 1 changent de résultat :
-  - `SimulationCuller` : un bâtiment exact cache moins, donc plus d'entités réveillées ;
-  - l'anti-apparition de `LoopSpawner` ;
-  - le dégagement des lampadaires ;
-  - la caméra « sol » de `MapShotsTest`.
-- Tests à rejouer : MapGateTest, MapPlacesTest, MapExplorationTest, SimulationCullingTest, DayNightTest et
-  ParkingStructureTest ; pour les véhicules, CarKerbTest et CarDrivingTest. Selon le §2 : seulement ceux que touche
-  l'étape, et prévenir le joueur avant toute vérification ou chaîne de plus de 10 min.
-- Deux mesures manquent :
-  - l'écart entre la capsule et le vrai corps des PNJ, qui dépend de la pose animée ;
-  - le coût dans une vraie image de jeu : le banc ci-dessus est synthétique.
-
 **Décisions du joueur (2026-09-23).**
 - **Véhicules** : forme de déplacement = enveloppe convexe qui suit la SILHOUETTE (capot penché, toit, coffre ; rétroviseurs et
   petits détails sans importance), plus de boîte ; **collision exacte réservée aux tirs** (c'est ce qui débloque le combat) ;
@@ -1706,10 +1654,9 @@ Restent en boîte ou en cylindre : poteaux, lampadaires, troncs, bancs, abribus,
 - **Bâtiments** : son problème principal, ce sont les ESCALIERS et PERRONS devant les entrées, que la boîte engloutit. Mesure à
   faire de 0 à 1,2 m tous les 10 cm AVANT de décider : si beaucoup de bâtiments sont concernés, collision exacte partout ; sinon,
   les modèles concernés seulement. **Mesuré : 70,8 % à la carte, 38,8 % au centre-ville — « beaucoup ». Rien construit : le
-  chiffre lui est donné avant, avec l'erratum ci-dessus. EN ATTENTE DE SON ACCORD.**
+  chiffre lui est donné avant, avec l'erratum ci-dessus.**
 - **Lieux de mission**, dans tous les cas : collision exacte sur l'hôpital, le commissariat, le casino, le ranch, la planque,
   l'hôtel et l'aéroport (arcades de l'hôpital et du commissariat praticables), et une collision pour l'avion de l'aéroport.
-  **EN COURS**, voir la dernière sous-section ; pause ensuite pour que le joueur regarde en jeu.
 - **On ne fait pas** : le mobilier, les poteaux et lampadaires ; les zones par os des PNJ vont au chantier combat (§7).
 
 ### Véhicules : fait le 2026-09-23
@@ -1740,15 +1687,3 @@ Restent en boîte ou en cylindre : poteaux, lampadaires, troncs, bancs, abribus,
   tir sur la couche 4), `ParkingStructureTest` et `WheelSpinTest` (lisaient la boîte comme `BoxShape3D`), `CarKerbTest`
   (joue maintenant, en plus du modèle tiré au sort, un pick-up, un camion et un bus), `WorldTrafficSmokeTest` (même voie
   dans les deux repères).
-
-### Lieux de mission : EN COURS, arrêté le 2026-09-23 à 11 h 57 (changement de PC)
-
-**Fait (commit e168b60, NON TESTÉ)** : `PlacesBake.gd` seul. `LIEUX_EXACTS` (hospital, precinct, casino, ranch, safehouse,
-hotel, airport) : `_model()` y verse les triangles du modèle dans la forme exacte « Surfaces » du lieu au lieu de sa boîte ;
-`_prop(..., collision = true)` pour les deux avions ; `stats["collision_exacte_triangles"]`. Le script se charge
-(`--check-only`). **Chaîne de cuisson PAS relancée : le jeu a encore les anciennes boîtes.**
-
-**Reste, dans l'ordre** : (1) chaîne du §4 entière + `--import`, prévenir le joueur si plus de 10 min ; (2) sonde : capsule
-sous les arcades de l'hôpital et du commissariat (doit entrer), contre les avions (doit bloquer) ; (3) MapPlacesTest,
-MapGateTest, ProjectLoadCheck ; (4) commit des fichiers régénérés ; (5) PAUSE, le joueur regarde en jeu.
-**En attente de son accord** : collision exacte sur TOUS les bâtiments (perrons engloutis : 70,8 % carte, 38,8 % centre).
