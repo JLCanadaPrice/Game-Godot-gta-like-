@@ -18,26 +18,23 @@ extends Node3D
 #     raccords), arrive en haut, puis redescend en marche arrière. À mi-pente, son modèle a l'assiette de la pente
 #     (nez levé en montée) et ses roues touchent la pente : écart entre le bas de chaque roue et la pente sous 8 cm.
 #     La boîte de collision restant horizontale, l'essieu arrière flottait avant à 0,27 m.
-#  4. ESCALIER : dans chacun des quatre parkings, un piéton monte du rez au TOIT par l'escalier de la bande arrière
-#     (déplacé le 2026-09-23 : il était dans la tour vitrée, devant l'entrée des voitures) — départ à l'est du pied
-#     des volées, puis à chaque étage volée A, palier, volée B, arrivée ; au toit, sortie vers l'est — et finit posé
-#     sur le toit. À l'aéroport, c'est le VRAI joueur (Player.tscn), piloté comme au clavier (move_forward, corps
-#     tourné vers le repère suivant) ; ailleurs, sa capsule.
+#  4. ESCALIER : dans chacun des quatre parkings, un piéton monte du rez au TOIT par l'escalier de la tour vitrée
+#     (porte du rez, puis à chaque étage volée A, palier, volée B, arrivée ; porte du toit) et finit posé sur le toit.
+#     À l'aéroport, c'est le VRAI joueur (Player.tscn), piloté comme au clavier (move_forward, corps tourné vers le
+#     repère suivant) ; ailleurs, sa capsule.
 #  4b. GARDE-CORPS, PIÉTON ET VOITURE : un piéton (capsule du joueur) et une voiture poussés à 3 et 4 m/s contre
-#     chaque garde-corps — paroi de l'escalier côté rampe, au palier de chaque volée ; couloir de la volée A au toit ;
-#     les DEUX parapets de chaque rampe, les deux bords de chaque trémie de rampe (côté sud, à l'est de l'escalier),
-#     et le bout ouest de la trémie du toit. Aucun ne passe par-dessus ni ne tombe : chacun reste du bon côté et
-#     debout sur son plancher.
+#     chaque garde-corps — bord est de chaque trémie d'escalier, couloir de la volée A au toit, les DEUX parapets de
+#     chaque rampe, les deux bords de chaque trémie de rampe, et le bout ouest de la trémie du toit. Aucun ne passe
+#     par-dessus ni ne tombe : chacun reste du bon côté et debout sur son plancher.
 #  4b bis. ÉCLAIRAGE INTÉRIEUR (2026-09-22) : les quatre parkings portent un maillage de lumières, TOUS sur le MÊME
 #     matériau (sinon le moteur ne les regroupe plus) ; chaque niveau couvert a des luminaires ; et sous chaque
 #     luminaire de la partie roulante il reste au moins 2,90 m de dégagement — un véhicule qui passe la barre de
 #     2,15 m ne doit jamais pouvoir taper dedans. C'est exactement la faute déjà payée avec les boîtiers du modèle,
 #     qui pendaient 20 cm au-dessus du tablier de la rampe.
-#  4b ter. PLACES MARQUÉES (2026-09-22) : les 14 places de chaque niveau (10 en bataille le long de la façade, 4 en
-#     créneau le long de la rampe depuis le 2026-09-23) doivent être PLATES (le tablier sous les quatre coins de la
-#     voiture, au niveau du plancher) et DÉGAGÉES sur 2 m de haut — un poteau, un bandeau de plafonnier ou un bout
-#     de rampe dans une place, et la voiture cuite se retrouve encastrée. Et chaque fiche de véhicule garé doit
-#     tomber sur une place de parking, dans son sens.
+#  4b ter. PLACES MARQUÉES (2026-09-22) : les 10 places de chaque niveau doivent être PLATES (le tablier sous les
+#     quatre coins de la voiture, au niveau du plancher) et DÉGAGÉES sur 2 m de haut — un poteau, un bandeau de
+#     plafonnier ou un bout de rampe dans une place, et la voiture cuite se retrouve encastrée. Et chaque fiche de
+#     véhicule garé doit tomber sur une place de parking.
 #  4c. BARRE DE HAUTEUR : à l'entrée de l'aéroport, un camion (2,79 m de caisse) et une berline (1,45 m) lancés à
 #     4 m/s vers le passage. Le camion est arrêté DEHORS par le portique, la berline entre.
 #  5. RAMPES INTÉRIEURES (2026-09-22) : la voiture du joueur, conduite comme au clavier (move_forward / move_left /
@@ -365,30 +362,22 @@ func _montee(delta: float) -> void:
 
 # --- 4. escalier ----------------------------------------------------------------------------------------------------
 
-# Repères de la montée, écrits dans le REPÈRE DE L'ESCALIER (cf. ParkingStructureKit, constantes ESC_*) et posés dans
-# celui du modèle par ESC_XF, comme l'escalier lui-même : départ dans la bande arrière, à l'est du pied des volées ;
-# puis, à chaque étage, pied de la volée A, haut de la volée A, palier, haut de la volée B, arrivée ; au toit, on
-# ressort vers l'est par le couloir de la volée B. Sur le palier, on passe d'une volée à l'autre au bout du mur
-# d'échiffre, pas en diagonale à travers lui.
+# Repères de la montée, dans le repère du modèle (cf. ParkingStructureKit, constantes ESC_*) : devant la porte côté
+# parking, zone de départ ; puis, à chaque étage, pied de la volée A, haut de la volée A, palier, haut de la volée B,
+# arrivée ; au toit, la porte de la cage. Sur le palier, on passe d'une volée à l'autre au bout du mur d'échiffre, pas en
+# diagonale à travers lui.
 func _reperes_escalier(sols: PackedFloat32Array) -> Array:
-	# milieu de la volée A ; volée B, 5 cm côté écran : en s'engageant dans la volée B depuis le palier, une capsule
-	# visée au milieu frôle le bout du mur d'échiffre (l'ancien test visait déjà 9,25 pour une volée centrée à 9,20)
-	var za: float = (Kit.ESC_A.x + Kit.ESC_A.y) * 0.5
-	var zb: float = (Kit.ESC_B.x + Kit.ESC_B.y) * 0.5 + 0.05
 	var y0: float = sols[0]
-	var out: Array = [Vector3(-7.0, y0, za), Vector3(-4.3, y0, za)]
+	var out: Array = [Vector3(-4.86, y0, 6.2), Vector3(-4.86, y0, 8.1), Vector3(-4.3, y0, 8.1)]
 	for k in sols.size() - 1:
 		var ya := (float(sols[k]) + float(sols[k + 1])) * 0.5
 		var y1: float = sols[k + 1]
-		out.append_array([Vector3(-1.1, ya, za), Vector3(0.0, ya, za), Vector3(0.0, ya, zb), Vector3(-1.1, ya, zb),
-				Vector3(-4.95, y1, zb)])
+		out.append_array([Vector3(-1.1, ya, 8.1), Vector3(0.0, ya, 8.1), Vector3(0.0, ya, 9.25), Vector3(-1.1, ya, 9.25),
+				Vector3(-4.95, y1, 9.25), Vector3(-4.95, y1, 8.1)])
 		if k < sols.size() - 2:
-			out.append_array([Vector3(-4.95, y1, za), Vector3(-4.3, y1, za)])
-	out.append(Vector3(-7.0, float(sols[sols.size() - 1]), zb))
-	var modele: Array = []
-	for r: Vector3 in out:
-		modele.append(Kit.ESC_XF * r)
-	return modele
+			out.append(Vector3(-4.3, y1, 8.1))
+	out.append(Vector3(-4.86, float(sols[sols.size() - 1]), 6.2))
+	return out
 
 
 func _debut_escalier() -> void:
@@ -474,20 +463,15 @@ func _debut_garde_corps() -> void:
 	for e: Array in _parkings:
 		var b: Node3D = e[0]
 		var sols: PackedFloat32Array = e[2]
-		# ESCALIER, paroi côté rampe, au palier de chaque volée : c'est là qu'on est le plus haut au-dessus du plancher de
-		# départ (2,28 m), et qu'on tomberait sur la rampe du dessous. Le piéton part du palier, côté volée B, vers +z.
-		for k in range(sols.size() - 1):
-			var ya := (float(sols[k]) + float(sols[k + 1])) * 0.5
-			_pousse(b, Kit.ESC_XF * Vector3(-0.1, ya, 9.2), Vector3(0, 0, 1), Kit.ESC_PAROI_Z.x, ya,
-					"%s, paroi de l'escalier au palier %d" % [b.name, k], false)
 		for k in range(1, sols.size()):
 			var y: float = sols[k]
+			# ESCALIER, bord est de la trémie : garde-corps en x 0,64..0,70 ; le piéton part de x 1,3 vers -x
+			_pousse(b, Vector3(1.3, y, 8.7), Vector3(-1, 0, 0), 0.70, y, "%s, bord est de la tremie d'escalier au niveau %d" % [b.name, k], false)
 			# RAMPE, garde-corps au ras du plancher, de part et d'autre de la trémie : piéton ET voiture
 			for sz: float in [-1.0, 1.0]:
 				# le piéton part à 1,2 m du garde-corps, la voiture à 3 m : elle fait 4,2 m de long et naîtrait à
-				# cheval dessus, ce qui la faisait ressortir SUR le garde-corps d'en face (payé le 2026-09-22). Côté sud,
-				# il part à l'est de l'escalier (x 12,5) : sur la longueur de l'escalier, c'est sa paroi qui borde la trémie.
-				_pousse(b, Vector3(12.5 if sz < 0.0 else 6.0, y, zr + sz * (bord_tremie + Kit.RAMPE_GC + 1.2)), Vector3(0, 0, -sz),
+				# cheval dessus, ce qui la faisait ressortir SUR le garde-corps d'en face (payé le 2026-09-22)
+				_pousse(b, Vector3(6.0, y, zr + sz * (bord_tremie + Kit.RAMPE_GC + 1.2)), Vector3(0, 0, -sz),
 						zr + sz * (bord_tremie + Kit.RAMPE_GC), y,
 						"%s, tremie de rampe au niveau %d, cote %s" % [b.name, k, "sud" if sz < 0.0 else "facade"], false)
 				if sz > 0.0:
@@ -495,11 +479,8 @@ func _debut_garde_corps() -> void:
 							zr + sz * (bord_tremie + Kit.RAMPE_GC), y,
 							"%s, tremie de rampe au niveau %d, cote facade" % [b.name, k], true)
 		var yt: float = sols[sols.size() - 1]
-		# TOIT : couloir de la volée A (garde-corps en travers, face est à x 10,72 du modèle, cf. ESC_XF), et bout ouest de
-		# la trémie de rampe (aucune rampe ne part du toit)
-		var za: float = (Kit.ESC_A.x + Kit.ESC_A.y) * 0.5
-		_pousse(b, Kit.ESC_XF * Vector3(-5.05, yt, za), Vector3(-1, 0, 0), (Kit.ESC_XF * Vector3(Kit.ESC_PIED - 0.06, 0, 0)).x, yt,
-				"%s, couloir de la volee A au toit" % b.name, false)
+		# TOIT : couloir de la volée A, et bout ouest de la trémie de rampe (aucune rampe ne part du toit)
+		_pousse(b, Vector3(-5.05, yt, 8.1), Vector3(1, 0, 0), -4.54, yt, "%s, couloir de la volee A au toit" % b.name, false)
 		var bt := Kit.rampe_bouts(float(sols[sols.size() - 1]) - float(sols[sols.size() - 2]))
 		_pousse(b, Vector3(bt.x - 2.0, yt, zr), Vector3(1, 0, 0), bt.x - Kit.RAMPE_JEU - Kit.RAMPE_GC, yt,
 				"%s, bout ouest de la tremie de rampe au toit" % b.name, true)
@@ -608,7 +589,7 @@ var _t_barre := 0.0
 const LUM_TETES := ["res://scenes/world/map/generated/places/parking_lights.tres",
 		"res://scenes/world/downtown/generated/parking_lights.tres"]
 const LUM_DEGAGEMENT := 2.90     # sous un luminaire de la partie roulante
-const LUM_AUVENT_Z := 11.87      # au-delà (repère du modèle), on est sous l'auvent de l'entrée, dehors
+const LUM_CAGE_Z := 7.0          # au-delà (repère du modèle), on est dans la cage d'escalier : piétons seulement
 
 
 func _lumieres() -> void:
@@ -635,11 +616,8 @@ func _lumieres() -> void:
 			_fautes.append("eclairage : %s absent, cuisson a relancer" % chemin)
 			continue
 		tetes.append_array((load(chemin) as MapLampHeads).heads)
-	# autant de luminaires cuits que le kit en pose par parking (47 depuis le 2026-09-23 : les 5 panneaux de la cage
-	# d'escalier sont devenus 4 panneaux au-dessus du pied du nouvel escalier, le toit n'en a plus)
-	var par_parking: int = (Kit.eclairage(_parkings[0][2], 4, 4)["tetes"] as PackedVector3Array).size()
-	if tetes.size() != _parkings.size() * par_parking:
-		_fautes.append("eclairage : %d luminaire(s) au lieu de %d" % [tetes.size(), _parkings.size() * par_parking])
+	if tetes.size() != _parkings.size() * 48:
+		_fautes.append("eclairage : %d luminaire(s) au lieu de %d" % [tetes.size(), _parkings.size() * 48])
 	# un luminaire par niveau couvert, et le dégagement sous ceux de la partie roulante
 	var espace := get_world_3d().direct_space_state
 	var pire := 99.0
@@ -656,8 +634,8 @@ func _lumieres() -> void:
 		for k in sols.size() - 1:
 			if local.y > float(sols[k]) and local.y <= float(sols[k + 1]) + 0.2:
 				par_niveau["%s|%d" % [b.name, k]] = int(par_niveau.get("%s|%d" % [b.name, k], 0)) + 1
-		if local.z > LUM_AUVENT_Z:
-			continue     # auvent de l'entrée, hors du bâtiment
+		if local.z > LUM_CAGE_Z:
+			continue     # cage d'escalier ou auvent : aucune voiture n'y passe
 		var q := PhysicsRayQueryParameters3D.create(t, t - Vector3(0, 6.0, 0), 1)
 		var hit := espace.intersect_ray(q)
 		if hit.is_empty():
@@ -681,8 +659,8 @@ func _lumieres() -> void:
 
 const PL_JSON := ["res://scenes/world/map/generated/places/places.json",
 		"res://scenes/world/downtown/generated/parked_parkings.json"]
-const PL_DEMI_X := 1.15          # demi-largeur de la plus large voiture tirée (SUV 01, 2,20 m), plus un peu
-const PL_DEMI_Z := 2.30          # demi-longueur de la plus longue (berline 02, 4,49 m), plus un peu
+const PL_DEMI_X := 1.15          # demi-largeur d'une voiture du parc, plus un peu
+const PL_DEMI_Z := 2.10          # demi-longueur
 const PL_LIBRE := 2.00           # hauteur libre exigée au-dessus d'une place
 
 
@@ -693,7 +671,6 @@ func _places() -> void:
 	var pire_ou := ""
 	var bas := 99.0
 	var bas_ou := ""
-	var creneaux := 0
 	for e: Array in _parkings:
 		var b: Node3D = e[0]
 		var sols: PackedFloat32Array = e[2]
@@ -702,12 +679,8 @@ func _places() -> void:
 			total += 1
 			var c: Vector3 = pl["centre"]
 			var sol: float = (b.global_transform * c).y
-			# en créneau, la voiture est couchée le long de x
-			var dx: float = PL_DEMI_Z if bool(pl.get("creneau", false)) else PL_DEMI_X
-			var dz: float = PL_DEMI_X if bool(pl.get("creneau", false)) else PL_DEMI_Z
-			if bool(pl.get("creneau", false)):
-				creneaux += 1
-			for d: Vector3 in [Vector3.ZERO, Vector3(dx, 0, dz), Vector3(-dx, 0, dz), Vector3(dx, 0, -dz), Vector3(-dx, 0, -dz)]:
+			for d: Vector3 in [Vector3.ZERO, Vector3(PL_DEMI_X, 0, PL_DEMI_Z), Vector3(-PL_DEMI_X, 0, PL_DEMI_Z),
+					Vector3(PL_DEMI_X, 0, -PL_DEMI_Z), Vector3(-PL_DEMI_X, 0, -PL_DEMI_Z)]:
 				var p := b.global_transform * (c + d + Vector3(0, 1.0, 0))
 				var hit := espace.intersect_ray(PhysicsRayQueryParameters3D.create(p, p - Vector3(0, 1.6, 0), 1))
 				var ecart := 9.0 if hit.is_empty() else absf(float((hit["position"] as Vector3).y) - sol)
@@ -724,12 +697,9 @@ func _places() -> void:
 		_fautes.append("places marquees : %.2f m d'ecart au plancher sous une place (%s)" % [pire, pire_ou])
 	if bas < PL_LIBRE:
 		_fautes.append("places marquees : %.2f m libres seulement au-dessus d'une place (%s)" % [bas, bas_ou])
-	# les fiches de véhicules garés tombent-elles sur une place, dans son sens ? Le tirage décale l'origine de la
-	# voiture de ±0,35 m le long de la place et de ±0,22 m (±0,08 en créneau) en travers.
+	# les fiches de véhicules garés tombent-elles sur une place ?
 	var hors := 0
 	var fiches := 0
-	var fiches_creneau := 0
-	var places_de := {}
 	for chemin: String in PL_JSON:
 		if not FileAccess.file_exists(chemin):
 			_fautes.append("places marquees : %s absent" % chemin)
@@ -746,27 +716,12 @@ func _places() -> void:
 				if absf(local.x) > 24.5 or absf(local.z) > 12.5 or local.y < -1.0 or local.y > 20.0:
 					continue
 				fiches += 1
-				if not places_de.has(b2):
-					places_de[b2] = Kit.places(e2[2], Kit.Maillage.new())
-				var sur := false
-				for pl2: Dictionary in places_de[b2]:
-					var c2: Vector3 = pl2["centre"]
-					if absf(local.y - c2.y) > 0.2:
-						continue
-					var cren := bool(pl2.get("creneau", false))
-					var le_long := absf(local.x - c2.x) if cren else absf(local.z - c2.z)
-					var en_travers := absf(local.z - c2.z) if cren else absf(local.x - c2.x)
-					if le_long <= 0.6 and en_travers <= (0.15 if cren else 0.3):
-						sur = true
-						if cren:
-							fiches_creneau += 1
-						break
-				if not sur:
+				if absf(local.z - (Kit.PL_Z - Kit.PL_PROF * 0.5)) > 0.6 or absf(local.x) < 5.5 or absf(local.x) > 20.2:
 					hors += 1
 	if hors > 0:
 		_fautes.append("places marquees : %d vehicule(s) gare(s) hors d'une place" % hors)
-	print("PARKING_PLACES %d places sur les %d parkings (dont %d en creneau), ecart au plancher %.3f m au pire (%s), hauteur libre %.2f m au plus bas (%s) ; %d vehicules gares (dont %d en creneau), %d hors place"
-			% [total, _parkings.size(), creneaux, pire, pire_ou, bas, bas_ou, fiches, fiches_creneau, hors])
+	print("PARKING_PLACES %d places sur les %d parkings, ecart au plancher %.3f m au pire (%s), hauteur libre %.2f m au plus bas (%s) ; %d vehicules gares, %d hors place"
+			% [total, _parkings.size(), pire, pire_ou, bas, bas_ou, fiches, hors])
 
 
 func _debut_barre() -> void:

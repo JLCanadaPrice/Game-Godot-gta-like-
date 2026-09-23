@@ -15,10 +15,6 @@ extends RefCounted
 #  - les boîtiers des plafonniers sont dans base_072 ; light_006 ne contient que les cônes, écartés à la fusion
 #    (BuildingModels.EXCLUS) ;
 #  - enroulement des faces : convention de Godot (faces avant en sens horaire vues du côté de leur normale).
-#
-# Retouches du 2026-09-23, demandées par le joueur : l'escalier a quitté la tour vitrée (il barrait l'entrée des
-# voitures) pour la bande arrière ; les cinq poteaux du milieu sont retirés ; quatre places en créneau par niveau le
-# long de la rampe (cf. ESC_XF, POTEAUX_X, PL_CRENEAU_Z).
 
 const MODELE := "Business_ParkingStructure"
 const CLE := "el:" + MODELE
@@ -275,23 +271,15 @@ class Maillage:
 	# tablier, qui arrêtaient net la voiture. Le centre et pas les trois sommets : un bandeau fait 9 m de long
 	# (x 9,42..18,40, z -5,73..-5,02) et traverse la bande, donc aucun de ses triangles n'y tient en entier.
 	# Rend le nombre de triangles retirés.
-	# `strict` : il faut les TROIS sommets dans la boîte (2026-09-23, poteaux du milieu). Un poteau est une pièce à part
-	# qui traverse tous les étages ; au test du centre, un grand triangle de dalle dont le centre tomberait dans la
-	# boîte partirait avec lui et percerait le plancher.
-	func retirer_boite(mn: Vector3, mx: Vector3, strict := false) -> int:
+	func retirer_boite(mn: Vector3, mx: Vector3) -> int:
 		var nv := PackedVector3Array()
 		var nn := PackedVector3Array()
 		var nc := PackedColorArray()
 		var ni := PackedInt32Array()
 		var retires := 0
-		var boite := AABB(mn, mx - mn).grow(0.0001)
 		for t in range(0, i.size() - 2, 3):
-			var dedans := false
-			if strict:
-				dedans = boite.has_point(v[i[t]]) and boite.has_point(v[i[t + 1]]) and boite.has_point(v[i[t + 2]])
-			else:
-				var cen := (v[i[t]] + v[i[t + 1]] + v[i[t + 2]]) / 3.0
-				dedans = cen.x >= mn.x and cen.x <= mx.x and cen.y >= mn.y and cen.y <= mx.y and cen.z >= mn.z and cen.z <= mx.z
+			var cen := (v[i[t]] + v[i[t + 1]] + v[i[t + 2]]) / 3.0
+			var dedans := cen.x >= mn.x and cen.x <= mx.x and cen.y >= mn.y and cen.y <= mx.y and cen.z >= mn.z and cen.z <= mx.z
 			if dedans:
 				retires += 1
 				continue
@@ -314,24 +302,6 @@ class Maillage:
 		c.append_array(autre.c)
 		for k in autre.i:
 			i.append(b + k)
-
-	# Copie déplacée par une transformation RIGIDE (rotation propre et translation) : sommets transformés, normales
-	# tournées. Une rotation propre garde l'enroulement de chaque triangle par rapport à sa normale, il n'y a donc rien
-	# à retourner. Les tableaux sont construits à part puis affectés : un tableau compacté est une VALEUR, lui ajouter
-	# des éléments à travers un autre objet ne toucherait qu'une copie.
-	func transforme(xf: Transform3D) -> Maillage:
-		var out := Maillage.new()
-		var nv := PackedVector3Array()
-		var nn := PackedVector3Array()
-		for p in v:
-			nv.append(xf * p)
-		for q in n:
-			nn.append((xf.basis * q).normalized())
-		out.v = nv
-		out.n = nn
-		out.c = c.duplicate()
-		out.i = i.duplicate()
-		return out
 
 	func vers_mesh(materiau: Material, nom: String, lods := true) -> Mesh:
 		var arrays := []
@@ -365,55 +335,25 @@ const TOUR_ANGLE_X := 24.18                # face est de la tour d'angle, pour z
 const TOUR_VITREE_Z := 7.48                # face de la tour vitrée côté parking : un plan SANS épaisseur
 const PASSAGE_OUEST_X := -3.87             # joue ouest du passage d'entrée du rez (plan x = -3,87, y 0..4,58)
 
-# ESCALIER — DÉPLACÉ LE 2026-09-23 (demande du joueur : « il est devant l'entrée des voitures »). Il était dans la
-# pièce de la tour vitrée, x -5,52..5,52, z 7,48..9,80, et au rez-de-chaussée cette pièce EST le passage d'entrée des
-# voitures (x ±3,87) : la volée A y posait ses marches pleines sur 3 m du passage, le mur d'échiffre le coupait sur
-# toute sa hauteur, et l'écran côté façade pendait à 1,95 m. Il est maintenant dans la BANDE ARRIÈRE, entre la rampe et
-# le muret arrière, à l'est de la tour arrière — relevé au maillage : aucun montant de façade entre la tour arrière
-# (face x = 5,52, du sol à 22,13 m) et la tour d'angle (x 20,13), muret intérieur à z -9,75, trémie de la rampe à
-# partir de z -7,47, dont le garde-corps occupe z -7,62..-7,47. Le passage d'entrée redevient un tunnel libre de
-# 7,74 m, la pièce de la tour vitrée n'a plus de porte : fermée, inaccessible, sans doublure.
-#
-# Il est DESSINÉ dans son repère d'origine (les constantes ci-dessous : volée A vers +x, palier à l'est, volées le long
-# de z) et POSÉ par ESC_XF, un demi-tour autour de la verticale plus une translation : le palier vient contre la tour
-# arrière (x 5,54, 2 cm de jeu), le pied des volées et l'arrivée à l'étage à l'est (x 10,66), la volée B le long du
-# muret arrière. Tout ce qui a été mesuré et payé sur l'escalier d'origine (rampes invisibles par les NEZ de marches,
-# fente comblée au départ de la volée suivante, garde-corps en travers du couloir de la volée A au dernier étage)
-# suit donc sans être réécrit. La bande arrière ne fait que 2,27 m entre le muret (-9,75) et la trémie de rampe
-# (-7,47) : pour garder aux volées leur 1,00 m, la paroi côté rampe fait 0,08 m et l'écran 0,05 m, collé au muret.
-# ESSAYÉ ET REJETÉ : des volées de 0,95 m avec la paroi à l'épaisseur du garde-corps (0,14 m). Une capsule de joueur
-# (0,80 m) n'y avait que 7,5 cm de jeu de chaque côté, et celle de ParkingStructureTest restait coincée entre le bout
-# du mur d'échiffre et la rampe invisible en s'engageant dans la volée B, dans les trois parkings du centre-ville.
+# Escalier (dans la pièce de la tour vitrée, x -5,52..5,52, z 7,48..9,80) : deux volées de 13 contremarches de part et
+# d'autre d'un palier, giron 0,28 m (32° pour 4,57 m entre planchers). Rampe de collision INVISIBLE par les nez de
+# marches : le joueur la monte comme une pente, les marches ne sont que visuelles.
 const GIRON := 0.28
 const DEMI_MARCHES := 13
 const ESC_X0 := -4.2                       # première contremarche de la volée A (vers +x)
 const ESC_PIED := -4.48                    # pied de la rampe A, et arrivée de la rampe B à l'étage (= bord de trémie)
 const ESC_PALIER := Vector2(-0.84, 0.64)   # palier intermédiaire (x)
-const ESC_A := Vector2(7.63, 8.63)         # volée A (z)
-const ESC_B := Vector2(8.73, 9.73)         # volée B (z)
-const ESC_MUR := Vector2(8.63, 8.73)       # mur d'échiffre entre les volées (z)
-const ESC_ECRAN := Vector2(9.75, 9.80)     # écran le long du muret, du dessus du muret au plancher du dessus + 1 m (z)
-const ESC_TREMIE := Rect2(-4.48, 7.60, 5.12, 2.20)   # trémie dans la dalle du dessus : x -4,48..0,64, z 7,60..9,80 (son chant côté rampe dans la paroi)
-# Repère de l'escalier -> repère du modèle : x' = 6,18 - x, z' = 0,05 - z. Le bord du palier (x 0,64) vient à 5,54,
-# contre la tour arrière ; le muret (z 9,80 dans le repère de l'escalier) tombe sur le muret arrière, z' = -9,75.
-# Dans le repère du modèle : écran -9,75..-9,70, volée B -9,68..-8,68, mur d'échiffre -8,68..-8,58, volée A
-# -8,58..-7,58, paroi -7,56..-7,48, trémie de rampe à partir de -7,47.
-const ESC_XF := Transform3D(Basis(Vector3(-1, 0, 0), Vector3(0, 1, 0), Vector3(0, 0, -1)), Vector3(6.18, 0.0, 0.05))
-# PAROI CÔTÉ RAMPE, dans le repère du modèle, du rez au toit (+ GC_H) : la volée A longe la trémie de la rampe, et aux
-# étages le garde-corps de 1,05 m de cette trémie passe sous les pieds de qui monte — on tomberait sur la rampe du
-# dessous. Elle prend la place de ce garde-corps sur la longueur de l'escalier (x 5,40..10,66 : elle entre de 12 cm
-# dans la tour arrière, pas de fente), et les deux trémies gardent entre elles une bande de dalle de 10 cm pour la porter.
-const ESC_PAROI_X := Vector2(5.40, 10.66)
-const ESC_PAROI_Z := Vector2(-7.56, -7.48)
+const ESC_A := Vector2(7.60, 8.60)         # volée A (z)
+const ESC_B := Vector2(8.70, 9.70)         # volée B (z)
+const ESC_MUR := Vector2(8.60, 8.70)       # mur d'échiffre entre les volées (z)
+const ESC_TREMIE := Rect2(-4.48, 7.55, 5.12, 2.25)   # trémie dans la dalle du dessus : x -4,48..0,64, z 7,55..9,80
+const ESC_PORTE := Vector2(-5.52, -4.2)    # porte dans la face de la tour (x), 2,2 m de haut
+const ESC_PORTE_H := 2.2
 const GC_H := 1.05                         # garde-corps : 1,05 m au-dessus de ce qu'il borde
+# Cage vitrée : ses faces n'ont qu'un côté dans le modèle ; depuis l'escalier on voyait au travers (étape 5).
+const CAGE := Rect2(-5.52, 7.48, 11.04, 4.39)   # x -5,52..5,52, z 7,48..11,87
 const BETON_ESCALIER := Color(0.46, 0.46, 0.44)
 const GARDE_CORPS := Color(0.30, 0.31, 0.33)
-# POTEAUX DU MILIEU — RETIRÉS LE 2026-09-23 (demande du joueur). Relevé au maillage : cinq pièces séparées, chacune un
-# prisme de 0,87 x 1,08 m qui traverse tous les étages d'un seul tenant (y 0..18,48), aux x ci-dessous, z ±0,54 ;
-# 16 ou 32 triangles chacune, 112 en tout. Les dalles sont d'un seul tenant sous eux (deux grands triangles par
-# plancher, sans trou) : les retirer ne perce rien.
-const POTEAUX_X := [-15.885, -9.915, 0.0, 9.915, 15.885]
-const POTEAU_DEMI := Vector2(0.50, 0.60)   # boîte de retrait (x, z) autour de chacun, un peu plus large que lui
 
 
 # Dessous des dalles, relevés comme les planchers (faces tournées vers le bas de plus de 500 m²) : le plus haut sous
@@ -453,36 +393,26 @@ static func praticable(mesh: Mesh, materiau: Material, nom: String, escaliers: i
 	var col := Maillage.new()      # collision seule (rampes invisibles)
 	var stats := {"planchers": sols, "dessous": bas, "decoupes": {}}
 	var fautes: Array[String] = []
-	# poteaux du milieu, retirés du rez au toit (cf. POTEAUX_X) ; aucun triangle retiré serait une cote fausse
-	for x: float in POTEAUX_X:
-		_compte(stats, fautes, "poteau du milieu", m.retirer_boite(Vector3(x - POTEAU_DEMI.x, sols[0] - 1.0, -POTEAU_DEMI.y),
-				Vector3(x + POTEAU_DEMI.x, sols[sols.size() - 1] + 0.5, POTEAU_DEMI.y), true))
-	# Ce que le modèle laisse pendre dans le volume des rampes (boîtiers de plafonnier de base_072, relevés le 2026-09-22 à
-	# 20 cm au-dessus du tablier : la voiture butait dessus) : retiré sur le modèle BRUT, avant toute découpe et tout
-	# ajout, au test des TROIS sommets, dans une boîte qui contient les bandeaux entiers (x -18,40..18,40).
-	# CORRIGÉ LE 2026-09-23 : ce retrait venait après la découpe de chaque trémie de rampe, au test du CENTRE, et sa boîte
-	# contenait aussi les chants de dalle que cette découpe venait d'ajouter. Il en emportait un triangle sur deux :
-	# relevé sur le maillage cuit, 1 triangle au lieu de 2 sur chaque chant long, aux quatre planchers — la tranche de la
-	# dalle était ouverte en triangle sur 29 m, le long des deux bords de chaque trémie. Et il aurait emporté de même la
-	# paroi de l'escalier, posée depuis contre la trémie.
-	for k in rampes:
-		_compte(stats, fautes, "plafonniers dans la bande", m.retirer_boite(
-				Vector3(-20.5, sols[k + 1] - 1.0, RAMPE_Z - RAMPE_DEMI - 0.1),
-				Vector3(20.5, sols[k + 1] - 0.15, RAMPE_Z + RAMPE_DEMI + 0.1), true))
 	for k in escaliers:
-		_tremie(m, _rect_modele(ESC_TREMIE), sols[k + 1], bas[k + 1], stats, fautes)
+		_porte(m, sols[k], stats, fautes)
+		if k == 0:
+			_compte(stats, fautes, "joue ouest du passage", m.decouper("x", PASSAGE_OUEST_X - 0.01, PASSAGE_OUEST_X + 0.01,
+					Rect2(TOUR_VITREE_Z, -0.01, 11.87 - TOUR_VITREE_Z, 4.60)))
+		_tremie(m, sols[k + 1], bas[k + 1], stats, fautes)
 		_escalier(m, col, sols[k], sols[k + 1], k == escaliers - 1)
 	if escaliers > 0:
-		m.boite(Vector3(ESC_PAROI_X.x, sols[0], ESC_PAROI_Z.x), Vector3(ESC_PAROI_X.y, sols[escaliers] + GC_H, ESC_PAROI_Z.y), BETON_ESCALIER)
+		_porte(m, sols[escaliers], stats, fautes)
 	for k: int in travees:
 		_travee(m, sols[k], stats, fautes)
 	# RAMPES INTÉRIEURES : toutes les découpes d'abord (une découpe cherche des faces dans un plan, et le tablier
 	# d'une rampe touche justement le plan du plancher qu'il rejoint), les géométries ensuite.
 	for k in rampes:
 		var bt := rampe_bouts(sols[k + 1] - sols[k])
-		# le garde-corps sud de la trémie s'interrompt là où la paroi de l'escalier monte (étages desservis par lui)
-		var sans := ESC_PAROI_X if k + 1 <= escaliers else Vector2.ZERO
-		_tremie_rampe(m, sols[k + 1], bas[k + 1], bt, k == rampes - 1, sans, stats, fautes)
+		_tremie_rampe(m, sols[k + 1], bas[k + 1], bt, k == rampes - 1, stats, fautes)
+		# ce que le modèle laisse pendre dans le volume de la rampe (boîtiers de plafonnier) : retiré, sinon la
+		# voiture bute dessus à 20 cm au-dessus du tablier
+		stats["decoupes"]["plafonniers dans la bande"] = int(stats["decoupes"].get("plafonniers dans la bande", 0)) 				+ m.retirer_boite(Vector3(bt.x - 0.5, sols[k + 1] - 1.0, RAMPE_Z - RAMPE_DEMI - 0.1),
+				Vector3(20.0, sols[k + 1] - 0.15, RAMPE_Z + RAMPE_DEMI + 0.1))
 	for k in rampes:
 		_rampe(m, sols[k], sols[k + 1], k == 0)
 	if rampes > 0:
@@ -490,17 +420,18 @@ static func praticable(mesh: Mesh, materiau: Material, nom: String, escaliers: i
 	var pl := places(sols, m)
 	var faces := m.faces()
 	faces.append_array(col.faces())
-	# La cage vitrée n'est plus doublée de l'intérieur (elle l'était depuis l'étape 7 pour qu'on ne voie pas au travers
-	# depuis l'escalier) : l'escalier l'a quittée, plus personne n'y entre.
+	# cage vitrée opaque DE L'INTÉRIEUR : ses quatre faces doublées à l'envers, APRÈS les découpes de portes (la
+	# doublure en garde les trous). Visuel seulement : la collision est déjà à deux faces.
+	var bas_haut := Vector2(-3.0, 30.0)
+	_compte(stats, fautes, "doublure de la cage (face cote parking)", m.doubler("z", TOUR_VITREE_Z - 0.01, TOUR_VITREE_Z + 0.01,
+			Rect2(CAGE.position.x, bas_haut.x, CAGE.size.x, bas_haut.y - bas_haut.x)))
+	_compte(stats, fautes, "doublure de la cage (face avant)", m.doubler("z", CAGE.end.y - 0.01, CAGE.end.y + 0.01,
+			Rect2(CAGE.position.x, bas_haut.x, CAGE.size.x, bas_haut.y - bas_haut.x)))
+	for x: float in [CAGE.position.x, CAGE.end.x]:
+		_compte(stats, fautes, "doublure de la cage (flancs)", m.doubler("x", x - 0.01, x + 0.01,
+				Rect2(CAGE.position.y, bas_haut.x, CAGE.size.y, bas_haut.y - bas_haut.x)))
 	return {"mesh": m.vers_mesh(materiau, nom), "faces": faces, "stats": stats, "fautes": fautes, "planchers": sols,
 			"places": pl}
-
-
-# Un rectangle (x, z) du repère de l'escalier, dans le repère du modèle.
-static func _rect_modele(r: Rect2) -> Rect2:
-	var a := ESC_XF * Vector3(r.position.x, 0.0, r.position.y)
-	var b := ESC_XF * Vector3(r.end.x, 0.0, r.end.y)
-	return Rect2(minf(a.x, b.x), minf(a.z, b.z), absf(b.x - a.x), absf(b.z - a.z))
 
 
 static func _compte(stats: Dictionary, fautes: Array[String], quoi: String, touches: int) -> void:
@@ -509,11 +440,17 @@ static func _compte(stats: Dictionary, fautes: Array[String], quoi: String, touc
 		fautes.append("découpe « %s » : aucun triangle touché, la cote relevée ne correspond plus au modèle" % quoi)
 
 
-# Trémie dans la dalle du plancher `y` (dessous `yb`) : dessus et dessous retirés sur `r` (x, z du repère du modèle) ;
-# quatre chants de dalle ajoutés, à la teinte de la dalle. (La porte découpée dans la face de la tour vitrée à chaque
-# niveau desservi, `_porte`, a disparu avec l'escalier de la tour le 2026-09-23.)
-static func _tremie(m: Maillage, r: Rect2, y: float, yb: float, stats: Dictionary, fautes: Array[String]) -> void:
-	var teinte := m.couleur_pres(Vector3(r.end.x + 1.0, y, r.get_center().y), "y")
+# Porte dans la face de la tour vitrée côté parking, au niveau `y`.
+static func _porte(m: Maillage, y: float, stats: Dictionary, fautes: Array[String]) -> void:
+	_compte(stats, fautes, "porte de la tour", m.decouper("z", TOUR_VITREE_Z - 0.01, TOUR_VITREE_Z + 0.01,
+			Rect2(ESC_PORTE.x, y, ESC_PORTE.y - ESC_PORTE.x, ESC_PORTE_H)))
+
+
+# Trémie dans la dalle du plancher `y` (dessous `yb`) : dessus, dessous et, au niveau 1, plafond du passage d'entrée
+# (4,58 m) retirés sur ESC_TREMIE ; quatre chants de dalle ajoutés, à la teinte de la dalle.
+static func _tremie(m: Maillage, y: float, yb: float, stats: Dictionary, fautes: Array[String]) -> void:
+	var r := ESC_TREMIE
+	var teinte := m.couleur_pres(Vector3(r.position.x - 1.0, y, r.get_center().y), "y")
 	_compte(stats, fautes, "trémie", m.decouper("y", yb - 0.01, y + 0.01, r))
 	var x0 := r.position.x
 	var x1 := r.end.x
@@ -542,48 +479,43 @@ static func _travee(m: Maillage, y: float, stats: Dictionary, fautes: Array[Stri
 
 # Escalier du plancher y0 au plancher y1, dans la tour vitrée. Visuel (marches pleines, palier, mur d'échiffre,
 # garde-corps) dans `m`, avec collision ; rampes invisibles par les nez de marches dans `col`.
-# Tout est construit dans le REPÈRE DE L'ESCALIER (cf. ESC_XF) puis posé dans celui du modèle : « est » et « ouest »
-# ci-dessous sont ceux de ce repère-là.
 static func _escalier(m: Maillage, col: Maillage, y0: float, y1: float, dernier: bool) -> void:
-	var e := Maillage.new()      # visuel, avec collision
-	var ce := Maillage.new()     # collision seule
 	var r := (y1 - y0) / float(2 * DEMI_MARCHES)
 	var ya := y0 + r * DEMI_MARCHES              # palier
 	# volée A : marches pleines posées sur le plancher
 	for k in range(1, DEMI_MARCHES):
 		var xa := ESC_X0 + float(k - 1) * GIRON
-		e.boite(Vector3(xa, y0, ESC_A.x), Vector3(xa + GIRON, y0 + r * k, ESC_A.y), BETON_ESCALIER)
-	# palier, dalle de 0,15 m
-	e.boite(Vector3(ESC_PALIER.x, ya - 0.15, ESC_A.x), Vector3(ESC_PALIER.y, ya, ESC_B.y), BETON_ESCALIER)
+		m.boite(Vector3(xa, y0, ESC_A.x), Vector3(xa + GIRON, y0 + r * k, ESC_A.y), BETON_ESCALIER)
+	# palier, dalle de 0,15 m (au rez, le passage des voitures passe dessous)
+	m.boite(Vector3(ESC_PALIER.x, ya - 0.15, ESC_A.x), Vector3(ESC_PALIER.y, ya, ESC_B.y), BETON_ESCALIER)
 	# volée B : marches portées, sous-face en escalier ; la 13e affleure le plancher du dessus (bord de trémie)
 	for k in range(1, DEMI_MARCHES + 1):
 		var xb := ESC_PALIER.x - float(k) * GIRON
-		e.boite(Vector3(xb, ya + r * k - r - 0.15, ESC_B.x), Vector3(xb + GIRON, ya + r * k, ESC_B.y), BETON_ESCALIER)
-	# mur d'échiffre entre les volées ; écran le long du muret de façade, du dessus du muret jusqu'à 1 m au-dessus du
-	# plancher du dessus. Le bout du palier, lui, est contre la tour arrière : ni garde-corps de palier ni garde-corps de
-	# trémie de ce côté (ils seraient dans la tour).
+		m.boite(Vector3(xb, ya + r * k - r - 0.15, ESC_B.x), Vector3(xb + GIRON, ya + r * k, ESC_B.y), BETON_ESCALIER)
+	# mur d'échiffre entre les volées, garde-corps au bout du palier, écran côté vitrage (le muret de façade est derrière)
 	var haut := y1 + (1.0 if dernier else 0.0)
-	e.boite(Vector3(ESC_X0, y0, ESC_MUR.x), Vector3(ESC_PALIER.x, haut, ESC_MUR.y), BETON_ESCALIER)
-	e.boite(Vector3(ESC_PIED, y0 + RIVE_HAUT, ESC_ECRAN.x), Vector3(ESC_PALIER.y, y1 + 1.0, ESC_ECRAN.y), GARDE_CORPS)
-	# Au dernier étage desservi, le couloir de la volée A est un trou (aucune volée n'y part) : garde-corps en travers,
-	# au bord de trémie. Aux étages intermédiaires, la volée A suivante part de ce couloir : la fente entre le bord de
-	# trémie et sa première contremarche est comblée.
+	m.boite(Vector3(ESC_X0, y0, ESC_MUR.x), Vector3(ESC_PALIER.x, haut, ESC_MUR.y), BETON_ESCALIER)
+	m.boite(Vector3(ESC_PALIER.y, ya, ESC_A.x), Vector3(ESC_PALIER.y + 0.06, ya + 1.0, ESC_B.y), GARDE_CORPS)
+	m.boite(Vector3(ESC_PIED, y0 + RIVE_HAUT, ESC_B.y + 0.02), Vector3(ESC_PALIER.y, y1 + 1.0, ESC_B.y + 0.10), GARDE_CORPS)
+	# GARDE-CORPS DE LA TRÉMIE, au plancher du dessus (2026-09-22) : son bord est, au droit du palier — on y tombait sur le
+	# palier, 2,3 m plus bas, depuis la partie est de la cage. Au dernier étage desservi, le couloir de la volée A est un
+	# trou (aucune volée n'y part) : garde-corps en travers, au bord de trémie. Aux étages intermédiaires, la volée A
+	# suivante part de ce couloir : la fente entre le bord de trémie et sa première contremarche est comblée.
+	m.boite(Vector3(ESC_PALIER.y, y1, ESC_TREMIE.position.y), Vector3(ESC_PALIER.y + 0.06, y1 + GC_H, ESC_TREMIE.end.y), GARDE_CORPS)
 	if dernier:
-		e.boite(Vector3(ESC_PIED - 0.06, y1, ESC_TREMIE.position.y), Vector3(ESC_PIED, y1 + GC_H, ESC_MUR.x), GARDE_CORPS)
+		m.boite(Vector3(ESC_PIED - 0.06, y1, ESC_TREMIE.position.y), Vector3(ESC_PIED, y1 + GC_H, ESC_MUR.x), GARDE_CORPS)
 	else:
-		e.boite(Vector3(ESC_PIED, y1 - 0.15, ESC_A.x), Vector3(ESC_X0, y1, ESC_A.y), BETON_ESCALIER)
+		m.boite(Vector3(ESC_PIED, y1 - 0.15, ESC_A.x), Vector3(ESC_X0, y1, ESC_A.y), BETON_ESCALIER)
 	# rampes invisibles PAR LES NEZ DE MARCHES : A du pied (plancher) au palier, palier, B du palier au plancher du
 	# dessus. Le nez d'une marche de B est son bord EST (on monte vers -x) : la ligne des nez part du palier un giron
 	# à l'est de la première marche (-0,56) et atteint le plancher au nez de la 13e (-4,2), dont le dessus affleure
 	# jusqu'au bord de trémie. Posée de -0,84 à -4,48, elle passait une contremarche SOUS chaque nez et le pied
 	# d'une capsule butait sur la première marche (vu par ParkingStructureTest).
 	var nez_b := ESC_PALIER.x + GIRON
-	ce.quad(Vector3(ESC_PIED, y0, ESC_A.x), Vector3(ESC_PALIER.x, ya, ESC_A.x), Vector3(ESC_PALIER.x, ya, ESC_A.y), Vector3(ESC_PIED, y0, ESC_A.y), Vector3.UP, Color.WHITE)
-	ce.quad(Vector3(ESC_PALIER.x, ya, ESC_A.x), Vector3(ESC_PALIER.y, ya, ESC_A.x), Vector3(ESC_PALIER.y, ya, ESC_B.y), Vector3(ESC_PALIER.x, ya, ESC_B.y), Vector3.UP, Color.WHITE)
-	ce.quad(Vector3(nez_b, ya, ESC_B.x), Vector3(ESC_X0, y1, ESC_B.x), Vector3(ESC_X0, y1, ESC_B.y), Vector3(nez_b, ya, ESC_B.y), Vector3.UP, Color.WHITE)
-	ce.quad(Vector3(ESC_X0, y1, ESC_B.x), Vector3(ESC_PIED, y1, ESC_B.x), Vector3(ESC_PIED, y1, ESC_B.y), Vector3(ESC_X0, y1, ESC_B.y), Vector3.UP, Color.WHITE)
-	m.ajouter(e.transforme(ESC_XF))
-	col.ajouter(ce.transforme(ESC_XF))
+	col.quad(Vector3(ESC_PIED, y0, ESC_A.x), Vector3(ESC_PALIER.x, ya, ESC_A.x), Vector3(ESC_PALIER.x, ya, ESC_A.y), Vector3(ESC_PIED, y0, ESC_A.y), Vector3.UP, Color.WHITE)
+	col.quad(Vector3(ESC_PALIER.x, ya, ESC_A.x), Vector3(ESC_PALIER.y, ya, ESC_A.x), Vector3(ESC_PALIER.y, ya, ESC_B.y), Vector3(ESC_PALIER.x, ya, ESC_B.y), Vector3.UP, Color.WHITE)
+	col.quad(Vector3(nez_b, ya, ESC_B.x), Vector3(ESC_X0, y1, ESC_B.x), Vector3(ESC_X0, y1, ESC_B.y), Vector3(nez_b, ya, ESC_B.y), Vector3.UP, Color.WHITE)
+	col.quad(Vector3(ESC_X0, y1, ESC_B.x), Vector3(ESC_PIED, y1, ESC_B.x), Vector3(ESC_PIED, y1, ESC_B.y), Vector3(ESC_X0, y1, ESC_B.y), Vector3.UP, Color.WHITE)
 
 
 # --- RAMPE INTÉRIEURE, 16 % (2026-09-22) --------------------------------------------------------------------------------
@@ -638,9 +570,7 @@ static func rampe_hauteur(x: float, bouts: Vector2, h: float) -> float:
 # plancher le long des deux longs côtés : au dernier niveau, sur toute la longueur et fermé à l'ouest, puisqu'aucune
 # rampe ne part de là ; en dessous, seulement passé RAMPE_GC_DEPART, avant quoi c'est le parapet de la rampe qui part
 # de ce plancher qui borde le trou.
-# `sans` : intervalle de x où le garde-corps SUD s'interrompt, remplacé par la paroi de l'escalier (Vector2.ZERO :
-# aucun).
-static func _tremie_rampe(m: Maillage, y: float, yb: float, bouts: Vector2, dernier: bool, sans: Vector2, stats: Dictionary, fautes: Array[String]) -> void:
+static func _tremie_rampe(m: Maillage, y: float, yb: float, bouts: Vector2, dernier: bool, stats: Dictionary, fautes: Array[String]) -> void:
 	var z0 := RAMPE_Z - RAMPE_DEMI - RAMPE_JEU
 	var z1 := RAMPE_Z + RAMPE_DEMI + RAMPE_JEU
 	var x0 := bouts.x - RAMPE_JEU
@@ -651,12 +581,7 @@ static func _tremie_rampe(m: Maillage, y: float, yb: float, bouts: Vector2, dern
 	m.quad(Vector3(x0, yb, z0), Vector3(x1, yb, z0), Vector3(x1, y, z0), Vector3(x0, y, z0), Vector3.BACK, teinte)
 	m.quad(Vector3(x0, yb, z1), Vector3(x1, yb, z1), Vector3(x1, y, z1), Vector3(x0, y, z1), Vector3.FORWARD, teinte)
 	var xg := x0 if dernier else bouts.x + RAMPE_GC_DEPART
-	var sud: Array[Vector2] = [Vector2(xg, x1)]
-	if sans != Vector2.ZERO:
-		sud = [Vector2(xg, sans.x), Vector2(sans.y, x1)]
-	for s: Vector2 in sud:
-		if s.y > s.x:
-			m.boite(Vector3(s.x, y, z0 - RAMPE_GC), Vector3(s.y, y + RAMPE_GC_H, z0), GARDE_CORPS)
+	m.boite(Vector3(xg, y, z0 - RAMPE_GC), Vector3(x1, y + RAMPE_GC_H, z0), GARDE_CORPS)
 	m.boite(Vector3(xg, y, z1), Vector3(x1, y + RAMPE_GC_H, z1 + RAMPE_GC), GARDE_CORPS)
 	if dernier:
 		m.boite(Vector3(x0 - RAMPE_GC, y, z0 - RAMPE_GC), Vector3(x0, y + RAMPE_GC_H, z1 + RAMPE_GC), GARDE_CORPS)
@@ -748,20 +673,9 @@ const PL_FILES := [Vector2(-20.12, -6.12), Vector2(6.12, 20.12)]
 const PL_PEINTURE := Color(0.86, 0.86, 0.84)
 const PL_HAUT := 0.006                         # le trait, au-dessus du tablier
 
-# PLACES LE LONG DE LA RAMPE (2026-09-23, demande du joueur), en créneau, du côté allée de la trémie de rampe. Rendu
-# possible par le retrait des poteaux du milieu, qui tenaient cette bande (z ±0,54). Entre le garde-corps de la trémie
-# (face nord à z -3,48 ; au rez, le flanc de la rampe à -3,65) et l'allée : 2,60 m de large, z -3,43..-0,83. En long,
-# quatre places de 6,00 m entre x -12 et 12 : les voitures qui font demi-tour aux deux bouts tournent autour de
-# x ±15,13 et ne passent à l'ouest (ou à l'est) de ce point qu'une fois dans l'allée ou dans la rampe — les places
-# restent hors de leur balayage. L'allée garde 5,38 m jusqu'aux places de la façade (z 4,55).
-const PL_CRENEAU_Z := Vector2(-3.43, -0.83)
-const PL_CRENEAU_X := [-12.0, -6.0, 0.0, 6.0, 12.0]   # limites des places
 
-
-# Dessine le marquage dans `m` et rend les places : [{"niveau": k, "centre": Vector3 (repère du modèle), "nez": Vector2,
-# "creneau": bool}]. Places de façade : le nez pointe vers la façade (+z), c'est la marche avant, `tirage_place` en
-# retourne une partie. Places en créneau : le nez suit l'allée (-x), et le tirage retourne une partie des voitures aussi
-# (l'allée sert dans les deux sens, montée et descente).
+# Dessine le marquage dans `m` et rend les places : [{"niveau": k, "centre": Vector3 (repère du modèle), "nez": Vector2}].
+# Le nez pointe vers la façade (+z) : c'est la marche avant, `_garer_sur_place` retourne une partie des voitures.
 static func places(sols: PackedFloat32Array, m: Maillage) -> Array:
 	var sortie: Array = []
 	for k in sols.size():
@@ -774,20 +688,7 @@ static func places(sols: PackedFloat32Array, m: Maillage) -> Array:
 						Vector3(x + PL_TRAIT * 0.5, y, PL_Z), Vector3(x - PL_TRAIT * 0.5, y, PL_Z), Vector3.UP, PL_PEINTURE)
 			for i in n:
 				var xc: float = f.x + (f.y - f.x) * (float(i) + 0.5) / float(n)
-				sortie.append({"niveau": k, "centre": Vector3(xc, sols[k], PL_Z - PL_PROF * 0.5), "nez": Vector2(0.0, 1.0), "creneau": false})
-		# créneaux : un trait continu côté allée, un trait en travers à chaque limite de place
-		var za := PL_CRENEAU_Z.x
-		var zb := PL_CRENEAU_Z.y
-		var xa: float = PL_CRENEAU_X[0]
-		var xb: float = PL_CRENEAU_X[PL_CRENEAU_X.size() - 1]
-		m.quad(Vector3(xa - PL_TRAIT * 0.5, y, zb - PL_TRAIT), Vector3(xb + PL_TRAIT * 0.5, y, zb - PL_TRAIT),
-				Vector3(xb + PL_TRAIT * 0.5, y, zb), Vector3(xa - PL_TRAIT * 0.5, y, zb), Vector3.UP, PL_PEINTURE)
-		for x: float in PL_CRENEAU_X:
-			m.quad(Vector3(x - PL_TRAIT * 0.5, y, za), Vector3(x + PL_TRAIT * 0.5, y, za),
-					Vector3(x + PL_TRAIT * 0.5, y, zb - PL_TRAIT), Vector3(x - PL_TRAIT * 0.5, y, zb - PL_TRAIT), Vector3.UP, PL_PEINTURE)
-		for i in PL_CRENEAU_X.size() - 1:
-			var xc: float = (float(PL_CRENEAU_X[i]) + float(PL_CRENEAU_X[i + 1])) * 0.5
-			sortie.append({"niveau": k, "centre": Vector3(xc, sols[k], (za + zb) * 0.5), "nez": Vector2(-1.0, 0.0), "creneau": true})
+				sortie.append({"niveau": k, "centre": Vector3(xc, sols[k], PL_Z - PL_PROF * 0.5), "nez": Vector2(0.0, 1.0)})
 	return sortie
 
 
@@ -807,19 +708,12 @@ const PL_TRAVERS := 3.0        # degrés de travers, au plus (moins qu'en surfac
 const PL_AVANCE := 0.35
 const PL_LATERAL := 0.22
 const PL_ARRIERE := 40         # % de voitures garées en marche arrière
-# En créneau, le jeu est en travers : 2,60 m de place, et le garde-corps de la trémie à 5 cm de son bord. Mesuré sur les
-# douze modèles ci-dessus à l'échelle du catalogue (1,65) : 2,20 m de large au plus (SUV 01), 4,49 m de long au plus
-# (berline 02). D'où moins de décalage et moins de travers qu'en bataille : pire cas 1,10 + 0,08 + 2,25 x sin 1,5° =
-# 1,24 m de l'axe, pour 1,30 de demi-largeur de place. En long, 6,00 m pour 4,49 : ±0,35 laisse 0,81 m entre deux
-# voitures voisines tirées l'une vers l'autre.
-const PL_TRAVERS_CRENEAU := 1.5
-const PL_LATERAL_CRENEAU := 0.08
 const Fenetres := preload("res://scenes/world/map/tools/BuildingWindows.gd")
 
 
 # Rend {} si la place reste vide, sinon {"model": chemin, "pos": Vector2 monde, "yaw": float}.
-# `pos` et `nez` sont en coordonnées MONDE ; `nez` pointe vers le fond de la place (en créneau : le long de l'allée).
-static func tirage_place(pos: Vector2, nez: Vector2, vide: int, creneau := false) -> Dictionary:
+# `pos` et `nez` sont en coordonnées MONDE ; `nez` pointe vers le fond de la place.
+static func tirage_place(pos: Vector2, nez: Vector2, vide: int) -> Dictionary:
 	var h := Fenetres.cle(Vector3(pos.x, 0.0, pos.y))
 	if h % 100 < vide:
 		return {}
@@ -827,9 +721,9 @@ static func tirage_place(pos: Vector2, nez: Vector2, vide: int, creneau := false
 	if not ResourceLoader.exists(chemin):
 		push_error("ParkingStructureKit : modèle absent %s" % chemin)
 		return {}
-	var travers := (float((h >> 11) % 2001) / 1000.0 - 1.0) * deg_to_rad(PL_TRAVERS_CRENEAU if creneau else PL_TRAVERS)
+	var travers := (float((h >> 11) % 2001) / 1000.0 - 1.0) * deg_to_rad(PL_TRAVERS)
 	var avance := (float((h >> 17) % 2001) / 1000.0 - 1.0) * PL_AVANCE
-	var lateral := (float((h >> 23) % 2001) / 1000.0 - 1.0) * (PL_LATERAL_CRENEAU if creneau else PL_LATERAL)
+	var lateral := (float((h >> 23) % 2001) / 1000.0 - 1.0) * PL_LATERAL
 	var cote := Vector2(-nez.y, nez.x)
 	var arriere := ((h >> 3) % 100) < PL_ARRIERE
 	# Le cap enregistré est celui du MODÈLE BRUT, même convention que partout ailleurs : nez vers (-x, -z).
@@ -875,10 +769,8 @@ const LUM_RAMPE_L := 2.4                       # longueur d'un bandeau
 const LUM_RAMPE_LARG := 0.5
 const LUM_ALLEE_X := [-16.0, -8.0, 0.0, 8.0, 16.0]   # file de bandeaux le long de l'allée de circulation
 const LUM_ALLEE_Z := 3.85                      # axe de l'allée (le même que celle du retour de la rampe)
-# Escalier (2026-09-23, dans la bande arrière) : un panneau sous chaque dalle desservie, juste à l'est de la trémie
-# (x 10,90..12,70, repère du modèle), au-dessus du pied des volées et de l'arrivée. Plus de panneau au-dessus du toit :
-# l'escalier débouche maintenant à l'air libre, il n'y a plus de tête de tour où le pendre.
-const LUM_ESCALIER := Rect2(10.90, -9.10, 1.80, 0.50)
+const LUM_CAGE := Rect2(1.4, 8.30, 1.8, 0.5)   # panneau de la cage : x 1,4..3,2, z 8,30..8,80 (à l'est de ESC_TREMIE)
+const LUM_CAGE_TOIT := 2.6                     # panneau du haut, au-dessus du plancher du toit
 
 
 # Le matériau partagé. Créé par la première cuisson qui en a besoin, relu ensuite : les deux cuiseurs l'appellent, et
@@ -942,15 +834,13 @@ static func _dans_modele(n: Node3D, racine: Node3D) -> Transform3D:
 static func eclairage(sols: PackedFloat32Array, rampes: int, escaliers: int) -> Dictionary:
 	var m := Maillage.new()
 	var tetes := PackedVector3Array()
-	var compte := {"vitres du modele": 0, "vitres dans la bande": 0, "bandeaux de rampe": 0, "panneaux d'escalier": 0}
+	var compte := {"vitres du modele": 0, "vitres dans la bande": 0, "bandeaux de rampe": 0, "panneaux de cage": 0}
 	# 1. les vitres du modèle, moins celles que la rampe a emportées avec leur plafond
 	var boites: Array[AABB] = []
 	for k in rampes:
-		# la boîte du retrait des boîtiers (praticable) : x ±20,5. Elle partait de x -15,13 jusqu'au 2026-09-23, et la
-		# vitre du boîtier ouest (x -18,40..-9,42) gardait allumé celui de ses triangles dont le centre tombait à l'ouest
-		# de cette limite.
-		var mn := Vector3(-20.5, sols[k + 1] - 1.2, RAMPE_Z - RAMPE_DEMI - 0.1)
-		boites.append(AABB(mn, Vector3(20.5, sols[k + 1] - 0.15, RAMPE_Z + RAMPE_DEMI + 0.1) - mn))
+		var bt := rampe_bouts(sols[k + 1] - sols[k])
+		var mn := Vector3(bt.x - 0.5, sols[k + 1] - 1.2, RAMPE_Z - RAMPE_DEMI - 0.1)
+		boites.append(AABB(mn, Vector3(20.0, sols[k + 1] - 0.15, RAMPE_Z + RAMPE_DEMI + 0.1) - mn))
 	var groupes := {}
 	for tri: Array in _vitres_modele():
 		var c: Vector3 = (tri[0] + tri[1] + tri[2]) / 3.0
@@ -991,12 +881,12 @@ static func eclairage(sols: PackedFloat32Array, rampes: int, escaliers: int) -> 
 			_panneau(m, Rect2(x - LUM_RAMPE_L * 0.5, LUM_ALLEE_Z - LUM_RAMPE_LARG * 0.5, LUM_RAMPE_L, LUM_RAMPE_LARG), yp)
 			tetes.append(Vector3(x, yp, LUM_ALLEE_Z))
 			compte["bandeaux d'allee"] = int(compte.get("bandeaux d'allee", 0)) + 1
-	# 4. escalier : un panneau sous chaque dalle desservie
-	for k in escaliers:
-		var y := sols[k + 1] - RAMPE_DALLE - LUM_SOUS_PLAFOND
-		_panneau(m, LUM_ESCALIER, y)
-		tetes.append(Vector3(LUM_ESCALIER.get_center().x, y, LUM_ESCALIER.get_center().y))
-		compte["panneaux d'escalier"] = int(compte.get("panneaux d'escalier", 0)) + 1
+	# 4. cage d'escalier : un panneau par niveau desservi, plus un sous le toit de la cage
+	for k in escaliers + 1:
+		var y := (sols[k + 1] - RAMPE_DALLE - LUM_SOUS_PLAFOND) if k < escaliers else (sols[escaliers] + LUM_CAGE_TOIT)
+		_panneau(m, LUM_CAGE, y)
+		tetes.append(Vector3(LUM_CAGE.position.x + LUM_CAGE.size.x * 0.5, y, LUM_CAGE.position.y + LUM_CAGE.size.y * 0.5))
+		compte["panneaux de cage"] = int(compte["panneaux de cage"]) + 1
 	return {"maillage": m, "tetes": tetes, "compte": compte}
 
 

@@ -454,780 +454,780 @@ size = Vector3(45, 0.4, 28.8)
 [sub_resource type="BoxShape3D" id="BoxShape3D_21iiy"]
 size = Vector3(45, 6, 28.8)
 
-[node name="Water" type="Node3D" unique_id=1041212405]
+[node name="Water" type="Node3D" unique_id=140352029]
 
-[node name="River_00" type="Node3D" parent="." unique_id=1262069219]
+[node name="River_00" type="Node3D" parent="." unique_id=385250417]
 
-[node name="Surface" type="MeshInstance3D" parent="River_00" unique_id=995337558]
+[node name="Surface" type="MeshInstance3D" parent="River_00" unique_id=1878999862]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1640, 0, -1792)
 cast_shadow = 0
 mesh = ExtResource("1_ur4kc")
 
-[node name="Slab" type="StaticBody3D" parent="River_00" unique_id=749319155]
+[node name="Slab" type="StaticBody3D" parent="River_00" unique_id=289271904]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.3, 0)
 
-[node name="Box_0" type="CollisionShape3D" parent="River_00/Slab" unique_id=755119962]
+[node name="Box_0" type="CollisionShape3D" parent="River_00/Slab" unique_id=80780055]
 transform = Transform3D(0.9832162, 0, 0.18244399, 0, 1, 0, -0.18244399, 0, 0.9832162, -1637.2224, 0, -1777.0313)
 shape = SubResource("BoxShape3D_xu7vp")
 
-[node name="Box_4" type="CollisionShape3D" parent="River_00/Slab" unique_id=77323049]
+[node name="Box_4" type="CollisionShape3D" parent="River_00/Slab" unique_id=832840350]
 transform = Transform3D(0.9854656, 0, 0.16987525, 0, 1, 0, -0.16987525, 0, 0.9854656, -1630.8917, 0, -1741.4504)
 shape = SubResource("BoxShape3D_488je")
 
-[node name="Box_8" type="CollisionShape3D" parent="River_00/Slab" unique_id=156621824]
+[node name="Box_8" type="CollisionShape3D" parent="River_00/Slab" unique_id=209484137]
 transform = Transform3D(0.9851245, 0, 0.17184182, 0, 1, 0, -0.17184182, 0, 0.9851245, -1623.0685, 0, -1696.3589)
 shape = SubResource("BoxShape3D_d1s0o")
 
-[node name="Box_12" type="CollisionShape3D" parent="River_00/Slab" unique_id=1612133287]
+[node name="Box_12" type="CollisionShape3D" parent="River_00/Slab" unique_id=469802341]
 transform = Transform3D(0.98322994, 0, 0.18237028, 0, 1, 0, -0.18237028, 0, 0.98322994, -1613.8698, 0, -1645.3074)
 shape = SubResource("BoxShape3D_jx8da")
 
-[node name="Box_16" type="CollisionShape3D" parent="River_00/Slab" unique_id=1035549230]
+[node name="Box_16" type="CollisionShape3D" parent="River_00/Slab" unique_id=800828826]
 transform = Transform3D(0.97951156, 0, 0.20138785, 0, 1, 0, -0.20138785, 0, 0.97951156, -1603.4128, 0, -1591.8464)
 shape = SubResource("BoxShape3D_7ybhn")
 
-[node name="Box_20" type="CollisionShape3D" parent="River_00/Slab" unique_id=1527337782]
+[node name="Box_20" type="CollisionShape3D" parent="River_00/Slab" unique_id=349782440]
 transform = Transform3D(0.9726781, 0, 0.23215777, 0, 1, 0, -0.23215777, 0, 0.9726781, -1591.8147, 0, -1539.5267)
 shape = SubResource("BoxShape3D_bflu8")
 
-[node name="WaterZone" type="Area3D" parent="River_00" unique_id=305613771]
+[node name="WaterZone" type="Area3D" parent="River_00" unique_id=637432305]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -2.884, 0)
 script = ExtResource("2_wq05s")
 
-[node name="Box_0" type="CollisionShape3D" parent="River_00/WaterZone" unique_id=1610136525]
+[node name="Box_0" type="CollisionShape3D" parent="River_00/WaterZone" unique_id=1230299027]
 transform = Transform3D(0.9832162, 0, 0.18244399, 0, 1, 0, -0.18244399, 0, 0.9832162, -1637.2224, 0, -1777.0313)
 shape = SubResource("BoxShape3D_cdd7q")
 
-[node name="Box_4" type="CollisionShape3D" parent="River_00/WaterZone" unique_id=303866136]
+[node name="Box_4" type="CollisionShape3D" parent="River_00/WaterZone" unique_id=2068881010]
 transform = Transform3D(0.9854656, 0, 0.16987525, 0, 1, 0, -0.16987525, 0, 0.9854656, -1630.8917, 0, -1741.4504)
 shape = SubResource("BoxShape3D_c0lbj")
 
-[node name="Box_8" type="CollisionShape3D" parent="River_00/WaterZone" unique_id=2053963417]
+[node name="Box_8" type="CollisionShape3D" parent="River_00/WaterZone" unique_id=867603352]
 transform = Transform3D(0.9851245, 0, 0.17184182, 0, 1, 0, -0.17184182, 0, 0.9851245, -1623.0685, 0, -1696.3589)
 shape = SubResource("BoxShape3D_p1pd1")
 
-[node name="Box_12" type="CollisionShape3D" parent="River_00/WaterZone" unique_id=238887890]
+[node name="Box_12" type="CollisionShape3D" parent="River_00/WaterZone" unique_id=494893090]
 transform = Transform3D(0.98322994, 0, 0.18237028, 0, 1, 0, -0.18237028, 0, 0.98322994, -1613.8698, 0, -1645.3074)
 shape = SubResource("BoxShape3D_3r61y")
 
-[node name="Box_16" type="CollisionShape3D" parent="River_00/WaterZone" unique_id=1394475448]
+[node name="Box_16" type="CollisionShape3D" parent="River_00/WaterZone" unique_id=491273804]
 transform = Transform3D(0.97951156, 0, 0.20138785, 0, 1, 0, -0.20138785, 0, 0.97951156, -1603.4128, 0, -1591.8464)
 shape = SubResource("BoxShape3D_kf45v")
 
-[node name="Box_20" type="CollisionShape3D" parent="River_00/WaterZone" unique_id=713840170]
+[node name="Box_20" type="CollisionShape3D" parent="River_00/WaterZone" unique_id=729761324]
 transform = Transform3D(0.9726781, 0, 0.23215777, 0, 1, 0, -0.23215777, 0, 0.9726781, -1591.8147, 0, -1539.5267)
 shape = SubResource("BoxShape3D_ocro0")
 
-[node name="River_01" type="Node3D" parent="." unique_id=633305934]
+[node name="River_01" type="Node3D" parent="." unique_id=1046817442]
 
-[node name="Surface" type="MeshInstance3D" parent="River_01" unique_id=266358851]
+[node name="Surface" type="MeshInstance3D" parent="River_01" unique_id=300614154]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1585.7449, 0, -1514.0961)
 cast_shadow = 0
 mesh = ExtResource("3_fk6mk")
 
-[node name="Slab" type="StaticBody3D" parent="River_01" unique_id=1232091643]
+[node name="Slab" type="StaticBody3D" parent="River_01" unique_id=965476284]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.3, 0)
 
-[node name="Box_24" type="CollisionShape3D" parent="River_01/Slab" unique_id=52408304]
+[node name="Box_24" type="CollisionShape3D" parent="River_01/Slab" unique_id=162248591]
 transform = Transform3D(0.9589999, 0, 0.2834065, 0, 1, 0, -0.2834065, 0, 0.9589999, -1578.959, 0, -1491.134)
 shape = SubResource("BoxShape3D_u7ji0")
 
-[node name="Box_28" type="CollisionShape3D" parent="River_01/Slab" unique_id=1196715887]
+[node name="Box_28" type="CollisionShape3D" parent="River_01/Slab" unique_id=888909344]
 transform = Transform3D(0.93930256, 0, 0.34308985, 0, 1, 0, -0.34308985, 0, 0.93930256, -1563.8209, 0, -1445.3052)
 shape = SubResource("BoxShape3D_5ds8o")
 
-[node name="Box_32" type="CollisionShape3D" parent="River_01/Slab" unique_id=1425062703]
+[node name="Box_32" type="CollisionShape3D" parent="River_01/Slab" unique_id=145195679]
 transform = Transform3D(0.92069197, 0, 0.39029008, 0, 1, 0, -0.39029008, 0, 0.92069197, -1546.1963, 0, -1400.565)
 shape = SubResource("BoxShape3D_k1h02")
 
-[node name="Box_36" type="CollisionShape3D" parent="River_01/Slab" unique_id=763090949]
+[node name="Box_36" type="CollisionShape3D" parent="River_01/Slab" unique_id=1958556921]
 transform = Transform3D(0.9059229, 0, 0.4234427, 0, 1, 0, -0.4234427, 0, 0.9059229, -1526.9951, 0, -1357.4498)
 shape = SubResource("BoxShape3D_pklxq")
 
-[node name="Box_40" type="CollisionShape3D" parent="River_01/Slab" unique_id=2051645208]
+[node name="Box_40" type="CollisionShape3D" parent="River_01/Slab" unique_id=926188116]
 transform = Transform3D(0.89722246, 0, 0.44157887, 0, 1, 0, -0.44157887, 0, 0.89722246, -1506.7455, 0, -1315.2374)
 shape = SubResource("BoxShape3D_co2m3")
 
-[node name="Box_44" type="CollisionShape3D" parent="River_01/Slab" unique_id=837829594]
+[node name="Box_44" type="CollisionShape3D" parent="River_01/Slab" unique_id=889446823]
 transform = Transform3D(0.89580095, 0, 0.4444555, 0, 1, 0, -0.4444555, 0, 0.89580095, -1485.9749, 0, -1273.2056)
 shape = SubResource("BoxShape3D_lhc5b")
 
-[node name="WaterZone" type="Area3D" parent="River_01" unique_id=907717160]
+[node name="WaterZone" type="Area3D" parent="River_01" unique_id=2061403924]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -2.884, 0)
 script = ExtResource("2_wq05s")
 
-[node name="Box_24" type="CollisionShape3D" parent="River_01/WaterZone" unique_id=1617951739]
+[node name="Box_24" type="CollisionShape3D" parent="River_01/WaterZone" unique_id=1569380742]
 transform = Transform3D(0.9589999, 0, 0.2834065, 0, 1, 0, -0.2834065, 0, 0.9589999, -1578.959, 0, -1491.134)
 shape = SubResource("BoxShape3D_xxvot")
 
-[node name="Box_28" type="CollisionShape3D" parent="River_01/WaterZone" unique_id=573648807]
+[node name="Box_28" type="CollisionShape3D" parent="River_01/WaterZone" unique_id=805429407]
 transform = Transform3D(0.93930256, 0, 0.34308985, 0, 1, 0, -0.34308985, 0, 0.93930256, -1563.8209, 0, -1445.3052)
 shape = SubResource("BoxShape3D_sxc4a")
 
-[node name="Box_32" type="CollisionShape3D" parent="River_01/WaterZone" unique_id=1641687785]
+[node name="Box_32" type="CollisionShape3D" parent="River_01/WaterZone" unique_id=545625657]
 transform = Transform3D(0.92069197, 0, 0.39029008, 0, 1, 0, -0.39029008, 0, 0.92069197, -1546.1963, 0, -1400.565)
 shape = SubResource("BoxShape3D_55jmq")
 
-[node name="Box_36" type="CollisionShape3D" parent="River_01/WaterZone" unique_id=1108897025]
+[node name="Box_36" type="CollisionShape3D" parent="River_01/WaterZone" unique_id=1206914002]
 transform = Transform3D(0.9059229, 0, 0.4234427, 0, 1, 0, -0.4234427, 0, 0.9059229, -1526.9951, 0, -1357.4498)
 shape = SubResource("BoxShape3D_2cs2l")
 
-[node name="Box_40" type="CollisionShape3D" parent="River_01/WaterZone" unique_id=407582958]
+[node name="Box_40" type="CollisionShape3D" parent="River_01/WaterZone" unique_id=792110124]
 transform = Transform3D(0.89722246, 0, 0.44157887, 0, 1, 0, -0.44157887, 0, 0.89722246, -1506.7455, 0, -1315.2374)
 shape = SubResource("BoxShape3D_smpfe")
 
-[node name="Box_44" type="CollisionShape3D" parent="River_01/WaterZone" unique_id=497834971]
+[node name="Box_44" type="CollisionShape3D" parent="River_01/WaterZone" unique_id=1688157695]
 transform = Transform3D(0.89580095, 0, 0.4444555, 0, 1, 0, -0.4444555, 0, 0.89580095, -1485.9749, 0, -1273.2056)
 shape = SubResource("BoxShape3D_udr5c")
 
-[node name="River_02" type="Node3D" parent="." unique_id=155410801]
+[node name="River_02" type="Node3D" parent="." unique_id=456981897]
 
-[node name="Surface" type="MeshInstance3D" parent="River_02" unique_id=155280636]
+[node name="Surface" type="MeshInstance3D" parent="River_02" unique_id=1052618714]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1475.5254, 0, -1252.1445)
 cast_shadow = 0
 mesh = ExtResource("4_mhep7")
 
-[node name="Slab" type="StaticBody3D" parent="River_02" unique_id=1537097560]
+[node name="Slab" type="StaticBody3D" parent="River_02" unique_id=210120364]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.3, 0)
 
-[node name="Box_48" type="CollisionShape3D" parent="River_02/Slab" unique_id=1005364229]
+[node name="Box_48" type="CollisionShape3D" parent="River_02/Slab" unique_id=992098474]
 transform = Transform3D(0.9010318, 0, 0.43375307, 0, 1, 0, -0.43375307, 0, 0.9010318, -1465.2803, 0, -1230.8623)
 shape = SubResource("BoxShape3D_cofx6")
 
-[node name="Box_52" type="CollisionShape3D" parent="River_02/Slab" unique_id=1743813668]
+[node name="Box_52" type="CollisionShape3D" parent="River_02/Slab" unique_id=1880921318]
 transform = Transform3D(0.89764434, 0, 0.44072062, 0, 1, 0, -0.44072062, 0, 0.89764434, -1444.7256, 0, -1188.582)
 shape = SubResource("BoxShape3D_x1rnc")
 
-[node name="Box_56" type="CollisionShape3D" parent="River_02/Slab" unique_id=1055411013]
+[node name="Box_56" type="CollisionShape3D" parent="River_02/Slab" unique_id=1115888023]
 transform = Transform3D(0.89190704, 0, 0.4522188, 0, 1, 0, -0.4522188, 0, 0.89190704, -1423.702, 0, -1146.4529)
 shape = SubResource("BoxShape3D_aulk8")
 
-[node name="Box_60" type="CollisionShape3D" parent="River_02/Slab" unique_id=2136226752]
+[node name="Box_60" type="CollisionShape3D" parent="River_02/Slab" unique_id=1712775154]
 transform = Transform3D(0.8893852, 0, 0.45715848, 0, 1, 0, -0.45715848, 0, 0.8893852, -1402.1399, 0, -1104.2173)
 shape = SubResource("BoxShape3D_i812l")
 
-[node name="Box_64" type="CollisionShape3D" parent="River_02/Slab" unique_id=2071567084]
+[node name="Box_64" type="CollisionShape3D" parent="River_02/Slab" unique_id=749967418]
 transform = Transform3D(0.89008135, 0, 0.4558017, 0, 1, 0, -0.4558017, 0, 0.89008135, -1380.5798, 0, -1062.1946)
 shape = SubResource("BoxShape3D_t1lyv")
 
-[node name="Box_68" type="CollisionShape3D" parent="River_02/Slab" unique_id=1501870000]
+[node name="Box_68" type="CollisionShape3D" parent="River_02/Slab" unique_id=302817662]
 transform = Transform3D(0.8940895, 0, 0.4478883, 0, 1, 0, -0.4478883, 0, 0.8940895, -1359.5625, 0, -1020.70435)
 shape = SubResource("BoxShape3D_gkl8v")
 
-[node name="WaterZone" type="Area3D" parent="River_02" unique_id=2096640443]
+[node name="WaterZone" type="Area3D" parent="River_02" unique_id=1360055651]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -2.884, 0)
 script = ExtResource("2_wq05s")
 
-[node name="Box_48" type="CollisionShape3D" parent="River_02/WaterZone" unique_id=931550990]
+[node name="Box_48" type="CollisionShape3D" parent="River_02/WaterZone" unique_id=841665965]
 transform = Transform3D(0.9010318, 0, 0.43375307, 0, 1, 0, -0.43375307, 0, 0.9010318, -1465.2803, 0, -1230.8623)
 shape = SubResource("BoxShape3D_jfo6j")
 
-[node name="Box_52" type="CollisionShape3D" parent="River_02/WaterZone" unique_id=1467697657]
+[node name="Box_52" type="CollisionShape3D" parent="River_02/WaterZone" unique_id=1481482831]
 transform = Transform3D(0.89764434, 0, 0.44072062, 0, 1, 0, -0.44072062, 0, 0.89764434, -1444.7256, 0, -1188.582)
 shape = SubResource("BoxShape3D_u78ec")
 
-[node name="Box_56" type="CollisionShape3D" parent="River_02/WaterZone" unique_id=291915853]
+[node name="Box_56" type="CollisionShape3D" parent="River_02/WaterZone" unique_id=706995928]
 transform = Transform3D(0.89190704, 0, 0.4522188, 0, 1, 0, -0.4522188, 0, 0.89190704, -1423.702, 0, -1146.4529)
 shape = SubResource("BoxShape3D_ta0pl")
 
-[node name="Box_60" type="CollisionShape3D" parent="River_02/WaterZone" unique_id=833623423]
+[node name="Box_60" type="CollisionShape3D" parent="River_02/WaterZone" unique_id=297988674]
 transform = Transform3D(0.8893852, 0, 0.45715848, 0, 1, 0, -0.45715848, 0, 0.8893852, -1402.1399, 0, -1104.2173)
 shape = SubResource("BoxShape3D_2jf11")
 
-[node name="Box_64" type="CollisionShape3D" parent="River_02/WaterZone" unique_id=764116632]
+[node name="Box_64" type="CollisionShape3D" parent="River_02/WaterZone" unique_id=1980854024]
 transform = Transform3D(0.89008135, 0, 0.4558017, 0, 1, 0, -0.4558017, 0, 0.89008135, -1380.5798, 0, -1062.1946)
 shape = SubResource("BoxShape3D_tt1yh")
 
-[node name="Box_68" type="CollisionShape3D" parent="River_02/WaterZone" unique_id=2071073901]
+[node name="Box_68" type="CollisionShape3D" parent="River_02/WaterZone" unique_id=933512417]
 transform = Transform3D(0.8940895, 0, 0.4478883, 0, 1, 0, -0.4478883, 0, 0.8940895, -1359.5625, 0, -1020.70435)
 shape = SubResource("BoxShape3D_we18j")
 
-[node name="River_03" type="Node3D" parent="." unique_id=511364674]
+[node name="River_03" type="Node3D" parent="." unique_id=1694356002]
 
-[node name="Surface" type="MeshInstance3D" parent="River_03" unique_id=1203848876]
+[node name="Surface" type="MeshInstance3D" parent="River_03" unique_id=702025744]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1349.2571, 0, -1000.1323)
 cast_shadow = 0
 mesh = ExtResource("5_jns7j")
 
-[node name="Slab" type="StaticBody3D" parent="River_03" unique_id=987851021]
+[node name="Slab" type="StaticBody3D" parent="River_03" unique_id=695312371]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.3, 0)
 
-[node name="Box_72" type="CollisionShape3D" parent="River_03/Slab" unique_id=870357859]
+[node name="Box_72" type="CollisionShape3D" parent="River_03/Slab" unique_id=1453973912]
 transform = Transform3D(0.90157944, 0, 0.43261355, 0, 1, 0, -0.43261355, 0, 0.90157944, -1339.6285, 0, -980.06616)
 shape = SubResource("BoxShape3D_7pr8l")
 
-[node name="Box_76" type="CollisionShape3D" parent="River_03/Slab" unique_id=120701061]
+[node name="Box_76" type="CollisionShape3D" parent="River_03/Slab" unique_id=59933712]
 transform = Transform3D(0.9054681, 0, 0.42441428, 0, 1, 0, -0.42441428, 0, 0.9054681, -1319.6582, 0, -937.93616)
 shape = SubResource("BoxShape3D_tj5bm")
 
-[node name="Box_80" type="CollisionShape3D" parent="River_03/Slab" unique_id=1269165524]
+[node name="Box_80" type="CollisionShape3D" parent="River_03/Slab" unique_id=1115070746]
 transform = Transform3D(0.9063206, 0, 0.4225908, 0, 1, 0, -0.4225908, 0, 0.9063206, -1299.3201, 0, -894.4335)
 shape = SubResource("BoxShape3D_iwcjr")
 
-[node name="Box_84" type="CollisionShape3D" parent="River_03/Slab" unique_id=637259831]
+[node name="Box_84" type="CollisionShape3D" parent="River_03/Slab" unique_id=1589640634]
 transform = Transform3D(0.9119425, 0, 0.4103181, 0, 1, 0, -0.4103181, 0, 0.9119425, -1279.8534, 0, -851.94666)
 shape = SubResource("BoxShape3D_eylk8")
 
-[node name="Box_88" type="CollisionShape3D" parent="River_03/Slab" unique_id=84994162]
+[node name="Box_88" type="CollisionShape3D" parent="River_03/Slab" unique_id=1479799078]
 transform = Transform3D(0.9221477, 0, 0.38683805, 0, 1, 0, -0.38683805, 0, 0.9221477, -1261.619, 0, -810.0068)
 shape = SubResource("BoxShape3D_bxowl")
 
-[node name="Box_92" type="CollisionShape3D" parent="River_03/Slab" unique_id=917905609]
+[node name="Box_92" type="CollisionShape3D" parent="River_03/Slab" unique_id=1010521005]
 transform = Transform3D(0.936127, 0, 0.35166207, 0, 1, 0, -0.35166207, 0, 0.936127, -1244.9775, 0, -768.145)
 shape = SubResource("BoxShape3D_ksw8b")
 
-[node name="WaterZone" type="Area3D" parent="River_03" unique_id=1972157836]
+[node name="WaterZone" type="Area3D" parent="River_03" unique_id=21659168]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -2.884, 0)
 script = ExtResource("2_wq05s")
 
-[node name="Box_72" type="CollisionShape3D" parent="River_03/WaterZone" unique_id=1919716220]
+[node name="Box_72" type="CollisionShape3D" parent="River_03/WaterZone" unique_id=665069098]
 transform = Transform3D(0.90157944, 0, 0.43261355, 0, 1, 0, -0.43261355, 0, 0.90157944, -1339.6285, 0, -980.06616)
 shape = SubResource("BoxShape3D_xff3s")
 
-[node name="Box_76" type="CollisionShape3D" parent="River_03/WaterZone" unique_id=2075477912]
+[node name="Box_76" type="CollisionShape3D" parent="River_03/WaterZone" unique_id=931257090]
 transform = Transform3D(0.9054681, 0, 0.42441428, 0, 1, 0, -0.42441428, 0, 0.9054681, -1319.6582, 0, -937.93616)
 shape = SubResource("BoxShape3D_dsdjh")
 
-[node name="Box_80" type="CollisionShape3D" parent="River_03/WaterZone" unique_id=154011419]
+[node name="Box_80" type="CollisionShape3D" parent="River_03/WaterZone" unique_id=1864747340]
 transform = Transform3D(0.9063206, 0, 0.4225908, 0, 1, 0, -0.4225908, 0, 0.9063206, -1299.3201, 0, -894.4335)
 shape = SubResource("BoxShape3D_47mqp")
 
-[node name="Box_84" type="CollisionShape3D" parent="River_03/WaterZone" unique_id=1692468321]
+[node name="Box_84" type="CollisionShape3D" parent="River_03/WaterZone" unique_id=1873245412]
 transform = Transform3D(0.9119425, 0, 0.4103181, 0, 1, 0, -0.4103181, 0, 0.9119425, -1279.8534, 0, -851.94666)
 shape = SubResource("BoxShape3D_yxrai")
 
-[node name="Box_88" type="CollisionShape3D" parent="River_03/WaterZone" unique_id=262989172]
+[node name="Box_88" type="CollisionShape3D" parent="River_03/WaterZone" unique_id=1560960326]
 transform = Transform3D(0.9221477, 0, 0.38683805, 0, 1, 0, -0.38683805, 0, 0.9221477, -1261.619, 0, -810.0068)
 shape = SubResource("BoxShape3D_s561e")
 
-[node name="Box_92" type="CollisionShape3D" parent="River_03/WaterZone" unique_id=1584358080]
+[node name="Box_92" type="CollisionShape3D" parent="River_03/WaterZone" unique_id=1256721053]
 transform = Transform3D(0.936127, 0, 0.35166207, 0, 1, 0, -0.35166207, 0, 0.936127, -1244.9775, 0, -768.145)
 shape = SubResource("BoxShape3D_m8lf8")
 
-[node name="River_04" type="Node3D" parent="." unique_id=434124798]
+[node name="River_04" type="Node3D" parent="." unique_id=1467727335]
 
-[node name="Surface" type="MeshInstance3D" parent="River_04" unique_id=626637104]
+[node name="Surface" type="MeshInstance3D" parent="River_04" unique_id=1411685338]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1237.1, 0, -747.17505)
 cast_shadow = 0
 mesh = ExtResource("6_jdj05")
 
-[node name="Slab" type="StaticBody3D" parent="River_04" unique_id=672187092]
+[node name="Slab" type="StaticBody3D" parent="River_04" unique_id=1957265511]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.3, 0)
 
-[node name="Box_96" type="CollisionShape3D" parent="River_04/Slab" unique_id=1397339844]
+[node name="Box_96" type="CollisionShape3D" parent="River_04/Slab" unique_id=961891616]
 transform = Transform3D(0.952449, 0, 0.30469793, 0, 1, 0, -0.30469793, 0, 0.952449, -1229.97, 0, -724.8875)
 shape = SubResource("BoxShape3D_oswxl")
 
-[node name="Box_100" type="CollisionShape3D" parent="River_04/Slab" unique_id=697477687]
+[node name="Box_100" type="CollisionShape3D" parent="River_04/Slab" unique_id=1862036186]
 transform = Transform3D(0.96633786, 0, 0.2572764, 0, 1, 0, -0.2572764, 0, 0.96633786, -1216.61, 0, -679.19995)
 shape = SubResource("BoxShape3D_vvtw2")
 
-[node name="Box_104" type="CollisionShape3D" parent="River_04/Slab" unique_id=1392694821]
+[node name="Box_104" type="CollisionShape3D" parent="River_04/Slab" unique_id=965533537]
 transform = Transform3D(0.9762753, 0, 0.216533, 0, 1, 0, -0.216533, 0, 0.9762753, -1205.19, 0, -632.4)
 shape = SubResource("BoxShape3D_nserg")
 
-[node name="Box_108" type="CollisionShape3D" parent="River_04/Slab" unique_id=9958279]
+[node name="Box_108" type="CollisionShape3D" parent="River_04/Slab" unique_id=487857041]
 transform = Transform3D(0.98285306, 0, 0.1843906, 0, 1, 0, -0.1843906, 0, 0.98285306, -1195.61, 0, -585.6)
 shape = SubResource("BoxShape3D_taka6")
 
-[node name="Box_112" type="CollisionShape3D" parent="River_04/Slab" unique_id=2086907379]
+[node name="Box_112" type="CollisionShape3D" parent="River_04/Slab" unique_id=1620071420]
 transform = Transform3D(0.9868683, 0, 0.16152665, 0, 1, 0, -0.16152665, 0, 0.9868683, -1187.3899, 0, -538.80005)
 shape = SubResource("BoxShape3D_anifb")
 
-[node name="Box_116" type="CollisionShape3D" parent="River_04/Slab" unique_id=1500760450]
+[node name="Box_116" type="CollisionShape3D" parent="River_04/Slab" unique_id=464954328]
 transform = Transform3D(0.98954827, 0, 0.14420222, 0, 1, 0, -0.14420222, 0, 0.98954827, -1180.1499, 0, -492)
 shape = SubResource("BoxShape3D_tu8xp")
 
-[node name="WaterZone" type="Area3D" parent="River_04" unique_id=847066625]
+[node name="WaterZone" type="Area3D" parent="River_04" unique_id=603855073]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -2.884, 0)
 script = ExtResource("2_wq05s")
 
-[node name="Box_96" type="CollisionShape3D" parent="River_04/WaterZone" unique_id=1126621892]
+[node name="Box_96" type="CollisionShape3D" parent="River_04/WaterZone" unique_id=1448680044]
 transform = Transform3D(0.952449, 0, 0.30469793, 0, 1, 0, -0.30469793, 0, 0.952449, -1229.97, 0, -724.8875)
 shape = SubResource("BoxShape3D_4418l")
 
-[node name="Box_100" type="CollisionShape3D" parent="River_04/WaterZone" unique_id=1751583276]
+[node name="Box_100" type="CollisionShape3D" parent="River_04/WaterZone" unique_id=81987155]
 transform = Transform3D(0.96633786, 0, 0.2572764, 0, 1, 0, -0.2572764, 0, 0.96633786, -1216.61, 0, -679.19995)
 shape = SubResource("BoxShape3D_d6cdt")
 
-[node name="Box_104" type="CollisionShape3D" parent="River_04/WaterZone" unique_id=1099685149]
+[node name="Box_104" type="CollisionShape3D" parent="River_04/WaterZone" unique_id=834909071]
 transform = Transform3D(0.9762753, 0, 0.216533, 0, 1, 0, -0.216533, 0, 0.9762753, -1205.19, 0, -632.4)
 shape = SubResource("BoxShape3D_4q7nb")
 
-[node name="Box_108" type="CollisionShape3D" parent="River_04/WaterZone" unique_id=942640993]
+[node name="Box_108" type="CollisionShape3D" parent="River_04/WaterZone" unique_id=1785866954]
 transform = Transform3D(0.98285306, 0, 0.1843906, 0, 1, 0, -0.1843906, 0, 0.98285306, -1195.61, 0, -585.6)
 shape = SubResource("BoxShape3D_8fgx7")
 
-[node name="Box_112" type="CollisionShape3D" parent="River_04/WaterZone" unique_id=913100279]
+[node name="Box_112" type="CollisionShape3D" parent="River_04/WaterZone" unique_id=772685150]
 transform = Transform3D(0.9868683, 0, 0.16152665, 0, 1, 0, -0.16152665, 0, 0.9868683, -1187.3899, 0, -538.80005)
 shape = SubResource("BoxShape3D_lyiyi")
 
-[node name="Box_116" type="CollisionShape3D" parent="River_04/WaterZone" unique_id=812201535]
+[node name="Box_116" type="CollisionShape3D" parent="River_04/WaterZone" unique_id=1716849095]
 transform = Transform3D(0.98954827, 0, 0.14420222, 0, 1, 0, -0.14420222, 0, 0.98954827, -1180.1499, 0, -492)
 shape = SubResource("BoxShape3D_x5jy0")
 
-[node name="River_05" type="Node3D" parent="." unique_id=1743960008]
+[node name="River_05" type="Node3D" parent="." unique_id=90777067]
 
-[node name="Surface" type="MeshInstance3D" parent="River_05" unique_id=762025531]
+[node name="Surface" type="MeshInstance3D" parent="River_05" unique_id=1051767529]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1176.74, 0, -468.6)
 cast_shadow = 0
 mesh = ExtResource("7_5slds")
 
-[node name="Slab" type="StaticBody3D" parent="River_05" unique_id=293523898]
+[node name="Slab" type="StaticBody3D" parent="River_05" unique_id=139838664]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.3, 0)
 
-[node name="Box_120" type="CollisionShape3D" parent="River_05/Slab" unique_id=1523237396]
+[node name="Box_120" type="CollisionShape3D" parent="River_05/Slab" unique_id=332295912]
 transform = Transform3D(0.99374306, 0, 0.11169009, 0, 1, 0, -0.11169009, 0, 0.99374306, -1174.11, 0, -445.2)
 shape = SubResource("BoxShape3D_e2rha")
 
-[node name="Box_124" type="CollisionShape3D" parent="River_05/Slab" unique_id=708880953]
+[node name="Box_124" type="CollisionShape3D" parent="River_05/Slab" unique_id=1256278488]
 transform = Transform3D(0.9964034, 0, 0.084736474, 0, 1, 0, -0.084736474, 0, 0.9964034, -1169.49, 0, -398.4)
 shape = SubResource("BoxShape3D_ohysr")
 
-[node name="Box_128" type="CollisionShape3D" parent="River_05/Slab" unique_id=2007672102]
+[node name="Box_128" type="CollisionShape3D" parent="River_05/Slab" unique_id=796951573]
 transform = Transform3D(0.9976994, 0, 0.067793556, 0, 1, 0, -0.067793556, 0, 0.9976994, -1165.9099, 0, -351.6)
 shape = SubResource("BoxShape3D_j3oqi")
 
-[node name="Box_132" type="CollisionShape3D" parent="River_05/Slab" unique_id=650988414]
+[node name="Box_132" type="CollisionShape3D" parent="River_05/Slab" unique_id=904123923]
 transform = Transform3D(0.99813795, 0, 0.06099702, 0, 1, 0, -0.06099702, 0, 0.99813795, -1162.8899, 0, -304.80002)
 shape = SubResource("BoxShape3D_e67or")
 
-[node name="Box_136" type="CollisionShape3D" parent="River_05/Slab" unique_id=1764290367]
+[node name="Box_136" type="CollisionShape3D" parent="River_05/Slab" unique_id=962292322]
 transform = Transform3D(0.99813145, 0, 0.061103325, 0, 1, 0, -0.061103325, 0, 0.99813145, -1160.0275, 0, -258)
 shape = SubResource("BoxShape3D_qj80x")
 
-[node name="Box_140" type="CollisionShape3D" parent="River_05/Slab" unique_id=1620879242]
+[node name="Box_140" type="CollisionShape3D" parent="River_05/Slab" unique_id=858789552]
 transform = Transform3D(0.998763, 0, 0.049723785, 0, 1, 0, -0.049723785, 0, 0.998763, -1157.4299, 0, -211.2)
 shape = SubResource("BoxShape3D_aph7d")
 
-[node name="WaterZone" type="Area3D" parent="River_05" unique_id=1299885595]
+[node name="WaterZone" type="Area3D" parent="River_05" unique_id=1599863901]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -2.884, 0)
 script = ExtResource("2_wq05s")
 
-[node name="Box_120" type="CollisionShape3D" parent="River_05/WaterZone" unique_id=80585893]
+[node name="Box_120" type="CollisionShape3D" parent="River_05/WaterZone" unique_id=1852963371]
 transform = Transform3D(0.99374306, 0, 0.11169009, 0, 1, 0, -0.11169009, 0, 0.99374306, -1174.11, 0, -445.2)
 shape = SubResource("BoxShape3D_fj7f8")
 
-[node name="Box_124" type="CollisionShape3D" parent="River_05/WaterZone" unique_id=316872414]
+[node name="Box_124" type="CollisionShape3D" parent="River_05/WaterZone" unique_id=2101171620]
 transform = Transform3D(0.9964034, 0, 0.084736474, 0, 1, 0, -0.084736474, 0, 0.9964034, -1169.49, 0, -398.4)
 shape = SubResource("BoxShape3D_abfc4")
 
-[node name="Box_128" type="CollisionShape3D" parent="River_05/WaterZone" unique_id=1630268836]
+[node name="Box_128" type="CollisionShape3D" parent="River_05/WaterZone" unique_id=1820145477]
 transform = Transform3D(0.9976994, 0, 0.067793556, 0, 1, 0, -0.067793556, 0, 0.9976994, -1165.9099, 0, -351.6)
 shape = SubResource("BoxShape3D_cfhsd")
 
-[node name="Box_132" type="CollisionShape3D" parent="River_05/WaterZone" unique_id=1985770315]
+[node name="Box_132" type="CollisionShape3D" parent="River_05/WaterZone" unique_id=1650525067]
 transform = Transform3D(0.99813795, 0, 0.06099702, 0, 1, 0, -0.06099702, 0, 0.99813795, -1162.8899, 0, -304.80002)
 shape = SubResource("BoxShape3D_c1a2f")
 
-[node name="Box_136" type="CollisionShape3D" parent="River_05/WaterZone" unique_id=1715213758]
+[node name="Box_136" type="CollisionShape3D" parent="River_05/WaterZone" unique_id=821247275]
 transform = Transform3D(0.99813145, 0, 0.061103325, 0, 1, 0, -0.061103325, 0, 0.99813145, -1160.0275, 0, -258)
 shape = SubResource("BoxShape3D_jstpi")
 
-[node name="Box_140" type="CollisionShape3D" parent="River_05/WaterZone" unique_id=952096724]
+[node name="Box_140" type="CollisionShape3D" parent="River_05/WaterZone" unique_id=521780773]
 transform = Transform3D(0.998763, 0, 0.049723785, 0, 1, 0, -0.049723785, 0, 0.998763, -1157.4299, 0, -211.2)
 shape = SubResource("BoxShape3D_gsf7o")
 
-[node name="River_06" type="Node3D" parent="." unique_id=405726264]
+[node name="River_06" type="Node3D" parent="." unique_id=1389987769]
 
-[node name="Surface" type="MeshInstance3D" parent="River_06" unique_id=360608675]
+[node name="Surface" type="MeshInstance3D" parent="River_06" unique_id=854719939]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1156.265, 0, -187.79999)
 cast_shadow = 0
 mesh = ExtResource("8_nd4ws")
 
-[node name="Slab" type="StaticBody3D" parent="River_06" unique_id=1524685825]
+[node name="Slab" type="StaticBody3D" parent="River_06" unique_id=1050825250]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.3, 0)
 
-[node name="Box_144" type="CollisionShape3D" parent="River_06/Slab" unique_id=1438335974]
+[node name="Box_144" type="CollisionShape3D" parent="River_06/Slab" unique_id=247794909]
 transform = Transform3D(0.9991855, 0, 0.040352046, 0, 1, 0, -0.040352046, 0, 0.9991855, -1155.3201, 0, -164.4)
 shape = SubResource("BoxShape3D_ehi36")
 
-[node name="Box_148" type="CollisionShape3D" parent="River_06/Slab" unique_id=2059694471]
+[node name="Box_148" type="CollisionShape3D" parent="River_06/Slab" unique_id=1351557391]
 transform = Transform3D(0.9993487, 0, 0.036086336, 0, 1, 0, -0.036086336, 0, 0.9993487, -1153.53, 0, -117.6)
 shape = SubResource("BoxShape3D_bvmpy")
 
-[node name="Box_152" type="CollisionShape3D" parent="River_06/Slab" unique_id=225534741]
+[node name="Box_152" type="CollisionShape3D" parent="River_06/Slab" unique_id=1340504955]
 transform = Transform3D(0.9993174, 0, 0.036942776, 0, 1, 0, -0.036942776, 0, 0.9993174, -1151.8201, 0, -70.8)
 shape = SubResource("BoxShape3D_gyfyp")
 
-[node name="Box_156" type="CollisionShape3D" parent="River_06/Slab" unique_id=1623982867]
+[node name="Box_156" type="CollisionShape3D" parent="River_06/Slab" unique_id=1070358304]
 transform = Transform3D(0.9996262, 0, 0.027338218, 0, 1, 0, -0.027338218, 0, 0.9996262, -1150.315, 0, -24.000004)
 shape = SubResource("BoxShape3D_5uswj")
 
-[node name="Box_160" type="CollisionShape3D" parent="River_06/Slab" unique_id=864033287]
+[node name="Box_160" type="CollisionShape3D" parent="River_06/Slab" unique_id=1797628789]
 transform = Transform3D(0.9990421, 0, -0.04375989, 0, 1, 0, 0.04375989, 0, 0.9990421, -1150.7, 0, 22.800003)
 shape = SubResource("BoxShape3D_u7hop")
 
-[node name="Box_164" type="CollisionShape3D" parent="River_06/Slab" unique_id=1013024991]
+[node name="Box_164" type="CollisionShape3D" parent="River_06/Slab" unique_id=702670150]
 transform = Transform3D(0.9984007, 0, -0.0565339, 0, 1, 0, 0.0565339, 0, 0.9984007, -1153.05, 0, 69.600006)
 shape = SubResource("BoxShape3D_5l8cq")
 
-[node name="WaterZone" type="Area3D" parent="River_06" unique_id=1507589656]
+[node name="WaterZone" type="Area3D" parent="River_06" unique_id=1841328627]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -2.884, 0)
 script = ExtResource("2_wq05s")
 
-[node name="Box_144" type="CollisionShape3D" parent="River_06/WaterZone" unique_id=1253447547]
+[node name="Box_144" type="CollisionShape3D" parent="River_06/WaterZone" unique_id=1528382338]
 transform = Transform3D(0.9991855, 0, 0.040352046, 0, 1, 0, -0.040352046, 0, 0.9991855, -1155.3201, 0, -164.4)
 shape = SubResource("BoxShape3D_qygby")
 
-[node name="Box_148" type="CollisionShape3D" parent="River_06/WaterZone" unique_id=385938045]
+[node name="Box_148" type="CollisionShape3D" parent="River_06/WaterZone" unique_id=1467853812]
 transform = Transform3D(0.9993487, 0, 0.036086336, 0, 1, 0, -0.036086336, 0, 0.9993487, -1153.53, 0, -117.6)
 shape = SubResource("BoxShape3D_34jkg")
 
-[node name="Box_152" type="CollisionShape3D" parent="River_06/WaterZone" unique_id=760182944]
+[node name="Box_152" type="CollisionShape3D" parent="River_06/WaterZone" unique_id=166053605]
 transform = Transform3D(0.9993174, 0, 0.036942776, 0, 1, 0, -0.036942776, 0, 0.9993174, -1151.8201, 0, -70.8)
 shape = SubResource("BoxShape3D_l0v1o")
 
-[node name="Box_156" type="CollisionShape3D" parent="River_06/WaterZone" unique_id=1656246724]
+[node name="Box_156" type="CollisionShape3D" parent="River_06/WaterZone" unique_id=985075891]
 transform = Transform3D(0.9996262, 0, 0.027338218, 0, 1, 0, -0.027338218, 0, 0.9996262, -1150.315, 0, -24.000004)
 shape = SubResource("BoxShape3D_f4qlo")
 
-[node name="Box_160" type="CollisionShape3D" parent="River_06/WaterZone" unique_id=815109747]
+[node name="Box_160" type="CollisionShape3D" parent="River_06/WaterZone" unique_id=455872818]
 transform = Transform3D(0.9990421, 0, -0.04375989, 0, 1, 0, 0.04375989, 0, 0.9990421, -1150.7, 0, 22.800003)
 shape = SubResource("BoxShape3D_jy0wx")
 
-[node name="Box_164" type="CollisionShape3D" parent="River_06/WaterZone" unique_id=309052346]
+[node name="Box_164" type="CollisionShape3D" parent="River_06/WaterZone" unique_id=1827266241]
 transform = Transform3D(0.9984007, 0, -0.0565339, 0, 1, 0, 0.0565339, 0, 0.9984007, -1153.05, 0, 69.600006)
 shape = SubResource("BoxShape3D_vdt81")
 
-[node name="River_07" type="Node3D" parent="." unique_id=506201771]
+[node name="River_07" type="Node3D" parent="." unique_id=1794111624]
 
-[node name="Surface" type="MeshInstance3D" parent="River_07" unique_id=1164307724]
+[node name="Surface" type="MeshInstance3D" parent="River_07" unique_id=176015216]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1154.375, 0, 93)
 cast_shadow = 0
 mesh = ExtResource("9_emmjr")
 
-[node name="Slab" type="StaticBody3D" parent="River_07" unique_id=1607017978]
+[node name="Slab" type="StaticBody3D" parent="River_07" unique_id=1277528453]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.3, 0)
 
-[node name="Box_168" type="CollisionShape3D" parent="River_07/Slab" unique_id=334233903]
+[node name="Box_168" type="CollisionShape3D" parent="River_07/Slab" unique_id=279938646]
 transform = Transform3D(0.99997205, 0, 0.007477901, 0, 1, 0, -0.007477901, 0, 0.99997205, -1154.2, 0, 116.4)
 shape = SubResource("BoxShape3D_4e5qa")
 
-[node name="Box_172" type="CollisionShape3D" parent="River_07/Slab" unique_id=1035597821]
+[node name="Box_172" type="CollisionShape3D" parent="River_07/Slab" unique_id=423738575]
 transform = Transform3D(0.98915213, 0, 0.1468949, 0, 1, 0, -0.1468949, 0, 0.98915213, -1150.55, 0, 163.2)
 shape = SubResource("BoxShape3D_e6b2d")
 
-[node name="Box_176" type="CollisionShape3D" parent="River_07/Slab" unique_id=715678850]
+[node name="Box_176" type="CollisionShape3D" parent="River_07/Slab" unique_id=2130600585]
 transform = Transform3D(0.9443933, 0, 0.32881802, 0, 1, 0, -0.32881802, 0, 0.9443933, -1139.592, 0, 208.09137)
 shape = SubResource("BoxShape3D_4jgkl")
 
-[node name="Box_180" type="CollisionShape3D" parent="River_07/Slab" unique_id=1308614335]
+[node name="Box_180" type="CollisionShape3D" parent="River_07/Slab" unique_id=1410899482]
 transform = Transform3D(0.8908578, 0, 0.45428222, 0, 1, 0, -0.45428222, 0, 0.8908578, -1122.0313, 0, 249.34607)
 shape = SubResource("BoxShape3D_0o0o1")
 
-[node name="Box_184" type="CollisionShape3D" parent="River_07/Slab" unique_id=1370028882]
+[node name="Box_184" type="CollisionShape3D" parent="River_07/Slab" unique_id=1340961867]
 transform = Transform3D(0.8467415, 0, 0.53200454, 0, 1, 0, -0.53200454, 0, 0.8467415, -1099.4792, 0, 288.96295)
 shape = SubResource("BoxShape3D_g48g3")
 
-[node name="Box_188" type="CollisionShape3D" parent="River_07/Slab" unique_id=966994375]
+[node name="Box_188" type="CollisionShape3D" parent="River_07/Slab" unique_id=493448769]
 transform = Transform3D(0.81123656, 0, 0.58471805, 0, 1, 0, -0.58471805, 0, 0.81123656, -1072.7604, 0, 328.57986)
 shape = SubResource("BoxShape3D_7v3vm")
 
-[node name="WaterZone" type="Area3D" parent="River_07" unique_id=1311557788]
+[node name="WaterZone" type="Area3D" parent="River_07" unique_id=335325393]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -2.884, 0)
 script = ExtResource("2_wq05s")
 
-[node name="Box_168" type="CollisionShape3D" parent="River_07/WaterZone" unique_id=697505317]
+[node name="Box_168" type="CollisionShape3D" parent="River_07/WaterZone" unique_id=1863437884]
 transform = Transform3D(0.99997205, 0, 0.007477901, 0, 1, 0, -0.007477901, 0, 0.99997205, -1154.2, 0, 116.4)
 shape = SubResource("BoxShape3D_jvjsu")
 
-[node name="Box_172" type="CollisionShape3D" parent="River_07/WaterZone" unique_id=236845079]
+[node name="Box_172" type="CollisionShape3D" parent="River_07/WaterZone" unique_id=325859447]
 transform = Transform3D(0.98915213, 0, 0.1468949, 0, 1, 0, -0.1468949, 0, 0.98915213, -1150.55, 0, 163.2)
 shape = SubResource("BoxShape3D_fuq8h")
 
-[node name="Box_176" type="CollisionShape3D" parent="River_07/WaterZone" unique_id=1231109192]
+[node name="Box_176" type="CollisionShape3D" parent="River_07/WaterZone" unique_id=1118061924]
 transform = Transform3D(0.9443933, 0, 0.32881802, 0, 1, 0, -0.32881802, 0, 0.9443933, -1139.592, 0, 208.09137)
 shape = SubResource("BoxShape3D_4im43")
 
-[node name="Box_180" type="CollisionShape3D" parent="River_07/WaterZone" unique_id=1100804084]
+[node name="Box_180" type="CollisionShape3D" parent="River_07/WaterZone" unique_id=1816637923]
 transform = Transform3D(0.8908578, 0, 0.45428222, 0, 1, 0, -0.45428222, 0, 0.8908578, -1122.0313, 0, 249.34607)
 shape = SubResource("BoxShape3D_h46gw")
 
-[node name="Box_184" type="CollisionShape3D" parent="River_07/WaterZone" unique_id=541144439]
+[node name="Box_184" type="CollisionShape3D" parent="River_07/WaterZone" unique_id=589524498]
 transform = Transform3D(0.8467415, 0, 0.53200454, 0, 1, 0, -0.53200454, 0, 0.8467415, -1099.4792, 0, 288.96295)
 shape = SubResource("BoxShape3D_ewjyd")
 
-[node name="Box_188" type="CollisionShape3D" parent="River_07/WaterZone" unique_id=419159605]
+[node name="Box_188" type="CollisionShape3D" parent="River_07/WaterZone" unique_id=1865863584]
 transform = Transform3D(0.81123656, 0, 0.58471805, 0, 1, 0, -0.58471805, 0, 0.81123656, -1072.7604, 0, 328.57986)
 shape = SubResource("BoxShape3D_usap3")
 
-[node name="River_08" type="Node3D" parent="." unique_id=1632966155]
+[node name="River_08" type="Node3D" parent="." unique_id=773134135]
 
-[node name="Surface" type="MeshInstance3D" parent="River_08" unique_id=1929499821]
+[node name="Surface" type="MeshInstance3D" parent="River_08" unique_id=832501243]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1058.5155, 0, 348.34317)
 cast_shadow = 0
 mesh = ExtResource("10_k5cls")
 
-[node name="Slab" type="StaticBody3D" parent="River_08" unique_id=1074557330]
+[node name="Slab" type="StaticBody3D" parent="River_08" unique_id=200301435]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.3, 0)
 
-[node name="Box_192" type="CollisionShape3D" parent="River_08/Slab" unique_id=1871934151]
+[node name="Box_192" type="CollisionShape3D" parent="River_08/Slab" unique_id=764274815]
 transform = Transform3D(0.7848482, 0, 0.6196881, 0, 1, 0, -0.6196881, 0, 0.7848482, -1043.125, 0, 367.83563)
 shape = SubResource("BoxShape3D_ofk11")
 
-[node name="Box_196" type="CollisionShape3D" parent="River_08/Slab" unique_id=83498204]
+[node name="Box_196" type="CollisionShape3D" parent="River_08/Slab" unique_id=231268396]
 transform = Transform3D(0.76735127, 0, 0.641227, 0, 1, 0, -0.641227, 0, 0.76735127, -1011.82294, 0, 406.3692)
 shape = SubResource("BoxShape3D_ffeff")
 
-[node name="Box_200" type="CollisionShape3D" parent="River_08/Slab" unique_id=151342168]
+[node name="Box_200" type="CollisionShape3D" parent="River_08/Slab" unique_id=1225859342]
 transform = Transform3D(0.7484946, 0, 0.66314083, 0, 1, 0, -0.66314083, 0, 0.7484946, -980.3408, 0, 442.98508)
 shape = SubResource("BoxShape3D_0mv2e")
 
-[node name="Box_204" type="CollisionShape3D" parent="River_08/Slab" unique_id=924664287]
+[node name="Box_204" type="CollisionShape3D" parent="River_08/Slab" unique_id=2095656027]
 transform = Transform3D(0.67956555, 0, 0.7336148, 0, 1, 0, -0.7336148, 0, 0.67956555, -948.02466, 0, 476.0717)
 shape = SubResource("BoxShape3D_6wf2g")
 
-[node name="Box_208" type="CollisionShape3D" parent="River_08/Slab" unique_id=793321907]
+[node name="Box_208" type="CollisionShape3D" parent="River_08/Slab" unique_id=1852146118]
 transform = Transform3D(0.6322403, 0, 0.77477235, 0, 1, 0, -0.77477235, 0, 0.6322403, -913.2408, 0, 506.30334)
 shape = SubResource("BoxShape3D_6wbd7")
 
-[node name="Box_212" type="CollisionShape3D" parent="River_08/Slab" unique_id=1237185110]
+[node name="Box_212" type="CollisionShape3D" parent="River_08/Slab" unique_id=1364108567]
 transform = Transform3D(0.62181246, 0, 0.78316617, 0, 1, 0, -0.78316617, 0, 0.62181246, -876.74554, 0, 535.6775)
 shape = SubResource("BoxShape3D_30hmt")
 
-[node name="WaterZone" type="Area3D" parent="River_08" unique_id=1026167459]
+[node name="WaterZone" type="Area3D" parent="River_08" unique_id=804295996]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -2.884, 0)
 script = ExtResource("2_wq05s")
 
-[node name="Box_192" type="CollisionShape3D" parent="River_08/WaterZone" unique_id=1584611383]
+[node name="Box_192" type="CollisionShape3D" parent="River_08/WaterZone" unique_id=496148833]
 transform = Transform3D(0.7848482, 0, 0.6196881, 0, 1, 0, -0.6196881, 0, 0.7848482, -1043.125, 0, 367.83563)
 shape = SubResource("BoxShape3D_ybj6y")
 
-[node name="Box_196" type="CollisionShape3D" parent="River_08/WaterZone" unique_id=597162401]
+[node name="Box_196" type="CollisionShape3D" parent="River_08/WaterZone" unique_id=1416276766]
 transform = Transform3D(0.76735127, 0, 0.641227, 0, 1, 0, -0.641227, 0, 0.76735127, -1011.82294, 0, 406.3692)
 shape = SubResource("BoxShape3D_moqji")
 
-[node name="Box_200" type="CollisionShape3D" parent="River_08/WaterZone" unique_id=1884463097]
+[node name="Box_200" type="CollisionShape3D" parent="River_08/WaterZone" unique_id=1568681353]
 transform = Transform3D(0.7484946, 0, 0.66314083, 0, 1, 0, -0.66314083, 0, 0.7484946, -980.3408, 0, 442.98508)
 shape = SubResource("BoxShape3D_gdno4")
 
-[node name="Box_204" type="CollisionShape3D" parent="River_08/WaterZone" unique_id=680805405]
+[node name="Box_204" type="CollisionShape3D" parent="River_08/WaterZone" unique_id=1787658269]
 transform = Transform3D(0.67956555, 0, 0.7336148, 0, 1, 0, -0.7336148, 0, 0.67956555, -948.02466, 0, 476.0717)
 shape = SubResource("BoxShape3D_g4slb")
 
-[node name="Box_208" type="CollisionShape3D" parent="River_08/WaterZone" unique_id=731061525]
+[node name="Box_208" type="CollisionShape3D" parent="River_08/WaterZone" unique_id=2133266412]
 transform = Transform3D(0.6322403, 0, 0.77477235, 0, 1, 0, -0.77477235, 0, 0.6322403, -913.2408, 0, 506.30334)
 shape = SubResource("BoxShape3D_xmi0q")
 
-[node name="Box_212" type="CollisionShape3D" parent="River_08/WaterZone" unique_id=783329834]
+[node name="Box_212" type="CollisionShape3D" parent="River_08/WaterZone" unique_id=1387217221]
 transform = Transform3D(0.62181246, 0, 0.78316617, 0, 1, 0, -0.78316617, 0, 0.62181246, -876.74554, 0, 535.6775)
 shape = SubResource("BoxShape3D_mr3ll")
 
-[node name="River_09" type="Node3D" parent="." unique_id=528745579]
+[node name="River_09" type="Node3D" parent="." unique_id=829086004]
 
-[node name="Surface" type="MeshInstance3D" parent="River_09" unique_id=984016066]
+[node name="Surface" type="MeshInstance3D" parent="River_09" unique_id=932287363]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -858.2886, 0, 550.33185)
 cast_shadow = 0
 mesh = ExtResource("11_ouw8o")
 
-[node name="Slab" type="StaticBody3D" parent="River_09" unique_id=851875191]
+[node name="Slab" type="StaticBody3D" parent="River_09" unique_id=291353347]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.3, 0)
 
-[node name="Box_216" type="CollisionShape3D" parent="River_09/Slab" unique_id=1700913990]
+[node name="Box_216" type="CollisionShape3D" parent="River_09/Slab" unique_id=1025395534]
 transform = Transform3D(0.64798313, 0, 0.7616547, 0, 1, 0, -0.7616547, 0, 0.64798313, -840.28674, 0, 565.64703)
 shape = SubResource("BoxShape3D_ejxh5")
 
-[node name="Box_220" type="CollisionShape3D" parent="River_09/Slab" unique_id=1215866971]
+[node name="Box_220" type="CollisionShape3D" parent="River_09/Slab" unique_id=111659933]
 transform = Transform3D(0.70773816, 0, 0.70647484, 0, 1, 0, -0.70647484, 0, 0.70773816, -805.6122, 0, 597.6648)
 shape = SubResource("BoxShape3D_2amtg")
 
-[node name="Box_224" type="CollisionShape3D" parent="River_09/Slab" unique_id=602561052]
+[node name="Box_224" type="CollisionShape3D" parent="River_09/Slab" unique_id=1583267743]
 transform = Transform3D(0.7927133, 0, 0.60959464, 0, 1, 0, -0.60959464, 0, 0.7927133, -774.4697, 0, 633.18365)
 shape = SubResource("BoxShape3D_rmat6")
 
-[node name="Box_228" type="CollisionShape3D" parent="River_09/Slab" unique_id=458900575]
+[node name="Box_228" type="CollisionShape3D" parent="River_09/Slab" unique_id=435458935]
 transform = Transform3D(0.8628316, 0, 0.5054915, 0, 1, 0, -0.5054915, 0, 0.8628316, -748.8745, 0, 670.99036)
 shape = SubResource("BoxShape3D_hrcfj")
 
-[node name="Box_232" type="CollisionShape3D" parent="River_09/Slab" unique_id=649248048]
+[node name="Box_232" type="CollisionShape3D" parent="River_09/Slab" unique_id=1783491323]
 transform = Transform3D(0.89962006, 0, 0.43667352, 0, 1, 0, -0.43667352, 0, 0.89962006, -727.742, 0, 710.5967)
 shape = SubResource("BoxShape3D_i1g7x")
 
-[node name="Box_236" type="CollisionShape3D" parent="River_09/Slab" unique_id=1219613185]
+[node name="Box_236" type="CollisionShape3D" parent="River_09/Slab" unique_id=1627677421]
 transform = Transform3D(0.92430633, 0, 0.38165134, 0, 1, 0, -0.38165134, 0, 0.92430633, -708.7285, 0, 753.0252)
 shape = SubResource("BoxShape3D_k3o21")
 
-[node name="WaterZone" type="Area3D" parent="River_09" unique_id=1746650478]
+[node name="WaterZone" type="Area3D" parent="River_09" unique_id=1055076244]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -2.884, 0)
 script = ExtResource("2_wq05s")
 
-[node name="Box_216" type="CollisionShape3D" parent="River_09/WaterZone" unique_id=156252106]
+[node name="Box_216" type="CollisionShape3D" parent="River_09/WaterZone" unique_id=1747811504]
 transform = Transform3D(0.64798313, 0, 0.7616547, 0, 1, 0, -0.7616547, 0, 0.64798313, -840.28674, 0, 565.64703)
 shape = SubResource("BoxShape3D_ywnhd")
 
-[node name="Box_220" type="CollisionShape3D" parent="River_09/WaterZone" unique_id=792032550]
+[node name="Box_220" type="CollisionShape3D" parent="River_09/WaterZone" unique_id=1980496815]
 transform = Transform3D(0.70773816, 0, 0.70647484, 0, 1, 0, -0.70647484, 0, 0.70773816, -805.6122, 0, 597.6648)
 shape = SubResource("BoxShape3D_ig7kc")
 
-[node name="Box_224" type="CollisionShape3D" parent="River_09/WaterZone" unique_id=1211749495]
+[node name="Box_224" type="CollisionShape3D" parent="River_09/WaterZone" unique_id=1619495377]
 transform = Transform3D(0.7927133, 0, 0.60959464, 0, 1, 0, -0.60959464, 0, 0.7927133, -774.4697, 0, 633.18365)
 shape = SubResource("BoxShape3D_m51v1")
 
-[node name="Box_228" type="CollisionShape3D" parent="River_09/WaterZone" unique_id=1589806202]
+[node name="Box_228" type="CollisionShape3D" parent="River_09/WaterZone" unique_id=654932380]
 transform = Transform3D(0.8628316, 0, 0.5054915, 0, 1, 0, -0.5054915, 0, 0.8628316, -748.8745, 0, 670.99036)
 shape = SubResource("BoxShape3D_kjsjk")
 
-[node name="Box_232" type="CollisionShape3D" parent="River_09/WaterZone" unique_id=726740555]
+[node name="Box_232" type="CollisionShape3D" parent="River_09/WaterZone" unique_id=526409503]
 transform = Transform3D(0.89962006, 0, 0.43667352, 0, 1, 0, -0.43667352, 0, 0.89962006, -727.742, 0, 710.5967)
 shape = SubResource("BoxShape3D_qagdl")
 
-[node name="Box_236" type="CollisionShape3D" parent="River_09/WaterZone" unique_id=236234775]
+[node name="Box_236" type="CollisionShape3D" parent="River_09/WaterZone" unique_id=87706582]
 transform = Transform3D(0.92430633, 0, 0.38165134, 0, 1, 0, -0.38165134, 0, 0.92430633, -708.7285, 0, 753.0252)
 shape = SubResource("BoxShape3D_mwwwp")
 
-[node name="River_10" type="Node3D" parent="." unique_id=109342153]
+[node name="River_10" type="Node3D" parent="." unique_id=1555416294]
 
-[node name="Surface" type="MeshInstance3D" parent="River_10" unique_id=319282594]
+[node name="Surface" type="MeshInstance3D" parent="River_10" unique_id=991380756]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -699.722, 0, 774.83777)
 cast_shadow = 0
 mesh = ExtResource("12_2qoks")
 
-[node name="Slab" type="StaticBody3D" parent="River_10" unique_id=786334187]
+[node name="Slab" type="StaticBody3D" parent="River_10" unique_id=653450628]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.3, 0)
 
-[node name="Box_240" type="CollisionShape3D" parent="River_10/Slab" unique_id=1474445437]
+[node name="Box_240" type="CollisionShape3D" parent="River_10/Slab" unique_id=1207551069]
 transform = Transform3D(0.94094986, 0, 0.33854592, 0, 1, 0, -0.33854592, 0, 0.94094986, -691.59784, 0, 797.4179)
 shape = SubResource("BoxShape3D_wjqmb")
 
-[node name="Box_244" type="CollisionShape3D" parent="River_10/Slab" unique_id=2099125944]
+[node name="Box_244" type="CollisionShape3D" parent="River_10/Slab" unique_id=1543037022]
 transform = Transform3D(0.9521115, 0, 0.30575114, 0, 1, 0, -0.30575114, 0, 0.9521115, -676.11383, 0, 842.91675)
 shape = SubResource("BoxShape3D_jqhm3")
 
-[node name="Box_248" type="CollisionShape3D" parent="River_10/Slab" unique_id=705499666]
+[node name="Box_248" type="CollisionShape3D" parent="River_10/Slab" unique_id=1211416206]
 transform = Transform3D(0.9593705, 0, 0.2821493, 0, 1, 0, -0.2821493, 0, 0.9593705, -662.0403, 0, 888.6635)
 shape = SubResource("BoxShape3D_oasjw")
 
-[node name="Box_252" type="CollisionShape3D" parent="River_10/Slab" unique_id=1239409425]
+[node name="Box_252" type="CollisionShape3D" parent="River_10/Slab" unique_id=1159871493]
 transform = Transform3D(0.9636433, 0, 0.26719198, 0, 1, 0, -0.26719198, 0, 0.9636433, -649.141, 0, 933.8002)
 shape = SubResource("BoxShape3D_t7rr8")
 
-[node name="Box_256" type="CollisionShape3D" parent="River_10/Slab" unique_id=508452900]
+[node name="Box_256" type="CollisionShape3D" parent="River_10/Slab" unique_id=1498674114]
 transform = Transform3D(0.9701929, 0, 0.242334, 0, 1, 0, -0.242334, 0, 0.9701929, -637.02637, 0, 979.8458)
 shape = SubResource("BoxShape3D_8v10m")
 
-[node name="Box_260" type="CollisionShape3D" parent="River_10/Slab" unique_id=2076640885]
+[node name="Box_260" type="CollisionShape3D" parent="River_10/Slab" unique_id=177470838]
 transform = Transform3D(0.98134923, 0, 0.19223332, 0, 1, 0, -0.19223332, 0, 0.98134923, -625.9554, 0, 1029.8328)
 shape = SubResource("BoxShape3D_rwcw3")
 
-[node name="WaterZone" type="Area3D" parent="River_10" unique_id=1996979844]
+[node name="WaterZone" type="Area3D" parent="River_10" unique_id=2134939873]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -2.884, 0)
 script = ExtResource("2_wq05s")
 
-[node name="Box_240" type="CollisionShape3D" parent="River_10/WaterZone" unique_id=830596381]
+[node name="Box_240" type="CollisionShape3D" parent="River_10/WaterZone" unique_id=1254651946]
 transform = Transform3D(0.94094986, 0, 0.33854592, 0, 1, 0, -0.33854592, 0, 0.94094986, -691.59784, 0, 797.4179)
 shape = SubResource("BoxShape3D_l5l60")
 
-[node name="Box_244" type="CollisionShape3D" parent="River_10/WaterZone" unique_id=299182427]
+[node name="Box_244" type="CollisionShape3D" parent="River_10/WaterZone" unique_id=915070926]
 transform = Transform3D(0.9521115, 0, 0.30575114, 0, 1, 0, -0.30575114, 0, 0.9521115, -676.11383, 0, 842.91675)
 shape = SubResource("BoxShape3D_g3wbe")
 
-[node name="Box_248" type="CollisionShape3D" parent="River_10/WaterZone" unique_id=2095108817]
+[node name="Box_248" type="CollisionShape3D" parent="River_10/WaterZone" unique_id=750928883]
 transform = Transform3D(0.9593705, 0, 0.2821493, 0, 1, 0, -0.2821493, 0, 0.9593705, -662.0403, 0, 888.6635)
 shape = SubResource("BoxShape3D_4mks0")
 
-[node name="Box_252" type="CollisionShape3D" parent="River_10/WaterZone" unique_id=437932807]
+[node name="Box_252" type="CollisionShape3D" parent="River_10/WaterZone" unique_id=915554206]
 transform = Transform3D(0.9636433, 0, 0.26719198, 0, 1, 0, -0.26719198, 0, 0.9636433, -649.141, 0, 933.8002)
 shape = SubResource("BoxShape3D_aetn3")
 
-[node name="Box_256" type="CollisionShape3D" parent="River_10/WaterZone" unique_id=993607472]
+[node name="Box_256" type="CollisionShape3D" parent="River_10/WaterZone" unique_id=1695130626]
 transform = Transform3D(0.9701929, 0, 0.242334, 0, 1, 0, -0.242334, 0, 0.9701929, -637.02637, 0, 979.8458)
 shape = SubResource("BoxShape3D_r4p7e")
 
-[node name="Box_260" type="CollisionShape3D" parent="River_10/WaterZone" unique_id=1136183619]
+[node name="Box_260" type="CollisionShape3D" parent="River_10/WaterZone" unique_id=801672472]
 transform = Transform3D(0.98134923, 0, 0.19223332, 0, 1, 0, -0.19223332, 0, 0.98134923, -625.9554, 0, 1029.8328)
 shape = SubResource("BoxShape3D_coga1")
 
-[node name="River_11" type="Node3D" parent="." unique_id=956613209]
+[node name="River_11" type="Node3D" parent="." unique_id=2113135861]
 
-[node name="Surface" type="MeshInstance3D" parent="River_11" unique_id=1909212278]
+[node name="Surface" type="MeshInstance3D" parent="River_11" unique_id=1549025687]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -620.8134, 0, 1056.0824)
 cast_shadow = 0
 mesh = ExtResource("13_ji2cd")
 
-[node name="Slab" type="StaticBody3D" parent="River_11" unique_id=221959550]
+[node name="Slab" type="StaticBody3D" parent="River_11" unique_id=119146091]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.3, 0)
 
-[node name="Box_264" type="CollisionShape3D" parent="River_11/Slab" unique_id=1702492246]
+[node name="Box_264" type="CollisionShape3D" parent="River_11/Slab" unique_id=897331619]
 transform = Transform3D(0.98739904, 0, 0.15825023, 0, 1, 0, -0.15825023, 0, 0.98739904, -616.48834, 0, 1083.0686)
 shape = SubResource("BoxShape3D_7vp2q")
 
-[node name="Box_268" type="CollisionShape3D" parent="River_11/Slab" unique_id=1652881378]
+[node name="Box_268" type="CollisionShape3D" parent="River_11/Slab" unique_id=1713115504]
 transform = Transform3D(0.990667, 0, 0.1363045, 0, 1, 0, -0.1363045, 0, 0.990667, -608.5576, 0, 1136.2606)
 shape = SubResource("BoxShape3D_apecy")
 
-[node name="Box_272" type="CollisionShape3D" parent="River_11/Slab" unique_id=1798217504]
+[node name="Box_272" type="CollisionShape3D" parent="River_11/Slab" unique_id=51119466]
 transform = Transform3D(0.9923021, 0, 0.12384081, 0, 1, 0, -0.12384081, 0, 0.9923021, -601.9682, 0, 1186.375)
 shape = SubResource("BoxShape3D_g31we")
 
-[node name="Box_276" type="CollisionShape3D" parent="River_11/Slab" unique_id=1723976484]
+[node name="Box_276" type="CollisionShape3D" parent="River_11/Slab" unique_id=245484708]
 transform = Transform3D(0.9925929, 0, 0.12148845, 0, 1, 0, -0.12148845, 0, 0.9925929, -596.5249, 0, 1230.3782)
 shape = SubResource("BoxShape3D_c8vxl")
 
-[node name="Box_280" type="CollisionShape3D" parent="River_11/Slab" unique_id=939888483]
+[node name="Box_280" type="CollisionShape3D" parent="River_11/Slab" unique_id=1262211976]
 transform = Transform3D(0.9906543, 0, 0.13639681, 0, 1, 0, -0.13639681, 0, 0.9906543, -592.0327, 0, 1265.2363)
 shape = SubResource("BoxShape3D_sxirc")
 
-[node name="WaterZone" type="Area3D" parent="River_11" unique_id=654001716]
+[node name="WaterZone" type="Area3D" parent="River_11" unique_id=432537509]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -2.884, 0)
 script = ExtResource("2_wq05s")
 
-[node name="Box_264" type="CollisionShape3D" parent="River_11/WaterZone" unique_id=1116296779]
+[node name="Box_264" type="CollisionShape3D" parent="River_11/WaterZone" unique_id=416909731]
 transform = Transform3D(0.98739904, 0, 0.15825023, 0, 1, 0, -0.15825023, 0, 0.98739904, -616.48834, 0, 1083.0686)
 shape = SubResource("BoxShape3D_fet4n")
 
-[node name="Box_268" type="CollisionShape3D" parent="River_11/WaterZone" unique_id=932073131]
+[node name="Box_268" type="CollisionShape3D" parent="River_11/WaterZone" unique_id=164509990]
 transform = Transform3D(0.990667, 0, 0.1363045, 0, 1, 0, -0.1363045, 0, 0.990667, -608.5576, 0, 1136.2606)
 shape = SubResource("BoxShape3D_j2hpl")
 
-[node name="Box_272" type="CollisionShape3D" parent="River_11/WaterZone" unique_id=1226764041]
+[node name="Box_272" type="CollisionShape3D" parent="River_11/WaterZone" unique_id=1074386340]
 transform = Transform3D(0.9923021, 0, 0.12384081, 0, 1, 0, -0.12384081, 0, 0.9923021, -601.9682, 0, 1186.375)
 shape = SubResource("BoxShape3D_3mlym")
 
-[node name="Box_276" type="CollisionShape3D" parent="River_11/WaterZone" unique_id=59620865]
+[node name="Box_276" type="CollisionShape3D" parent="River_11/WaterZone" unique_id=891509597]
 transform = Transform3D(0.9925929, 0, 0.12148845, 0, 1, 0, -0.12148845, 0, 0.9925929, -596.5249, 0, 1230.3782)
 shape = SubResource("BoxShape3D_kj5b4")
 
-[node name="Box_280" type="CollisionShape3D" parent="River_11/WaterZone" unique_id=19112970]
+[node name="Box_280" type="CollisionShape3D" parent="River_11/WaterZone" unique_id=302085900]
 transform = Transform3D(0.9906543, 0, 0.13639681, 0, 1, 0, -0.13639681, 0, 0.9906543, -592.0327, 0, 1265.2363)
 shape = SubResource("BoxShape3D_h1crg")
 
-[node name="Lake_willow_lake" type="Node3D" parent="." unique_id=615000825]
+[node name="Lake_willow_lake" type="Node3D" parent="." unique_id=889770613]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1760, 0, -90)
 
-[node name="Surface" type="MeshInstance3D" parent="Lake_willow_lake" unique_id=16291744]
+[node name="Surface" type="MeshInstance3D" parent="Lake_willow_lake" unique_id=304909542]
 cast_shadow = 0
 mesh = ExtResource("14_fqr2e")
 
-[node name="Slab" type="StaticBody3D" parent="Lake_willow_lake" unique_id=1042735501]
+[node name="Slab" type="StaticBody3D" parent="Lake_willow_lake" unique_id=158779400]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 19.16168, 0)
 
-[node name="Box" type="CollisionShape3D" parent="Lake_willow_lake/Slab" unique_id=1073450542]
+[node name="Box" type="CollisionShape3D" parent="Lake_willow_lake/Slab" unique_id=767134248]
 shape = SubResource("BoxShape3D_r6pj2")
 
-[node name="WaterZone" type="Area3D" parent="Lake_willow_lake" unique_id=1676791372]
+[node name="WaterZone" type="Area3D" parent="Lake_willow_lake" unique_id=179263706]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 17.57768, 0)
 script = ExtResource("2_wq05s")
 
-[node name="Box" type="CollisionShape3D" parent="Lake_willow_lake/WaterZone" unique_id=1239926753]
+[node name="Box" type="CollisionShape3D" parent="Lake_willow_lake/WaterZone" unique_id=1948977805]
 shape = SubResource("BoxShape3D_58s61")
 
-[node name="Lake_ranch_pond" type="Node3D" parent="." unique_id=769529374]
+[node name="Lake_ranch_pond" type="Node3D" parent="." unique_id=1398198001]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1760, 0, -60)
 
-[node name="Surface" type="MeshInstance3D" parent="Lake_ranch_pond" unique_id=997113622]
+[node name="Surface" type="MeshInstance3D" parent="Lake_ranch_pond" unique_id=762136686]
 cast_shadow = 0
 mesh = ExtResource("15_vtnmy")
 
-[node name="Slab" type="StaticBody3D" parent="Lake_ranch_pond" unique_id=1125271414]
+[node name="Slab" type="StaticBody3D" parent="Lake_ranch_pond" unique_id=1496380890]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.0933506, 0)
 
-[node name="Box" type="CollisionShape3D" parent="Lake_ranch_pond/Slab" unique_id=242186694]
+[node name="Box" type="CollisionShape3D" parent="Lake_ranch_pond/Slab" unique_id=440591666]
 shape = SubResource("BoxShape3D_ikmsl")
 
-[node name="WaterZone" type="Area3D" parent="Lake_ranch_pond" unique_id=1263543061]
+[node name="WaterZone" type="Area3D" parent="Lake_ranch_pond" unique_id=1689869971]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.50935066, 0)
 script = ExtResource("2_wq05s")
 
-[node name="Box" type="CollisionShape3D" parent="Lake_ranch_pond/WaterZone" unique_id=814980914]
+[node name="Box" type="CollisionShape3D" parent="Lake_ranch_pond/WaterZone" unique_id=1940221734]
 shape = SubResource("BoxShape3D_21iiy")

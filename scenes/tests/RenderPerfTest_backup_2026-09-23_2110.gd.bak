@@ -31,10 +31,6 @@ extends Node
 #                        Godot 512 ; plus = tampon plus fin).
 #  --ignore-occlusion=<familles> : jamais masqués par l'occlusion, ex. trottoirs,routes,decals (cf. CATS) ; pour les
 #                        décalques et spots, sans réglage dédié, c'est tout leur culling qui est ignoré (frustum compris).
-#  --parking           : vraies lumières des parkings à étages (2026-09-23) : aucune, bassin de 8 (réglage d'avant),
-#                        une fixe par luminaire (réglage livré) ; caméra dans un parking du centre-ville (plateau du
-#                        niveau 1, allée du rez) et à 300 m ; de jour et de nuit ; modes alternés, médianes (cf.
-#                        _parking_perf).
 #
 # Lancer : Godot_console --path <projet> [--resolution 1920x1080] res://scenes/tests/RenderPerfTest.tscn -- [options]
 
@@ -161,8 +157,6 @@ func _ready() -> void:
 		await _verify_multimesh()
 	elif _arg("--verify-lod=") != "":
 		await _verify_lod(_arg("--verify-lod=").to_float())
-	elif "--parking" in _args:
-		await _parking_perf()
 	elif "--breakdown" in _args:
 		await _place("coin_SE", 8.0)
 		for step: Array in BREAKDOWN:
@@ -471,97 +465,6 @@ func _arg(prefix: String) -> String:
 		if a.begins_with(prefix):
 			return a.trim_prefix(prefix)
 	return ""
-
-
-# --- PARKINGS À ÉTAGES : lumières fixes contre bassin (2026-09-23) ----------------------------------------------------
-#
-# Le joueur a voulu les vraies lumières des parkings allumées tout le temps, pas seulement près de lui, « si c'est
-# supportable », mesure d'abord. Trois modes de StreetLights.regler_interieur : AUCUNE vraie lumière (les maillages
-# allumés seuls), BASSIN de 8 sur les plus proches de la caméra (le réglage d'avant), FIXES, une par luminaire, fondues
-# au-delà de 100 m (le réglage livré). Trois vues : dans un parking du centre-ville, plateau du niveau 1 vu d'un bout
-# et allée du rez vue de l'autre ; puis à 300 m de lui, où les lumières fixes doivent être fondues donc gratuites.
-# De jour (12 h) et de nuit (1 h). Les modes sont ALTERNÉS trois fois dans chaque vue et l'on garde la médiane des
-# médianes : sur cette machine le temps d'une même scène varie d'une course à l'autre (CLAUDE.md §12, piège f), et une
-# mesure A puis B d'affilée confond la dérive avec l'écart. RAPPEL (§3, §9) : sur une machine dont le GPU n'est pas le
-# goulot, un coût de lumière est noyé dans le bruit ; ce banc donne la mesure qui vaut sur la carte Intel du futur
-# mode graphique léger quand on l'y relance.
-const ParkingKit := preload("res://scenes/world/map/tools/ParkingStructureKit.gd")
-const PARKING_MAILLAGE := "res://scenes/world/downtown/generated/buildings/parking_praticable.res"
-const Lumieres := preload("res://scenes/world/StreetLights.gd")
-
-
-func _parking_perf() -> void:
-	var lights = _world.get_node_or_null("StreetLights")
-	var cycle = _world.get_node_or_null("DayNight")
-	var parking: Node3D = null
-	for n in _world.find_children("*", "Node3D", true, false):
-		if String(n.get_meta("model", "")) == ParkingKit.CLE:
-			parking = n
-			break
-	if lights == null or cycle == null or parking == null:
-		print("RENDER_PERF_PARKING impossible : StreetLights %s, DayNight %s, parking %s" % [lights != null, cycle != null, parking != null])
-		return
-	var sols := ParkingKit.planchers(load(PARKING_MAILLAGE))
-	var xf := parking.global_transform
-	var vues := [
-		["plateau du niveau 1", xf * Vector3(19.0, sols[1] + 1.6, 2.0), xf * Vector3(-19.0, sols[1] + 1.2, 0.0)],
-		["allee du rez", xf * Vector3(-19.0, sols[0] + 1.6, 3.0), xf * Vector3(19.0, sols[0] + 1.2, 1.0)],
-		["a 300 m", xf * Vector3(0.0, 60.0, 300.0), xf * Vector3(0.0, 10.0, 0.0)],
-	]
-	var modes := [["aucune", false, 0], ["bassin de 8", false, 8], ["fixes", true, 0]]
-	print("RENDER_PERF_PARKING parking %s en %s, planchers %s ; %d vraies lumieres fixes au total"
-			% [parking.name, parking.global_position.snappedf(0.1), str(sols), (load("res://scenes/world/downtown/generated/parking_lights.tres") as MapLampHeads).heads.size()
-			+ (load("res://scenes/world/map/generated/places/parking_lights.tres") as MapLampHeads).heads.size()])
-	for heure: float in [12.0, 1.0]:
-		cycle.set_hour(heure)
-		for v: Array in vues:
-			_look_from(v[1], v[2])
-			var par_mode := {}
-			for rep in 3:
-				for m: Array in modes:
-					lights.regler_interieur(bool(m[1]), int(m[2]))
-					await get_tree().create_timer(1.0).timeout
-					var r := await _echantillon(3.0)
-					var actives := 0
-					for l in lights.get("_int_lights"):
-						var d := (l as Node3D).global_position.distance_to(_free_cam.global_position)
-						if (l as Node3D).visible and (not (l as Light3D).distance_fade_enabled or d < Lumieres.INT_FONDU_DEBUT + Lumieres.INT_FONDU_LONGUEUR):
-							actives += 1
-					r["actives"] = actives
-					if not par_mode.has(m[0]):
-						par_mode[m[0]] = []
-					(par_mode[m[0]] as Array).append(r)
-					print("RENDER_PERF_PARKING %2.0f h | %-19s | %-11s | passe %d : image %.3f ms, GPU %.3f ms (medianes sur %d images), %d appels de dessin, %d lumieres interieures actives"
-							% [heure, v[0], m[0], rep + 1, r["frame"], r["gpu"], r["n"], r["draw"], actives])
-			for m: Array in modes:
-				var rs: Array = par_mode[m[0]]
-				var frames: Array = rs.map(func(x): return float(x["frame"]))
-				var gpus: Array = rs.map(func(x): return float(x["gpu"]))
-				frames.sort()
-				gpus.sort()
-				print("RENDER_PERF_PARKING_BILAN %2.0f h | %-19s | %-11s : image %.3f ms, GPU %.3f ms (medianes des 3 passes ; passes de %.3f a %.3f ms), %d lumieres actives"
-						% [heure, v[0], m[0], frames[1], gpus[1], frames[0], frames[2], int(rs[0]["actives"])])
-	lights.regler_interieur(true, 0)
-
-
-# Médianes sur `secondes` : temps d'image à l'horloge et temps GPU mesuré par le RenderingServer, appels de dessin.
-func _echantillon(secondes: float) -> Dictionary:
-	var frames: Array = []
-	var gpus: Array = []
-	var draws: Array = []
-	var fin := Time.get_ticks_usec() + int(secondes * 1000000.0)
-	var prec := Time.get_ticks_usec()
-	await get_tree().process_frame
-	while Time.get_ticks_usec() < fin:
-		await get_tree().process_frame
-		var now := Time.get_ticks_usec()
-		frames.append((now - prec) / 1000.0)
-		prec = now
-		gpus.append(RenderingServer.viewport_get_measured_render_time_gpu(_vp))
-		draws.append(get_viewport().get_render_info(Viewport.RENDER_INFO_TYPE_VISIBLE, Viewport.RENDER_INFO_DRAW_CALLS_IN_FRAME))
-	frames.sort()
-	gpus.sort()
-	return {"frame": frames[frames.size() / 2], "gpu": gpus[gpus.size() / 2], "draw": int(_mean(draws)), "n": frames.size()}
 
 
 func _begin_verify() -> String:

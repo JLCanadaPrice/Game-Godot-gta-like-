@@ -257,10 +257,7 @@ func model(key: String) -> Dictionary:
 				models[key]["front_fixed"] = false
 		models[key]["height"] = (models[key]["aabb"] as AABB).end.y
 		models[key]["hlod_color"] = _mean_color(models[key]["mesh"], family)
-		# Parking à étages : aucune fenêtre allumée (2026-09-23, demande du joueur). Son seul vitrage est la grande vitre de
-		# la tour de l'entrée, que le tirage allumait la nuit comme la fenêtre d'un bureau ; ses lumières sont ses
-		# plafonniers (ParkingLumieres).
-		models[key]["windows"] = [] if key == Parking.CLE else _window_panes(family, name)
+		models[key]["windows"] = _window_panes(family, name)
 	return models[key]
 
 
@@ -846,11 +843,11 @@ func _write_window_glow(root: Node3D, cells: Dictionary, portee: float, prefixe:
 
 # --- scène --------------------------------------------------------------------------------------------------------------
 
-# PARKING À ÉTAGES (2026-09-21) : escalier et trémies (ParkingStructureKit.praticable). Son maillage remplace celui du
-# modèle pour les trois exemplaires, sa collision est faite de ses triangles (dont les rampes invisibles de l'escalier).
-# Depuis le 2026-09-22, la rampe INTÉRIEURE à 16 % des quatre parkings ; depuis le 2026-09-23, l'escalier dans la bande
-# arrière (il était dans la tour vitrée, devant l'entrée des voitures), sans poteaux au milieu, avec des places en
-# créneau le long de la rampe (cf. CLAUDE.md §11). La boîte du modèle, qui sert à la pose, ne change pas.
+# PARKING À ÉTAGES (2026-09-21) : escalier dans la tour vitrée, porte à chaque niveau desservi, trémie dans la dalle du
+# dessus (ParkingStructureKit.praticable). Son maillage remplace celui du modèle pour les trois exemplaires, sa
+# collision est faite de ses triangles (dont les rampes invisibles de l'escalier). Pas de rampe pour les voitures ici :
+# il n'y a de place pour une rampe extérieure au bout d'aucun des trois (voisins à moins de 8 m), et une rampe
+# intérieure ne tient pas dans le modèle (cf. CLAUDE.md §11). La boîte du modèle, qui sert à la pose, ne change pas.
 const PARKING_ESCALIERS := 4                 # du rez au toit
 const PARKING_RAMPES := 4                    # rampes intérieures empilées, du rez au toit (2026-09-22)
 
@@ -957,7 +954,7 @@ func _write_scene() -> String:
 				var centre: Vector3 = node.transform * (pl["centre"] as Vector3)
 				var nez3: Vector3 = node.transform.basis * Vector3((pl["nez"] as Vector2).x, 0.0, (pl["nez"] as Vector2).y)
 				var tir := Parking.tirage_place(Vector2(centre.x, centre.z), Vector2(nez3.x, nez3.z).normalized(),
-						100 - Parking.remplissage(int(pl["niveau"])), bool(pl.get("creneau", false)))
+						100 - Parking.remplissage(int(pl["niveau"])))
 				if tir.is_empty():
 					continue
 				var pv: Vector2 = tir["pos"]

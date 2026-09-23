@@ -42,60 +42,60 @@ size = Vector3(2, 220, 580.8018)
 [sub_resource type="BoxShape3D" id="BoxShape3D_fhhti"]
 size = Vector3(2, 220, 553.3984)
 
-[node name="Boundary" type="StaticBody3D" unique_id=1957565678]
+[node name="Boundary" type="StaticBody3D" unique_id=981832274]
 
-[node name="LimiteNord_0" type="CollisionShape3D" parent="." unique_id=788027606]
+[node name="LimiteNord_0" type="CollisionShape3D" parent="." unique_id=291689345]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1445.65, 60, -1481)
 shape = SubResource("BoxShape3D_ia7au")
 
-[node name="LimiteNord_1" type="CollisionShape3D" parent="." unique_id=866655391]
+[node name="LimiteNord_1" type="CollisionShape3D" parent="." unique_id=1842537129]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 239.99997, 60, -1481)
 shape = SubResource("BoxShape3D_t05xf")
 
-[node name="LimiteNord_2" type="CollisionShape3D" parent="." unique_id=1870523144]
+[node name="LimiteNord_2" type="CollisionShape3D" parent="." unique_id=127668818]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1685.15, 60, -1481)
 shape = SubResource("BoxShape3D_cch4u")
 
-[node name="LimiteSud_0" type="CollisionShape3D" parent="." unique_id=1687254829]
+[node name="LimiteSud_0" type="CollisionShape3D" parent="." unique_id=1687363710]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1542.4867, 60, 968)
 shape = SubResource("BoxShape3D_ilyee")
 
-[node name="LimiteSud_1" type="CollisionShape3D" parent="." unique_id=1397368190]
+[node name="LimiteSud_1" type="CollisionShape3D" parent="." unique_id=1306765682]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -623.4804, 60, 968)
 shape = SubResource("BoxShape3D_e002g")
 
-[node name="LimiteSud_2" type="CollisionShape3D" parent="." unique_id=5051085]
+[node name="LimiteSud_2" type="CollisionShape3D" parent="." unique_id=726029706]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 623.5192, 60, 968)
 shape = SubResource("BoxShape3D_agx43")
 
-[node name="LimiteSud_3" type="CollisionShape3D" parent="." unique_id=1525395436]
+[node name="LimiteSud_3" type="CollisionShape3D" parent="." unique_id=822059925]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1879.9128, 60, 968)
 shape = SubResource("BoxShape3D_47qbx")
 
-[node name="LimiteOuest_0" type="CollisionShape3D" parent="." unique_id=1081543416]
+[node name="LimiteOuest_0" type="CollisionShape3D" parent="." unique_id=1471736338]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2175, 60, -1020.6503)
 shape = SubResource("BoxShape3D_7jrwm")
 
-[node name="LimiteOuest_1" type="CollisionShape3D" parent="." unique_id=453342995]
+[node name="LimiteOuest_1" type="CollisionShape3D" parent="." unique_id=457915429]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2175, 60, 14.999786)
 shape = SubResource("BoxShape3D_1jobh")
 
-[node name="LimiteOuest_2" type="CollisionShape3D" parent="." unique_id=1028057625]
+[node name="LimiteOuest_2" type="CollisionShape3D" parent="." unique_id=1415551250]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2175, 60, 779.15015)
 shape = SubResource("BoxShape3D_4atvn")
 
-[node name="LimiteEst_0" type="CollisionShape3D" parent="." unique_id=106026284]
+[node name="LimiteEst_0" type="CollisionShape3D" parent="." unique_id=1646963962]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2174, 60, -1084.65)
 shape = SubResource("BoxShape3D_euvu3")
 
-[node name="LimiteEst_1" type="CollisionShape3D" parent="." unique_id=55583326]
+[node name="LimiteEst_1" type="CollisionShape3D" parent="." unique_id=1976414182]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2174, 60, -422.15018)
 shape = SubResource("BoxShape3D_y1t04")
 
-[node name="LimiteEst_2" type="CollisionShape3D" parent="." unique_id=908330647]
+[node name="LimiteEst_2" type="CollisionShape3D" parent="." unique_id=1141582769]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2174, 60, 116.00071)
 shape = SubResource("BoxShape3D_ugol5")
 
-[node name="LimiteEst_3" type="CollisionShape3D" parent="." unique_id=404895425]
+[node name="LimiteEst_3" type="CollisionShape3D" parent="." unique_id=570127903]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2174, 60, 694.3008)
 shape = SubResource("BoxShape3D_fhhti")

@@ -84,18 +84,19 @@ const VIEWS := [
 	["parking_aeroport_rampe_sol", Vector3(378.05, 7.34, -1161.58), Vector3(371.31, 7.13, -1151.95), "", 12.0],
 	["parking_aeroport_rampe_haut", Vector3(378.05, 11.91, -1161.58), Vector3(375.65, 9.48, -1168.17), "", 12.0],
 	["parking_aeroport_travee_niveau1", Vector3(376.0, 11.91, -1161.58), Vector3(390.0, 11.18, -1161.58), "", 12.0],
-	# Escalier (2026-09-23) : sorti de la tour vitree, ou il barrait l'entree des voitures, et pose dans la bande arriere,
-	# entre la rampe et le muret arriere. Aeroport : repere du modele -> monde = (405 - x, 5,28 + y, -1167,2 - z) ;
-	# centre-ville (lowrise_389) : (-770,54 - x, 0,2 + y, 67,16 - z). Le passage d'entree, libre ; le pied de l'escalier
-	# depuis la bande arriere ; le palier ; l'arrivee au niveau 1 ; l'arrivee au toit.
-	["parking_aeroport_passage", Vector3(405.0, 7.24, -1180.2), Vector3(405.0, 6.88, -1167.2), "", 12.0],
-	["parking_aeroport_escalier", Vector3(390.0, 7.24, -1158.9), Vector3(397.0, 8.18, -1158.9), "", 12.0],
-	["parking_aeroport_escalier_palier", Vector3(398.7, 9.53, -1158.2), Vector3(394.0, 11.01, -1158.1), "", 12.0],
-	["parking_aeroport_escalier_haut", Vector3(392.2, 11.81, -1158.8), Vector3(398.0, 9.71, -1158.8), "", 12.0],
-	["parking_aeroport_escalier_toit", Vector3(392.0, 25.49, -1158.6), Vector3(398.0, 24.09, -1158.8), "", 12.0],
-	["parking_centre_3_escalier", Vector3(-785.54, 2.16, 75.46), Vector3(-778.54, 3.1, 75.46), "", 12.0],
-	# Places en creneau le long de la rampe (2026-09-23) ; le plateau sans poteaux, ce sont les vues plateau_* plus bas
-	["parking_aeroport_creneaux", Vector3(391.2, 11.81, -1167.8), Vector3(411.0, 10.71, -1165.0), "", 12.0],
+	# escalier : au pied de la volee A, dans la cage (vers le palier) ; en haut de la volee B, au niveau 1, vers le bas
+	["parking_aeroport_porte_rez", Vector3(409.86, 7.34, -1167.2), Vector3(409.86, 6.68, -1174.68), "", 12.0],
+	["parking_aeroport_escalier", Vector3(410.1, 7.34, -1175.3), Vector3(405.84, 7.93, -1175.3), "", 12.0],
+	["parking_aeroport_escalier_haut", Vector3(410.2, 11.91, -1176.4), Vector3(405.84, 8.93, -1176.4), "", 12.0],
+	["parking_centre_3_escalier", Vector3(-765.44, 2.26, 59.06), Vector3(-769.7, 2.85, 59.06), "", 12.0],
+	["parking_centre_3_escalier_haut", Vector3(-765.34, 6.83, 57.96), Vector3(-769.7, 3.85, 57.96), "", 12.0],
+	# Escalier jusqu'au toit (2026-09-22), cage opaque de l'intérieur, garde-corps de trémie. Aéroport : repère du modèle
+	# -> monde = (405 - x, 5,28 + y, -1167,2 - z) ; centre-ville (lowrise_389) : (-770,54 - x, 0,2 + y, 67,16 - z).
+	["parking_aeroport_escalier_niveau2", Vector3(410.1, 16.47, -1175.3), Vector3(405.84, 17.08, -1175.3), "", 12.0],
+	["parking_aeroport_garde_corps_tremie", Vector3(401.5, 11.91, -1175.9), Vector3(406.0, 10.68, -1175.9), "", 12.0],
+	["parking_aeroport_escalier_toit", Vector3(410.2, 25.59, -1176.4), Vector3(404.36, 24.38, -1175.3), "", 12.0],
+	["parking_aeroport_toit_porte", Vector3(409.86, 25.59, -1170.2), Vector3(409.86, 24.88, -1174.68), "", 12.0],
+	["parking_centre_3_escalier_toit", Vector3(-765.34, 20.51, 57.96), Vector3(-771.18, 19.3, 59.06), "", 12.0],
 	# Rampes intérieures, garde-corps et barre de hauteur (2026-09-22). Aéroport : repère du modèle -> monde =
 	# (405 - x, 5,28 + y, -1167,2 - z) ; centre-ville (lowrise_389) : (-770,54 - x, 0,2 + y, 67,16 - z).
 	["parking_aeroport_barre", Vector3(405.0, 7.0, -1187.0), Vector3(405.0, 7.9, -1179.4), "", 12.0],
@@ -112,9 +113,9 @@ const VIEWS := [
 	["parking_aeroport_plateau_jour", Vector3(405.0, 11.91, -1169.2), Vector3(419.0, 12.6, -1169.2), "", 12.0],
 	["parking_aeroport_plateau_nuit", Vector3(405.0, 11.91, -1169.2), Vector3(419.0, 12.6, -1169.2), "", 1.0],
 	["parking_aeroport_rampe_nuit", Vector3(407.0, 9.31, -1161.65), Vector3(397.0, 9.9, -1161.65), "", 1.0],
-	["parking_aeroport_escalier_nuit", Vector3(390.0, 7.24, -1158.9), Vector3(397.0, 8.18, -1158.9), "", 1.0],
-	["parking_aeroport_passage_nuit", Vector3(405.0, 7.24, -1180.2), Vector3(405.0, 6.88, -1167.2), "", 1.0],
-	["parking_aeroport_creneaux_nuit", Vector3(391.2, 11.81, -1167.8), Vector3(411.0, 10.71, -1165.0), "", 1.0],
+	["parking_aeroport_cage_jour", Vector3(409.8, 11.91, -1175.2), Vector3(405.0, 10.78, -1175.3), "", 12.0],
+	["parking_aeroport_porte_nuit", Vector3(413.0, 7.34, -1172.2), Vector3(409.9, 6.68, -1174.7), "", 1.0],
+	["parking_aeroport_cage_nuit", Vector3(409.8, 11.91, -1175.2), Vector3(405.0, 10.78, -1175.3), "", 1.0],
 	["parking_aeroport_barre_nuit", Vector3(405.0, 7.2, -1183.5), Vector3(405.0, 7.75, -1179.4), "", 1.0],
 	["parking_centre_3_plateau_nuit", Vector3(-770.54, 6.83, 65.16), Vector3(-784.54, 7.5, 65.16), "", 1.0],
 	# Places marquees et voitures garees (2026-09-22)

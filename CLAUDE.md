@@ -604,7 +604,8 @@ débogage sur `V`.
   par tache, 2,1 ms à la première d'un modèle ;
 - **mode graphique léger**, plus tard, pour les PC à carte graphique Intel : c'est le gel des PC de l'école (§6)
   qui l'a fait inscrire. Réglages déjà en place qu'il pourra piloter : le bassin de vraies lumières
-  (`StreetLights.pool`, 16, §9), les ombres du soleil (`DirectionalLight3D`, portée 240 m), le LOD des bâtiments
+  (`StreetLights.pool`, 16, §9), les vraies lumières des parkings (`StreetLights.interieur_fixe` : 43 fixes par parking
+  ou bassin de 8, §11 étape 12), les ombres du soleil (`DirectionalLight3D`, portée 240 m), le LOD des bâtiments
   (`CityRenderOptimizer.building_lod_bias` 0,25 au-delà de `lod_near_radius` 150 m), la distance des silhouettes du
   centre-ville (`DowntownHLOD`, 650 m) ; côté moteur, l'échelle de rendu 3D du viewport (`scaling_3d_scale`, non
   utilisée aujourd'hui). Ni SSAO ni glow ne sont activés, rien à gagner de ce côté. La mesure qui décidera est le
@@ -1636,6 +1637,85 @@ borné lui aussi, toujours actif.
   chaque fiche de véhicule garé retombe sur une place (**63 sur 63**).
 
 **Le chantier du parking à étages est terminé.**
+
+**Étape 12 — l'escalier déplacé, les poteaux retirés, des places en créneau, les lumières fixes** (2026-09-23, demandes
+du joueur, un commit).
+
+- **L'ESCALIER BARRAIT L'ENTRÉE DES VOITURES.** Il était dans la pièce de la tour vitrée, et au rez cette pièce EST le
+  passage d'entrée (x ±3,87) : la volée A y posait ses marches pleines sur 3 m du passage, le mur d'échiffre le coupait
+  sur toute sa hauteur, l'écran côté façade pendait à 1,95 m. Il est maintenant dans la **bande arrière**, entre la
+  trémie de la rampe et le muret arrière, adossé à la tour arrière : x 5,54..10,66, z -9,75..-7,55 (repère du modèle).
+  Relevé au maillage avant de le poser : aucun montant de façade entre la tour arrière (face x = 5,52, du sol à
+  22,13 m) et la tour d'angle (x 20,13). C'est le MÊME escalier, dessiné dans son repère d'origine et posé par une
+  transformation rigide (`ESC_XF`, demi-tour et translation) : rampes invisibles par les nez de marches, fente comblée,
+  garde-corps en travers du couloir de la volée A au toit suivent sans être réécrits. On y entre par l'est de la bande
+  arrière ; il débouche au toit à l'air libre. Le passage d'entrée redevient un tunnel libre de 7,74 m ; la pièce de
+  la tour vitrée n'a plus de porte ni de doublure : fermée, inaccessible.
+- **PAROI CÔTÉ RAMPE**, du rez au toit + 1,05 m (x 5,40..10,66, z -7,56..-7,48) : la volée A longe la trémie de la
+  rampe, et aux étages le garde-corps de 1,05 m de cette trémie passait sous les pieds de qui monte — on tombait sur la
+  rampe du dessous. Elle remplace ce garde-corps sur la longueur de l'escalier.
+- **VOLÉES DE 1,00 M, PAS 0,95 — ESSAYÉ ET REJETÉ.** La bande fait 2,27 m entre le muret (-9,75) et la trémie de rampe
+  (-7,47). La première version y mettait des volées de 0,95 m, avec une paroi à l'épaisseur du garde-corps (0,14 m) :
+  les capsules de ParkingStructureTest restaient coincées dans les trois parkings du centre-ville, entre le bout du
+  mur d'échiffre et la rampe invisible, en s'engageant dans la volée B — 7,5 cm de jeu de chaque côté d'une capsule
+  de 0,80 m, et le vrai joueur a la même (le sien passait à l'aéroport). Paroi amincie à 0,08 m, écran à 0,05 m collé
+  au muret : 1,00 m comme à l'origine. Le test vise la volée B 5 cm côté écran, comme l'ancien (9,25 pour 9,20).
+- **POTEAUX DU MILIEU RETIRÉS** : cinq pièces séparées de 0,87 x 1,08 m (x 0, ±9,915, ±15,885 ; z ±0,54) qui
+  traversent tous les étages d'un seul tenant, 112 triangles. Retrait au test des TROIS sommets
+  (`Maillage.retirer_boite(..., true)`) : les dalles sont d'un seul tenant dessous, rien n'est percé.
+- **PLACES EN CRÉNEAU LE LONG DE LA RAMPE** : quatre par niveau, 6,00 x 2,60 m, x -12..12, z -3,43..-0,83 (entre le
+  garde-corps de la trémie et l'allée, place libérée par les poteaux), trait continu côté allée et traits en travers.
+  Hors du balayage des demi-tours, qui tournent autour de x ±15,13 et ne reviennent à l'intérieur de ce point que dans
+  l'allée ou dans la rampe. Tirage à moins de travers (1,5°) et de décalage (0,08 m) qu'en bataille : relevé sur les
+  douze modèles tirés à l'échelle du catalogue, 2,20 m de large au plus (SUV 01), 4,49 m de long (berline 02).
+  **280 places** (200 + 80), **89 voitures garées dans les parkings** (63 avant), dont 26 en créneau ; 31 à
+  l'aéroport, 58 au centre-ville.
+- **LUMIÈRES FIXES, TOUJOURS ALLUMÉES** (`StreetLights.interieur_fixe`, vrai par défaut). Le bassin de 8 de l'étape 10
+  ne se posait que sur les luminaires les plus proches de la caméra : vu du bout d'un plateau, le reste restait sans
+  lumière réelle. Maintenant une OmniLight3D sans ombre par luminaire, fondue par la distance au-delà de 80 + 20 m ;
+  les parkings sont à 458 m au moins l'un de l'autre, donc au plus 43 lumières actives à la fois. Mesuré
+  (`RenderPerfTest --parking`, RTX 4070 SUPER, 1920x1080, vsync coupée, modes alternés, médianes de trois passes) :
+
+  | vue | GPU sans lumière | bassin de 8 | 43 fixes | image (sans / bassin / fixes) |
+  |---|---|---|---|---|
+  | plateau du niveau 1, 12 h | 0,732 ms | 0,992 | 1,434 | 2,28 / 2,35 / 2,52 ms |
+  | allée du rez, 12 h | 0,744 | 0,990 | 1,257 | 2,39 / 2,26 / 2,34 |
+  | à 300 m, 12 h | 0,858 | 0,855 | 0,854 | 2,37 / 2,36 / 2,34 |
+  | plateau du niveau 1, 1 h | 0,616 | 0,842 | 1,277 | 1,95 / 1,94 / 1,97 |
+  | allée du rez, 1 h | 0,627 | 0,846 | 1,106 | 2,07 / 2,06 / 2,18 |
+  | à 300 m, 1 h | 0,715 | 0,718 | 0,719 | 2,26 / 2,19 / 2,19 |
+
+  Dans un parking, +0,27 à +0,44 ms de GPU sur le bassin ; l'image, limitée par le processeur, ne bouge pas au-delà
+  du bruit ; à 300 m, rien (0 lumière active). **Contrairement aux lampadaires du 2026-09-19 (§9), le compteur GPU est
+  ici stable au millième d'une passe à l'autre** : 43 lumières qui se recouvrent toutes dans un volume fermé vu de
+  l'intérieur. Sur une carte Intel, ce coût serait à multiplier : le bassin reste disponible
+  (`interieur_fixe = false`, ou `StreetLights.regler_interieur`) pour le mode graphique léger (§7).
+- **PLUS DE FENÊTRE ALLUMÉE SUR LE PARKING** : son seul vitrage, la grande vitre de la tour de l'entrée (12 carreaux),
+  s'allumait la nuit comme la fenêtre d'un bureau. À l'aéroport c'était le seul carreau allumé du lieu (relevé :
+  `airport_fenetres.res` tenait 6 sommets, tous dans l'emprise du parking) : le fichier n'est plus produit, il est
+  retiré du dépôt.
+- **DEUX DÉFAUTS ANTÉRIEURS DE L'ÉTAPE 9, trouvés en faisant.** Le retrait des boîtiers de plafonnier qui pendent dans
+  le volume des rampes venait après la découpe de chaque trémie de rampe, au test du CENTRE, dans une boîte qui
+  commençait à x -15,13. (a) Cette boîte contenait les chants de dalle que la découpe venait d'ajouter : relevé sur le
+  maillage cuit de HEAD, **1 triangle au lieu de 2 sur chaque chant long de chaque trémie, aux quatre planchers** — la
+  tranche de la dalle était ouverte en triangle sur 29 m, le long des deux bords de chaque rampe. (b) Le bout ouest du
+  boîtier ouest (x -18,40..-15,13) restait pendu, et sa vitre gardait allumé un triangle : 4 têtes de vraie lumière et
+  20 triangles allumés par parking flottaient au-dessus de la rampe (relevé sur le kit de HEAD). Corrigé : retrait sur
+  le modèle BRUT, avant toute découpe, au test des TROIS sommets, dans une boîte x ±20,5 : 96 triangles, soit 2
+  boîtiers de 12 triangles par plafond de bande, relevés un à un (couleurs des boîtiers, x -18,40..18,40, 0,21 m de
+  haut). Même boîte pour les vitres. Luminaires : **43 par parking**, 172 en tout (48 et 192 avant : -5 panneaux de
+  la cage, +4 au-dessus du pied du nouvel escalier, -4 têtes flottantes).
+- Vérifié : ParkingStructureTest OK — l'escalier monté du rez au toit dans les quatre parkings en 24 s (capsules au
+  centre-ville, vrai joueur à l'aéroport) ; 88 poussées contre les garde-corps (60 piétons, 28 voitures), dont 16
+  contre la paroi de l'escalier au palier de chaque volée et 4 contre le garde-corps du toit, toutes arrêtées ; 280
+  places plates à 4 mm près et libres sur 2,00 m, 89 fiches sur leur place ; rampes montées en 79,3 s et redescendues
+  en 78,7 s, 16,0 %, sans ressaut ; barre de hauteur. VehicleLightsTest, MapPlacesTest, DowntownBuildingsTest,
+  DayNightTest OK ; ProjectLoadCheck 627, 0 échec. Vues de référence du §3 : jour 333 / 352 / 611 / 350 / 268 / 554,
+  nuit 277 / 181 / 480 / 267 / 222 / 458, les chiffres de l'étape 11 à un appel près (la mesure « avant » n'a pas été
+  refaite sur la machine du jour : il aurait fallu réimporter un second arbre du projet).
+- Captures au sol, de jour et de nuit : `D:/p-recree/ground_shots/parkings_2026-09-23/` (hors dépôt) ; vues
+  `parking_aeroport_passage`, `_escalier`, `_escalier_palier`, `_escalier_haut`, `_escalier_toit`, `_creneaux` et leurs
+  variantes `_nuit`, `parking_centre_3_escalier`.
 
 ## 12. Collisions : inventaire mesuré et décisions (2026-09-23)
 
