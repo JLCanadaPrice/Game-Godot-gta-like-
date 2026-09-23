@@ -832,7 +832,7 @@ func _land_after_noclip() -> void:
 	overlap.transform = Transform3D(Basis.IDENTITY, global_position)
 	overlap.collision_mask = 1
 	overlap.exclude = [get_rid()]
-	var inside := not space.intersect_shape(overlap, 1).is_empty() or _enferme(space)
+	var inside := not space.intersect_shape(overlap, 1).is_empty()
 	var below := PhysicsRayQueryParameters3D.create(global_position, global_position + Vector3.DOWN * NOCLIP_PROBE_HEIGHT, 1, [get_rid()])
 	if not inside and not space.intersect_ray(below).is_empty():
 		return
@@ -841,42 +841,6 @@ func _land_after_noclip() -> void:
 	var hit := space.intersect_ray(top)
 	if not hit.is_empty():
 		global_position = (hit["position"] as Vector3) + Vector3.UP * 0.95   # capsule de 1,8 m centrée sur l'origine
-
-# ENFERMÉ DANS UNE COQUE (2026-09-23). Depuis la collision exacte de tous les bâtiments (§12), un bâtiment n'est plus
-# une boîte PLEINE mais une COQUE : Jolt n'expulse plus un corps posé dedans, et le chevauchement de capsule ci-dessus
-# ne trouve rien — le joueur restait dans l'immeuble en quittant le noclip. On regarde donc si TOUTES les directions
-# butent sur LA MÊME forme : un rayon vers le haut et huit à l'horizontale. Sous une arcade, dans une cour, sous un
-# pont, au moins un rayon s'échappe ou tombe sur autre chose.
-#
-# ET on exige que le joueur ne soit PAS POSÉ sur cette même forme : dans un parking à étages — fait pour être parcouru,
-# et dont le muret de rive de 1,93 m arrête bel et bien les huit rayons horizontaux — le sol sous les pieds est la forme
-# elle-même. C'est ce qui distingue « enfermé dans une coque » de « debout à l'intérieur d'un volume praticable », sans
-# avoir à citer une ressource par son nom.
-# La portée VERTICALE couvre la plus haute tour du jeu (153 m) : à 60 m, un joueur lâché à 30 m dans un gratte-ciel
-# de 115 m ne trouvait rien au-dessus de lui et passait pour libre — c'est ce que disait NoclipTest.
-const ENFERME_HAUT := 250.0
-const ENFERME_COTE := 60.0         # m : plus grand bâtiment du jeu en plan, largement
-
-
-func _enferme(space: PhysicsDirectSpaceState3D) -> bool:
-	var haut := _forme_touchee(space, Vector3.UP * ENFERME_HAUT)
-	if haut == "":
-		return false
-	for k in 8:
-		var a := TAU * float(k) / 8.0
-		if _forme_touchee(space, Vector3(cos(a), 0.0, sin(a)) * ENFERME_COTE) != haut:
-			return false
-	return _forme_touchee(space, Vector3.DOWN * 3.0) != haut
-
-
-# Identifiant de la forme touchée par un rayon parti du joueur, "" si le rayon ne touche rien. Corps ET forme : un
-# bâtiment est une seule forme concave, un parking aussi, mais deux bâtiments voisins sont deux formes distinctes.
-func _forme_touchee(space: PhysicsDirectSpaceState3D, direction: Vector3) -> String:
-	var q := PhysicsRayQueryParameters3D.create(global_position, global_position + direction, 1, [get_rid()])
-	var hit := space.intersect_ray(q)
-	if hit.is_empty():
-		return ""
-	return "%d|%d" % [(hit["rid"] as RID).get_id(), int(hit["shape"])]
 
 # Bandeau en haut de l'écran tant que le noclip est actif.
 func _show_noclip_hint(shown: bool) -> void:
@@ -972,7 +936,7 @@ func _exit_vehicle() -> void:
 	# la position de repos du joueur (le perso retombe au sol). C'était y = 1,3 fixe, écrit pour le sol plat du
 	# monde d'essai : sur le plateau de l'aéroport (5,3 m) ou au niveau 1 d'un parking à étages, le joueur était
 	# posé SOUS le sol (vu par ParkingStructureTest, 2026-09-21).
-	global_position = _place_de_sortie(car, Vector3(exit_pos.x, exit_pos.y + 0.85, exit_pos.z))
+	global_position = Vector3(exit_pos.x, exit_pos.y + 0.85, exit_pos.z)
 	rotation = Vector3(0, car_yaw, 0)   # face au même cap que la voiture
 
 	($CollisionShape3D as CollisionShape3D).set_deferred("disabled", false)
@@ -989,54 +953,6 @@ func _exit_vehicle() -> void:
 
 	_driving = false
 	_current_car = null
-
-# OÙ DESCENDRE (2026-09-23). Le joueur sortait TOUJOURS par `ExitPoint`, à 1,7 m sur sa gauche, sans rien vérifier :
-# une voiture garée le flanc contre un mur le déposait DANS le bâtiment. C'était sans conséquence tant que les
-# bâtiments étaient des boîtes pleines — Jolt ressortait le joueur par la face la plus proche —, mais depuis la
-# collision exacte (§12) une coque creuse le garde. Mesuré avant correction : 10 cas sur 10 dans le bâtiment.
-#
-# On prend donc le PREMIER point LIBRE : la portière (inchangé, donc rien ne bouge en terrain dégagé), puis le côté
-# passager, l'arrière, l'avant, enfin le toit. Faute de place nulle part, la portière comme avant : mieux vaut le
-# comportement d'avant qu'un joueur bloqué dans sa voiture.
-const SORTIE_MARGE := 0.55         # du bord de caisse au centre du joueur
-const SORTIE_HAUTEUR := 0.85       # au-dessus de l'origine de la voiture, comme la portière
-const SORTIE_RAYON := 0.3          # capsule d'essai, la même que celle de la sortie de noclip
-const SORTIE_TAILLE := 1.2
-
-
-func _place_de_sortie(car: Node3D, portiere: Vector3) -> Vector3:
-	var space := get_world_3d().direct_space_state
-	if _sortie_libre(space, car, portiere):
-		return portiere
-	var b: AABB = car.call("boite_caisse") if car.has_method("boite_caisse") else AABB(Vector3(-0.9, -0.6, -2.0), Vector3(1.8, 1.2, 4.0))
-	var c := b.get_center()
-	# repère de la VOITURE : +x le côté passager, +z l'arrière (l'avant est -z, cf. _drive_physics)
-	for local: Vector3 in [Vector3(b.end.x + SORTIE_MARGE, SORTIE_HAUTEUR, c.z),
-			Vector3(c.x, SORTIE_HAUTEUR, b.end.z + SORTIE_MARGE),
-			Vector3(c.x, SORTIE_HAUTEUR, b.position.z - SORTIE_MARGE),
-			Vector3(c.x, b.end.y + 0.95, c.z)]:
-		var p: Vector3 = car.global_transform * local
-		if _sortie_libre(space, car, p):
-			return p
-	return portiere
-
-
-# Libre : le trajet depuis la voiture ne traverse aucun décor, et la place elle-même n'est prise ni par le décor ni par
-# un autre véhicule. Capsule réduite (0,3 x 1,2 m) comme en sortie de noclip : des pieds à peine enfoncés dans une
-# bordure ne doivent pas faire refuser une place.
-func _sortie_libre(space: PhysicsDirectSpaceState3D, car: Node3D, p: Vector3) -> bool:
-	var depart := car.global_position + Vector3.UP * SORTIE_HAUTEUR
-	if not space.intersect_ray(PhysicsRayQueryParameters3D.create(depart, p, 1, [get_rid()])).is_empty():
-		return false
-	var cap := CapsuleShape3D.new()
-	cap.radius = SORTIE_RAYON
-	cap.height = SORTIE_TAILLE
-	var q := PhysicsShapeQueryParameters3D.new()
-	q.shape = cap
-	q.transform = Transform3D(Basis.IDENTITY, p)
-	q.collision_mask = 1 | 4
-	q.exclude = [get_rid(), car.get_rid()]
-	return space.intersect_shape(q, 1).is_empty()
 
 func _update_drive_camera(delta: float) -> void:
 	if _current_car == null:

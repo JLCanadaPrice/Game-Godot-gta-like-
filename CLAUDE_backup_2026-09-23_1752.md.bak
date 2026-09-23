@@ -3,8 +3,8 @@
 Fiche écrite pour être lue au début de chaque session : le contexte du projet, la méthode de
 travail imposée, les commandes exactes, les pièges déjà payés et l'état d'avancement.
 
-> **EN COURS (2026-09-23, 17 h 50) : lire d'abord la fin du §12, « EN COURS : reprendre ici ».** La régression
-> des bâtiments creux est CORRIGÉE ; reste l'anti-apparition du `LoopSpawner` (point B).
+> **EN COURS (2026-09-23, 16 h 30) : lire d'abord la fin du §12, « EN COURS : reprendre ici ».** Une
+> régression (joueur laissé dans les bâtiments creux en sortie de voiture et de noclip) est à corriger avant tout.
 
 ## 1. Le projet
 
@@ -1933,46 +1933,32 @@ limite de 40 cm du joueur — **FAIT** (e204792, ci-dessus) ; 2. anti-apparition
 circulation se remplit toujours normalement ; 3. le coût physique d'environ 2 ms : **NE RIEN TOUCHER**, le joueur le
 teste en jeu. Un commit par point, tests concernés seulement. Il pousse lui-même.
 
-**A. RÉGRESSION CORRIGÉE** (`Player.gd` seul), causée par la collision exacte de tous les bâtiments (2534f55,
-d68f46c, f7bf8b7) et passée inaperçue parce que NoclipTest n'était pas dans les tests lancés à ces étapes. Une coque
-creuse n'expulse plus un joueur posé dedans ; une boîte pleine le faisait (Jolt le sortait par la face la plus proche).
-
-- **Sortie de voiture.** `_exit_vehicle` posait le joueur sur `ExitPoint` (côté gauche, x local -1,7) **sans rien
-  vérifier** : une voiture garée flanc contre un mur le déposait dans le bâtiment. Il prend maintenant le PREMIER
-  point LIBRE : la portière (inchangée, donc rien ne bouge en terrain dégagé), puis le côté passager, l'arrière,
-  l'avant, enfin le toit — les quatre derniers déduits de `boite_caisse()`. **Libre** = le segment depuis la voiture
-  (à la hauteur de sortie) ne touche aucun décor (masque 1) ET une capsule réduite (0,3 x 1,2 m, la même qu'en sortie
-  de noclip) ne chevauche au point ni décor ni véhicule (masque 1 | 4, la voiture quittée exclue). Faute de place
-  nulle part, la portière comme avant : mieux vaut le comportement d'avant qu'un joueur bloqué dans sa voiture.
-- **Sortie de noclip.** `_land_after_noclip` ne reconnaissait « dans un bâtiment » qu'au CHEVAUCHEMENT d'une capsule
-  avec le monde statique, ce qui est faux dans une coque creuse. Il reconnaît maintenant aussi l'ENFERMEMENT : un
-  rayon vers le haut et huit à l'horizontale butent sur LA MÊME forme (même corps, même forme), **et** le joueur
-  n'est PAS POSÉ sur cette forme. Ce second critère est ce qui distingue une coque fermée d'un volume fait pour être
-  parcouru — dans un parking à étages, le muret de rive de 1,93 m arrête bel et bien les huit rayons horizontaux et
-  la dalle du dessus le rayon vertical, mais le sol sous les pieds est la forme elle-même. Il évite d'avoir à citer
-  une ressource par son nom.
-- **La portée verticale doit couvrir la plus haute tour.** À 60 m, un joueur lâché à 30 m dans un gratte-ciel de
-  115 m ne trouvait rien au-dessus de lui et passait pour libre : NoclipTest échouait encore. `ENFERME_HAUT` = 250 m
-  (la plus haute tour du jeu fait 153 m), `ENFERME_COTE` = 60 m.
-- **Mesures.** `sonde_sortie`, même sonde sur les deux codes : **10 cas sur 10 dans le bâtiment avant, 10 sur 10
-  dehors après** (le joueur posé à 2,66 à 3,27 m du mur, alors que l'ExitPoint reste 0,11 à 0,62 m DANS le mur).
-  `sonde_enferme` (nouvelle) : **23 cas, 0 faute** — les 20 niveaux des quatre parkings laissés sur place, le parvis
-  de l'hôpital et une rue aussi, et le témoin lâché dans la tour de NoclipTest reposé 85,92 m plus haut, sur le toit
-  (115,92 m). NoclipTest OK. ParkingStructureTest OK, le vrai joueur sort toujours de sa voiture sur le toit (23,89
-  pour un sol à 23,89) et au rez (5,65 pour 5,64).
-- **DEUX DÉFAUTS DE LA SONDE, trouvés en route et corrigés — la sonde accusait le jeu à tort.**
-  1. Son rayon de recherche du mur n'excluait pas le JOUEUR. Tant que la sortie était cassée, le joueur finissait
-     DANS le bâtiment et ne gênait pas ; une fois corrigée il reste DEHORS, et le rayon du cas suivant tapait dans sa
-     capsule : mur annoncé 3,06 m trop près (2,66 m + 0,40 m de rayon), voiture garée 3 m trop loin, et la sonde
-     annonçait « DANS LE BÂTIMENT » pour cinq cas qui marchaient.
-  2. Elle visait toujours la face -X du bâtiment. En centre-ville, où les bâtiments sont à moins de 8 m les uns des
-     autres, le point « 4 m dehors » tombe DANS le voisin : la voiture était garée à l'intérieur du gratte-ciel
-     `midrise_095`, où aucune place n'est évidemment libre. Elle essaie maintenant les quatre façades et garde la
-     première vraiment dégagée (capsule de 1,4 m libre au point de départ, et le rayon de retour doit toucher LA
-     FORME VISÉE, vérifié par `shape_find_owner`).
-  **Règle : une sonde qui pose un objet « contre un mur » doit vérifier QUEL mur elle a trouvé, et s'exclure
-  elle-même du décor qu'elle mesure.** Et, comme pour les captures : le relevé qui compte est pris AU DÉCLENCHEMENT
-  (la sonde imprime maintenant la place où le joueur est POSÉ, avant que la gravité ne le fasse glisser).
+**A. RÉGRESSION trouvée, PAS ENCORE CORRIGÉE (aucun code modifié)**, causée par la collision exacte de tous les
+bâtiments (2534f55, d68f46c, f7bf8b7) et passée inaperçue parce que NoclipTest n'était pas dans les tests lancés à ces
+étapes. Une coque creuse n'expulse plus un joueur posé dedans ; une boîte pleine le faisait (Jolt le sortait par la
+face la plus proche).
+- **Sortie de voiture** : `Player._exit_vehicle` pose le joueur sur `ExitPoint` (côté gauche, x local -1,7) sans rien
+  vérifier. Sonde `sonde_sortie` (berline puis camion garés flanc gauche à 5 cm d'un mur, vrai joueur `_enter_vehicle`
+  puis `_exit_vehicle`) : **10 cas sur 10 dans le bâtiment** (GeorgianHome_alt04, Warehouse_alt01, Loft_alt06,
+  ModernSkyscraper_alt04, OldCottage_alt01 ; ExitPoint de 0,38 à 0,69 m derrière le mur). Log `sortie_avant.log`.
+- **Sortie de noclip** : `Player._land_after_noclip` ne reconnaît « dans un bâtiment » que si une capsule chevauche le
+  monde statique, ce qui est faux dans une coque creuse. **NoclipTest échoue** sur « sortie dans un bâtiment » : V à
+  30 m dans le gratte-ciel Mk2, le joueur reste dedans (y 24,68) au lieu d'être reposé sur le toit (115,0 m). Le
+  sous-test des zones (« voiture à portée ») passe.
+- **Correction prévue** (sauvegarder `Player.gd` avant) :
+  1. `_exit_vehicle` : premier point libre parmi ExitPoint (côté conducteur), son symétrique côté passager, derrière
+     puis devant (d'après `boite_caisse()`), sinon sur le toit si le plafond le permet, sinon ExitPoint comme avant.
+     Libre = le segment du centre de la voiture (à la hauteur de sortie) au point ne touche pas le monde statique
+     (masque 1, voiture exclue) ET une capsule réduite (0,3 x 1,2, comme `_land_after_noclip`) au point ne chevauche
+     ni le monde statique ni une autre voiture (masque 1 | 4).
+  2. `_land_after_noclip` : « dedans » aussi si le point est ENFERMÉ, c'est-à-dire un rayon vers le haut et 8 rayons
+     horizontaux tous arrêtés par la MÊME forme (même corps, même forme). Sous des arcades, dans une cour, sous un
+     pont, un rayon s'échappe. **À mesurer avant de valider** : le parking à étages (fait pour être parcouru :
+     garde-corps, rampes, étage au-dessus) ne doit pas passer pour « enfermé » ; sinon l'exclure par sa forme
+     (`parking_collision.res`).
+- **Vérifier** : `sonde_sortie -- --tag=apres` (tout « ok » attendu), NoclipTest, ParkingStructureTest (le vrai joueur
+  sort d'une voiture sur le toit et au rez d'un parking). Commit à part, présenté comme la correction d'une régression
+  des commits de collision exacte.
 
 **B. Point 2, anti-apparition : PAS COMMENCÉ dans le code.** Mesures « avant » faites sur ce PC (déterministes) :
 - `sonde_vue` : critère actuel du LoopSpawner (rayon vers le point AU SOL) : **14 refus sur 37 007** poses dans le
