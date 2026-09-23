@@ -354,18 +354,6 @@ sans le plafond de 800x450 du §6). Une vue peut imposer sa propre heure par un 
   Payé le 2026-09-21 sur la séquence de l'hélice : des vues de travers et plongeantes, prises d'abord pour un défaut de
   la caméra de conduite. `Input.mouse_mode = MOUSE_MODE_VISIBLE` après l'instanciation du monde : le gestionnaire du
   joueur ne lit la souris qu'en mode capturé. (`MapShotsTest` n'est pas concerné : il rend avec sa propre caméra.)
-- **LE GADGET `CollisionShape3D` DE L'ÉDITEUR LE REND INUTILISABLE DEPUIS LA COLLISION EXACTE DES BÂTIMENTS**
-  (2026-09-23, cause confirmée par le joueur). Godot dessine un gadget en fil de fer pour CHAQUE `CollisionShape3D` de
-  la scène ouverte, sous-scènes instanciées comprises : avec `World.tscn` ouvert, **26,4 millions de segments**, contre
-  8,1 M avant le chantier des collisions (`cc5bc41`), dont **19,7 M pour les formes exactes** des bâtiments et des lieux
-  (1,4 M avant, x14). Tracé en jeu (`--debug-collisions`, même fil de fer), il fait passer une image de 15,6 à
-  **41,3 ms en noclip** (p95 69, max 110 ms) et de 9,9 à 19,8 ms en voiture. **Sur CHAQUE PC** : dans la vue 3D de
-  l'éditeur, Affichage > Gadgets > **décocher `CollisionShape3D`** — c'est ce qui a rendu l'éditeur fluide — et **ne
-  jamais cocher Débogage > « Formes de collision visibles »**. Ce réglage de l'éditeur n'est pas dans le dépôt : il se
-  vérifie sur chaque machine. Pour inspecter une collision, ouvrir la sous-scène concernée seule, ou ne réactiver le
-  gadget qu'un instant. Sans ce fil de fer, le jeu ne coûte que **+0,8 ms par image (+10 %)** de plus qu'avant le
-  chantier, moitié les véhicules, moitié les bâtiments exacts, et aucun des suspects vérifiés n'a changé (anti-apparition,
-  contrôle « enfermé » du noclip, rayons du culler) : sonde et journaux dans `D:/p-recree/sondes/2026-09-23_perf/`.
 - **Un objet posé EN PERMANENCE sur la carte sans portée de visibilité se paie partout ailleurs.** Payé le
   2026-09-22 sur les véhicules garés : 43 voitures dans trois parkings du centre-ville ajoutaient 25 appels de
   dessin à une vue prise à 2 km de là, parce que leur maillage n'avait aucun `visibility_range_end`. Ce qui
