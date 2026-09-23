@@ -163,10 +163,6 @@ puis Blender, qui écrit `scenes/vehicles/enveloppes_pieces.json` et une image d
 "<disque>:/p-recree/blender-5.2.2-windows-x64/blender.exe" -b --factory-startup --python scenes/vehicles/tools/enveloppes_pieces.py -- --entree=<export.json> --sortie="$PROJET/scenes/vehicles/enveloppes_pieces.json" --images=<dossier hors du dépôt>
 ```
 
-**Toucher à `BuildingModels` ou à un modèle EverythingLibrary impose la chaîne ET `DowntownBuildingsBake`** (31 s) : depuis
-la collision exacte (§12), la carte et le centre-ville posent la MÊME forme de collision d'un modèle
-(`generated/buildings/models/<nom>_collision.res`, `BuildingModels.collision_of`), écrite par celui des deux qui cuit.
-
 **Toucher aux lampadaires impose DEUX cuissons hors chaîne** : `RoadBake` écrit les luminaires de la carte
 (`generated/roads/lamp_heads.tres`) et `DowntownFurnitureBake` ceux du centre-ville
 (`downtown/generated/lamp_heads.tres`). Oublier la seconde laisse 906 lampadaires sur 1 371 sans halo et sans
@@ -582,13 +578,6 @@ débogage sur `V`.
   utilisée aujourd'hui). Ni SSAO ni glow ne sont activés, rien à gagner de ce côté. La mesure qui décidera est le
   temps GPU (`RenderPerfTest`) sur une carte Intel, pas les appels de dessin (§3) ;
 - **bug : 0 voiture exposée** chez le concessionnaire ;
-- **bug : l'anti-apparition de `LoopSpawner` ne refuse presque rien** (relevé le 2026-09-23, §12) : 14 points sur 37 007
-  dans le cône de vue, avec ou sans collision exacte. Le rayon vise le point d'apparition AU SOL : parti de la caméra, il
-  rase la chaussée et bute sur une bordure ou une bosse avant d'arriver, donc le point passe pour caché. Viser 1 m au-dessus,
-  comme `SimulationCuller`, changerait ce comportement : à décider avec le joueur ;
-- **marches trop hautes pour `StepClimb`** (0,40 m au plus) devant certaines entrées, relevé le 2026-09-23 (§12) : il faut
-  sauter pour atteindre le palier des maisons georgiennes alt04 (dernière contremarche de 0,40 m), des supérettes (0,48),
-  du cabinet médical (0,44), des petits commerces alt01 (0,61), du DataCenter (0,64). À décider avec le joueur ;
 - ~~**bug : `PlayerCarPhysics` finit SUR LE TOIT**~~ **CORRIGÉ le 2026-09-21** (cause : §6, « le pack
   VitaVehicle compte en pieds »). Avant : `CarDrivingTest` `min_up_dot = -0,9977`, `final_speed =
   11,99` ; `CarDropTest` `up_dot = -0,9999` et 20,39 m de dérive (mêmes chiffres sur `0344b79`, donc
@@ -1678,7 +1667,7 @@ parking.
 
 | catégorie | outil | pourquoi | état |
 |---|---|---|---|
-| bâtiments et lieux (statiques) | **Godot seul** | Les cuiseurs versent les triangles du modèle dans une forme concave, comme ils le font déjà pour la station-service (`TRIMESH_MODELS`) et les parkings. Coût mesuré faible. Blender seulement au cas par cas : escalier changé en rampe, éolienne en treillis, simplification si le joueur accroche des détails. | lieux : fait ; tous les bâtiments : fait (fin du §12) |
+| bâtiments et lieux (statiques) | **Godot seul** | Les cuiseurs versent les triangles du modèle dans une forme concave, comme ils le font déjà pour la station-service (`TRIMESH_MODELS`) et les parkings. Coût mesuré faible. Blender seulement au cas par cas : escalier changé en rampe, éolienne en treillis, simplification si le joueur accroche des détails. | lieux : fait (fin du §12) ; tous les bâtiments : attend l'accord du joueur |
 | véhicules, déplacement | **Godot** (`create_convex_shape`) ; **Blender** pour camions, bus et pick-up | Une enveloppe unique relie la cabine et la benne. Blender coupe donc la caisse aux marches de son profil et fait une enveloppe par pièce. Aucune décomposition convexe automatique n'est utilisable : le V-HACD de Godot rend UNE coque pour la berline, et Blender n'en a pas. | fait |
 | véhicules, tirs | **Godot** (triangles du modèle, couche 4) | La forme concave est statique et seuls les rayons l'interrogent : Jolt n'a jamais à la faire collisionner. | fait |
 | PNJ | **Godot seul** | Capsule pour marcher ; zones par os (tête, torse, membres) pour le combat. | zones par os : chantier combat (§7) |
@@ -1697,7 +1686,7 @@ et la collision exacte partout coûte peu : +22 Mo dans Jolt, +211 ms au chargem
 Ordre en vigueur :
 1. véhicules : fait ;
 2. lieux de mission : fait, le joueur regarde en jeu ;
-3. tous les bâtiments en exact : fait (dernière sous-section), le joueur regarde en jeu ;
+3. tous les bâtiments en exact, si le joueur confirme ;
 4. le combat : zones par os des PNJ, dégâts aux véhicules.
 
 Restent en boîte ou en cylindre : poteaux, lampadaires, troncs, bancs, abribus, clôtures.
@@ -1708,16 +1697,16 @@ Restent en boîte ou en cylindre : poteaux, lampadaires, troncs, bancs, abribus,
   (enveloppe, boîte, capsule) ; le concave est réservé au décor statique et aux zones de tir (masque vide). Une fois les
   bâtiments exacts, un corps mobile en trimesh les traverserait aussi, alors qu'aujourd'hui il bute contre leurs boîtes.
 - PNJ et circulation : aucun risque pour leurs trajets. Aucun point du PedGraph ni du graphe routier n'est dans une boîte
-  de bâtiment. (Vérifié après coup, dernière sous-section : 0 PNJ bloqué, 0 point de voie touché.)
+  de bâtiment.
 - Le joueur, à pied ou en voiture, entre dans ce que la boîte bouchait :
   - des marches à franchir (`_try_step_up`) ;
   - les plafonds bas des arcades, pour la voiture ;
-  - un modèle creux (des façades sans intérieur) ne doit pas l'avaler : vérifié, aucun ne l'avale (dernière sous-section).
+  - à vérifier : un modèle creux (des façades sans intérieur) ne doit pas l'avaler.
 - Les rayons sur la couche 1 changent de résultat :
-  - `SimulationCuller` : un bâtiment exact cache moins, donc plus d'entités réveillées (mesuré : +1,2 %) ;
-  - l'anti-apparition de `LoopSpawner` (mesuré : inchangée, et elle ne refuse presque rien de toute façon, §7) ;
-  - « le dégagement des lampadaires » : n'existe pas en jeu, aucun script ne tire ce rayon ;
-  - la caméra « sol » de `MapShotsTest` : non vérifiée (captures fenêtrées, pas sur le PC de l'école).
+  - `SimulationCuller` : un bâtiment exact cache moins, donc plus d'entités réveillées ;
+  - l'anti-apparition de `LoopSpawner` ;
+  - le dégagement des lampadaires ;
+  - la caméra « sol » de `MapShotsTest`.
 - Tests à rejouer : MapGateTest, MapPlacesTest, MapExplorationTest, SimulationCullingTest, DayNightTest et
   ParkingStructureTest ; pour les véhicules, CarKerbTest et CarDrivingTest. Selon le §2 : seulement ceux que touche
   l'étape, et prévenir le joueur avant toute vérification ou chaîne de plus de 10 min.
@@ -1731,9 +1720,8 @@ Restent en boîte ou en cylindre : poteaux, lampadaires, troncs, bancs, abribus,
   camions, bus et pick-up : **enveloppes par pièce faites dans Blender**. Jamais de trimesh pour le déplacement (mesure ci-dessus).
 - **Bâtiments** : son problème principal, ce sont les ESCALIERS et PERRONS devant les entrées, que la boîte engloutit. Mesure à
   faire de 0 à 1,2 m tous les 10 cm AVANT de décider : si beaucoup de bâtiments sont concernés, collision exacte partout ; sinon,
-  les modèles concernés seulement. **Mesuré : 70,8 % à la carte, 38,8 % au centre-ville, 62 % en tout — « beaucoup ». Le
-  joueur a appliqué sa règle : collision exacte sur TOUS les bâtiments, carte et centre-ville, en commençant par les modèles à
-  perron. FAIT (`2534f55`, `d68f46c`, `f7bf8b7`), voir la dernière sous-section.**
+  les modèles concernés seulement. **Mesuré : 70,8 % à la carte, 38,8 % au centre-ville — « beaucoup ». Rien construit : le
+  chiffre lui est donné avant, avec l'erratum ci-dessus. EN ATTENTE DE SON ACCORD.**
 - **Lieux de mission**, dans tous les cas : collision exacte sur l'hôpital, le commissariat, le casino, le ranch, la planque,
   l'hôtel et l'aéroport (arcades de l'hôpital et du commissariat praticables), et une collision pour l'avion de l'aéroport.
   **FAIT** (`bca191b`), voir la dernière sous-section ; PAUSE, le joueur regarde en jeu.
@@ -1795,79 +1783,6 @@ Restent en boîte ou en cylindre : poteaux, lampadaires, troncs, bancs, abribus,
 - **Tests** : MapPlacesTest, MapGateTest, ParkingStructureTest OK ; ProjectLoadCheck donne 626 fichiers et 0 échec.
 - **Seuil du §3** : non concerné, et non mesuré. Une forme de collision ne fait aucun appel de dessin, et les 6 vues de
   référence ont une caméra fixe (aucune n'est en mode « sol »).
-- **Reste** : le joueur regarde en jeu. Les bâtiments de la ville ont suivi (sous-section suivante).
-
-### Tous les bâtiments : faits le 2026-09-23 (PAUSE, le joueur regarde en jeu le soir)
-
-Décision du joueur, le 62 % de perrons engloutis tombant dans sa règle : collision exacte sur TOUS les bâtiments, carte et
-centre-ville, en commençant par les modèles à perron de la carte, chaque étape vérifiée à la sonde comme les lieux.
-
-- **Code.**
-  - `BuildingModels.collision_of(nom)` : les triangles du modèle dans son repère, à deux faces, enregistrés à côté de son
-    maillage (`generated/buildings/models/<nom>_collision.res`), partagés par ses exemplaires, par la carte et par le
-    centre-ville ; l'option `with_trimesh` (une face, forme incrustée dans la scène) a disparu.
-  - `DistrictsBake` n'a plus de boîtes : une `CollisionShape3D` par bâtiment portant la forme de son modèle, dans la
-    transformation du modèle.
-  - `DowntownBuildingsBake._forme` : exacte pour les modèles EverythingLibrary (via `collision_of`), les gratte-ciels et le
-    pack urbain (forme à côté de leur maillage). Le parking à étages garde ses triangles retaillés.
-- **Étapes.**
-  - `2534f55` : les 33 modèles à perron de la carte, 869 bâtiments sur 1 196, relevés par rayons sur le maillage avec la
-    méthode de l'erratum. L'erratum en comptait 29 et 843 ; sa sonde est perdue, d'où l'écart.
-  - `d68f46c` : les 26 autres modèles de la carte, soit les 1 196 bâtiments, 59 modèles, 154 151 triangles.
-  - `f7bf8b7` : le centre-ville, 441 bâtiments, 62 modèles, 290 876 triangles.
-  - Au total : 104 formes concaves uniques, 404 000 triangles. **Tailles réelles** : 4,2 Mo à l'étape 1, 5,6 Mo à l'étape 2,
-    12,6 Mo en tout (92 fichiers) plus 0,29 Mo pour le parking. Les messages des trois commits donnent 6,2, 9,1 et 14,6 Mo :
-    c'est FAUX, ce sont des lectures de `du -h`, qui compte les blocs du disque externe. Voir le piège (e) ci-dessous.
-- **Aucun bâtiment n'avale le joueur ni une voiture.**
-  - Labo : les 93 modèles posés, seuls sur une dalle, en exact ; 25 662 capsules du joueur (de face et à 45°) et 9 448
-    berlines (12 et 30 m/s). Résultat : 0 enfermée, 0 coincée.
-  - En situ, dans World.tscn : 3 exemplaires de chaque modèle de la carte, 2 de chaque modèle du centre-ville (281 en tout),
-    74 093 capsules et 18 935 voitures. Résultat : 0 enfermée dans un bâtiment, 0 coincée, 0 passée sous un plancher. Les
-    seules « enfermées » sont dans le parking à étages, où l'on entre ; le seul « debout sur le bâtiment » est sur l'escalier
-    extérieur de `pack:building_06` (1,53 m).
-- **Perrons.** La plupart se montent à pied maintenant : commerces, usines, maisons familiales, grandes maisons, et le tribunal
-  (1,24 m). Certains ont une dernière marche au-dessus des 0,40 m de `StepClimb` et demandent un saut, voir le §7.
-- **Trajets.** 3 points du PedGraph sur 30 350 frôlent `building_06` de l'îlot des boutiques (4 avec sa boîte) ; aucun point
-  de voie du Circuit sur 177 713. **0 PNJ bloqué** en jeu : 3 endroits avec le culler, puis 737 entités éveillées.
-- **SimulationCuller et LoopSpawner.** Mesurés sur 165 poses × 4 caps, avec les critères exacts des deux scripts et les noeuds
-  réels des graphes :
-  - éveillées : 5 697 → 5 763 sur 29 068 dans le champ, soit +1,2 % (centre-ville +0,7 %, carte +2,9 %) ;
-  - anti-apparition : 14 refus, inchangé.
-- **Coût réel sur le PC de l'école, même binaire, sondes identiques.**
-  - Chargement de World.tscn : 3,7-4,0 s → 4,0-4,1 s. L'entrée dans l'arbre prend environ 150 ms de plus : Jolt construit
-    les 104 maillages.
-  - Mémoire privée du processus : +423 → +440 Mo, soit +17 Mo, dont +12 Mo comptés par Godot.
-  - Rayon moyen : 2,3-2,7 → 4,2-4,8 µs.
-  - **Physique par image, en jeu** (spawners, graine fixe) : A/B dans le même binaire, les boîtes étant remises à
-    l'exécution. Cette émulation redonne au chiffre près les comptes « avant ». Médianes :
-    - Founders Plaza : 4,6-5,5 → 6,3-7,9 ms, soit environ +1,9 ms (+37 %). Trois causes s'y additionnent : 17,5 → 25,3
-      entités éveillées à cet endroit, des requêtes de déplacement plus chères, et les rayons du culler (+0,1 à 0,25 ms) ;
-    - culler coupé, 737 entités éveillées dans les deux cas : 32,5-33,4 → 36,6-36,7 ms, soit environ 5 µs de plus par
-      entité et par image.
-- **Tests corrigés, pas contournés.** MapDistrictsTest et DowntownBuildingsTest vérifiaient la collision par UN rayon au
-  centre de l'emprise. Il tombait dans l'angle intérieur des immeubles commerciaux en L (alt01 à 05 : 6 à la carte, 71 au
-  centre-ville), sur la plateforme basse d'`IndustrialBuilding_alt06` (2) et dans le puits central de `pack:building_04`
-  (14). Ces bâtiments ont bien leur collision : 13 à 24 rayons sur 25 la touchent sur leur emprise. Les tests cherchent maintenant le toit au centre, puis sur une grille 5 x 5. Les
-  rayons de sol de MapDistrictsTest ignorent la collision des bâtiments, qu'ils touchaient au plancher ou au perron.
-- **Pas vérifié ici.** La caméra « sol » de `MapShotsTest` et les captures : le joueur est sur le PC de l'école et
-  regarde en jeu le soir.
-- **Si le coût physique gêne**, deux pistes, non faites :
-  - exact jusqu'à ~6 m (là où marchent et roulent joueur, PNJ et voitures) et boîte au-dessus : la plupart des triangles
-    sont dans les étages ;
-  - maillages de collision simplifiés dans Blender pour les modèles les plus lourds.
-- **Pièges payés en mesurant** (sondes gardées hors dépôt : `D:/p-recree/sondes/2026-09-23_collision_exacte/`, avec un
-  LISEZMOI) :
-  - (a) **un sol en `WorldBoundaryShape3D` loin de l'origine fait traverser les murs** aux `CharacterBody3D`. Mesuré dans
-    une sonde : à 1 000 m, 18 capsules sur 88 passent ; à 2 000 m, toutes ; avec une dalle en boîte, aucune. Le jeu n'en
-    utilise pas ;
-  - (b) **Jolt refuse les corps au-delà de 10 240** (réglage du projet). Ceux-là ne bougent pas, et seule une erreur au
-    journal le dit : une première version du labo annonçait « 0 entré » pour la moitié des modèles sans rien avoir mesuré ;
-  - (c) **en situ, un critère doit viser l'exemplaire** : sur le terrain en pente, « monté de plus de 1 m » et « tombé »
-    mesurent la colline, et les rayons d'« enfermé » butent sur les voisins et les arbres. Il faut regarder la forme touchée
-    (`shape_find_owner` puis `shape_owner_get_owner` sur le corps de la cellule) ;
-  - (d) **un script de sonde qui ne compile pas laisse Godot ouvert sans fin** : la scène se charge sans script et rien
-    n'appelle `quit()`. Toujours lancer sous `timeout` ;
-  - (e) **`du -h` sur le disque externe compte les blocs**, soit 1,5 fois la taille réelle ici. Pour une taille de fichier,
-    utiliser `du -b` ou `stat` ;
-  - (f) **les temps de ce PC varient d'une course à l'autre** : 4,4 à 5,9 ms pour la même scène. Pour un avant/après, il
-    faut alterner les modes plusieurs fois et prendre des médianes.
+- **Reste** : le joueur regarde en jeu. **En attente de son accord** : collision exacte sur TOUS les bâtiments (perrons
+  engloutis : 70,8 % à la carte, 38,8 % au centre-ville). Avant de s'y mettre, il faut rejouer la sonde des lieux sur un
+  échantillon de modèles de la ville : les socles et perrons y sont nombreux.
