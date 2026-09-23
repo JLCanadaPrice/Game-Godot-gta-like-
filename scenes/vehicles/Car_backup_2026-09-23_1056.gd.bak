@@ -271,9 +271,6 @@ var _voie := 1.6                      # entre les centres des roues avant, MESUR
 var _steer_visual := 0.0
 var _ride_height := RIDE_HEIGHT       # recalculé selon la boîte ajustée au modèle
 var _half_length := 2.0               # demi-longueur (axe -Z avant) de la caisse, recalculée au modèle réel ; 2.0 = moitié de la boîte par défaut de Car.tscn (size.z=4)
-# Boîte englobante du modèle (+2 cm), dans le repère de la voiture : une DONNÉE, plus la forme physique (cf. ENVELOPPE).
-# Longueur, hauteur de caisse, bande d'impact des taches et tests en dépendent. Par défaut, la boîte de Car.tscn.
-var _boite_caisse := AABB(Vector3(-0.9, -0.6, -2.0), Vector3(1.8, 1.2, 4.0))
 
 @onready var _prompt: Label3D = $EnterPrompt
 
@@ -297,10 +294,14 @@ func _print_ride_diag() -> void:
 	if _diag_done:
 		return
 	_diag_done = true
-	var bottom_offset := _boite_caisse.position.y              # bas de caisse / origine
+	var cs := $CollisionShape3D as CollisionShape3D
+	var box := cs.shape as BoxShape3D
+	if box == null:
+		return
+	var bottom_offset := cs.position.y - box.size.y * 0.5      # bas de caisse / origine
 	var bottom_global := global_position.y + bottom_offset
-	print("[Car diag] boîte de caisse taille=%s  centre local Y=%.3f  -> bas de caisse à %.3f sous l'origine"
-		% [_boite_caisse.size, _boite_caisse.get_center().y, -bottom_offset])
+	print("[Car diag] BoxShape3D taille=%s  offset local Y=%.3f  -> bas de caisse à %.3f sous l'origine"
+		% [box.size, cs.position.y, -bottom_offset])
 	print("[Car diag] origine Y=%.3f  ride_height=%.2f  -> bas de caisse Y global=%.3f"
 		% [global_position.y, _ride_height, bottom_global])
 	var st := get_world_3d().direct_space_state
@@ -422,132 +423,19 @@ func _fit_collision_to_model() -> void:
 		return
 	size += Vector3(0.04, 0.04, 0.04)   # micro-marge, la boîte ne dépasse pas du modèle
 
-	# la caisse peut ne pas être centrée sur l'origine
-	_boite_caisse = AABB(aabb.get_center() - size * 0.5, size)
+	var box := BoxShape3D.new()
+	box.size = size
+	cs.shape = box                      # ressource neuve -> pas de partage entre voitures
+	cs.position = aabb.get_center()     # la caisse peut ne pas être centrée sur l'origine
 	_half_length = size.z * 0.5         # pour arrêter la voiture AVANT le carrefour, pas son origine dessus
 
 	# repose le bas de la boîte sur la chaussée (+1 cm) pour la circulation
-	var box_bottom_local := _boite_caisse.position.y
+	var box_bottom_local := cs.position.y - size.y * 0.5
 	_ride_height = ROAD_TOP_Y + 0.01 - box_bottom_local
-	_poser_enveloppes(cs)
-	_poser_zone_de_tir()
 	if debug_hitbox:
 		print("[Car hitbox] %s -> L=%.2f l=%.2f h=%.2f  centre=(%.2f,%.2f,%.2f)  ride_h=%.2f"
 			% [String(_model.name), size.z, size.x, size.y,
-				_boite_caisse.get_center().x, _boite_caisse.get_center().y, _boite_caisse.get_center().z, _ride_height])
-
-# Boîte englobante du modèle dans le repère de la voiture (cf. _boite_caisse), pour les tests et les sondes.
-func boite_caisse() -> AABB:
-	return _boite_caisse
-
-# ENVELOPPE QUI SUIT LA SILHOUETTE (2026-09-23, CLAUDE.md §12). La forme physique était la boîte englobante : devant la
-# bande capot / pare-brise elle débordait de la caisse de 1,44 m en médiane sur les 72 modèles (3,22 m au pire), et le
-# joueur ne voulait plus « un gros cube autour de la voiture ». C'est maintenant l'ENVELOPPE CONVEXE du modèle, calculée
-# une fois par modèle sur ses sommets : 0,32 m de débord au même endroit. Convexe et pas le maillage exact : deux formes
-# concaves ne se touchent pas dans Jolt, et une voiture en trimesh traversait la route (mesuré, -12,7 m en 1,5 s).
-# Deux retouches, et seulement deux :
-#  - les RÉTROVISEURS ne gonflent pas l'enveloppe : les sommets plus larges que la caisse sous la ceinture (bas 55 % de
-#    la hauteur, où il n'y a ni rétroviseur ni galerie) sont ramenés à cette largeur ;
-#  - sous les pare-chocs, l'enveloppe descend VERTICALEMENT jusqu'au sol, comme la boîte : c'est cette face basse qui
-#    touche les bordures de 0,15 m, et le franchissement du joueur (_try_step_up) comme l'arrêt de la circulation devant
-#    elles (CarKerbTest) en dépendent. Capot, toit et coffre gardent leur pente.
-# Repli : la boîte, si le modèle n'a rien de mesurable.
-static var _enveloppes := {}   # model_path -> Array de ConvexPolygonShape3D, dans le repère de la voiture
-
-func _poser_enveloppes(cs: CollisionShape3D) -> void:
-	if not _enveloppes.has(model_path):
-		var formes: Array = []
-		var coque := _enveloppe_silhouette()
-		if coque != null:
-			formes.append(coque)
-		_enveloppes[model_path] = formes
-	var formes: Array = _enveloppes[model_path]
-	if formes.is_empty():
-		var box := BoxShape3D.new()
-		box.size = _boite_caisse.size
-		cs.shape = box
-		cs.position = _boite_caisse.get_center()
-		return
-	cs.shape = formes[0]
-	cs.position = Vector3.ZERO
-	for i in range(1, formes.size()):
-		var c := CollisionShape3D.new()
-		c.name = "Enveloppe_%d" % i
-		c.shape = formes[i]
-		add_child(c)
-
-func _enveloppe_silhouette() -> ConvexPolygonShape3D:
-	var faces := PackedVector3Array()
-	var liste := _model.find_children("*", "MeshInstance3D", true, false)
-	if _model is MeshInstance3D:
-		liste.append(_model)
-	for n in liste:
-		var mi := n as MeshInstance3D
-		if mi.mesh != null and mi.visible:
-			faces.append_array(_xf_dans_voiture(mi) * mi.mesh.get_faces())
-	if faces.size() < 12:
-		return null
-	var bas := INF
-	for v in faces:
-		bas = minf(bas, v.y)
-	var h := _boite_caisse.size.y
-	var demi_largeur := 0.0
-	for v in faces:
-		if v.y <= bas + 0.55 * h:
-			demi_largeur = maxf(demi_largeur, absf(v.x))
-	var avant := INF
-	var arriere := -INF
-	for i in faces.size():
-		var v := faces[i]
-		if absf(v.x) > demi_largeur:
-			faces[i] = Vector3(signf(v.x) * demi_largeur, v.y, v.z)
-		if v.y <= bas + 0.35 * h:
-			avant = minf(avant, v.z)
-			arriere = maxf(arriere, v.z)
-	# jupe : les quatre coins au sol à l'aplomb du pare-chocs avant et arrière
-	faces.append_array(PackedVector3Array([Vector3(-demi_largeur, bas, avant), Vector3(demi_largeur, bas, avant), Vector3(demi_largeur, bas, arriere),
-			Vector3(-demi_largeur, bas, avant), Vector3(demi_largeur, bas, arriere), Vector3(-demi_largeur, bas, arriere)]))
-	var am := ArrayMesh.new()
-	var arr := []
-	arr.resize(Mesh.ARRAY_MAX)
-	arr[Mesh.ARRAY_VERTEX] = faces
-	am.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arr)
-	return am.create_convex_shape(true, false)
-
-# ZONE DE TIR EXACTE (2026-09-23, CLAUDE.md §12). Le rayon d'arme du joueur ne voyait pas les voitures (masque décor + PNJ) :
-# les balles les traversaient. La voiture porte maintenant, sur une couche À ELLE, COUCHE_TIRS, les triangles exacts de son
-# modèle : un tir s'arrête sur la tôle ou la vitre, pas sur l'enveloppe. Rien d'autre ne regarde cette couche (masque
-# vide) : ni le déplacement, ni les rayons de sol des PNJ et des lampadaires, qui se poseraient sinon sur les toits.
-# Un trimesh sur un corps qui bouge ne sert ici qu'aux rayons ; pour le déplacement il traverserait la route (§12).
-const COUCHE_TIRS := 8                  # couche 4
-static var _zones_de_tir := {}          # model_path -> ConcavePolygonShape3D, dans le repère de la voiture
-
-func _poser_zone_de_tir() -> void:
-	if not _zones_de_tir.has(model_path):
-		var faces := PackedVector3Array()
-		var liste := _model.find_children("*", "MeshInstance3D", true, false)
-		if _model is MeshInstance3D:
-			liste.append(_model)
-		for n in liste:
-			var mi := n as MeshInstance3D
-			if mi.mesh != null and mi.visible:
-				faces.append_array(_xf_dans_voiture(mi) * mi.mesh.get_faces())
-		var forme: ConcavePolygonShape3D = null
-		if not faces.is_empty():
-			forme = ConcavePolygonShape3D.new()
-			forme.set_faces(faces)
-			forme.backface_collision = true
-		_zones_de_tir[model_path] = forme
-	if _zones_de_tir[model_path] == null:
-		return
-	var corps := StaticBody3D.new()
-	corps.name = "ZoneDeTir"
-	corps.collision_layer = COUCHE_TIRS
-	corps.collision_mask = 0
-	var c := CollisionShape3D.new()
-	c.shape = _zones_de_tir[model_path]
-	corps.add_child(c)
-	add_child(corps)
+				cs.position.x, cs.position.y, cs.position.z, _ride_height])
 
 # --- circulation scriptée -----------------------------------------
 
@@ -1822,15 +1710,16 @@ static var _carrosseries := {}
 func _add_body_stain() -> void:
 	if _stains >= MAX_STAINS or _model == null:
 		return
+	var cs := get_node_or_null("CollisionShape3D") as CollisionShape3D
+	var boite: BoxShape3D = cs.shape as BoxShape3D if cs != null else null
 	var carrosserie := _carrosserie()
-	if carrosserie.is_empty():
+	if boite == null or carrosserie.is_empty():
 		return
-	var boite := _boite_caisse
 	var vers_voiture := _xf_dans_voiture(_model)
 	var ctx := {"tm": carrosserie[0], "roues": carrosserie[1], "vers_modele": vers_voiture.affine_inverse(),
 			"vers_voiture": vers_voiture}
-	var bas := boite.position.y
-	var avant := boite.position.z
+	var bas := cs.position.y - boite.size.y * 0.5
+	var avant := cs.position.z - boite.size.z * 0.5
 	var haut := maxf(minf(TACHE_HAUTEUR.y, boite.size.y * 0.85), TACHE_HAUTEUR.x)
 	for essai in TACHE_ESSAIS:
 		var x := randf_range(-TACHE_LARGEUR, TACHE_LARGEUR) * boite.size.x

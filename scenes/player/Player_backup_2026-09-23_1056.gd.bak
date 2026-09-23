@@ -701,9 +701,7 @@ func _shoot() -> void:
 	var to: Vector3 = from - camera.global_transform.basis.z * weapon.shot_range
 
 	var params := PhysicsRayQueryParameters3D.create(from, to)
-	# bit 1 = murs/monde, bit 2 = PNJ, bit 4 = zone de tir exacte des véhicules (Car.COUCHE_TIRS, 2026-09-23) : sans elle
-	# les balles traversaient les voitures, et leur enveloppe de déplacement (bit 3) déborde encore de la tôle
-	params.collision_mask = 0b1011
+	params.collision_mask = 0b11  # bit 1 = murs/monde, bit 2 = PNJ
 	params.exclude = [get_rid()]
 	var hit := get_world_3d().direct_space_state.intersect_ray(params)
 

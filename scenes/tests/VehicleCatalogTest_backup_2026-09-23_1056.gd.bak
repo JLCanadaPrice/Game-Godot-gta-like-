@@ -108,30 +108,11 @@ func _check_car(m: ModelData, errors: Array[String]) -> void:
 			print("VEHICLE_CATALOG_WARN %s : pivot de la roue %s décalé de %.2f m (asset d'origine inchangé)" % [m.id, worst_wheel, worst_pivot])
 		else:
 			errors.append("%s : pivot de la roue %s décalé de %.2f m" % [m.id, worst_wheel, worst_pivot])
-	# la boîte englobante reste la mesure du gabarit ; la forme physique est l'enveloppe convexe (CLAUDE.md §12)
-	var box: AABB = car.call("boite_caisse")
+	var box := (car.get_node("CollisionShape3D") as CollisionShape3D).shape as BoxShape3D
 	var half: float = car.get("_half_length")
 	if box.size.z < LENGTH_RANGE.x or box.size.z > LENGTH_RANGE.y or box.size.x < WIDTH_RANGE.x \
 			or box.size.x > WIDTH_RANGE.y or not is_equal_approx(half, box.size.z * 0.5):
-		errors.append("%s : boîte de caisse %s incohérente" % [m.id, box.size])
-	var formes := 0
-	for c in car.get_children():
-		if c is CollisionShape3D:
-			formes += 1
-			var cs := c as CollisionShape3D
-			if not (cs.shape is ConvexPolygonShape3D):
-				errors.append("%s : forme de déplacement %s, pas une enveloppe convexe" % [m.id, cs.shape.get_class()])
-				continue
-			for p in (cs.shape as ConvexPolygonShape3D).points:
-				if not box.grow(0.01).has_point(cs.position + p):
-					errors.append("%s : enveloppe hors de la boîte de caisse en %s" % [m.id, cs.position + p])
-					break
-	if formes == 0:
-		errors.append("%s : aucune forme de déplacement" % m.id)
-	var zone := car.get_node_or_null("ZoneDeTir") as StaticBody3D
-	if zone == null or zone.collision_layer != 8 or zone.collision_mask != 0 or zone.get_child_count() != 1 \
-			or not ((zone.get_child(0) as CollisionShape3D).shape is ConcavePolygonShape3D):
-		errors.append("%s : zone de tir exacte absente ou mal réglée (couche 4 seule, masque vide, triangles du modèle)" % m.id)
+		errors.append("%s : boîte de collision %s incohérente" % [m.id, box.size])
 	print("VEHICLE_CATALOG_CAR %-24s %-7s x%.2f  L=%.2f l=%.2f h=%.2f  roues=%d avant=%d pivot=%.3f"
 			% [m.id, m.role, m.model_scale, box.size.z, box.size.x, box.size.y, wheels.size(), fronts.size(), worst_pivot])
 	car.free()

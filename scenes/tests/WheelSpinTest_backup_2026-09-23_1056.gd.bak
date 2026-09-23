@@ -324,7 +324,10 @@ func _rayons_par_famille(voitures: Array) -> void:
 			e[3] = nom
 		e[4] = int(e[4]) + 1
 		par[fam] = e
-		var caisse := (car.call("boite_caisse") as AABB).size
+		var caisse := Vector3.ZERO
+		var cs := car.get_node_or_null("CollisionShape3D") as CollisionShape3D
+		if cs != null and cs.shape is BoxShape3D:
+			caisse = (cs.shape as BoxShape3D).size
 		print("WHEEL_SPIN_RAYON_DETAIL %-22s %-24s empattement %.2f m, voie %.2f m : entre murs %.2f m, origine %.2f m ; caisse %.2f x %.2f x %.2f m"
 				% [fam, nom, emp, voie, murs, r0, caisse.z, caisse.x, caisse.y])
 		if fam == "?":

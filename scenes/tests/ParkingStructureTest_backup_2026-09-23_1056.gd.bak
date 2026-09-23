@@ -756,7 +756,7 @@ func _barre(delta: float) -> void:
 		var local := _aeroport.global_transform.affine_inverse() * car.global_position
 		var passe := local.z < Kit.BARRE_Z.x
 		print("PARKING_BARRE %s (%.2f m de haut) : %s, fini a z %.2f du modele (portique a z %.2f, barre a %.2f m)"
-				% [e[1], (car.call("boite_caisse") as AABB).size.y, "ENTRE" if passe else "arrete dehors",
+				% [e[1], (car.get_node("CollisionShape3D").shape as BoxShape3D).size.y, "ENTRE" if passe else "arrete dehors",
 				local.z, Kit.BARRE_Z.x, Kit.BARRE_HAUTEUR])
 		if passe != bool(e[2]):
 			_fautes.append("barre de hauteur : %s %s (z %.2f)" % [e[1], "est passe alors qu'il ne devrait pas" if passe else "n'est pas entre", local.z])
