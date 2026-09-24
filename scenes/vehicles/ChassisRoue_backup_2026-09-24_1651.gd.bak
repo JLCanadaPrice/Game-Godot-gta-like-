@@ -68,9 +68,7 @@ func _abs_roue() -> void:
 		var avant := global_transform.basis.z
 		var v_sol: float = (car.linear_velocity + car.angular_velocity.cross(global_position - car.global_position)).dot(avant)
 		var v_roue: float = float(wv) * float(car._tailles.get(self, 1.0)) * float(car.LengthScale)
-		# le pneu, plus raide (ChassisReel.RAIDEUR_PNEU), sature à un glissement d'autant plus petit
-		var seuil: float = (ABS_GLISSE + ABS_RELATIF * absf(v_sol)) / float(car.RAIDEUR_PNEU)
-		if absf(v_sol) > ABS_V_MIN and signf(v_sol) * (v_roue - v_sol) < -seuil:
+		if absf(v_sol) > ABS_V_MIN and signf(v_sol) * (v_roue - v_sol) < -(ABS_GLISSE + ABS_RELATIF * absf(v_sol)):
 			_abs = maxf(ABS_MIN, _abs * ABS_DESSERRE)
 		else:
 			_abs = minf(1.0, _abs + ABS_RESSERRE)

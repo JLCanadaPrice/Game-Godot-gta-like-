@@ -1,0 +1,9 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/ReglagesConduite.gd" id="1_reglages"]
+
+[resource]
+script = ExtResource("1_reglages")
+multiplicateur_freinage = 1.3
+multiplicateur_adherence = 1.25
+glissement_avant_max = 5.0

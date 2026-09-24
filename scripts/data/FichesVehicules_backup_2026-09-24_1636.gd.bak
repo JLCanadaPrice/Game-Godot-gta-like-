@@ -26,13 +26,8 @@ const DEFAUTS := {"masse_kg": 1300.0, "transmission": "T", "puissance_kw": 100.0
 		"amortissement_pct": 33.0, "antiroulis_av_pct": 40.0, "antiroulis_ar_pct": 25.0, "garde_cm": 24.0, "trafic_kmh": 43.0,
 		"trafic_accel_ms2": 3.0}
 
-# Réglages globaux (multiplicateurs du freinage et de l'adhérence, borne de la direction à vitesse) : un fichier à part,
-# pour les changer sans toucher aux 72 lignes (ReglagesConduite.gd).
-const REGLAGES := "res://resources/vehicle_physics/reglages_conduite.tres"
-
 static var _lu := false
 static var _fiches := {}
-static var _reglages := {}
 
 
 # La fiche d'un modèle : ses cases, nombres convertis (NAN pour une case vide), textes tels quels. {} s'il est absent.
@@ -65,33 +60,7 @@ static func texte(f: Dictionary, cle: String) -> String:
 static func recharger() -> void:
 	_lu = false
 	_fiches.clear()
-	_reglages.clear()
 	_charger()
-
-
-# Un réglage global (reglages_conduite.tres) : `multiplicateur_freinage`, `multiplicateur_adherence`,
-# `glissement_avant_max`. Fichier absent : 1 pour un multiplicateur, 0 pour le glissement (les fiches telles quelles, la
-# direction du pack seule).
-static func reglage(cle: String) -> float:
-	if _reglages.is_empty():
-		var r := load(REGLAGES) if ResourceLoader.exists(REGLAGES) else null
-		for k in ["multiplicateur_freinage", "multiplicateur_adherence", "glissement_avant_max"]:
-			var v = r.get(k) if r != null else null
-			_reglages[k] = float(v) if v != null else (0.0 if k == "glissement_avant_max" else 1.0)
-	return float(_reglages.get(cle, 1.0))
-
-
-# Valeurs EFFECTIVES, celles que roule le châssis : la fiche x le multiplicateur global.
-static func adherence_effective(f: Dictionary) -> float:
-	return nombre(f, "adherence") * reglage("multiplicateur_adherence")
-
-
-static func freinage_effectif(f: Dictionary) -> float:
-	return nombre(f, "freinage_ms2") * reglage("multiplicateur_freinage")
-
-
-static func frein_main_effectif(f: Dictionary) -> float:
-	return nombre(f, "frein_main_ms2") * reglage("multiplicateur_freinage")
 
 
 static func _charger() -> void:
@@ -124,14 +93,7 @@ static func _charger() -> void:
 
 # Hauteur du centre de gravité pour la physique : l'estimation réelle, bornée par la règle anti-tonneau (cf. SSF_MIN).
 static func cdg(hauteur_m: float, voie_m: float, adherence: float) -> float:
-	return minf(PART_CDG_HAUTEUR * hauteur_m, cdg_max(voie_m, adherence))
-
-
-# La hauteur au-delà de laquelle un véhicule de cette voie pourrait se coucher avec cette adhérence (règle SSF_MIN). Le
-# châssis la réapplique avec l'adhérence EFFECTIVE (multiplicateur global compris) : la colonne cdg_m du tableau, elle,
-# est calculée sur l'adhérence de la fiche.
-static func cdg_max(voie_m: float, adherence: float) -> float:
-	return voie_m / (2.0 * SSF_MIN * maxf(adherence, 0.3))
+	return minf(PART_CDG_HAUTEUR * hauteur_m, voie_m / (2.0 * SSF_MIN * maxf(adherence, 0.3)))
 
 
 # Raideur d'UN ressort (N/mm) pour que la masse qu'il porte oscille à `hz` : k = (2 pi f)^2 x m.

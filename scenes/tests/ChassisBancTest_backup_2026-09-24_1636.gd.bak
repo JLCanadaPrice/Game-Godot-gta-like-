@@ -770,11 +770,10 @@ func _resume() -> void:
 			_faute("%s : %s, deux roues d'un même côté en l'air %.2f s" % [id, ph, v["leve"]])
 	var fm: Dictionary = _res.get("frein_main", {})
 	if not fm.is_empty():
-		# valeurs EFFECTIVES : la fiche x les multiplicateurs globaux (reglages_conduite.tres), celles que roule le châssis
-		var limite := FichesVehicules.adherence_effective(f) * 9.81 * (1.0 - FichesVehicules.nombre(f, "avant_pct") / 100.0)
-		var bloque := FichesVehicules.frein_main_effectif(f) > limite
-		morceaux.append("frein à main seul depuis %.0f km/h : %.1f m/s² (fiche, multiplicateur compris : %.1f ; pneus arrière %.1f à l'arrêt), roues arrière bloquées %.0f %% du temps, cap %.1f°" % [
-				fm["v0"], fm["decel"], FichesVehicules.frein_main_effectif(f), limite, float(fm["bloquees"]) * 100.0, fm["cap"]])
+		var limite := FichesVehicules.nombre(f, "adherence") * 9.81 * (1.0 - FichesVehicules.nombre(f, "avant_pct") / 100.0)
+		var bloque := FichesVehicules.nombre(f, "frein_main_ms2") > limite
+		morceaux.append("frein à main seul depuis %.0f km/h : %.1f m/s² (fiche %.1f, pneus arrière %.1f à l'arrêt), roues arrière bloquées %.0f %% du temps, cap %.1f°" % [
+				fm["v0"], fm["decel"], FichesVehicules.nombre(f, "frein_main_ms2"), limite, float(fm["bloquees"]) * 100.0, fm["cap"]])
 		var fp: Dictionary = _res.get("frein_main_pied", {})
 		if not fp.is_empty():
 			morceaux.append("avec le frein au pied : %.1f m/s², roues arrière bloquées %.0f %% du temps, cap %.1f°" % [fp["decel"], float(fp["bloquees"]) * 100.0, fp["cap"]])

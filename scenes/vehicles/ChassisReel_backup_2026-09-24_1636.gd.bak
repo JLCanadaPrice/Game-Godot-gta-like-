@@ -51,27 +51,6 @@ extends "res://assets/car_physics/MAIN/car.gd"
 # et c'est elle qui tient la voiture dans les changements de voie mesurés à 108 km/h. Elle est donc DOSÉE PAR LA VITESSE :
 # nulle sous ASSISTANCE_V0 (en manœuvre, le rayon suit le volant), entière au-delà de ASSISTANCE_V1 (rien ne change à
 # vitesse), en courbe douce entre les deux.
-#
-# FREINS, PNEUS ET DIRECTION À VITESSE (2026-09-24, après l'essai en jeu du joueur : « le freinage est trop mou » ; « la
-# voiture glisse trop quand on va vite, et aussi quand on tourne à vitesse moyenne »). Trois réglages globaux, pour tous
-# les véhicules à la fois (resources/vehicle_physics/reglages_conduite.tres, FichesVehicules.reglage) :
-#  - multiplicateur_freinage : la décélération des freins de chaque fiche, et son frein à main ;
-#  - multiplicateur_adherence : l'adhérence du pneu, ET sa raideur (CompoundSettings.Stiffness) avec elle. L'adhérence seule
-#    plus haute, le pneu du pack glisserait davantage avant de décrocher (sa force monte avec le glissement, en proportion
-#    de sa raideur, jusqu'à l'adhérence) ; les deux ensemble, il décroche au même glissement, plus fort. Le glissement où il
-#    sature ne change donc pas : l'antipatinage (_antipatinage) et l'ABS (ChassisRoue) gardent leurs consignes. Et le
-#    centre de gravité est borné avec l'adhérence EFFECTIVE (FichesVehicules.cdg_max, SSF_MIN) : plus d'adhérence ne doit
-#    faire coucher personne ;
-#  - glissement_avant_max : À VITESSE, LE BRAQUAGE À FOND DEMANDAIT BIEN PLUS QUE CE QUE TIENNENT LES PNEUS. Au clavier, D ou Q
-#    tenus, c'est le braquage à fond ; le pack ne le réduit avec la vitesse que de 1 / (1 + vitesse x SteerAmountDecay /
-#    assistance), soit encore les deux tiers à 110 km/h : le virage demandé valait une dizaine de fois ce que tiennent les
-#    pneus, qui décrochaient aussitôt, et la voiture partait de travers (dérive relevée au banc : 10° pour la berline, 17°
-#    pour le SUV, 22° pour le camion à 110 km/h). Le braquage à fond est maintenant borné à l'angle du virage que tiennent
-#    les pneus plus glissement_avant_max degrés de glissement du pneu avant (_borne_braquage) : la voiture tourne à la
-#    limite et y glisse un peu, progressivement. Le contre-braquage reste libre (le pack le desserre quand la voiture
-#    glisse), et la borne est levée tant que le frein à main bloque les roues arrière (le geste pour la faire pivoter).
-#  Et le pneu du pack est rendu plus raide (RAIDEUR_PNEU) : il donnait sa force en glissant trop, et c'est ce glissement
-#  que le joueur voyait en virage. La force maximale ne change pas ; il y arrive en glissant 1,6 fois moins.
 
 const Roue := preload("res://scenes/vehicles/ChassisRoue.gd")
 
@@ -103,12 +82,6 @@ const ASSISTANCE_DERIVE := 1.0    # SteeringAssistance du pack (car.gd), entièr
 const ASSISTANCE_LACET := 0.12    # SteeringAssistanceAngular du pack, idem
 const ASSISTANCE_V0 := 5.0        # m/s (18 km/h) : en dessous, pas d'assistance de direction (cf. DIRECTION en tête)
 const ASSISTANCE_V1 := 10.0       # m/s (36 km/h) : au-delà, l'assistance du pack entière
-const DERIVE_GLISSADE := 10.0     # ° : au-delà de cette dérive, glissade franche, l'assistance du pack entière (cf. _borne_braquage)
-# Raideur du pneu du pack, en plus de celle qui suit la charge et l'adhérence (2026-09-24) : il atteignait sa force en
-# glissant trop (cf. FREINS, PNEUS ET DIRECTION en tête). Le glissement où il sature en est divisé d'autant : l'antipatinage
-# (_antipatinage) et l'ABS (ChassisRoue) en tiennent compte.
-const RAIDEUR_PNEU := 1.6
-const PEDALE_FREIN := 0.1         # par pas : pédale de frein enfoncée à fond en 10 pas (0,17 s), cf. configurer
 
 var cout_roues_us := 0            # versé par les roues (ChassisRoue), remis à zéro à chaque pas
 var roues: Array = []             # les roues du châssis, dans l'ordre des mesures
@@ -123,10 +96,6 @@ var _tailles := {}                # roue -> rayon du pneu en unités du pack (w_
 var fiche := {}                   # la fiche du véhicule (FichesVehicules)
 var v_max := 70.0                 # vitesse de pointe (m/s), tenue par le limiteur (controls)
 var _c_trainee := 0.0             # traînée : décélération = _c_trainee x v² (1/m)
-var _adherence := 1.0             # adhérence effective (fiche x multiplicateur global) : la borne de la direction
-var _decay_pack := 0.015          # SteerAmountDecay du pack : la borne de la direction ne braque jamais PLUS que lui
-var _empattement := 2.5           # m, mesuré : la borne de la direction
-var _frein_main_bloque := false   # le frein à main de ce véhicule bloque ses roues arrière (fiche) : la borne est levée
 
 
 # Construit le châssis sur les mesures du modèle (cf. Car._mesures_chassis), AVANT son entrée dans l'arbre : le _ready du
@@ -144,9 +113,6 @@ func configurer(m: Dictionary, braquage_max: float, f: Dictionary) -> void:
 	regler_couple(couple_pour(FichesVehicules.nombre(f, "puissance_kw")))
 	v_max = FichesVehicules.nombre(f, "vitesse_max_kmh") / 3.6
 	Controlled = false
-	# pédale de frein : enfoncée à fond en 0,17 s (le pack : 0,05 par pas, 0,33 s ; à 100 km/h, 4,6 m parcourus avant de
-	# freiner à fond ; un conducteur qui pile y met 0,15 à 0,2 s). Le joueur trouvait le freinage mou (2026-09-24).
-	OnBrakeRate = PEDALE_FREIN
 	# délai de la boîte avant la marche arrière (S tenu au point mort) : 60, sa valeur de repos dans le pack. Il valait 0
 	# à la création du châssis, et un S enfoncé dès la montée passait la marche arrière aussitôt — S accélérait alors en
 	# arrière au lieu de freiner (trouvé par VehicleLightsTest, 2026-09-24)
@@ -189,15 +155,7 @@ func configurer(m: Dictionary, braquage_max: float, f: Dictionary) -> void:
 	Steer_Radius = empattement / tan(braquage_max)
 	var calc := FichesVehicules.calculees(f, float(m["voie"]), float(m["hauteur"]), n_av, n_ar)
 	var avant := FichesVehicules.nombre(f, "avant_pct") / 100.0
-	# adhérence, freins et frein à main EFFECTIFS : la fiche x les multiplicateurs globaux (reglages_conduite.tres)
-	var adherence := FichesVehicules.adherence_effective(f)
-	var freinage := FichesVehicules.freinage_effectif(f)
-	_adherence = adherence
-	_decay_pack = float(SteerAmountDecay)
-	_empattement = empattement
-	# centre de gravité : la colonne cdg_m, bornée par la règle anti-tonneau avec l'adhérence effective
-	var cdg_m := minf(float(calc["cdg_m"]), FichesVehicules.cdg_max(float(m["voie"]), adherence))
-	var cdg := Vector3(0.0, y_sol + cdg_m, z_ar + avant * empattement)
+	var cdg := Vector3(0.0, y_sol + float(calc["cdg_m"]), z_ar + avant * empattement)
 	center_of_mass_mode = RigidBody3D.CENTER_OF_MASS_MODE_CUSTOM
 	center_of_mass = cdg
 	var trainee := Marker3D.new()
@@ -220,19 +178,19 @@ func configurer(m: Dictionary, braquage_max: float, f: Dictionary) -> void:
 	# à la barre la part phi de la raideur en roulis de l'essieu.
 	var transmission := FichesVehicules.texte(f, "transmission")
 	var par_pas := mass * _g / float(Engine.physics_ticks_per_second)
+	var adherence := FichesVehicules.nombre(f, "adherence")
 	# Répartition du freinage : celle de la charge au freinage maximal de la fiche (le transfert vers l'avant vaut
 	# hauteur du centre de gravité / empattement x décélération / g), un peu plus sur l'avant. Moins, les roues arrière
 	# bloquent avant les avant et la voiture part en tête-à-queue au freinage (mesuré : 34,5° sur la berline, dont
 	# l'arrière ne porte plus que 17 % du poids à 9,5 m/s²) ; plus, elle freine moins fort qu'elle ne pourrait.
-	var transfert := cdg_m / empattement * freinage / _g
+	var transfert := float(calc["cdg_m"]) / empattement * FichesVehicules.nombre(f, "freinage_ms2") / _g
 	var frein_av := clampf(avant + transfert + MARGE_FREIN_AV, 0.5, 0.9)
 	# Frein à main, sur les roues arrière seulement : la décélération `frein_main_ms2` de la fiche, au même couple par
 	# unité que le frein au pied (B_Torque, ci-dessous) ; le pack plafonne la part d'une roue à 1 (`braked`). S'il est plus
 	# fort que ce que tiennent les pneus arrière (adhérence x g x part du poids sur l'arrière), il les BLOQUE (ChassisRoue).
-	var frein_main_ms2 := FichesVehicules.frein_main_effectif(f)
-	var frein_main := clampf(2.0 * frein_main_ms2 / (freinage * float(n_ar)), 0.0, 1.0)
-	var bloque := frein_main_ms2 > adherence * _g * (1.0 - avant)
-	_frein_main_bloque = bloque
+	var frein_main_ms2 := FichesVehicules.nombre(f, "frein_main_ms2")
+	var frein_main := clampf(2.0 * frein_main_ms2 / (FichesVehicules.nombre(f, "freinage_ms2") * float(n_ar)), 0.0, 1.0)
+	var bloque := frein_main_ms2 > FichesVehicules.nombre(f, "adherence") * _g * (1.0 - avant)
 	var somme_biais := 0.0
 	var somme_rayons := 0.0
 	var r_motrices := 0.0
@@ -253,7 +211,7 @@ func configurer(m: Dictionary, braquage_max: float, f: Dictionary) -> void:
 		w.position = (r["centre"] as Vector3) + Vector3(0.0, longueur - j0 - rayon_pneu, 0.0)
 		w.TyreSettings = {"GripInfluence": adherence, "Width (mm)": 185.0, "Aspect Ratio": 60.0, "Rim Size (in)": float(jante)}
 		var gomme: Dictionary = (w.CompoundSettings as Dictionary).duplicate()
-		gomme["Stiffness"] = charge / CHARGE_REF * FichesVehicules.reglage("multiplicateur_adherence") * RAIDEUR_PNEU
+		gomme["Stiffness"] = charge / CHARGE_REF
 		w.CompoundSettings = gomme
 		w.S_Stiffness = ressort
 		w.S_Damping = amort
@@ -290,7 +248,7 @@ func configurer(m: Dictionary, braquage_max: float, f: Dictionary) -> void:
 		_tailles[w] = rayon_pneu / LengthScale
 	Powered_Wheels = motrices
 	# freins : la décélération de la fiche, quelle que soit la masse (la force d'un frein du pack ne la suit pas)
-	var b_couple := mass * freinage / (60.0 * (somme_rayons / float(liste.size())) * somme_biais)
+	var b_couple := mass * FichesVehicules.nombre(f, "freinage_ms2") / (60.0 * (somme_rayons / float(liste.size())) * somme_biais)
 	for w in roues:
 		w.B_Torque = b_couple
 	# l'ABS du pack (toutes les roues à la fois, par à-coups) est coupé : chaque roue a le sien (ChassisRoue)
@@ -420,7 +378,6 @@ func controls():
 	var dose := smoothstep(ASSISTANCE_V0, ASSISTANCE_V1, absf(vitesse_avant()))
 	SteeringAssistance = ASSISTANCE_DERIVE * dose
 	SteeringAssistanceAngular = ASSISTANCE_LACET * dose
-	_borne_braquage()
 	super.controls()
 	# BOÎTE BLOQUÉE EN DEUXIÈME (trouvé le 2026-09-24) : le pack borne ses pédales (limits) APRÈS avoir décidé des
 	# passages de rapport (transmission). Pied au plancher, la boîte voyait donc un accélérateur à 1,2 et attendait
@@ -447,47 +404,6 @@ func controls():
 		_maintien = false
 
 
-# DIRECTION BORNÉE PAR LES PNEUS, à vitesse (cf. en tête). Le pack donne au braquage d'un joueur (steer2, -1..1) l'angle
-# steer2 x maxsteer, maxsteer = 1 / (going x SteerAmountDecay / assistance_factor + 1), `going` étant la vitesse le long de
-# la voiture (unités du pack), réduite quand elle glisse et qu'on contre-braque. Et le braquage `steer` = 1 tourne les roues
-# de empattement / Steer_Radius (rad). La borne : l'angle du virage que tiennent les pneus (empattement / rayon, le rayon
-# valant v² / (adhérence x g)), plus glissement_avant_max de glissement du pneu avant — à vitesse, c'est ce glissement qui
-# domine : un braquage borné au seul angle du virage laissait la voiture sous 0,8 g pour 1,25 que tiennent ses pneus
-# (essayé). On règle SteerAmountDecay, à chaque pas, pour que le pack trouve cette borne de lui-même. Elle ne fait que
-# RETENIR le braquage : là où le pack le réduisait déjà davantage (en manœuvre), sa réduction reste.
-# ET L'ASSISTANCE DE DIRECTION SUIT LA BORNE, en virage ordinaire. Ses deux termes (contre-braquage selon la dérive et selon
-# le lacet, cf. DIRECTION en tête) sont taillés pour tout le braquage du pack : avec un braquage borné cinq fois plus petit,
-# les mêmes corrections en mangeaient les trois quarts, et la voiture ne tournait plus (mesuré : berline à fond à 80 km/h,
-# 4,2 m/s² au lieu de 12). Ils sont ramenés dans le rapport de la borne au braquage du pack ; mais ENTIERS en glissade
-# franche (dérive au-delà de DERIVE_GLISSADE, un dérapage au frein à main par exemple) : c'est eux qui la rattrapent.
-func _borne_braquage() -> void:
-	SteerAmountDecay = _decay_pack
-	var glissement := deg_to_rad(FichesVehicules.reglage("glissement_avant_max"))
-	if glissement <= 0.0:
-		return
-	# le frein à main qui bloque les roues arrière est le geste pour faire pivoter la voiture : la borne est levée
-	if _frein_main_bloque and handbrakepull > 0.05:
-		return
-	var v := vitesse_avant()
-	var going := v / float(LengthScale)
-	var af := float(assistance_factor)
-	if going < 1.0 or af <= 0.0:
-		return
-	# angle de braquage (rad) : celui du virage que tiennent les pneus, empattement / rayon = empattement x adhérence x g
-	# / v², plus le glissement permis au pneu avant ; en unités du pack (le braquage `steer` = 1 tourne de
-	# empattement / Steer_Radius)
-	var borne: float = (_adherence * _g * _empattement / maxf(v * v, 0.01) + glissement) * float(Steer_Radius) / _empattement
-	var braquage_pack := 1.0 / (going * _decay_pack / af + 1.0)
-	if borne >= braquage_pack:
-		return
-	SteerAmountDecay = (1.0 / borne - 1.0) * af / going
-	var local := global_transform.basis.inverse() * linear_velocity
-	var derive := rad_to_deg(absf(atan2(local.x, maxf(absf(local.z), 0.1))))
-	var k := lerpf(borne / braquage_pack, 1.0, clampf(derive / DERIVE_GLISSADE, 0.0, 1.0))
-	SteeringAssistance *= k
-	SteeringAssistanceAngular *= k
-
-
 # ANTIPATINAGE. Le pack en déclare un (TTCS) mais ne l'a jamais écrit : `tcsweight`, qui divise la consigne des gaz,
 # restait à zéro. Sans lui, le couple de la berline de l'étape 1 faisait patiner les roues avant de 20 à 45 m/s au départ.
 # On l'alimente ici : au-delà de la consigne de glissement des roues motrices, les gaz sont coupés en proportion (le
@@ -506,7 +422,7 @@ func _antipatinage() -> void:
 	var glisse := 0.0
 	for w in c_pws:
 		glisse = maxf(glisse, absf(float(w.wv) * float(_tailles.get(w, 1.0)) * float(LengthScale)) - v_sol)
-	var consigne := PART_ANTIPATINAGE * GLISSE_SATURATION * FichesVehicules.nombre(fiche, "adherence") / RAIDEUR_PNEU
+	var consigne := PART_ANTIPATINAGE * GLISSE_SATURATION * FichesVehicules.nombre(fiche, "adherence")
 	consigne *= maxf(1.0, v_sol / (float(LengthScale) * 50.0) + 0.5)
 	tcsweight = maxf(0.0, glisse - consigne) * GAIN_ANTIPATINAGE
 

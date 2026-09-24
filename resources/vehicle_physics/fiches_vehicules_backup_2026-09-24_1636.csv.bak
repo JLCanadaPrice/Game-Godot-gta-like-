@@ -34,12 +34,6 @@
 # Une case VIDE de cdg_m, raideur_*, amort_* est recalculée par le jeu à partir des autres colonnes : pour que la suspension
 # suive une masse modifiée, vider ses cases (l'outil scenes/vehicles/tools/FichesVehiculesOutil.tscn les réécrit alors).
 #
-# RÉGLAGES GLOBAUX, pour tous les véhicules à la fois, sans toucher à ces lignes : resources/vehicle_physics/
-# reglages_conduite.tres (dans l'éditeur, double-clic : l'inspecteur). Deux multiplicateurs, le freinage (freinage_ms2 et
-# frein_main_ms2 de chaque ligne) et l'adhérence (adherence, et la raideur du pneu avec elle), qui gardent les écarts entre
-# modèles ; et le glissement permis au pneu avant quand on braque à fond à vitesse. Les valeurs ci-dessous sont celles des
-# vrais véhicules ; le jeu les roule multipliées. cdg_m est borné de nouveau au lancement avec l'adhérence multipliée.
-#
 id;nature;longueur_m;largeur_m;hauteur_m;masse_kg;transmission;puissance_kw;vitesse_max_kmh;cx;cdg_m;avant_pct;adherence;freinage_ms2;frein_main_ms2;suspension_hz;amortissement_pct;raideur_av_nmm;raideur_ar_nmm;amort_av_nsm;amort_ar_nsm;antiroulis_av_pct;antiroulis_ar_pct;garde_cm;trafic_kmh;trafic_accel_ms2
 city_ambulance;ambulance à cellule sur châssis de fourgon lourd (type E-450, V8 7,3 l);6.12;2.44;2.62;4800;P;245;140;0.55;0.533;45;0.85;7.0;3.5;1.5;47;95.9;136.8;9568;12630;45;35;36;42;1.8
 city_bus_01;bus urbain de 10,8 m (diesel 300 ch, bridé);10.77;2.80;3.02;12000;P;220;90;0.65;0.723;35;0.75;6.0;2.5;1.1;45;100.3;217.3;13063;26200;50;40;33;36;1.2
