@@ -141,8 +141,7 @@ func _ready() -> void:
 	call_deferred("_emit_weapon_state")
 
 	_setup_model()
-	# outils de conduite (CLAUDE.md §13, §14) : B pose une berline (plus F8, qui arrête le jeu lancé depuis l'éditeur),
-	# et un compteur tant qu'on conduit
+	# essai de la conduite réaliste (2026-09-24, CLAUDE.md §13) : F7 bascule arcade / réaliste, F8 pose une berline
 	var essai: Node = preload("res://scenes/vehicles/EssaiConduiteReelle.gd").new()
 	essai.name = "EssaiConduiteReelle"
 	add_child(essai)

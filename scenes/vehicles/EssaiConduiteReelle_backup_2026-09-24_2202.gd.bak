@@ -2,13 +2,10 @@ extends Node
 
 # OUTILS DE CONDUITE, posés sur le joueur par Player._ready (né comme essai de la conduite réaliste, étape 1, 2026-09-24,
 # CLAUDE.md §13 ; la conduite réaliste est la seule du joueur depuis le même jour, §14 : la bascule F7 a disparu).
-#  - B : à pied, pose une berline city_sedan_01 devant le joueur (la précédente disparaît si personne n'est dedans).
-#    Outil de débogage. C'était F8 jusqu'au 2026-09-24 au soir : l'éditeur de Godot garde F8 pour ARRÊTER le jeu qu'il a
-#    lancé, même quand la fenêtre du jeu a le focus. Aucune touche du jeu sur F1 à F12 ; B n'est prise par aucune action
-#    du projet ni par aucune touche lue dans un script, et elle est à la même place en AZERTY et en QWERTY.
+#  - F8 : à pied, pose une berline city_sedan_01 devant le joueur (la précédente disparaît si personne n'est dedans).
+#    Outil de débogage.
 #  - un compteur en bas de l'écran, tant qu'on conduit : rapport engagé et vitesse.
 
-const TOUCHE_BERLINE := KEY_B
 const CAR := preload("res://scenes/vehicles/Car.tscn")
 const MODELE := "res://resources/vehicle_models/city_sedan_01.tres"
 const DISTANCES := [7.0, 9.0, 11.0, 13.0]
@@ -50,15 +47,16 @@ func _etiquette(couche: CanvasLayer, ancre: int, haut_gauche: Vector2, bas_droit
 func _unhandled_input(event: InputEvent) -> void:
 	if not (event is InputEventKey and event.pressed and not event.echo):
 		return
-	if (event as InputEventKey).keycode == TOUCHE_BERLINE:
-		faire_apparaitre()
+	match (event as InputEventKey).keycode:
+		KEY_F8:
+			faire_apparaitre()
 
 
 # Pose une berline devant le joueur à pied : au plus près parmi DISTANCES, sur un sol à peu près plat et dans une place
 # libre (décor et véhicules), en travers du regard, portière du conducteur vers le joueur. Rend la voiture, ou null.
 func faire_apparaitre() -> Node3D:
 	if bool(_joueur.get("_driving")):
-		afficher("%s : à pied seulement" % OS.get_keycode_string(TOUCHE_BERLINE))
+		afficher("F8 : à pied seulement")
 		return null
 	var avant := -_joueur.global_transform.basis.z
 	var cam := _joueur.get_viewport().get_camera_3d() if _joueur.is_inside_tree() else null
@@ -89,7 +87,7 @@ func faire_apparaitre() -> Node3D:
 		var voiture := _poser((sol["position"] as Vector3), cap)
 		afficher("Berline posée à %.0f m devant toi — E pour monter" % d)
 		return voiture
-	afficher("%s : pas de place libre devant toi" % OS.get_keycode_string(TOUCHE_BERLINE))
+	afficher("F8 : pas de place libre devant toi")
 	return null
 
 

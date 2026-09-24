@@ -31,9 +31,7 @@ extends Node3D
 #    jamais à moins de 2 cm du sol ;
 #  - SORTIE en gardant W enfoncé, puis W et S pressés à côté : la voiture s'arrête et ne bouge plus (5 cm au plus), le
 #    joueur est dehors ; remontée dans les 25 s : la voiture ne disparaît pas sous lui (défaut corrigé le 2026-09-24) ;
-#  - TOUCHE B, la vraie (un événement clavier) : une berline posée devant le joueur, sur le sol. C'était F8 jusqu'au
-#    2026-09-24 au soir, que l'éditeur de Godot garde pour arrêter le jeu qu'il a lancé : F8 ne pose plus rien (l'événement
-#    est passé directement au gestionnaire, pour qu'un essai lancé depuis l'éditeur ne s'arrête pas lui-même) ;
+#  - F8 : une berline posée devant le joueur, sur le sol ;
 #  - COÛT PHYSIQUE : temps du script du châssis par pas physique, et temps d'une image complète sans rendu, voiture
 #    conduite (rapportés).
 # Jusqu'au 2026-09-24, il vérifiait aussi la bascule arcade / réaliste en roulant (F7) et la conduite arcade à l'entrée du
@@ -73,7 +71,7 @@ var _ch: RigidBody3D
 var _bordure: StaticBody3D
 var _parking: StaticBody3D
 var _etapes: Array[String] = ["pose", "montee", "repos", "depart", "vitesse108", "freinage", "virage50", "roue_libre",
-		"frein_main", "rayon", "arret_rayon", "volant_partiel", "bordure_face", "bordure_biais", "rampe", "entree", "sortie", "remontee", "cout", "descente", "berline", "fin"]
+		"frein_main", "rayon", "arret_rayon", "volant_partiel", "bordure_face", "bordure_biais", "rampe", "entree", "sortie", "remontee", "cout", "descente", "f8", "fin"]
 var _i := 0
 var _t := 0.0
 var _e := {}                 # état de l'étape en cours
@@ -478,16 +476,6 @@ func _espace(appuye: bool) -> void:
 	ev.keycode = KEY_SPACE
 	ev.pressed = appuye
 	Input.parse_input_event(ev)
-
-
-# Une touche tapée : un événement « enfoncée » puis un « relâchée », par le même chemin que le clavier du joueur.
-func _taper(k: Key) -> void:
-	for appuye: bool in [true, false]:
-		var ev := InputEventKey.new()
-		ev.physical_keycode = k
-		ev.keycode = k
-		ev.pressed = appuye
-		Input.parse_input_event(ev)
 
 
 func _e_frein_main(_d: float) -> bool:
@@ -995,39 +983,26 @@ func _e_descente(_d: float) -> bool:
 	return true
 
 
-# TOUCHE B (2026-09-24 au soir ; c'était F8, le raccourci de l'éditeur de Godot pour arrêter le jeu qu'il a lancé). B passe
-# par le vrai chemin du clavier. F8 est passé DIRECTEMENT au gestionnaire de touches : envoyé comme une touche, il
-# arrêterait cet essai quand on le lance depuis l'éditeur.
-func _e_berline(_d: float) -> bool:
-	if not _e.has("b"):
-		_e["b"] = true
+func _e_f8(_d: float) -> bool:
+	if not _e.has("voiture"):
 		_pedales()
 		_joueur.rotation.y = 0.0
-		var f8 := InputEventKey.new()
-		f8.keycode = KEY_F8
-		f8.physical_keycode = KEY_F8
-		f8.pressed = true
-		_essai.call("_unhandled_input", f8)
-		if is_instance_valid(_essai.get("_berline")):
-			_faute("F8 pose encore une berline")
-		_taper(KEY_B)
+		var v = _essai.call("faire_apparaitre")
+		_e["voiture"] = v
+		if v == null:
+			_faute("F8 : aucune berline posée")
+			return true
 		return false
 	if _t < 2.0:
 		return false
-	var v = _essai.get("_berline")
-	if not is_instance_valid(v):
-		_faute("touche B : aucune berline posée")
-		return true
+	var v: Node3D = _e["voiture"]
 	var d := Vector2(v.global_position.x - _joueur.global_position.x, v.global_position.z - _joueur.global_position.z).length()
-	var message := String((_essai.get("_message") as Label).text)
-	_r["berline"] = "touche B : berline posée à %.1f m du joueur, origine à %.3f m du sol (garée %.3f), modèle %s, message « %s » ; F8 : rien" % [
-			d, v.global_position.y, float(_r["h_garee"]), String(v.get("model_path")).get_file(), message]
+	_r["f8"] = "F8 : berline posée à %.1f m du joueur, origine à %.3f m du sol (garée %.3f), modèle %s" % [
+			d, v.global_position.y, float(_r["h_garee"]), String(v.get("model_path")).get_file()]
 	if d < 5.0 or d > 15.0:
-		_faute("touche B : berline posée à %.1f m" % d)
+		_faute("F8 : berline posée à %.1f m" % d)
 	if absf(v.global_position.y - float(_r["h_garee"])) > 0.15:
-		_faute("touche B : berline pas posée sur le sol (%.3f m)" % v.global_position.y)
-	if not message.begins_with("Berline posée"):
-		_faute("touche B : message « %s »" % message)
+		_faute("F8 : berline pas posée sur le sol (%.3f m)" % v.global_position.y)
 	return true
 
 
@@ -1043,7 +1018,7 @@ func _e_fin(_d: float) -> bool:
 	if _min_up < 0.95:
 		_faute("caisse penchée de plus de 18° pendant l'essai (%.1f°)" % rad_to_deg(acos(clampf(_min_up, -1.0, 1.0))))
 	for k in ["pneu", "geometrie", "repos", "depart", "vitesse108", "freinage", "virage50", "roue_libre", "frein_main", "rayon", "volant_partiel",
-			"bordure_0", "bordure_30", "rampe", "entree", "sortie", "disparition", "cout_pas", "cout_scripts", "tenue", "berline"]:
+			"bordure_0", "bordure_30", "rampe", "entree", "sortie", "disparition", "cout_pas", "cout_scripts", "tenue", "f8"]:
 		if _r.has(k):
 			print("CONDUITE_REELLE %s : %s" % [k, _r[k]])
 	print("CONDUITE_REELLE_RESULT %s" % ("OK" if _fautes.is_empty() else "FAIL : " + " ; ".join(_fautes)))
