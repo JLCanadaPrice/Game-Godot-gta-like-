@@ -34,8 +34,6 @@ travail imposée, les commandes exactes, les pièges déjà payés et l'état d'
 > `vecInertiaMultiplier`, amortisseurs au critique, report de charge au freinage borné, répartiteur de freinage) ; les
 > fiches recalées sur une étude du handling.meta de GTA V (fichier de référence hors dépôt, jamais recopié). Les tests et
 > les vidéos 13 à 15 (hors dépôt) contre-braquent au clavier par `scenes/tests/PiloteClavier.gd`.
-> **Puis, le même soir : freiner ET tourner** (§15, « Freiner en tournant ») : S et braquage à fond allaient presque tout
-> droit ; l'ABS des roues avant partage maintenant l'adhérence selon la direction du glissement de la roue.
 > **Puis, le même soir : la berline de débogage se pose avec B, plus avec F8** (§13) : F8 est le raccourci de l'éditeur de
 > Godot pour ARRÊTER le jeu qu'il a lancé, et le jeu se coupait. Aucune touche du jeu sur F1 à F12 (§6).
 > Toujours en attente depuis le 2026-09-23 : le coût physique d'environ 2 ms (NON TOUCHÉ, le joueur le teste en jeu) et la
@@ -254,7 +252,7 @@ attendu. (C'est la voiture du pack telle quelle, qui n'est plus conduite en jeu 
 "$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/CarDrivingTest.tscn  # accélération, virage, freinage : CAR_DRIVING_RESULT
 "$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/CarDropTest.tscn     # chute de 10 m : CAR_DROP_RESULT
 "$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/ConduiteReelleTest.tscn  # conduite du joueur (façon GTA V), berline : 108 km/h et changement de voie au stick, freinage, frein à main (Espace) rattrapé par le joueur au clavier, bordure, volant partiel, rampe 16 %, entrée de parking, sortie, touche B (berline posée ; F8 ne pose plus rien), coût, cf. §15
-"$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/ChassisBancTest.tscn  # châssis par fiche (façon GTA V) : accélération et patinage, freinage et plongée, freinage fort en tournant, S et braquage à fond à 50 et 80 km/h (la voiture tourne), virages braqués à fond sans tonneau, frein à main, dérapages rattrapés par le joueur au clavier, bordures, parking ; 6 silhouettes (~30 s) ; -- --tous --lot=i/3 pour les 72 (3 x ~1 min en parallèle), cf. §15
+"$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/ChassisBancTest.tscn  # châssis par fiche (façon GTA V) : accélération et patinage, freinage et plongée, freinage fort en tournant, virages braqués à fond sans tonneau, frein à main, dérapages rattrapés par le joueur au clavier, bordures, parking ; 6 silhouettes (~30 s) ; -- --tous --lot=i/3 pour les 72 (3 x ~1 min en parallèle), cf. §15
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/CarKerbTest.tscn          # bordures : le joueur monte, l'IA non
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/WheelSpinTest.tscn        # roues des 72 modèles : axe, sens, rayon, stroboscope, pivot, braquage, rayon de braquage par modèle
 "$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/ParkingStructureTest.tscn  # parkings à étages : plateaux, escalier, hélice, cf. §11
@@ -3311,48 +3309,6 @@ touches pressées et l'angle des roues) :
   5,6°, 37° de cap, 77 km/h au bout ; puis le joueur redresse ;
 - `15_freinage_fort_sportive_et_camion_100_kmh.mp4` : depuis 100 km/h, vues de côté ; sportive 29,2 m, caisse plongée de
   1,6° ; camion 48,4 m, 0,9°.
-
-### Freiner en tournant : l'ABS des roues avant (2026-09-24, tard le soir)
-
-Le joueur : « quand je freine en tournant, la voiture va TOUT DROIT, comme si les roues avant se bloquaient et ne
-dirigeaient plus. Je veux pouvoir freiner ET tourner en même temps, comme dans GTA V : freiner en virage peut élargir un peu
-la trajectoire, mais la voiture doit toujours tourner. » Le frein à main (Espace) qui bloque l'arrière reste tel quel.
-
-**Ce que c'était, relevé à la trace** (berline, 80 km/h, S et braquage à fond) : roues avant à 33-50° de dérive, lacet nul.
-Les roues ne se bloquaient pas (elles roulaient à la vitesse du sol) ; deux choses s'ajoutaient :
-- le frein au pied demande environ deux fois ce que tient le pneu avant (fBrakeForce x 2,4 g). Partagé EN PROPORTION des
-  demandes dans le cercle d'adhérence, il ne laissait au virage qu'environ 45 % de l'adhérence ;
-- et, poussant le long de la roue braquée à 40°, ce frein annulait presque tout ce qui restait de force en travers
-  (0,7 x cap en travers, 0,71 le long, à 40° : il reste 0,09 de côté). Une première correction qui ne réservait que 70 %
-  d'adhérence au virage n'a presque rien changé (1,3 -> 1,1 m de côté) : c'est ce second point qui a été trouvé ensuite.
-
-**Ce qui est fait** (`ChassisGTA._pneu`) : à l'AVANT, sous le frein au pied, quand la demande dépasse ce que tient le pneu,
-l'adhérence est partagée selon la direction du GLISSEMENT de la roue, comme le fait un vrai pneu : `ABS_GLISSEMENT` (20 %,
-le glissement où un vrai ABS tient la roue, 10 à 20 %) le long, tan(dérive du pneu) en travers ; ce qu'une demande n'use
-pas va à l'autre. En ligne droite, tout au frein (distances inchangées) ; roue braquée qui dérive beaucoup, presque tout au
-virage, et la voiture tourne en ralentissant. L'ARRIÈRE garde le répartiteur puis le partage en proportion : avec le
-partage par glissement à l'arrière aussi (et 15 %), le hot rod partait en tête-à-queue au freinage fort en tournant (63°,
-puis 29° avec l'avant seul à 15 %) ; à 20 %, 5,6°. Le report de charge (moitié de la charge de l'essieu le plus léger) et
-le répartiteur ne privaient PAS l'avant : au freinage, l'avant est au contraire chargé (5,0 à 5,3 kN par roue sur la
-berline, 3,8 à l'arrêt).
-
-**Avant / après** (`ChassisBancTest`, phases nouvelles `frein_braque_50` et `frein_braque_80` : lancé en ligne droite, S à
-fond et braquage à fond ensemble, jusqu'à l'arrêt ; « de côté » = décalage latéral depuis la ligne de départ) :
-
-| | 50 km/h : de côté / en avant | 80 km/h : de côté / en avant | dérive au plus | distance à l'arrêt à 80 km/h |
-|---|---|---|---|---|
-| city_sedan_01 | 0,4 / 8,3 m -> **1,7 / 8,7 m** | 1,3 / 20,6 m -> **4,3 / 21,2 m** | 11 -> 18° | 20,7 -> 22,1 m |
-| city_sports_car_02 | 0,4 / 7,6 m -> **2,0 / 7,8 m** | 1,2 / 18,9 m -> **5,3 / 19,0 m** | 8 -> 13° | 19,1 -> 20,5 m |
-| city_truck_01 | 0,8 / 12,7 m -> **3,4 / 13,2 m** | 1,6 / 31,4 m -> **8,7 / 31,8 m** | 2 -> 17° | 31,5 -> 34,1 m |
-
-La « trajectoire tournée » avant l'arrêt (cap de la vitesse) passait de 43-50° à 61-70° pour la berline, de 14-16° à 54-70°
-pour le camion ; elle ne sert pas de critère : le pivot final au ralenti la gonflait déjà avant. Le critère du banc est le
-décalage latéral, au moins `FREIN_BRAQUE_ECART` = 0,12 fois l'avance (0,05 à 0,06 avant sur la berline).
-
-Sur les 72 : décalage latéral de 0,16 à ~0,3 fois l'avance (médiane 0,21 à 50 km/h, 0,23 à 80), dérive 19° au plus
-(city_pickup_03), aucun tête-à-queue ; freinage fort en tournant (volant à 10 %) 5,6° de dérive au plus (city_hotrod ;
-18,5° au pire avant) ; freinage en ligne droite inchangé. Tests : `ChassisBancTest` (les 72, trois lots), `ConduiteReelleTest`
-(freinage 35,7 m, frein à main 100 % bloqué, 24° de dérive, inchangés), `CarKerbTest` OK.
 
 ### Reste
 
