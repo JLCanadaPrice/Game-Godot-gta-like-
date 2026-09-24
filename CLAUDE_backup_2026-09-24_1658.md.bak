@@ -22,9 +22,7 @@ travail imposée, les commandes exactes, les pièges déjà payés et l'état d'
 > physique sur les PNJ, NON — la circulation reste cinématique, et l'idée de ne passer en physique que la voiture percutée
 > va à la feuille de route (§7) ; les 13 modèles bas ne sont pas surélevés. **Frein à main pour déraper, FAIT** (§14) : en
 > voiture, Espace n'est plus que le frein à main ; il bloque les roues arrière quand la fiche le dit plus fort que les pneus
-> arrière (voitures, SUV, fourgons légers), pas sur les camions et les bus ; vidéo 8 hors dépôt. **Puis, après l'essai en jeu
-> du joueur (freins mous, voiture qui glisse) : freins et pneus renforcés, direction bornée à vitesse** (§14), par trois
-> réglages globaux dans `resources/vehicle_physics/reglages_conduite.tres`. Toujours en attente depuis le
+> arrière (voitures, SUV, fourgons légers), pas sur les camions et les bus ; vidéo 8 hors dépôt. Toujours en attente depuis le
 > 2026-09-23 : le coût physique d'environ 2 ms (NON TOUCHÉ, le joueur le teste en jeu) et la pose des trois packs
 > d'accessoires convertis (§7).
 
@@ -61,8 +59,7 @@ travail imposée, les commandes exactes, les pièges déjà payés et l'état d'
   des entrées (`RampesEntree.gd`, même jour), **629** depuis le feu d'obstacle de Mk1 (`feu_obstacle.gdshader` et son
   matériau, même jour, §9), **630** depuis l'outil de conversion des packs d'accessoires (`ConversionPacks.gd`, même
   jour, §7), **635** depuis l'essai de la conduite réaliste (`ChassisReel.gd`, `ChassisRoue.gd`, `EssaiConduiteReelle.gd`,
-  `ConduiteReelleTest`, 2026-09-24, §13), **642** depuis les réglages globaux de la conduite (`ReglagesConduite.gd`,
-  `reglages_conduite.tres`, même jour, §14), **640** avant, depuis les fiches des véhicules (`FichesVehicules.gd`,
+  `ConduiteReelleTest`, 2026-09-24, §13), **640** depuis les fiches des véhicules (`FichesVehicules.gd`,
   `ChassisBancTest`, `FichesVehiculesOutil`, même jour, §14). **`ProjectLoadCheck` ne parcourt pas `res://assets`** (seulement scenes, scripts, resources, shaders) : les
   98 scènes d'accessoires n'entrent pas dans son compte.
 
@@ -246,7 +243,7 @@ attendu. (C'est la voiture du pack telle quelle. Le châssis de la conduite réa
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/DowntownStreetsTest.tscn
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/DowntownBuildingsTest.tscn
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/ShopBuildingsTest.tscn     # échec ANTÉRIEUR connu
-"$GODOT" --headless --path "$PROJET" --script res://scenes/world/map/tools/ProjectLoadCheck.gd   # attendu : 642 fichiers, 0 échec
+"$GODOT" --headless --path "$PROJET" --script res://scenes/world/map/tools/ProjectLoadCheck.gd   # attendu : 640 fichiers, 0 échec
 ```
 
 Outil d'inspection, hors batterie : `res://scenes/tests/VehicleSortTest.tscn` aligne les véhicules du catalogue
@@ -2858,90 +2855,3 @@ LISEZMOI) coule chaque forme de la coque vers le bas, sol exclu (`cast_motion`),
 - Son dessous visible est à 0,239 m, et la coque est invisible : rien ne change à l'œil.
 
 C'est une exception à la règle du point 7 (28 cm au moins, ou le dessous du modèle - 2 cm), qui lui donnait 28 cm.
-
-### Freins, pneus et direction à vitesse (2026-09-24)
-
-Retour d'essai en jeu du joueur : « le FREINAGE est trop mou, la voiture met trop longtemps à s'arrêter » ; « la voiture
-GLISSE trop quand on va vite, et aussi quand on tourne à vitesse moyenne ». Il veut des pneus plus accrocheurs et des freins
-plus forts, « réaliste, mais plus agréable à conduire, comme dans un jeu », en gardant les écarts entre modèles, et deux
-multiplicateurs qu'il puisse régler lui-même sans toucher aux 72 lignes.
-
-**Trois réglages globaux** dans `resources/vehicle_physics/reglages_conduite.tres` (script `scripts/data/ReglagesConduite.gd`,
-lu par `FichesVehicules.reglage`) :
-- **`multiplicateur_freinage` = 1,3** : la décélération des freins de chaque fiche (`freinage_ms2`) et son frein à main
-  (`frein_main_ms2`) ;
-- **`multiplicateur_adherence` = 1,25** : l'adhérence du pneu, et sa raideur avec elle ;
-- **`glissement_avant_max` = 5°** : la borne de la direction à vitesse (ci-dessous).
-
-Les fiches gardent les valeurs des vrais véhicules. Les valeurs effectives sont `FichesVehicules.adherence_effective`,
-`freinage_effectif` et `frein_main_effectif`, et c'est ce que le châssis roule (`ChassisReel.configurer`). À 1, 1 et 0, on
-retrouve la conduite d'avant, à 0,3° de dérive et 0,2 m de freinage près : la borne anti-tonneau est recalculée au lancement
-sur la voie mesurée, ce qui déplace le centre de gravité de quelques dixièmes de millimètre.
-
-**Ce qu'on a trouvé**, au banc, avant de choisir :
-- **Plus d'adhérence seule ne change pas la glisse.** À freins x 1,3 et adhérence x 1,25, la berline passe de 1,00 à 1,24 g,
-  mais sa dérive à 110 km/h reste à 10° (celle du SUV à 16°, du camion à 18°).
-- **La glisse venait de la direction au clavier.** D ou Q tenus, c'est le braquage à fond. Le pack ne le réduit avec la
-  vitesse que de 1 / (1 + vitesse x SteerAmountDecay / assistance) : il en reste les deux tiers à 110 km/h. Le virage demandé
-  valait alors une dizaine de fois ce que tiennent les pneus, qui décrochaient aussitôt.
-- **Borner le braquage au seul angle du virage que tiennent les pneus ne marche pas.** Essayé : la voiture ne tournait plus
-  qu'à 0,27 à 0,5 g. Deux raisons :
-  - l'assistance de direction du pack (ses termes de dérive et de lacet) est taillée pour tout son braquage, et en mangeait
-    les trois quarts ;
-  - à vitesse, c'est le glissement du pneu avant qui fait tourner, pas l'angle géométrique : le pneu du pack ne donne sa
-    force qu'en glissant.
-- **Le pneu du pack atteignait sa force en glissant trop.** Sa force monte avec le glissement, sans pic. Rendu 2,5 fois plus
-  raide, il ne glisse presque plus à vitesse, mais le SUV et le camion partent de travers à 50 km/h braqués à fond (12-13°).
-  1,6 fois plus raide est le bon compromis.
-
-**Ce qui est fait** (`ChassisReel`, `ChassisRoue`) :
-- **adhérence x multiplicateur**, avec la raideur du pneu x le même multiplicateur. Le pneu décroche donc au même
-  glissement, en plus fort, et les consignes de l'ABS et de l'antipatinage restent justes ;
-- **pneu 1,6 fois plus raide** (`RAIDEUR_PNEU`, fixe) : la force maximale ne change pas, mais le pneu y arrive en glissant
-  1,6 fois moins. Le seuil de l'ABS et la consigne de l'antipatinage sont divisés d'autant ;
-- **centre de gravité borné avec l'adhérence effective** (`FichesVehicules.cdg_max`, règle `SSF_MIN` = 1,8) : plus
-  d'adhérence ne fait coucher personne ;
-- **freins x multiplicateur** (couple et répartition) ; et une **pédale de frein enfoncée à fond en 0,17 s**
-  (`PEDALE_FREIN`). Le pack mettait 0,33 s, soit 4,6 m parcourus à 100 km/h avant de freiner à fond ;
-- **borne de la direction à vitesse** (`_borne_braquage`) : le braquage à fond vaut au plus l'angle du virage que tiennent
-  les pneus (empattement x adhérence x g / v²), plus `glissement_avant_max` degrés de glissement du pneu avant.
-  - Elle passe par `SteerAmountDecay`, réglé à chaque pas, et ne fait que retenir le braquage : en manœuvre, rien ne change.
-  - Le contre-braquage reste libre : le pack le desserre quand la voiture glisse.
-  - L'assistance de direction du pack est ramenée dans le rapport de la borne en virage ordinaire, mais reste entière en
-    glissade franche (dérive au-delà de 10°), pour rattraper un dérapage.
-  - **La borne est levée tant que le frein à main bloque les roues arrière** : c'est le geste pour faire pivoter la voiture.
-    Le camion, dont le frein à main ne bloque pas, reste borné.
-
-**Avant / après** (`ChassisBancTest`, braquage à fond, vitesse tenue ; « dérive » = angle entre la vitesse et l'axe de la caisse) :
-
-| | freinage 100-0 | accélération latérale au plus | dérive à 80 / 110 km/h | dérapage au frein à main 50 / 80 / 110 |
-|---|---|---|---|---|
-| city_sports_car_02 | 40,2 -> **32,0 m** | 10,7 -> **13,3 m/s²** (1,09 -> 1,35 g) | 7,9 / 8,9° -> **2,6 / 3,3°** | 42 / 37 / 37° -> 44 / 36 / 37° |
-| city_sedan_01 | 44,8 -> **35,4 m** | 9,8 -> **12,3 m/s²** (1,00 -> 1,25 g) | 7,6 / 10,1° -> **2,6 / 4,1°** | 38 / 40 / 38° -> 38 / 38 / 37° |
-| city_truck_01 | 53,7 -> **42,7 m** | 7,8 -> **9,9 m/s²** (0,79 -> 1,00 g) | 8,4 / 21,6° -> **0,9 / 4,1°** | 2 / 14 / 18° -> 10 / 6 / 7° |
-
-Sur les 72, avant -> après :
-- dérive à la limite à 110 km/h : médiane 17,4 -> **3,9°**, pire 25,3 -> **5,8°**, jamais sous 2,6° : à la limite, la
-  voiture glisse encore un peu, progressivement ;
-- accélération latérale à 80 km/h : médiane 9,2 -> **11,5 m/s²** ;
-- **aucun tonneau, aucune roue levée**, à 50, 80, 110 km/h et à la vitesse de pointe : roulis au pire 8,45 -> **8,31°**
-  (city_retro_car_01) ;
-- dérapage au frein à main : relâché, l'adhérence revient en **1,63 s** au pire (2,62 avant) ;
-- les mêmes 53 modèles bloquent leurs roues arrière au frein à main ;
-- freinage le plus long : camion de pompiers, 68,9 -> **58,9 m**.
-
-`ConduiteReelleTest`, la berline au clavier :
-- freinage de 108 km/h à l'arrêt : 50,7 -> **40,2 m** ;
-- braquage à fond à 50 km/h : 0,93 -> **1,19 g** ;
-- double changement de voie à 108 km/h : lacet au plus 56 -> 27°/s, roulis 4,2 -> 3,5° ;
-- frein à main (Espace à 49 km/h) : 29° de dérive, adhérence reprise en 0,95 s.
-
-Tests : banc des 72 (trois lots), `ChassisBancTest` (six silhouettes), `ConduiteReelleTest` et `ProjectLoadCheck` (642
-fichiers, 0 échec) passent. Le banc juge maintenant le blocage au frein à main sur les valeurs effectives.
-
-**Régler soi-même** (`reglages_conduite.tres`, relu au lancement du jeu) :
-- `multiplicateur_freinage` : plus haut, tout le monde freine plus court. Au-delà de ce que tiennent les pneus, l'ABS
-  plafonne : monter l'adhérence avec.
-- `multiplicateur_adherence` : plus haut, plus de grip. Le centre de gravité descend tout seul pour que rien ne se couche.
-- `glissement_avant_max` : plus haut, la voiture tourne plus serré à vitesse et glisse davantage à la limite ; 0 rend la
-  direction du pack seul (le braquage à fond au clavier qui faisait glisser).
