@@ -15,10 +15,6 @@ extends Node3D
 #  - bordure de 0,15 m de face et en biais (30°) : franchie, montée ET descente, sans que la coque la touche ;
 #  - rampe à 16 % : montée sans que la coque touche, arrêt en pleine pente SANS RECULER (2 cm au plus en 2 s),
 #    redémarrage en côte, arrivée au niveau 1 ;
-#  - ENTRÉE du parking (rampe d'accès du passage, refaite le 2026-09-24 : elle faisait 27 % et le pare-chocs la touchait),
-#    traversée en réaliste PUIS en arcade, à 4 et 7 m/s : aucun contact de la coque (réaliste), et le DESSOUS DU MODÈLE
-#    — ce qu'on voit, roues exceptées — jamais à moins de 2 cm du sol, dans les deux modes ; en arcade, les pneus posés
-#    sur le sol à 5 cm près tout du long (assiette du modèle au pied et en haut de la rampe, refaite le même jour) ;
 #  - SORTIE en gardant W enfoncé, puis W et S pressés à côté : la voiture s'arrête et ne bouge plus (5 cm au plus), le
 #    joueur est dehors ; remontée dans les 25 s : la voiture ne disparaît pas sous lui (défaut corrigé le 2026-09-24) ;
 #  - bascule arcade / réaliste en roulant (F7) : aucun saut de position, la vitesse est gardée ;
@@ -40,13 +36,6 @@ const RAMPE_Z := -5.55                              # axe de la rampe (ParkingSt
 const BORDURE_CENTRE := Vector3(-150.0, 0.075, 0.0)
 const BORDURE_TAILLE := Vector3(30.0, 0.15, 12.0)
 const KMH := 1.0 / 3.6
-# Entrée du parking (repère du modèle) : départ devant la façade (z 11,87) et la barre de hauteur (z 11,95..12,15),
-# arrivée dans le rez, passage franchi (face intérieure de la tour à z 7,48). [réaliste ?, vitesse m/s]
-const ENTREE_PASSAGES := [[true, 4.0], [true, 7.0], [false, 4.0], [false, 7.0]]
-const ENTREE_DEPART_Z := 24.0
-const ENTREE_FIN_Z := 1.0
-const ENTREE_GARDE_MIN := 0.02                     # dessous du modèle : au moins 2 cm au-dessus du sol
-const ENTREE_ROUES_MAX := 0.05                     # arcade : pneus posés sur le sol à 5 cm près (assiette du modèle)
 
 var _voiture: Node3D
 var _joueur: CharacterBody3D
@@ -55,7 +44,7 @@ var _ch: RigidBody3D
 var _bordure: StaticBody3D
 var _parking: StaticBody3D
 var _etapes: Array[String] = ["pose", "montee", "repos", "depart", "vitesse108", "freinage", "virage50", "roue_libre",
-		"rayon", "arret_rayon", "bordure_face", "bordure_biais", "rampe", "entree", "sortie", "remontee", "cout", "descente", "f8", "fin"]
+		"rayon", "arret_rayon", "bordure_face", "bordure_biais", "rampe", "sortie", "remontee", "cout", "descente", "f8", "fin"]
 var _i := 0
 var _t := 0.0
 var _e := {}                 # état de l'étape en cours
@@ -68,7 +57,6 @@ var _min_up := 1.0
 var _sortie_t := -1.0        # temps écoulé depuis la sortie (disparition programmée à 25 s)
 var _horloge := 0            # début du pas précédent (µs) : en headless, l'écart entre deux pas est le temps d'une image
 var _image_us := 0
-var _dessous := PackedVector3Array()   # dessous du modèle, repère de son nœud : le point le plus bas de chaque tranche de 3 cm
 
 
 func _ready() -> void:
@@ -595,161 +583,6 @@ func _e_rampe(_d: float) -> bool:
 	return false
 
 
-# ENTRÉE DU PARKING (2026-09-24). Les vidéos ont montré la rampe d'accès du passage (0,36 m sur 1,35 m, 27 %) toucher le
-# pare-chocs avant de la berline, puis l'arrière frotter le sol. Quatre traversées de l'entrée, réaliste puis arcade, à 4
-# et 7 m/s. Deux mesures : les contacts de la coque du châssis (réaliste), et la garde au sol du DESSOUS DU MODÈLE — ce
-# qu'on voit — relevée au rayon sous chacun de ses points bas, à chaque pas (arcade comme réaliste : en arcade, la
-# collision de la voiture glisse sur la rampe, c'est le modèle posé en pente qui pourrait s'y enfoncer).
-func _e_entree(_d: float) -> bool:
-	if not _e.has("k"):
-		_e["k"] = -1
-		_e["lignes"] = []
-		_entree_suivante()
-		return false
-	var z := _pos().z - PARKING_POS.z
-	match String(_e["phase"]):
-		"attente":
-			_pedales()
-			if _t - float(_e["t0"]) > 0.6:
-				if _dessous.is_empty():
-					_dessous = _profil_dessous()
-				_e["phase"] = "route"
-		"route":
-			_regule(float(ENTREE_PASSAGES[_e["k"]][1]))
-			if z < 20.0:
-				var g := _garde_dessous()
-				if g < float(_e["garde"]):
-					_e["garde"] = g
-					_e["garde_z"] = z
-				_e["penche"] = maxf(float(_e["penche"]), _incline_modele())
-				var r := _ecart_roues()
-				if absf(r) > absf(float(_e["roues"])):
-					_e["roues"] = r
-					_e["roues_z"] = z
-				if _touche(_parking):
-					_e["contact"] = int(_e["contact"]) + 1
-			if z < ENTREE_FIN_Z:
-				_e["phase"] = "arret"
-		"arret":
-			if _v() > 0.3:
-				_pedales(false, true)
-			else:
-				_pedales()
-				var reel: bool = ENTREE_PASSAGES[_e["k"]][0]
-				var nom := "%s à %.0f m/s" % ["réaliste" if reel else "arcade", float(ENTREE_PASSAGES[_e["k"]][1])]
-				(_e["lignes"] as Array).append("%s : dessous du modèle à %.3f m du sol au plus près (voiture à z %.1f), roues à %+.3f m du sol au pire (z %.1f), modèle incliné de %.1f° au plus%s" % [
-						nom, float(_e["garde"]), float(_e["garde_z"]), float(_e["roues"]), float(_e["roues_z"]), float(_e["penche"]),
-						(", coque en contact %d pas" % int(_e["contact"])) if reel else ""])
-				if not reel and absf(float(_e["roues"])) > ENTREE_ROUES_MAX:
-					_faute("entrée du parking, %s : une roue à %+.3f m du sol (voiture à z %.1f)" % [nom, float(_e["roues"]), float(_e["roues_z"])])
-				if reel and int(_e["contact"]) > 0:
-					_faute("entrée du parking, %s : la coque touche (%d pas)" % [nom, int(_e["contact"])])
-				if float(_e["garde"]) < ENTREE_GARDE_MIN:
-					_faute("entrée du parking, %s : le dessous du modèle passe à %.3f m du sol (voiture à z %.1f)" % [nom, float(_e["garde"]), float(_e["garde_z"])])
-				if _entree_suivante():
-					_r["entree"] = "rampe d'accès du passage, %d traversées : %s" % [ENTREE_PASSAGES.size(), " ; ".join(_e["lignes"])]
-					return true
-	if _t > 85.0:
-		_faute("entrée du parking : bloquée en phase « %s » (z = %.1f)" % [String(_e["phase"]), z])
-		return true
-	return false
-
-
-# Traversée suivante : bon mode de conduite (F7), voiture posée devant l'entrée. Rend true quand elles sont toutes faites,
-# la voiture laissée en réaliste pour la suite.
-func _entree_suivante() -> bool:
-	_e["k"] = int(_e["k"]) + 1
-	var fini := int(_e["k"]) >= ENTREE_PASSAGES.size()
-	var reel: bool = true if fini else ENTREE_PASSAGES[_e["k"]][0]
-	if (_voiture.call("chassis") != null) != reel:
-		_essai.call("basculer")
-	_ch = _voiture.call("chassis")
-	if fini:
-		return true
-	_placer(PARKING_POS + Vector3(0.0, 0.0, ENTREE_DEPART_Z), 0.0)
-	_e["phase"] = "attente"
-	_e["t0"] = _t
-	_e["garde"] = INF
-	_e["garde_z"] = 0.0
-	_e["penche"] = 0.0
-	_e["roues"] = 0.0
-	_e["roues_z"] = 0.0
-	_e["contact"] = 0
-	return false
-
-
-# Inclinaison du MODÈLE (deg), ce qu'on voit : angle entre son axe vertical et la verticale (assiette en arcade, roulis et
-# tangage du châssis en réaliste).
-func _incline_modele() -> float:
-	var modele: Node3D = _voiture.get("_model")
-	return rad_to_deg(acos(clampf(modele.global_transform.basis.y.normalized().dot(Vector3.UP), -1.0, 1.0)))
-
-
-# Écart au sol du bas de chaque pneu (centre de la roue moins son rayon, contre le sol relevé au rayon juste dessous) :
-# positif si la roue flotte, négatif si elle s'enfonce. Rend l'écart le plus grand en valeur absolue.
-func _ecart_roues() -> float:
-	var espace := get_world_3d().direct_space_state
-	var exclus: Array[RID] = _voiture.call("rids_exclus")
-	var centres: Dictionary = _voiture.get("_wheel_centre")
-	var rayons: Dictionary = _voiture.get("_wheel_radius")
-	var pire := 0.0
-	for w: Node3D in _voiture.get("_wheels"):
-		var c: Vector3 = w.global_transform * (centres.get(w, Vector3.ZERO) as Vector3)
-		var hit := espace.intersect_ray(PhysicsRayQueryParameters3D.create(c, c + Vector3.DOWN * 1.5, 1, exclus))
-		if not hit.is_empty():
-			var e := c.y - float(rayons.get(w, 0.3)) - (hit["position"] as Vector3).y
-			if absf(e) > absf(pire):
-				pire = e
-	return pire
-
-
-# Dessous du modèle, roues exceptées : le point le plus bas de chaque tranche de 3 cm le long de la voiture, relevé sur les
-# sommets de ses maillages, voiture posée à plat ; rangé dans le repère du nœud du modèle, qui porte la pose (roulis et
-# tangage du châssis en réaliste, assiette en pente en arcade).
-func _profil_dessous() -> PackedVector3Array:
-	var modele: Node3D = _voiture.get("_model")
-	var roues: Array = _voiture.get("_wheels")
-	var vers_voiture := _voiture.global_transform.affine_inverse()
-	var vers_modele := modele.global_transform.affine_inverse()
-	var tranches := {}
-	for n in modele.find_children("*", "MeshInstance3D", true, false):
-		var mi := n as MeshInstance3D
-		var roue := false
-		for w: Node3D in roues:
-			if w == mi or w.is_ancestor_of(mi):
-				roue = true
-		if roue or mi.mesh == null:
-			continue
-		for s in mi.mesh.get_surface_count():
-			for p: Vector3 in mi.mesh.surface_get_arrays(s)[Mesh.ARRAY_VERTEX]:
-				var g := mi.global_transform * p
-				var q := vers_voiture * g
-				var k := int(floor(q.z / 0.03))
-				if not tranches.has(k) or q.y < float((tranches[k] as Array)[0]):
-					tranches[k] = [q.y, vers_modele * g]
-	var out := PackedVector3Array()
-	for k in tranches:
-		out.append((tranches[k] as Array)[1])
-	return out
-
-
-# Garde au sol du dessous du modèle : pour chaque point, distance au premier obstacle du décor (calque 1) juste en dessous
-# (négative si le point est dedans). Le rayon part 0,6 m au-dessus du point : sous la barre de hauteur, pas au-dessus.
-func _garde_dessous() -> float:
-	var modele: Node3D = _voiture.get("_model")
-	var xf := modele.global_transform
-	var espace := get_world_3d().direct_space_state
-	var exclus: Array[RID] = _voiture.call("rids_exclus")
-	var mini := INF
-	for q in _dessous:
-		var p := xf * q
-		var req := PhysicsRayQueryParameters3D.create(p + Vector3.UP * 0.6, p + Vector3.DOWN * 1.5, 1, exclus)
-		var hit := espace.intersect_ray(req)
-		if not hit.is_empty():
-			mini = minf(mini, p.y - (hit["position"] as Vector3).y)
-	return mini
-
-
 func _e_sortie(_d: float) -> bool:
 	if not _e.has("phase"):
 		_placer(Vector3(0.0, 0.0, 300.0), 0.0)
@@ -902,7 +735,7 @@ func _e_fin(_d: float) -> bool:
 	if _min_up < 0.95:
 		_faute("caisse penchée de plus de 18° pendant l'essai (%.1f°)" % rad_to_deg(acos(clampf(_min_up, -1.0, 1.0))))
 	for k in ["pneu", "geometrie", "repos", "depart", "vitesse108", "freinage", "virage50", "roue_libre", "rayon",
-			"bordure_0", "bordure_30", "rampe", "entree", "sortie", "disparition", "bascule", "cout_pas", "cout_scripts", "tenue", "f8"]:
+			"bordure_0", "bordure_30", "rampe", "sortie", "disparition", "bascule", "cout_pas", "cout_scripts", "tenue", "f8"]:
 		if _r.has(k):
 			print("CONDUITE_REELLE %s : %s" % [k, _r[k]])
 	print("CONDUITE_REELLE_RESULT %s" % ("OK" if _fautes.is_empty() else "FAIL : " + " ; ".join(_fautes)))

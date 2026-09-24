@@ -415,102 +415,6 @@ const GARDE_CORPS := Color(0.30, 0.31, 0.33)
 # plancher, sans trou) : les retirer ne perce rien.
 const POTEAUX_X := [-15.885, -9.915, 0.0, 9.915, 15.885]
 const POTEAU_DEMI := Vector2(0.50, 0.60)   # boîte de retrait (x, z) autour de chacun, un peu plus large que lui
-# RAMPE D'ACCÈS DE L'ENTRÉE — REFAITE LE 2026-09-24 (demande du joueur, vue dans les vidéos de la conduite réaliste :
-# « elle fait 27 % et touche le pare-chocs »). Relevé sur les sommets du modèle : DEUX triangles, de la bande centrale du
-# rez (x ±4,312, y 0,364, z 9,803) au sol extérieur (y 0, z 11,146) : 0,364 m sur 1,343 m, 27,1 %, 15,2°. Entre son pied
-# et la façade (z 11,868), pas de sol dans le modèle ; sous elle, la fondation (face à z 11,146, de 0 à -2,43 m).
-# Mesuré avec la vraie berline (ConduiteReelleTest, étape « entree ») : en réaliste la coque touchait (13 pas à 4 m/s,
-# tangage 11,7°), son angle d'attaque n'étant que de 13,5° (bas de caisse à 0,20 m, 0,84 m devant l'essieu avant).
-# Elle est refaite sur toute la longueur du passage, de la ligne de façade (sol extérieur) à la face intérieure de la
-# tour vitrée (plancher du rez) : 4,39 m pour 0,364 m, raccordée en arc aux deux bouts, 9,6 % au plus (5,5°). La bande
-# centrale du rez est découpée dessous (z 7,478..9,803). Tout reste entre les joues du passage (x ±3,87), qui descendent
-# jusqu'au sol : dehors rien ne change, et la barre de hauteur garde ses 2,15 m au-dessus du sol extérieur.
-const ACCES_HAUT_Z := 7.478                # face intérieure de la tour vitrée : arrivée au plancher du rez
-const ACCES_PIED_Z := 11.868               # ligne de façade : départ au sol extérieur
-const ACCES_MODELE_Z := Vector2(9.803, 11.146)   # rampe du modèle : haut, pied (relevés)
-const ACCES_MODELE_H := 0.364              # plancher du rez, relevé sur le haut de la rampe du modèle
-const ACCES_DEMI_X := 4.312                # demi-largeur de la rampe du modèle (elle entre dans les joues du passage)
-const ACCES_RACCORD := 0.6                 # longueur de chaque raccord en arc
-const ACCES_PAS := 0.25                    # longueur des bandes de la surface
-const ACCES_PENTE_MAX := 0.11              # contrôle à la cuisson, sur le maillage final
-const ACCES_ENROBE := Color("141212")      # teinte de la rampe du modèle
-
-
-# Hauteur de la rampe d'accès à `d` m de son pied (0 au pied, `h` en haut) : pente constante au milieu, arc de
-# ACCES_RACCORD à chaque bout (la pente y croît de 0 à son maximum, puis y décroît).
-static func acces_hauteur(d: float, h: float) -> float:
-	var l := ACCES_PIED_Z - ACCES_HAUT_Z
-	var p := h / (l - ACCES_RACCORD)
-	d = clampf(d, 0.0, l)
-	if d < ACCES_RACCORD:
-		return 0.5 * p * d * d / ACCES_RACCORD
-	if d > l - ACCES_RACCORD:
-		return h - 0.5 * p * (l - d) * (l - d) / ACCES_RACCORD
-	return 0.5 * p * ACCES_RACCORD + p * (d - ACCES_RACCORD)
-
-
-# La rampe d'accès du modèle retirée (deux triangles exactement, sinon la cote relevée est fausse), la bande centrale du
-# rez découpée sous la nouvelle, et la nouvelle posée, en bandes de ACCES_PAS.
-static func _rampe_acces(m: Maillage, stats: Dictionary, fautes: Array[String]) -> float:
-	var mn := Vector3(-ACCES_DEMI_X - 0.05, -0.05, ACCES_MODELE_Z.x - 0.05)
-	var mx := Vector3(ACCES_DEMI_X + 0.05, ACCES_MODELE_H + 0.05, ACCES_MODELE_Z.y + 0.05)
-	var boite := AABB(mn, mx - mn)
-	var h := 0.0
-	for t in range(0, m.i.size() - 2, 3):
-		var p0 := m.v[m.i[t]]
-		var p1 := m.v[m.i[t + 1]]
-		var p2 := m.v[m.i[t + 2]]
-		if boite.has_point(p0) and boite.has_point(p1) and boite.has_point(p2):
-			h = maxf(h, maxf(p0.y, maxf(p1.y, p2.y)))
-	var retires := m.retirer_boite(mn, mx, true)
-	stats["decoupes"]["rampe d'accès du modèle"] = retires
-	if retires != 2 or absf(h - ACCES_MODELE_H) > 0.005:
-		fautes.append("rampe d'accès du modèle : %d triangles retirés (2 attendus), haut à %.3f m (%.3f attendu) : la cote relevée ne correspond plus au modèle"
-				% [retires, h, ACCES_MODELE_H])
-		h = ACCES_MODELE_H
-	_compte(stats, fautes, "plancher du rez sous la rampe d'accès", m.decouper("y", h - 0.01, h + 0.01,
-			Rect2(-ACCES_DEMI_X - 0.01, ACCES_HAUT_Z, 2.0 * ACCES_DEMI_X + 0.02, ACCES_MODELE_Z.x - ACCES_HAUT_Z + 0.01)))
-	var l := ACCES_PIED_Z - ACCES_HAUT_Z
-	var n := int(ceil(l / ACCES_PAS))
-	for k in n:
-		var d0 := l * float(k) / float(n)
-		var d1 := l * float(k + 1) / float(n)
-		var y0 := acces_hauteur(d0, h)
-		var y1 := acces_hauteur(d1, h)
-		var z0 := ACCES_PIED_Z - d0
-		var z1 := ACCES_PIED_Z - d1
-		# la surface monte vers -z : sa normale penche vers +z (dehors)
-		var normale := Vector3(0.0, d1 - d0, y1 - y0).normalized()
-		m.quad(Vector3(-ACCES_DEMI_X, y0, z0), Vector3(ACCES_DEMI_X, y0, z0), Vector3(ACCES_DEMI_X, y1, z1),
-				Vector3(-ACCES_DEMI_X, y1, z1), normale, ACCES_ENROBE)
-	return h
-
-
-# Contrôle de la rampe d'accès sur le maillage final (collision comprise) : trois lignes le long du passage, un rayon
-# vertical tous les 5 cm de la façade jusqu'à 1 m dans le rez ; pente au plus ACCES_PENTE_MAX, aucune marche (1 cm).
-static func _controle_acces(tm: TriangleMesh, h: float, stats: Dictionary, fautes: Array[String]) -> void:
-	var pente_max := 0.0
-	var marche_max := 0.0
-	for x: float in [-3.4, 0.0, 3.4]:
-		var z := ACCES_PIED_Z - 0.02
-		var y_avant := NAN
-		while z > ACCES_HAUT_Z - 1.0:
-			var r := tm.intersect_segment(Vector3(x, h + 1.0, z), Vector3(x, -0.5, z))
-			if r.is_empty():
-				fautes.append("rampe d'accès : aucun sol sous (%.2f ; %.2f)" % [x, z])
-				return
-			var y: float = (r["position"] as Vector3).y
-			if not is_nan(y_avant):
-				marche_max = maxf(marche_max, absf(y - y_avant))
-				pente_max = maxf(pente_max, absf(y - y_avant) / 0.05)
-			y_avant = y
-			z -= 0.05
-		if absf(y_avant - h) > 0.005:
-			fautes.append("rampe d'accès : le rez est à %.3f m derrière elle, au lieu de %.3f" % [y_avant, h])
-	stats["rampe_acces"] = {"longueur": ACCES_PIED_Z - ACCES_HAUT_Z, "hauteur": h, "pente_max": pente_max, "marche_max": marche_max}
-	if pente_max > ACCES_PENTE_MAX or marche_max > 0.01:
-		fautes.append("rampe d'accès : pente de %.1f %% au plus, marche de %.3f m au plus (%.0f %% et 0,01 m admis)"
-				% [pente_max * 100.0, marche_max, ACCES_PENTE_MAX * 100.0])
 
 
 # Dessous des dalles, relevés comme les planchers (faces tournées vers le bas de plus de 500 m²) : le plus haut sous
@@ -558,8 +462,6 @@ static func praticable(mesh: Mesh, materiau: Material, nom: String, escaliers: i
 	for x: float in POTEAUX_X:
 		_compte(stats, fautes, "poteau du milieu", m.retirer_boite(Vector3(x - POTEAU_DEMI.x, sols[0] - 1.0, -POTEAU_DEMI.y),
 				Vector3(x + POTEAU_DEMI.x, sols[sols.size() - 1] + 0.5, POTEAU_DEMI.y), true))
-	# rampe d'accès de l'entrée, refaite sur toute la longueur du passage (cf. ACCES_*)
-	var h_acces := _rampe_acces(m, stats, fautes)
 	# Ce que le modèle laisse pendre dans le volume des rampes (boîtiers de plafonnier de base_072, relevés le 2026-09-22 à
 	# 20 cm au-dessus du tablier : la voiture butait dessus) : retiré sur le modèle BRUT, avant toute découpe et tout
 	# ajout, au test des TROIS sommets, dans une boîte qui contient les bandeaux entiers (x -18,40..18,40).
@@ -600,7 +502,6 @@ static func praticable(mesh: Mesh, materiau: Material, nom: String, escaliers: i
 	var toutes := m.faces()
 	toutes.append_array(col.faces())
 	tm.create_from_faces(toutes)
-	_controle_acces(tm, h_acces, stats, fautes)
 	var poses := {}
 	for e: Array in plaf["liste"]:
 		var xf: Transform3D = e[0]

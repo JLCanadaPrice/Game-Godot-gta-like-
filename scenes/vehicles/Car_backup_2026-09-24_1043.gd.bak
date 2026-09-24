@@ -247,20 +247,9 @@ var _tilt_roll := 0.0
 # ASSIETTE SUR UNE PENTE (2026-09-21). La boîte de collision de la voiture ne s'incline jamais : move_and_slide la
 # fait monter une rampe, mais elle reste horizontale, appuyée sur son arête avant (en montée) ou arrière (en
 # descente). Sur 12 %, une voiture de 4,5 m roulait donc l'essieu arrière suspendu 0,27 m au-dessus de la rampe.
-# Le MODÈLE prend l'angle du sol et descend pour que ses deux essieux touchent la pente. Visuel seulement : la
-# physique ne change pas.
-# REFAIT LE 2026-09-24 : le sol est relevé AU RAYON SOUS CHAQUE ESSIEU (_poser_assiette), le modèle cabré de l'écart entre
-# les deux et descendu pour que chaque essieu se pose sur le sien. Avant, il prenait la normale du sol sous la BOÎTE et
-# descendait d'une demi-longueur x tan(angle) — juste sur une pente continue, faux à chaque raccord : au pied d'une rampe,
-# la boîte (qui glisse sur son arête avant) touche déjà la pente alors que les roues sont encore sur le plat, et le modèle
-# était cabré de tout l'angle de la rampe et descendu d'autant. Mesuré à l'entrée d'un parking à étages (rampe d'accès
-# de 27 %, ConduiteReelleTest, étape « entree ») : le dessous de la berline à 0,5 m SOUS le sol ; encore 2 cm sous le
-# sol sur la rampe adoucie à 9,6 %. Sur une pente continue, les deux calculs donnent la même pose.
+# Le MODÈLE prend l'angle du sol (normale sous la voiture, lissée) et descend de la demi-longueur de la caisse x
+# tan(angle), pour que ses deux essieux touchent la pente. Visuel seulement : la physique ne change pas.
 var _pente := 0.0
-var _abaisse := 0.0                       # descente du modèle (m) pour que ses essieux se posent sur leur sol
-var _sol_essieux := Vector2(NAN, NAN)     # sol relevé sous l'essieu avant (x) et arrière (y), suivi à vitesse bornée
-var _z_essieu_av := -1.3                  # essieux, repère de la voiture (avant = -z), MESURÉS (cf. _mesurer_empattement)
-var _z_essieu_ar := 1.3
 var _stains := 0
 
 # visuel
@@ -1388,40 +1377,12 @@ func _drive_physics(delta: float) -> void:
 	_try_step_up(fwd)
 	_resolve_drive_collisions(fwd)
 	# assiette sur une pente (cf. ASSIETTE)
-	_poser_assiette(delta)
-
-
-# ASSIETTE : le sol sous chaque essieu, relevé au rayon (décor seulement, calque 1), suivi à ASSIETTE_VITESSE au plus —
-# une pente continue est suivie exactement, une marche (bordure de 15 cm) est montée en ~0,06 s, comme par un pneu. En
-# l'air, le modèle revient dans l'axe de la boîte. Le modèle est cabré de asin((avant - arrière) / empattement) et
-# descendu pour que l'essieu arrière se pose sur son sol (l'avant suit, par construction) : _pente et _abaisse, que
-# _update_visuals applique.
-const ASSIETTE_VITESSE := 2.5            # m/s : vitesse verticale maximale du sol suivi sous un essieu
-const ENVELOPPE_BAS := 0.02              # bas des pneus (et de l'enveloppe) au-dessus du bas de _boite_caisse (sa marge)
-
-func _poser_assiette(delta: float) -> void:
-	var xf := global_transform
-	var bas := xf.origin.y + _boite_caisse.position.y + ENVELOPPE_BAS    # bas des pneus, modèle au repos
-	var cible := Vector2(bas, bas)
+	var pente_cible := 0.0
 	if is_on_floor():
-		var espace := get_world_3d().direct_space_state
-		var exclure: Array[RID] = [get_rid()]
-		for k in 2:
-			var p := xf * Vector3(0.0, 0.0, _z_essieu_av if k == 0 else _z_essieu_ar)
-			var hit := espace.intersect_ray(PhysicsRayQueryParameters3D.create(Vector3(p.x, bas + 0.6, p.z), Vector3(p.x, bas - 0.8, p.z), 1, exclure))
-			if not hit.is_empty():
-				if k == 0:
-					cible.x = (hit["position"] as Vector3).y
-				else:
-					cible.y = (hit["position"] as Vector3).y
-	if is_nan(_sol_essieux.x) or absf(_sol_essieux.x - cible.x) > 1.0 or absf(_sol_essieux.y - cible.y) > 1.0:
-		_sol_essieux = cible          # première fois, ou voiture déplacée : pas de rattrapage à l'écran
-	else:
-		var pas := ASSIETTE_VITESSE * delta
-		_sol_essieux = Vector2(move_toward(_sol_essieux.x, cible.x, pas), move_toward(_sol_essieux.y, cible.y, pas))
-	var s := clampf((_sol_essieux.x - _sol_essieux.y) / maxf(_z_essieu_ar - _z_essieu_av, 0.5), -0.6, 0.6)
-	_pente = asin(s)
-	_abaisse = clampf(_sol_essieux.y - bas + _z_essieu_ar * s, -1.0, 0.05)
+		var nsol := get_floor_normal()
+		var avant_h := Vector3(fwd.x, 0.0, fwd.z).normalized()
+		pente_cible = atan2(-nsol.dot(avant_h), nsol.y)
+	_pente = lerpf(_pente, pente_cible, clampf(delta * 8.0, 0.0, 1.0))
 
 
 # Angle de braquage à fond à la vitesse `v` (cf. BRAQUAGE_A_LAT) : MAX_STEER_RAD tant que l'accélération latérale
@@ -1570,7 +1531,7 @@ func _update_visuals(delta: float, fwd_speed: float, steer_target: float) -> voi
 		_model.rotation.x = _tilt_pitch + _pente * cos(deg_to_rad(model_yaw_deg))
 		_model.rotation.z = _tilt_roll
 		_model.rotation.y = deg_to_rad(model_yaw_deg)
-		_model.position.y = model_y_offset + _abaisse
+		_model.position.y = model_y_offset - _half_length * tan(absf(_pente))
 
 # ROUES QUI ROULENT À L'ENDROIT (2026-09-21). Toutes les roues tournaient autour du X LOCAL de leur noeud,
 # dans le même sens, quel que soit le modèle. Relevé sur les 72 modèles du catalogue posés comme ici
@@ -1629,8 +1590,6 @@ func _mesurer_empattement() -> void:
 			nr += 1
 	if na > 0 and nr > 0:
 		_empattement = maxf(absf(zr / float(nr) - za / float(na)), 0.5)
-		_z_essieu_av = za / float(na)
-		_z_essieu_ar = zr / float(nr)
 	if na >= 2:
 		_voie = maxf(xa.y - xa.x, 0.5)
 

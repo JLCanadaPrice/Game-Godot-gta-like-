@@ -1034,9 +1034,7 @@ func _releve_roues() -> Dictionary:
 	var out := {"pire": pire, "ecarts": ", ".join(ecarts), "pente": rad_to_deg(float(_pilote.get("_pente"))), "nez_moins_arriere": nez}
 	# même relevé SANS l'assiette (le comportement d'avant) : la physique est la même, seul le modèle change
 	var pente: float = _pilote.get("_pente")
-	var abaisse: float = _pilote.get("_abaisse")
 	_pilote.set("_pente", 0.0)
-	_pilote.set("_abaisse", 0.0)
 	_pilote.call("_update_visuals", 0.0, 0.0, 0.0)
 	var sans := 0.0
 	for w: Node3D in _pilote.get("_wheels"):
@@ -1056,7 +1054,6 @@ func _releve_roues() -> Dictionary:
 		sans = maxf(sans, bas - _hauteur_rampe(xz.y))
 	out["sans_assiette"] = sans
 	_pilote.set("_pente", pente)
-	_pilote.set("_abaisse", abaisse)
 	_pilote.call("_update_visuals", 0.0, 0.0, 0.0)
 	return out
 

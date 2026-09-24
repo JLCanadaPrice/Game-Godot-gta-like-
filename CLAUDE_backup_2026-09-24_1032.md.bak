@@ -217,7 +217,7 @@ attendu. (C'est la voiture du pack telle quelle. Le châssis de la conduite réa
 "$GODOT" --headless --path "$PROJET" --fixed-fps 60 --quit-after 300 res://scenes/tests/VehicleCatalogTest.tscn  # catalogue des véhicules, 20 000 tirages
 "$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/CarDrivingTest.tscn  # accélération, virage, freinage : CAR_DRIVING_RESULT
 "$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/CarDropTest.tscn     # chute de 10 m : CAR_DROP_RESULT
-"$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/ConduiteReelleTest.tscn  # conduite réaliste, berline : 108 km/h, freinage, bordure, rampe 16 %, entrée de parking (réaliste ET arcade), sortie, F7, F8, coût, cf. §13
+"$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/ConduiteReelleTest.tscn  # conduite réaliste, berline : 108 km/h, freinage, bordure, rampe 16 %, sortie, F7, F8, coût (~5 s), cf. §13
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/CarKerbTest.tscn          # bordures : le joueur monte, l'IA non
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/WheelSpinTest.tscn        # roues des 72 modèles : axe, sens, rayon, stroboscope, pivot, braquage, rayon de braquage par modèle
 "$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/ParkingStructureTest.tscn  # parkings à étages : plateaux, escalier, hélice, cf. §11
@@ -1418,7 +1418,7 @@ modèle : origine au sol, entrée côté +Z) :
   pleines** et une tour arrière pleine ; aux deux bouts, deux montants découpent trois travées (z ±2,46..3,54).
 - La **« cage vitrée »** est une tour (x ±5,52, z 7,48..11,87) que chaque plateau traverse : une pièce de 11 x 2,3 m
   par niveau, fermée côté parking. Au rez-de-chaussée un passage de 7,7 m la traverse : c'est l'entrée des voitures,
-  avec une rampe d'accès de 0,36 m sur 1,35 m (27 % : **refaite le 2026-09-24**, étape 14).
+  avec une rampe d'accès de 0,36 m sur 1,35 m.
 - Enroulement des faces : la convention de Godot (faces avant en sens horaire), vérifié triangle par triangle.
 
 **Étape 1 — les cônes.** `light_006` ne contient que les « cônes de lumière » opaques (photos 05 et 06) : 16 prismes
@@ -1453,9 +1453,7 @@ touche toute la conduite).
   (normale lissée) et descend de la demi-longueur de la caisse x tan(angle) : les quatre roues à 1,6 cm de la pente.
   Visuel seulement, joueur seulement (la circulation ne va pas sur les rampes). Piège de signe : la rotation du modèle
   se compose avec son lacet de catalogue de 180°, un angle positif autour de son X BAISSE le nez — d'où le
-  `cos(lacet)`. **REMPLACÉ le 2026-09-24 (étape 14)** : ce calcul n'est juste que sur une pente continue ; à chaque
-  raccord il enfonçait le modèle dans le sol (0,5 m à l'entrée d'un parking). Le modèle se pose maintenant sur le sol
-  relevé au rayon sous CHAQUE ESSIEU (`Car._poser_assiette`).
+  `cos(lacet)`.
 - `ParkingStructureTest` mesure les deux sur un sol témoin : rayons à 3, 8 et 16 m/s, et une vraie rampe de 12 %
   d'un seul tenant (plat, pente, plat) que la voiture du joueur monte en 8,4 s puis redescend en marche arrière.
 
@@ -1829,55 +1827,6 @@ des rectangles lumineux sans boîtier qui flottaient sous le plafond. Il ne gard
   - Captures de nuit au sol, avant et après, dans `D:/p-recree/ground_shots/plafonniers_2026-09-24/` (hors dépôt) :
     vues `parking_aeroport_plateau_nuit`, `_allee_plafonniers_nuit` (nouvelle), `_rampe_nuit`, `_escalier_nuit`,
     `_escalier_pied_nuit` (nouvelle), `parking_centre_3_plateau_nuit`.
-
-**Étape 14 — la rampe d'accès de l'entrée, et l'assiette de l'arcade aux raccords** (2026-09-24, demande du joueur après
-les vidéos de la conduite réaliste : « elle fait 27 % et touche le pare-chocs ; qu'une berline passe sans toucher, en
-arcade comme en réaliste »).
-
-- **Relevé sur les sommets du modèle** (sonde hors dépôt, `D:/p-recree/sondes/2026-09-24_rampe_acces/`) : la rampe d'accès
-  est faite de DEUX triangles, de la bande centrale du rez (x ±4,312, y 0,364, z 9,803) au sol extérieur (y 0, z 11,146).
-  Cela fait 0,364 m sur 1,343 m, soit **27,1 %, 15,2°**. Entre son pied et la façade (z 11,868), le modèle n'a pas de sol.
-  Sous elle se trouve la fondation (une face à z 11,146, de 0 à -2,43 m). L'angle d'attaque de la berline est de 13,5° :
-  bas de caisse à 0,20 m, 0,84 m devant l'essieu avant.
-- **Mesuré avant, avec la vraie berline** (`ConduiteReelleTest`, étape « entree » ajoutée pour ça, quatre traversées) :
-  - en réaliste, la coque touchait (13 pas à 4 m/s, 5 pas à 7 m/s), avec 11,7 et 13,8° de tangage et le dessous du modèle
-    à 0,000 m ;
-  - en arcade, le dessous du modèle passait à **0,505 m SOUS le sol** (0,345 m à 7 m/s). Ce n'était pas la rampe seule, voir plus bas.
-- **La nouvelle rampe** (`ParkingStructureKit._rampe_acces`, dans les quatre parkings) :
-  - elle va de la ligne de façade (sol extérieur) à la face intérieure de la tour vitrée (z 7,478, plancher du rez) : 4,39 m ;
-  - elle est raccordée en arc de 0,6 m aux deux bouts, **9,6 % au plus (5,5°)** ;
-  - la bande centrale du rez est découpée dessous (6 triangles) ;
-  - la hauteur du rez est lue sur le haut de la rampe du modèle (0,364), car `planchers()` arrondit au centimètre.
-  Tout reste entre les joues du passage (x ±3,87), qui descendent jusqu'au sol. Dehors, rien ne change, et la barre de
-  hauteur garde ses 2,15 m au-dessus du sol extérieur. Contrôles à la cuisson (0 faute sur les quatre parkings) :
-  - la rampe du modèle retirée doit compter exactement 2 triangles ;
-  - trois lignes de rayons, un tous les 5 cm de la façade à 1 m dans le rez : pente de 11 % au plus, aucune marche de
-    plus de 1 cm, le rez retrouvé à sa hauteur.
-  À l'aéroport, l'allée d'enrobé (1 cm au-dessus du béton) entre dans le passage jusqu'à z 11,15 : la rampe la recouvre à
-  partir de 0,35 m de la façade.
-- **L'ASSIETTE DE L'ARCADE ÉTAIT FAUSSE À CHAQUE RACCORD** (`Car.gd`, défaut antérieur, étape 3). Elle prenait la
-  normale du sol sous la BOÎTE, et descendait le modèle d'une demi-longueur x tan(angle). Or la boîte glisse sur son arête
-  avant : au pied d'une rampe, elle touche déjà la pente alors que les roues sont encore sur le plat, et le modèle était
-  cabré de tout l'angle de la rampe et descendu d'autant. Sur la rampe adoucie, le modèle passait encore 1,9 cm sous le sol.
-  `_poser_assiette` relève maintenant le sol AU RAYON sous chaque essieu (positions mesurées par `_mesurer_empattement`) :
-  - le modèle est cabré de asin((avant - arrière) / empattement) et descendu pour que chaque essieu se pose sur son sol ;
-  - chaque relevé est suivi à 2,5 m/s au plus : une pente continue est suivie exactement, une bordure est montée en ~0,06 s ;
-  - en l'air, le modèle revient dans l'axe de la boîte.
-  Sur une pente continue, les deux calculs donnent la même pose. À mi-pente de la rampe témoin de 12 %
-  (`ParkingStructureTest`), les roues sont maintenant à **4 mm** de la pente (1,6 cm avant).
-- **Après** (quatre traversées) :
-  - réaliste, 4 et 7 m/s : **0 contact de coque**, dessous du modèle à **0,116 et 0,102 m** du sol au plus près, pneus à 7 mm
-    dans le sol (compression du pneu du pack), 6,0 et 7,2° ;
-  - arcade, 4 et 7 m/s : dessous à **0,142 m**, pneus à **2 mm** du sol au pire, modèle incliné de 5,5° au plus (la pente
-    de la rampe).
-- Vérifié :
-  - `ConduiteReelleTest` OK (étape « entree » : elle échoue sur l'ancienne rampe) ;
-  - `ParkingStructureTest` OK : barre, rampes 79,3 / 78,7 s, 280 places, 140 luminaires ;
-  - `MapPlacesTest`, `DowntownBuildingsTest`, `CarKerbTest` OK.
-  Cuisson : chaîne complète 90 s, `DowntownBuildingsBake` 23 s.
-- **Relevé en passant, pas traité** : dans la même chaîne, `DowntownBuildingsBake` écrit trois fois « Cannot create file »
-  en réécrivant des modèles de la carte que `DistrictsBake` venait d'écrire (`Business_SmallBusiness_alt02`, `Business_Pub`,
-  `Business_Restaurant`, `BuildingModels._bake`). Ces fichiers ressortent identiques à HEAD : rien n'est perdu.
 
 ## 12. Collisions : inventaire mesuré et décisions (2026-09-23)
 
@@ -2357,7 +2306,6 @@ branché sur `queue_free` sans condition). Chaque sortie a maintenant son numér
 | rayon de braquage à 3 m/s | 5,44 m entre murs (arcade 5,30), 4,37 m au centre |
 | bordure de 0,15 m, de face et à 30° | montée (0,156 et 0,158 m), traversée, redescendue ; coque jamais en contact |
 | rampe à 16 % (collision cuite d'un parking du centre-ville) | montée sans contact, 10,4° de tangage ; arrêt en pleine pente tenu (0,1 mm en 2 s) ; redémarrage en côte en 0,75 s |
-| entrée du même parking, rampe d'accès refaite le 2026-09-24 (27 % -> 9,6 %, §11 étape 14), à 4 et 7 m/s | réaliste : coque jamais en contact, dessous du modèle à 0,10 m du sol au plus près ; arcade : 0,14 m, pneus sur le sol à 2 mm près (13 pas de contact et 0,5 m SOUS le sol en arcade avec l'ancienne) |
 | sortie en gardant W, puis W et S pressés à côté | 0 mm, corps figé ; joueur à 2,8 m |
 | remontée dans les 25 s | la voiture est toujours là 48 s après la première sortie |
 | F7 en roulant (6 bascules) | vitesse gardée (0,16 m/s d'écart) ; un pas de roulage d'écart (0,25 m à 54 km/h), aucun saut |
