@@ -28,12 +28,6 @@ travail imposée, les commandes exactes, les pièges déjà payés et l'état d'
 > conduite de GTA V, pas une conduite réaliste ». FAIT** (§15) : un modèle de conduite à nous, inspiré de celui de GTA V
 > (`ChassisGTA`), à la place du pack VitaVehicle ; les fiches aux noms du handling.meta de GTA V (fMass, fBrakeForce,
 > fTractionCurveMax...), chacun documenté dans l'en-tête du tableau ; les 72 modèles au banc ; vidéos 9 à 12 hors dépôt.
-> **Puis, le même soir, deuxième version (§15, « Deuxième version ») : le joueur seul tourne les roues.** Retirés, à sa
-> demande : le contre-braquage automatique et la borne qui réduisait le braquage avec la vitesse (braquage de la fiche à
-> toute vitesse). La stabilité vient de la physique seule (partage de l'adhérence `fTractionBiasFront`, inertie
-> `vecInertiaMultiplier`, amortisseurs au critique, report de charge au freinage borné, répartiteur de freinage) ; les
-> fiches recalées sur une étude du handling.meta de GTA V (fichier de référence hors dépôt, jamais recopié). Les tests et
-> les vidéos 13 à 15 (hors dépôt) contre-braquent au clavier par `scenes/tests/PiloteClavier.gd`.
 > Toujours en attente depuis le 2026-09-23 : le coût physique d'environ 2 ms (NON TOUCHÉ, le joueur le teste en jeu) et la
 > pose des trois packs d'accessoires convertis (§7).
 
@@ -74,8 +68,7 @@ travail imposée, les commandes exactes, les pièges déjà payés et l'état d'
   `ChassisBancTest`, `FichesVehiculesOutil`, même jour, §14), **642** depuis les réglages globaux de la conduite
   (`ReglagesConduite.gd`, `reglages_conduite.tres`, même jour, §14), et de nouveau **640** depuis la conduite façon GTA V
   (même jour au soir, §15 : `ChassisGTA.gd` et `RoueGTA.gd` ajoutés ; `ChassisReel.gd`, `ChassisRoue.gd` et l'outil
-  `FichesVehiculesOutil` — son script et sa scène — retirés), puis **641** avec le joueur au clavier des tests
-(`scenes/tests/PiloteClavier.gd`, même soir, §15). **`ProjectLoadCheck` ne parcourt pas `res://assets`** (seulement scenes, scripts, resources, shaders) : les
+  `FichesVehiculesOutil` — son script et sa scène — retirés). **`ProjectLoadCheck` ne parcourt pas `res://assets`** (seulement scenes, scripts, resources, shaders) : les
   98 scènes d'accessoires n'entrent pas dans son compte.
 
 ## 2. Méthode de travail (imposée, non négociable)
@@ -249,15 +242,15 @@ attendu. (C'est la voiture du pack telle quelle, qui n'est plus conduite en jeu 
 "$GODOT" --headless --path "$PROJET" --fixed-fps 60 --quit-after 300 res://scenes/tests/VehicleCatalogTest.tscn  # catalogue des véhicules, 20 000 tirages
 "$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/CarDrivingTest.tscn  # accélération, virage, freinage : CAR_DRIVING_RESULT
 "$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/CarDropTest.tscn     # chute de 10 m : CAR_DROP_RESULT
-"$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/ConduiteReelleTest.tscn  # conduite du joueur (façon GTA V), berline : 108 km/h et changement de voie au stick, freinage, frein à main (Espace) rattrapé par le joueur au clavier, bordure, volant partiel, rampe 16 %, entrée de parking, sortie, F8, coût, cf. §15
-"$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/ChassisBancTest.tscn  # châssis par fiche (façon GTA V) : accélération et patinage, freinage et plongée, freinage fort en tournant, virages braqués à fond sans tonneau, frein à main, dérapages rattrapés par le joueur au clavier, bordures, parking ; 6 silhouettes (~30 s) ; -- --tous --lot=i/3 pour les 72 (3 x ~1 min en parallèle), cf. §15
+"$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/ConduiteReelleTest.tscn  # conduite du joueur (façon GTA V), berline : 108 km/h, freinage, frein à main (Espace), bordure, volant partiel, rampe 16 %, entrée de parking, sortie, F8, coût, cf. §15
+"$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/ChassisBancTest.tscn  # châssis par fiche (façon GTA V) : accélération et patinage, freinage et plongée, virages sans tonneau, frein à main et dérapage, bordures, parking ; 6 silhouettes (~20 s) ; -- --tous --lot=i/3 pour les 72 (3 x ~1 min en parallèle), cf. §15
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/CarKerbTest.tscn          # bordures : le joueur monte, l'IA non
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/WheelSpinTest.tscn        # roues des 72 modèles : axe, sens, rayon, stroboscope, pivot, braquage, rayon de braquage par modèle
 "$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/ParkingStructureTest.tscn  # parkings à étages : plateaux, escalier, hélice, cf. §11
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/DowntownStreetsTest.tscn
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/DowntownBuildingsTest.tscn
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/ShopBuildingsTest.tscn     # échec ANTÉRIEUR connu
-"$GODOT" --headless --path "$PROJET" --script res://scenes/world/map/tools/ProjectLoadCheck.gd   # attendu : 641 fichiers, 0 échec
+"$GODOT" --headless --path "$PROJET" --script res://scenes/world/map/tools/ProjectLoadCheck.gd   # attendu : 640 fichiers, 0 échec
 ```
 
 Outil d'inspection, hors batterie : `res://scenes/tests/VehicleSortTest.tscn` aligne les véhicules du catalogue
@@ -701,8 +694,7 @@ débogage sur `V`.
   vidéos, FAITES), et le frein à main pour déraper, le même jour (§14). Décisions du joueur, toujours le 2026-09-24 : la
   vraie physique sur les PNJ, non (la circulation reste cinématique) ; les 13 modèles plus bas que les bordures ne sont pas
   surélevés. **Puis, le soir : « la conduite de GTA V, pas une conduite réaliste » — FAIT** (§15), un modèle à nous à la
-  place du pack, les fiches aux noms du handling.meta de GTA V. **Puis, le même soir : plus aucune aide de direction, le
-  joueur seul tourne les roues — FAIT** (§15, « Deuxième version »). Restent : le réglage au ressenti par le joueur, les chocs
+  place du pack, les fiches aux noms du handling.meta de GTA V. Restent : le réglage au ressenti par le joueur, les chocs
   contre la circulation (puce suivante), les sons.
 - **chocs réels contre la circulation**, plus tard (idée retenue par le joueur le 2026-09-24, après la mesure de l'étape D
   du §14) : ne passer en physique QUE la voiture que le joueur percute, au moment du choc. Aujourd'hui une voiture de la
@@ -2975,13 +2967,6 @@ fichiers, 0 échec) passent. Le banc juge maintenant le blocage au frein à main
 
 ## 15. Conduite façon GTA V : un modèle à nous (2026-09-24 au soir)
 
-> **DEUXIÈME VERSION LE MÊME SOIR (dernière sous-section) : le joueur seul tourne les roues.** Ce qui suit décrit la première
-> version ; y sont devenus FAUX, et marqués comme tels : la direction bornée à vitesse, le contre-braquage automatique et la
-> « stabilité » qui resserrait le braquage (trois aides RETIRÉES), la définition de fTractionCurveLateral (le pic est à la
-> MOITIÉ de la valeur), les conversions des freins, du frein à main et des amortisseurs, l'arrière « 8 % de plus » (c'est
-> maintenant la colonne fTractionBiasFront), le quart de charge gardé par l'arrière au freinage (c'est la moitié), le
-> braquage de 35° des voitures (40°), et les chiffres des tableaux.
-
 Le joueur, après avoir conduit le châssis réel (§13, §14) : « Je n'aime pas la conduite actuelle. Je veux la conduite de GTA
 V, pas une conduite réaliste. » Ce qui fait ce ressenti, dans ses mots :
 - beaucoup plus d'adhérence qu'en vrai : les voitures tournent fort et collent à la route ;
@@ -3037,13 +3022,13 @@ Réponse donnée au joueur avant de coder :
 
 | colonne | dans ce jeu |
 |---|---|
-| fTractionCurveMax / Min | adhérence du pneu (g) = valeur x 0,6 (2,33 -> 1,4 g), au pic / en glisse ; l'arrière 8 % de plus (**FAUX depuis la deuxième version** : partage par fTractionBiasFront) |
-| fTractionCurveLateral | angle de glissement du pic de la courbe, en degrés (courbe en sinus jusqu'au pic, puis vers Min au double) (**FAUX depuis la deuxième version** : le pic est à la moitié de la valeur, la définition de GTA V) |
-| fBrakeForce | décélération demandée = valeur x 1,5 g, bornée par l'adhérence (ABS) (**remplacé** : x 2,4 g) |
-| fHandBrakeForce | force sur l'essieu arrière = valeur x le poids du véhicule (**remplacé** : x 2,4 x le poids) |
+| fTractionCurveMax / Min | adhérence du pneu (g) = valeur x 0,6 (2,33 -> 1,4 g), au pic / en glisse ; l'arrière 8 % de plus |
+| fTractionCurveLateral | angle de glissement du pic de la courbe, en degrés (courbe en sinus jusqu'au pic, puis vers Min au double) |
+| fBrakeForce | décélération demandée = valeur x 1,5 g, bornée par l'adhérence (ABS) |
+| fHandBrakeForce | force sur l'essieu arrière = valeur x le poids du véhicule |
 | fInitialDriveForce | poussée au démarrage = valeur x 3 g, entière jusqu'à 20 % de la vitesse de pointe, puis à puissance constante |
 | fSuspensionForce | détente sans effort sous le repos = 1 / (4 x valeur) m (la définition de GTA V) ; fréquence ~ racine(valeur) Hz |
-| fSuspensionCompDamp / ReboundDamp | valeur x 20 % de l'amortissement critique (**remplacé** : critique à fSuspensionForce / 2, la définition de GTA V) |
+| fSuspensionCompDamp / ReboundDamp | valeur x 20 % de l'amortissement critique |
 | fAntiRollBarForce | raideur en roulis de l'essieu = ressorts x (1 + valeur) |
 | fLowSpeedTractionLossMult | à l'arrêt, les roues qui poussent perdent valeur x 30 % d'adhérence, retrouvée à 25 km/h |
 
@@ -3059,18 +3044,17 @@ Réponse donnée au joueur avant de coder :
   sinon il freine selon la charge de chaque roue, avec ce que le pneu garde après le virage (un camion ralentit sans
   déraper). Il débraye les roues qu'il tient.
 - **Direction** : au clavier, le volant va du centre à la butée en 0,14 s à l'arrêt (0,22 s à 108 km/h), revient ou change de
-  côté à 9 par seconde. **RETIRÉ (deuxième version) :** À vitesse, l'angle des roues avant
+  côté à 9 par seconde. À vitesse, l'angle des roues avant
   est borné par leur pneu (au pic de la courbe, 85 % au-delà de 108 km/h) par rapport à leur trajectoire : braquer à fond
   donne le virage le plus serré qui colle, et le contre-braquage reste entier. Volant lâché, les roues suivent la trajectoire.
-- **Stabilité — RETIRÉE (deuxième version)** : quand l'essieu arrière approche le pic de sa courbe (freinage, pied levé, gaz
-  sur une propulsion), la borne des roues avant se resserre du côté qui ferait tourner la voiture davantage.
-- **Assistance de glisse — RETIRÉE (deuxième version)** : quand la dérive, PRÉVUE 0,3 s plus tard, dépasse 12° (18° si le
-  frein à main bloque l'arrière : on veut déraper) et que les roues avant font encore tourner la voiture dans le sens de la
-  glisse, elles contre-braquent d'elles-mêmes, entièrement à 35° (45°). La glisse se tient au lieu de finir en tête-à-queue.
+- **Stabilité** : quand l'essieu arrière approche le pic de sa courbe (freinage, pied levé, gaz sur une propulsion), la borne
+  des roues avant se resserre du côté qui ferait tourner la voiture davantage.
+- **Assistance de glisse** : quand la dérive, PRÉVUE 0,3 s plus tard, dépasse 12° (18° si le frein à main bloque l'arrière :
+  on veut déraper) et que les roues avant font encore tourner la voiture dans le sens de la glisse, elles contre-braquent
+  d'elles-mêmes, entièrement à 35° (45°). La glisse se tient au lieu de finir en tête-à-queue.
 - **Pas de tonneau** : les forces des pneus en travers s'appliquent au centre de roulis, placé pour que le bras de levier du
   roulis vaille au plus voie / (2 x 1,8 x adhérence) (`FichesVehicules.SSF_MIN`, comme fRollCentreHeight dans GTA V) ; celles
-  le long, au centre de tangage, placé pour qu'au freinage le plus fort l'essieu arrière garde 25 % de sa charge (**devenu
-  50 %** au freinage dans la deuxième version).
+  le long, au centre de tangage, placé pour qu'au freinage le plus fort l'essieu arrière garde 25 % de sa charge.
 - Pas de boîte : le rapport affiché est une tranche de la vitesse de pointe. Coût : 60 à 80 µs par pas (le pack : 200).
 
 ### Pièges payés en le faisant
@@ -3083,11 +3067,10 @@ Réponse donnée au joueur avant de coder :
   1 m/s² de freinage en moins ; 7° de roulis retiraient autant de tenue en virage. Il pousse le long de la normale du sol.
 - **Le frein à main décidé roue par roue bloquait la roue intérieure** d'un virage, délestée (8,6 kN au lieu de 20 sur le
   camion) : l'arrière du camion partait à 31°.
-- (aide retirée depuis) **Une assistance de glisse réglée sur la dérive seule arrivait trop tard** : 2 rad/s de lacet déjà pris à 15° de dérive, et
+- **Une assistance de glisse réglée sur la dérive seule arrivait trop tard** : 2 rad/s de lacet déjà pris à 15° de dérive, et
   D + Espace tenus 1,2 s faisaient pivoter la voiture de 110 à 160°. Elle regarde la dérive prévue 0,3 s plus tard.
-- (aide retirée depuis) **L'avant tenu au pic de son pneu demandait à l'arrière plus qu'il ne tient** dès qu'un peu de
-  charge passait vers l'avant (camion freinant à 107 km/h en braquant : 40 kN devant, 48,9 kN demandés derrière pour 47,3) :
-  d'où la stabilité. La deuxième version règle le même défaut par la physique (report de charge borné, répartiteur).
+- **L'avant tenu au pic de son pneu demandait à l'arrière plus qu'il ne tient** dès qu'un peu de charge passait vers l'avant
+  (camion freinant à 107 km/h en braquant : 40 kN devant, 48,9 kN demandés derrière pour 47,3) : d'où la stabilité.
 - **Une suspension souple perdait ses roues intérieures avant de les délester** (limousine, 1 / (4 x 0,77) = 0,33 m de
   détente sans effort pour 0,16 de course) : roues en l'air 0,13 s, 11,6° de roulis. La course de détente suit maintenant la
   détente sans effort, et fSuspensionForce vaut au moins 1.
@@ -3134,8 +3117,7 @@ aucune au-delà : la circulation n'a pas changé), `ProjectLoadCheck` (640 fichi
   (`frein_main_bloque`).
 - `ParkingStructureTest` : le camion et le bus braquaient « au moins 8,5 m » à 3 m/s, seuil écrit quand tous braquaient de
   29,8°. Chaque modèle a maintenant son braquage (fSteeringLock : 35° pour les voitures, 38 à 40° pour les longs
-  véhicules — **40° pour les voitures depuis la deuxième version** : 3,0 m au centre pour la berline, 6,9 m pour le camion et
-  le bus) : 6,6 m pour le camion et le bus. Le contrôle vérifie ce qu'il visait, qu'ils braquent bien plus large que la
+  véhicules) : 6,6 m pour le camion et le bus. Le contrôle vérifie ce qu'il visait, qu'ils braquent bien plus large que la
   berline (au moins 1,5 fois ; 3,5 m) et que les demi-tours des rampes (4,70 m).
 - `WorldTrafficSmokeTest` : il ne relève que quelques voitures ayant atteint leur croisière dans sa durée (2 sur 84) ; le
   code d'avant ce chantier en relève autant (5 sur 88, rejoué sur 14092cf).
@@ -3148,144 +3130,6 @@ Hors dépôt, dans `D:/p-recree/videos_conduite/`, outil `outils/video_gta.gd` (
   2,9° ; camion 38,5 m, 1,4° ;
 - `11_derapage_frein_a_main_sportive_80_kmh_gta.mp4` : deux dérapages, 36° de dérive, reprise au relâcher ;
 - `12_depart_arrete_sportive_et_camion_gta.mp4` : pied au plancher 8 s ; sportive 0-100 en 3,2 s, 4,5 m/s de patinage.
-
-### Deuxième version, le même soir : le joueur seul tourne les roues
-
-Le joueur, après avoir conduit la première version : « Deux problèmes, et ce n'est pas encore assez comme GTA V. » Ses mots :
-- « Quand je dérape et que je tourne, les roues contre-braquent toutes seules. Je ne veux pas ça : c'est MOI qui
-  contre-braque. Retire les aides qui tournent les roues à ma place. La stabilité peut venir de la physique de la voiture,
-  mais jamais d'un braquage automatique des roues. »
-- « Plus je vais vite, moins les roues tournent. Comme dans GTA V, je veux pouvoir braquer franchement à haute vitesse.
-  Retire (ou réduis fortement) la limite de braquage en fonction de la vitesse. Si la voiture glisse parce que je braque
-  trop, c'est à moi de gérer. »
-- une recherche sérieuse sur GTA V, et le handling.meta de GTA V, exporté par le joueur avec OpenIV
-  (`D:/p-recree/reference_gta/handling.meta`, HORS DU DÉPÔT), comme référence : « Ne copie pas ce fichier ni ses tableaux
-  dans mon dépôt, qui est public : mes fiches gardent leurs propres valeurs. » Rien de ce fichier n'est ici : ni extrait, ni
-  tableau de ses valeurs ; seulement ce qu'il a appris sur les écarts entre familles et les définitions.
-
-**Ce que dit la recherche** (sources publiques : wiki GTAMods « handling.meta », glossaire de GTACars, guide d'eddlm, code
-du mod Manual Transmission d'ikt32, qui reproduit la direction de GTA V pour pouvoir la couper ; documentation Dawnstar) :
-- GTA V a bien les deux aides que le joueur refuse : une **réduction du braquage avec la vitesse** (la copie publique du mod
-  garde environ 20 % de la butée à 120 km/h) et un **contre-braquage automatique** (les roues visent la direction du
-  déplacement). Des mods (Custom Steering) servent justement à les couper. Ce jeu ne les a plus.
-- fTractionCurveLateral : le pic d'adhérence est à la MOITIÉ de la valeur, en degrés de glissement (22 : pic à 11°) ;
-  fTractionBiasFront partage l'adhérence entre les essieux (sous 0,5, l'arrière tient plus) ; vecInertiaMultiplier multiplie
-  l'inertie (x le tangage, y le roulis, z le lacet) ; les freins usent toute l'adhérence au-delà de fBrakeForce =
-  fTractionCurveMax / 4 ; fSuspensionCompDamp = fSuspensionForce / 2 annule le mouvement en un rebond (le critique) ;
-  fSteeringLock est l'angle des roues à l'arrêt.
-- Ce que montre la référence, famille par famille (sans ses nombres) : un braquage presque le même pour toutes les voitures,
-  plus faible pour les SUV, les fourgons et les bus ; un arrière qui tient toujours un peu plus que l'avant ; des
-  suspensions amorties au critique ou au-delà (la caisse bouge beaucoup, sans rebondir) ; une inertie en lacet multipliée
-  pour presque tout ; des freins de camions et de bus bien plus faibles que ceux des voitures (ils n'usent pas toute leur
-  adhérence) ; une adhérence en glisse proche du maximum, un peu plus basse sur les muscle cars et les anciennes.
-
-**Ce qui est fait** (`ChassisGTA.gd`, `FichesVehicules.gd`, `fiches_vehicules.csv`) :
-- **les trois aides retirées** : plus de borne du braquage à vitesse, plus de contre-braquage automatique, plus de roues qui
-  suivent la trajectoire volant lâché, plus de « stabilité » qui resserrait le braquage. Le volant suit les touches (ou le
-  stick d'une manette : `get_action_strength`), et l'angle des roues est le volant x fSteeringLock, à toute vitesse ;
-- **fiches recalées** (script hors dépôt ; masse, moteur, ressorts, centre de gravité et colonnes de la circulation
-  inchangés) : braquage 40° pour les voitures, 38° pour les SUV, pick-up, fourgons, utilitaires et blindés, 38 à 40° pour
-  les camions et les bus ; fTractionCurveLateral aux nouvelles définitions (17 pour le bus à 23 pour les muscle cars) ;
-  adhérence des lourds abaissée (bus 1,55, camions 1,65 à 1,77, fourgons 1,85 à 2,0), rapport glisse / maximum par modèle
-  (0,84 à 0,93) ; freins et frein à main aux nouvelles unités ; amortisseurs au critique (compression 0,75 à 1,15 du
-  critique, détente 1,2 à 1,65 selon le modèle) ; répartition du freinage recalculée sur le nouveau report de charge ;
-- **deux colonnes nouvelles**, aux noms de GTA V : `fTractionBiasFront` (0,48 pour la plupart ; 0,46 les blindés, 0,44 le
-  blindé lourd de 14 t, 0,485 à 0,49 les sportives et muscle cars) et `vecInertiaMultiplier` (lacet 0,9 à 1,0 pour les
-  voitures, 1,1 à 1,4 pour les lourds) ;
-- **conversions changées** : fBrakeForce x 2,4 g (au-delà de fTractionCurveMax / 4, l'ABS borne le freinage à l'adhérence :
-  toutes les voitures y sont ; camions et bus en deçà), fHandBrakeForce dans la même unité (x 2,4 x le poids, sur
-  l'arrière), amortisseurs en part du critique = 2 x valeur / fSuspensionForce ; `AMORT_PAR_UNITE` et `BIAIS_ARRIERE`
-  supprimés ;
-- **la stabilité, par la physique seulement** :
-  - le report de charge au FREINAGE est borné à la moitié de la charge statique de l'essieu le plus léger (`MARGE_FREINAGE`,
-    0,25 avant) ; celui de l'ACCÉLÉRATION reste aux trois quarts (`MARGE_POUSSEE`) : la caisse s'écrase comme avant ;
-  - un **répartiteur de freinage** (`REPARTITEUR`, celui de toutes les voitures depuis les années 1970) : le frein au pied
-    d'une roue arrière n'use jamais plus de 75 % de ce que tient son pneu ; c'est une pièce des freins, pas une aide de
-    direction ;
-  - l'essieu arrière bloqué au frein à main garde ses roues bloquées même déchargées un instant.
-
-**Le joueur au clavier des tests et des vidéos** : `scenes/tests/PiloteClavier.gd`. Sans aide, un test qui prouve qu'une glisse
-se rattrape doit la rattraper comme un joueur : il ne rend que des touches (gauche, droite) ; il voit la voiture avec 0,15 s
-de retard, anticipe à moitié ce qu'il voit bouger, vise pour les roues avant la direction où va l'avant de la voiture (moins
-un peu du lacet) et tapote la touche qui en rapproche le volant.
-
-**Mesuré sur les 72 modèles** (sonde hors dépôt, 720 essais ; puis le banc) :
-- **frein à main à 50 km/h**, D et Espace 1,2 s : les voitures dérapent (37° de dérive en médiane, 79° de cap), les 19 lourds
-  ralentissent (4 à 13°) ; 53 modèles bloquent leurs roues arrière, comme avant ;
-- **dérapage rattrapé par le joueur**, D et Espace jusqu'à 15° de dérive, puis le joueur contre-braque au clavier : droit en
-  0,83 s en médiane à 50 km/h, 1,10 s à 80, 1,30 s à 110 ; 2,0 s au pire (micro-citadine à 110) ; aucun tête-à-queue ;
-- **braquage à fond à 120 km/h** (D tenu 2,5 s, pied levé) : 6,6 à 13,3 m/s², 10° de dérive au plus, roulis 8,6° au plus ; la
-  voiture tourne franchement (48° de cap en médiane) en perdant de la vitesse (70 km/h au bout) : aucun tête-à-queue ;
-- **freinage fort en tournant** (volant tenu à 5, 10 ou 25 %, à 60 et 100 km/h) : 3 à 7° de dérive en médiane, aucun modèle
-  ne part (avant le report borné et le répartiteur : 85° pour la berline, la plupart des voitures en tête-à-queue) ;
-- **changement de voie à 108 km/h au stick** (sinus de 5 % du volant, 2°) : dérive 3,7° au plus, roulis 4,4°, retour dans
-  l'axe à 0,6° près, sans aide ;
-- **au clavier à 108 km/h**, la tape la plus brève donne 6° aux roues un instant : 1,4° de cap et 1 m de côté en 2 s ; 50 ms :
-  3°, 2,2 m. Progressif : on garde la main sans réduction du braquage.
-
-**Avant / après** (`ChassisBancTest` ; avant : la première version de ce soir) :
-
-| | freinage 100-0 | plongée | accélération latérale à 110 km/h, braqué à fond | dérapage à 50 km/h, rattrapé par le joueur | dérapage à 80 km/h, rattrapé par le joueur |
-|---|---|---|---|---|---|
-| city_sports_car_02 | 26,6 -> 29,4 m | 2,9 -> 1,6° | 13,2 m/s², dérive 5° | 22°, droite 0,68 s après Espace lâché (10 appuis) | 31°, droite en 1,12 s (15 appuis) |
-| city_sedan_01 | 30,2 -> 31,3 m | 6,6 -> 3,8° | 11,7 m/s², dérive 6° | 25°, droite en 0,83 s (11 appuis) | 29°, droite en 1,20 s (17 appuis) |
-| city_truck_01 | 38,8 -> 48,8 m | 1,4 -> 0,9° | 7,2 m/s², dérive 3° | 9° (ne bloque pas), 0,37 s | 2°, 0,23 s |
-
-Les dérapages ne se comparent pas à ceux d'avant : le banc tenait D et Espace 1,2 s, et l'aide contre-braquait (55° pour la
-sportive, 53° pour la berline à 50 km/h) ; il lâche maintenant Espace à 15° de dérive, et c'est le joueur qui contre-braque.
-
-La plongée au freinage est plus faible (le report de charge borné est le prix de la stabilité en freinant en tournant) ;
-l'écrasement à l'accélération est inchangé. Les camions freinent plus long (comme ceux de GTA V : leurs freins n'usent pas
-toute leur adhérence). Sur les 72 : freinage depuis 100 km/h de 28,3 m (lowpoly_lamb) à 53,2 m (autocar), médiane 33,9 m ;
-freinage fort en tournant, 4,8° de dérive en médiane, 18,5° au pire (city_truck_02) ; 0-100 médiane 6,8 s ; patinage au
-départ sur 50 modèles ; roulis au plus 8,5° (city_retro_car_01), aucune roue levée.
-
-`ConduiteReelleTest`, le vrai joueur au clavier de la berline : 0-100 en 6,8 s ; changement de voie à 108 km/h au stick,
-5,2 m de côté, 2,8° de caisse, cap repris à 0,1° près ; freinage de 108 km/h à l'arrêt en 35,7 m, droit ; braquage à fond à
-50 km/h, 1,19 g ; Espace à 49 km/h avec braquage à fond, 24° de dérive, puis le joueur contre-braque (9 appuis) : droite en
-0,80 s ; rayon à 3 m/s, 4,21 m entre murs (40°) ; script du châssis 70 µs par pas en médiane.
-
-**Tests** : `ChassisBancTest` (six silhouettes, et les 72 en trois lots : tous OK), `ConduiteReelleTest`, `CarKerbTest`,
-`VehicleLightsTest`, `ParkingStructureTest` (berline 3,0 m au centre à 3 m/s, camion et bus 6,9 m ; rampes montées en 91 s,
-redescendues en 87 s),
-`WorldTrafficSmokeTest` (croisière de chaque modèle à 0,000 m/s de sa fiche : la circulation n'a pas changé),
-`ProjectLoadCheck` (641 fichiers, 0 échec).
-- `ChassisBancTest` : les dérapages lâchent Espace à 15° de dérive (1 s au plus), puis le joueur contre-braque ; échec s'il
-  ne rattrape pas en 4 s ou s'arrête en travers. Phase nouvelle `frein_virage` : freinage fort en tournant à 100 km/h, volant
-  tenu à 10 % ; échec au-delà de 20° de dérive.
-- `ConduiteReelleTest` : frein à main rattrapé par le joueur (droit en moins de 2 s) ; le double changement de voie au
-  clavier (touches tenues 0,4 et 0,8 s, qui donnaient la butée quand le braquage était réduit) est devenu un sinus au stick,
-  un vrai changement de voie à 108 km/h.
-
-**Pièges payés en le faisant** :
-- **Sans aide, freiner fort en tournant faisait partir presque toutes les voitures** : l'arrière gardait le quart de sa charge
-  (1,6 kN au lieu de 5,5 sur la berline) et plus rien en travers, pendant que l'avant, chargé, tirait toujours. Le report de
-  charge au freinage est borné à la moitié ; calculé sur l'essieu arrière seul, les sportives à moteur central et les
-  camions partaient encore : il l'est sur l'essieu le plus léger.
-- **Les camions et les blindés partaient encore** : leurs freins arrière usaient toute l'adhérence de l'arrière (6,9 kN
-  demandés par roue pour 5,2 tenus). D'où le répartiteur.
-- **Au freinage le plus fort (pied et frein à main ensemble, 1,3 g)**, l'arrière de la berline se déchargeait un instant, et
-  ses roues, tenues par le frein à main, se remettaient à tourner (73 % du temps bloquées au lieu de 100).
-- **L'amortissement était trois fois plus faible que celui de GTA V** : la caisse rebondissait et déchargeait l'arrière en
-  plongeant. Adopter la définition de GTA V (critique à fSuspensionForce / 2) ne suffisait pas seul contre les tête-à-queue au
-  freinage, mais ôte le rebond.
-- **Le joueur scripté** : bang-bang avec retard, il entrait en oscillation (dérapage à 110 km/h jamais rattrapé) tant qu'il
-  lâchait Espace à 25° et ne relâchait pas son contre-braquage quand la voiture revenait ; lâché à 15°, avec une part du
-  lacet retirée et une anticipation de moitié, il rattrape les 72. Sa tolérance (6° de braquage) est bien trop grossière pour
-  suivre une voie à 108 km/h, où un changement de voie demande 1 à 2° : d'où le stick du test de changement de voie.
-- **Le compte des freins à main qui bloquent** (53) venait d'une mesure EN ROULANT : cinq fourgons et petits camions légers
-  bloquent sous le report de charge alors qu'une formule à l'arrêt les dit en deçà. Leur fiche les met franchement au-delà.
-- **Le braquage à fond à 50 km/h avec Espace** faisait à peine déraper (12°) avec une inertie en lacet de 1,5 x la boîte :
-  la voiture tournait serré en perdant sa vitesse. Ramenée à 1,0 (voitures), le frein à main fait pivoter comme dans GTA V.
-
-**Vidéos** (hors dépôt, `D:/p-recree/videos_conduite/`, outil `outils/video_gta2.gd`, clips 13 à 15 ; en bas de l'écran, les
-touches pressées et l'angle des roues) :
-- `13_derapage_contre_braque_par_le_joueur_sportive_80_kmh.mp4` : deux dérapages, D (puis A) et Espace jusqu'à 18°, puis le
-  joueur contre-braque au clavier et remet les gaz : 35° et 34° de dérive, droite 1,15 s après Espace lâché ;
-- `14_virage_braque_a_fond_berline_120_kmh.mp4` : D tenu 1,8 s à 120 km/h, pied levé, roues à 40° : 1,13 g, dérive 8°, roulis
-  5,6°, 37° de cap, 77 km/h au bout ; puis le joueur redresse ;
-- `15_freinage_fort_sportive_et_camion_100_kmh.mp4` : depuis 100 km/h, vues de côté ; sportive 29,2 m, caisse plongée de
-  1,6° ; camion 48,4 m, 0,9°.
 
 ### Reste
 
