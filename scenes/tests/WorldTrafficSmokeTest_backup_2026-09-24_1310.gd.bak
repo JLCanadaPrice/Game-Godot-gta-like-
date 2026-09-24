@@ -4,10 +4,7 @@ extends Node
 # les rues pendant GAME_SECONDS de jeu, puis relève :
 #  - la composition des voitures apparues (voitures d'origine / City Vehicles / Low Poly Cars, par modèle) ;
 #  - l'écart pare-choc à pare-choc entre deux voitures IA qui se suivent sur la même voie (cap à 25° près,
-#    décalage latéral < 1.5 m), pour vérifier que le suivi tient compte de la longueur réelle des véhicules ;
-#  - VITESSE DE CROISIÈRE PAR MODÈLE (2026-09-24, CLAUDE.md §14) : chaque voiture roule à la vitesse de SA fiche
-#    (trafic_kmh, dans le rapport de la berline de référence), jamais au-delà, et l'atteint ; les poids lourds roulent
-#    plus lentement que les sportives.
+#    décalage latéral < 1.5 m), pour vérifier que le suivi tient compte de la longueur réelle des véhicules.
 # Le poids des véhicules longs (bus, autocar, camions, limousine) est multiplié en mémoire pour en voir assez
 # en 90 s ; rien n'est enregistré dans les .tres.
 #
@@ -32,7 +29,6 @@ var _min_gap_cars := INF
 var _min_gap_long := INF
 var _overlaps_cars := {}            # paire -> pire écart
 var _overlaps_long := {}
-var _vitesses := {}                 # instance id -> [id du modèle, vitesse de croisière visée, vitesse la plus haute relevée]
 
 
 func _ready() -> void:
@@ -60,9 +56,6 @@ func _physics_process(delta: float) -> void:
 			_seen[v.get_instance_id()] = str(v.get("model_path"))
 		if _is_ai(v):
 			cars.append(v as Node3D)
-			var e: Array = _vitesses.get(v.get_instance_id(), [_modele(v), float(v.get("_speed")), 0.0])
-			e[2] = maxf(float(e[2]), float(v.get("_ai_speed")))
-			_vitesses[v.get_instance_id()] = e
 	for i in cars.size():
 		var a := cars[i]
 		var fwd := _flat_forward(a)
@@ -130,54 +123,8 @@ func _report() -> void:
 		errors.append("aucun véhicule long apparu")
 	if not _overlaps_long.is_empty():
 		errors.append("%d paires avec véhicule long qui se chevauchent" % _overlaps_long.size())
-	_vitesses_par_modele(errors)
 	print("WORLD_TRAFFIC_RESULT %s %s" % ["OK" if errors.is_empty() else "FAIL", " | ".join(errors)])
 	get_tree().quit(0 if errors.is_empty() else 1)
-
-
-func _modele(v: Node) -> String:
-	var d := VehicleCatalog.find_by_path(str(v.get("model_path")))
-	return d.id if d != null else "?"
-
-
-# Vitesse de croisière de chaque voiture : celle de sa fiche (dans le rapport de la berline de référence), jamais
-# dépassée, et atteinte (au moins 90 %) par la plupart ; poids lourds plus lents que les sportives.
-func _vitesses_par_modele(errors: Array[String]) -> void:
-	var trop_vite := 0
-	var atteinte := 0
-	var ecart_fiche := 0.0
-	var lourds := PackedFloat32Array()
-	var sportives := PackedFloat32Array()
-	for id in _vitesses:
-		var e: Array = _vitesses[id]
-		var f := FichesVehicules.fiche(String(e[0]))
-		var attendu := 12.0 * FichesVehicules.nombre(f, "trafic_kmh") / float(FichesVehicules.DEFAUTS["trafic_kmh"])
-		ecart_fiche = maxf(ecart_fiche, absf(float(e[1]) - attendu))
-		if float(e[2]) > float(e[1]) + 0.05:
-			trop_vite += 1
-		if float(e[2]) >= 0.9 * float(e[1]):
-			atteinte += 1
-			if _is_long_id(String(e[0])):
-				lourds.append(float(e[1]) * 3.6)
-			elif FichesVehicules.nombre(f, "trafic_kmh") >= 45.0:
-				sportives.append(float(e[1]) * 3.6)
-	var moy_l := _moyenne(lourds)
-	var moy_s := _moyenne(sportives)
-	print("WORLD_TRAFFIC_VITESSES %d voitures suivies : croisière réglée sur la fiche à %.3f m/s près ; %d l'ont atteinte (90 %%), %d l'ont dépassée ; croisière des poids lourds %.1f km/h (%d), des sportives %.1f km/h (%d)"
-			% [_vitesses.size(), ecart_fiche, atteinte, trop_vite, moy_l, lourds.size(), moy_s, sportives.size()])
-	if ecart_fiche > 0.01:
-		errors.append("vitesse de croisière hors fiche (%.3f m/s d'écart)" % ecart_fiche)
-	if trop_vite > 0:
-		errors.append("%d voiture(s) au-delà de leur vitesse de croisière" % trop_vite)
-	if lourds.size() > 0 and sportives.size() > 0 and moy_l >= moy_s:
-		errors.append("les poids lourds ne roulent pas plus lentement que les sportives (%.1f contre %.1f km/h)" % [moy_l, moy_s])
-
-
-static func _moyenne(v: PackedFloat32Array) -> float:
-	var s := 0.0
-	for x in v:
-		s += x
-	return s / float(v.size()) if v.size() > 0 else 0.0
 
 
 func _is_ai(v: Node) -> bool:

@@ -22,7 +22,10 @@
 #  amort_av_nsm, amort_ar_nsm         amortisseur d'UNE roue (N.s/m), déduit de la raideur et de amortissement_pct
 #  antiroulis_av_pct, antiroulis_ar_pct   part de la raideur en roulis de l'essieu donnée par la barre anti-roulis
 #  garde_cm           hauteur minimale du dessous de la caisse physique au-dessus du sol (le modèle peut être plus bas)
-#  trafic_kmh, trafic_accel_ms2       vitesse de croisière et accélération de ce modèle dans la circulation
+#  trafic_kmh, trafic_accel_ms2       vitesse de croisière et accélération de ce modèle dans la circulation. La vitesse
+#                     est relative : un modèle roule à trafic_kmh quand la berline de référence (43 km/h, la valeur par
+#                     défaut) roule à la vitesse de son spawner (12 m/s dans World.tscn) ; un spawner réglé autrement
+#                     décale tout le monde d'autant (Car.setup). Le freinage est le même pour tous (Car.AI_DECEL).
 #
 # Une case VIDE de cdg_m, raideur_*, amort_* est recalculée par le jeu à partir des autres colonnes : pour que la suspension
 # suive une masse modifiée, vider ses cases (l'outil scenes/vehicles/tools/FichesVehiculesOutil.tscn les réécrit alors).

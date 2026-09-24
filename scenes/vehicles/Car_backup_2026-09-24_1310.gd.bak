@@ -76,7 +76,7 @@ const CRUSH_MIN_SPEED := 5.0      # vitesse mini pour écraser un PNJ
 const MAX_STAINS := 8
 
 # --- circulation IA : accélération / freinage / virage progressifs ---
-const AI_ACCEL := 3.5             # m/s² pour rejoindre la vitesse de croisière (repli : chaque modèle a la sienne, cf. setup)
+const AI_ACCEL := 3.5             # m/s² pour rejoindre la vitesse de croisière
 const BRAKE_EPS := 0.05           # m/s de marge : en deçà, la consigne "descend" par simple bruit
 const BRAKE_STOP_SPEED := 0.4     # m/s sous quoi la voiture compte comme arrêtée, feux allumés
 const AI_DECEL := 12.0            # m/s² pour freiner (obstacle, arrêt) — DOIT correspondre à la
@@ -211,7 +211,6 @@ var has_npc_driver := false
 var is_player_owned := false
 var _abandoned := false
 var _abandon_gen := 0                 # numéro de la dernière sortie du joueur (cf. stop_drive)
-var _ai_accel := AI_ACCEL             # accélération de CE modèle dans la circulation (fiche, cf. setup)
 var _drive_speed := 0.0
 var _player_braking := false
 var _player_near := false
@@ -552,17 +551,10 @@ func _poser_zone_de_tir() -> void:
 
 # --- circulation scriptée -----------------------------------------
 
-# VITESSE ET ACCÉLÉRATION PAR MODÈLE (2026-09-24, CLAUDE.md §14, demande du joueur : « les camions plus lents, les
-# sportives plus vives »). `speed`, celle du spawner (12 m/s dans World.tscn), est la vitesse de croisière d'une berline
-# de référence, la fiche par défaut ; chaque modèle roule dans le rapport de sa fiche (trafic_kmh : 35 km/h pour une
-# benne à ordures, 46 pour une sportive) et accélère à la sienne (trafic_accel_ms2 : 1,1 à 4,8 m/s²). Le freinage reste
-# AI_DECEL pour tous : c'est lui que supposent les distances de décision devant les obstacles et aux carrefours.
 func setup(path: CircuitPath, start_node: int, speed: float, lateral: float, edges_budget := 20) -> void:
 	_path = path
 	_from_node = start_node
-	var f := fiche_physique()
-	_speed = speed * FichesVehicules.nombre(f, "trafic_kmh") / float(FichesVehicules.DEFAUTS["trafic_kmh"])
-	_ai_accel = FichesVehicules.nombre(f, "trafic_accel_ms2")
+	_speed = speed
 	_lateral = lateral
 	_edges_left = edges_budget
 	_cur_edge = _path.pick_next_edge(_from_node, -1)
@@ -648,7 +640,7 @@ func _physics_process(delta: float) -> void:
 			diag_raison = _diag_carrefour
 			diag_objet = _diag_carrefour_objet
 	var desired_speed: float = _cached_obstacle_speed_limit
-	var accel := _ai_accel if desired_speed > _ai_speed else AI_DECEL
+	var accel := AI_ACCEL if desired_speed > _ai_speed else AI_DECEL
 	# Feux de freinage : c'est ICI que la voiture décide de ralentir, et nulle part ailleurs. Il
 	# n'existait aucun indicateur de freinage sur Car — seul _committed_to_stop existait, et il ne
 	# couvre que l'arrêt à un carrefour, pas le suivi de véhicule. On le relève donc sur la rampe

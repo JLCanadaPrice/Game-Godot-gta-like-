@@ -14,9 +14,8 @@ travail imposée, les commandes exactes, les pièges déjà payés et l'état d'
 >
 > **Puis décision du joueur : conduite FULL RÉALISTE pour le joueur, arcade supprimée, sur les 72 modèles** (§14). Étape
 > A FAITE : une fiche par modèle (`resources/vehicle_physics/fiches_vehicules.csv`), le châssis réglé sur elle, le banc
-> `ChassisBancTest` passé par les 72. Étape B FAITE : l'arcade retirée pour le joueur, plus de F7, tests migrés. Étape C
-> FAITE : la circulation roule et accélère selon la fiche de chaque modèle. Suivent : D, la vraie physique sur les PNJ
-> MESURÉE seulement ; E, les vidéos. Toujours en attente depuis le
+> `ChassisBancTest` passé par les 72. Étape B FAITE : l'arcade retirée pour le joueur, plus de F7, tests migrés. Suivent :
+> C, la circulation aux vitesses de chaque modèle ; D, la vraie physique sur les PNJ MESURÉE seulement ; E, les vidéos. Toujours en attente depuis le
 > 2026-09-23 : le coût physique d'environ 2 ms (NON TOUCHÉ, le joueur le teste en jeu) et la pose des trois packs
 > d'accessoires convertis (§7).
 
@@ -223,7 +222,7 @@ attendu. (C'est la voiture du pack telle quelle. Le châssis de la conduite réa
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/SimulationCullingTest.tscn # gel hors champ
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/DayNightTest.tscn         # cycle jour/nuit, halos, luminaires
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/VehicleLightsTest.tscn    # freins, gyrophares, véhicules garés
-"$GODOT" --headless --path "$PROJET" res://scenes/tests/WorldTrafficSmokeTest.tscn # trafic, vitesse de croisière par modèle (aléa connu, cf. §6)
+"$GODOT" --headless --path "$PROJET" res://scenes/tests/WorldTrafficSmokeTest.tscn # trafic (aléa connu, cf. §6)
 "$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/RoundaboutTrafficTest.tscn  # 5 min de circulation à Echo Circle, cf. §10
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/NoclipTest.tscn            # noclip, aléa connu aussi
 "$GODOT" --headless --path "$PROJET" --fixed-fps 60 --quit-after 300 res://scenes/tests/VehicleCatalogTest.tscn  # catalogue des véhicules, 20 000 tirages
@@ -676,8 +675,7 @@ débogage sur `V`.
 - **conduite réaliste** (pack VitaVehicle, §13 et §14) : étape 1 FAITE le 2026-09-24, essai sur la berline city_sedan_01
   (F7 / F8), et deux défauts des vidéos corrigés le même jour (rampe d'accès des parkings, direction). Puis décision du
   joueur, le même jour : **full réaliste pour le joueur, arcade supprimée, sur les 72 modèles**, chacun sur sa fiche (§14 ;
-  étapes A, les fiches, B, l'arcade retirée, et C, la circulation par modèle, FAITES). Restent ensuite : les chocs
-  contre la circulation, les sons.
+  étapes A, les fiches, et B, l'arcade retirée, FAITES). Restent ensuite : les chocs contre la circulation, les sons.
 - **ACCESSOIRES PRÊTS À POSER, pas encore posés** (2026-09-23) : trois packs reçus en FBX, convertis en une scène par
   modèle par `scenes/world/props/tools/ConversionPacks.gd` — `assets/airport_ground_vehicles/` (4 véhicules de piste),
   `assets/farm_buildings_quaternius/` (13 bâtiments et objets de ferme), `assets/low_poly_construction/` (81 éléments et
@@ -2608,21 +2606,3 @@ la commande des vidéos :
 - corrigée de l'écart de cap et de l'écart latéral (commande de Stanley) ;
 - sur un tracé dense (un repère tous les 1,5 m). Des repères espacés de 6 m, ou un trou de 9 m au toit, suffisaient à la
   mettre en défaut.
-
-### Étape C : la circulation par modèle (2026-09-24)
-
-Demande du joueur : « les camions plus lents, les sportives plus vives ». Dans `Car.setup`, chaque voiture de la circulation
-prend deux valeurs de sa fiche :
-- **sa vitesse de croisière** : `trafic_kmh`, de 35 km/h (benne à ordures) à 46 (sportives). La vitesse que passe le
-  spawner (12 m/s dans `World.tscn`) est celle de la berline de référence, la fiche par défaut à 43 km/h ; chaque modèle
-  roule dans le rapport de sa fiche. Un spawner réglé plus lent ou plus vite décale donc tout le monde d'autant ;
-- **son accélération** : `trafic_accel_ms2`, de 1,1 à 4,8 m/s², au lieu de 3,5 pour tous (`AI_ACCEL`, gardé en repli).
-
-Le freinage reste `AI_DECEL` = 12 m/s² pour tous : c'est lui que supposent les distances de décision devant les obstacles
-et aux carrefours (`INTERSECTION_CHECK_DIST` couvre jusqu'à 16 m/s de croisière ; la plus rapide est à 12,8).
-
-Vérifié :
-- `WorldTrafficSmokeTest` relève la croisière de chaque voiture. Elle est réglée sur la fiche au millième près, et
-  aucune voiture ne la dépasse. Les poids lourds roulent à 39,2 km/h en moyenne, les sportives à 45,9 ;
-- `RoundaboutTrafficTest` : 28 sorties en 300 s (20 exigées ; 21 à 25 avant), aucune file figée, les deux voies servent ;
-- `MapRoadsTest` : 798 m au moins en 70 s (350 exigés).
