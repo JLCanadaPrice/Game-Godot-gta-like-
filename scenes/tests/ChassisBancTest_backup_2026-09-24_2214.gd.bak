@@ -14,11 +14,6 @@ extends Node3D
 #    la limite des pneus avant à cette vitesse), puis S à fond jusqu'à l'arrêt, le volant toujours tenu. Sans aide de
 #    direction, c'est la physique qui doit garder la voiture dans l'axe de sa trajectoire : l'arrière garde la moitié de sa
 #    charge (centre de tangage du freinage) et le répartiteur de freinage lui laisse de quoi tenir en travers ;
-#  - FREINER ET TOURNER (2026-09-24 au soir) : lancé à 50 puis 80 km/h en ligne droite, S à fond ET braquage à fond à droite
-#    en même temps, jusqu'à l'arrêt. La voiture doit TOURNER, pas aller tout droit : l'ABS ne bloque jamais les roues avant
-#    et leur laisse de quoi diriger (« freiner en virage peut élargir un peu la trajectoire, mais la voiture doit toujours
-#    tourner »). Relevés : trajectoire tournée (cap de la VITESSE) avant l'arrêt, rayon moyen (distance / trajectoire
-#    tournée), décalage latéral, dérive au plus fort, distance d'arrêt ;
 #  - PAS DE TONNEAU : braquage à fond, vitesse tenue, à 50, 80, 110 km/h et à la vitesse de pointe : roulis, roues levées,
 #    glissade. Il glisse ou il sous-vire ; il ne se couche pas ;
 #  - FREIN À MAIN (2026-09-24) : en ligne droite depuis 50 km/h, seul puis avec le frein au pied ; s'il est plus fort que
@@ -35,8 +30,7 @@ extends Node3D
 # est plus basse) pas atteints en 30 s, un freinage qui dévie de plus de 15°, un véhicule sans châssis ; un frein à main
 # plus fort que les pneus arrière qui ne les bloque pas (80 % du temps au moins), seul ou avec le frein au pied, ou qui fait
 # tourner la voiture en ligne droite (5° au plus) ; un freinage en tournant qui fait partir la voiture (dérive au-delà de
-# FREIN_VIRAGE_DERIVE) ; freiner et braquer à fond qui laisse la voiture aller presque tout droit (décalage latéral sous
-# FREIN_BRAQUE_ECART fois l'avance : la trajectoire tournée seule ne suffit pas, le pivot final au ralenti la gonfle) ou la fait partir en tête-à-queue (dérive au-delà de FREIN_BRAQUE_DERIVE) ; un dérapage que le joueur ne rattrape pas en DERAPAGE_APRES s (dérive
+# FREIN_VIRAGE_DERIVE) ; un dérapage que le joueur ne rattrape pas en DERAPAGE_APRES s (dérive
 # sous 5° et lacet sous 0,15 rad/s, tenus 0,3 s), ou qui finit arrêté en travers ; une sportive qui ne dérape pas au moins
 # deux fois plus que le camion (city_sports_car_02 et city_truck_01, s'ils sont du passage).
 # Rapporté sans être jugé : garde au sol du DESSOUS DU MODÈLE (ce qu'on voit) sur les bordures et à l'entrée du parking —
@@ -50,7 +44,7 @@ const CarScript := preload("res://scenes/vehicles/Car.gd")
 const PiloteClavier := preload("res://scenes/tests/PiloteClavier.gd")
 const PARKING := "res://scenes/world/downtown/generated/buildings/parking_collision.res"
 const SILHOUETTES := ["city_microcar", "city_sedan_01", "city_sports_car_02", "city_suv_02", "city_truck_01", "city_bus_01"]
-const PHASES := ["repos", "acceleration", "freinage", "frein_virage", "frein_braque_50", "frein_braque_80", "frein_main", "virage_50", "virage_80", "virage_110", "virage_vmax",
+const PHASES := ["repos", "acceleration", "freinage", "frein_virage", "frein_main", "virage_50", "virage_80", "virage_110", "virage_vmax",
 		"derapage_50", "derapage_80", "derapage_110", "bordure_15_face", "bordure_15_biais", "bordure_17_face", "bordure_17_biais",
 		"parking"]
 # Frein à main : la sportive doit déraper facilement, le camion beaucoup moins (demande du joueur, 2026-09-24). Quand les
@@ -66,9 +60,6 @@ const DEPART_DERAPAGE := Vector3(-3000.0, 0.0, -3000.0)
 const DEPART_FREIN_VIRAGE := Vector3(-1500.0, 0.0, 3000.0)
 const FREIN_VIRAGE_VOLANT := 0.1   # volant tenu (au stick), à droite
 const FREIN_VIRAGE_DERIVE := 20.0  # ° : au-delà, la voiture part
-const DEPART_FREIN_BRAQUE := Vector3(1500.0, 0.0, -1500.0)
-const FREIN_BRAQUE_ECART := 0.12   # décalage latéral / avance au moins, entre le coup de frein et l'arrêt (tout droit : 0)
-const FREIN_BRAQUE_DERIVE := 60.0  # ° : au-delà (au-dessus de 3 m/s), c'est un tête-à-queue
 const DERAPAGE_LIGNE := 1.5
 const DERAPAGE_TIRE := 1.0       # s au plus : braquage à fond et frein à main, sans gaz...
 const DERAPAGE_LACHE := 15.0     # ... lâché à cette dérive (°) : l'arrière est parti
@@ -216,8 +207,6 @@ func _physics_process(delta: float) -> void:
 	var fini := false
 	if phase.begins_with("virage_"):
 		fini = _p_virage(phase)
-	elif phase.begins_with("frein_braque_"):
-		fini = _p_frein_braque(phase)
 	elif phase.begins_with("derapage_"):
 		fini = _p_derapage(phase)
 	elif phase.begins_with("bordure_"):
@@ -502,61 +491,6 @@ func _p_freinage(_phase: String) -> bool:
 				return true
 			if _t - float(_e.get("t0", _t)) > 20.0:
 				_res["freinage"] = {"v0": float(_e["v0"]) * 3.6, "distance": -1.0, "temps": -1.0, "cap": 0.0, "plonge": _e["plonge"]}
-				return true
-	return false
-
-
-# FREINER ET TOURNER : cf. en tête. S à fond et D (braquage à fond) pressés ensemble, jusqu'à l'arrêt.
-func _p_frein_braque(phase: String) -> bool:
-	var v0 := minf(float(phase.get_slice("_", 2)) * KMH, _vmax() * 0.95)
-	if not _e.has("phase"):
-		_e["phase"] = "lance"
-		_placer(DEPART_FREIN_BRAQUE + Vector3(0.0, 0.0, -200.0 if phase.ends_with("80") else 0.0), _cap_vers_x(), v0)
-		return false
-	var vh := _ch.linear_velocity
-	vh.y = 0.0
-	var avant := _ch.global_transform.basis.z
-	avant.y = 0.0
-	match String(_e["phase"]):
-		"lance":
-			_regule(v0)
-			if _t > 1.5:
-				_e["phase"] = "freine"
-				_e["t0"] = _t
-				_e["v1"] = _v()
-				_e["x0"] = _ch.global_position
-				_e["dir0"] = vh.normalized()
-				_e["cap_v"] = atan2(vh.x, vh.z)
-				_e["tourne"] = 0.0
-				_e["chemin"] = 0.0
-				_e["derive"] = 0.0
-				_e["penche"] = 0.0
-				_e["up_min"] = 1.0
-				_e["prec"] = _ch.global_position
-		"freine":
-			_pedales(false, true, true)
-			var pos := _ch.global_position
-			var pas := pos - (_e["prec"] as Vector3)
-			pas.y = 0.0
-			_e["chemin"] = float(_e["chemin"]) + pas.length()
-			_e["prec"] = pos
-			if vh.length() > 1.0:
-				var cap_v := atan2(vh.x, vh.z)
-				_e["tourne"] = float(_e["tourne"]) + wrapf(cap_v - float(_e["cap_v"]), -PI, PI)
-				_e["cap_v"] = cap_v
-			if vh.length() > 3.0:
-				_e["derive"] = maxf(float(_e["derive"]), rad_to_deg(vh.normalized().angle_to(avant.normalized())))
-			_e["penche"] = maxf(float(_e["penche"]), _penche())
-			_e["up_min"] = minf(float(_e["up_min"]), _ch.global_transform.basis.y.dot(Vector3.UP))
-			if vh.length() < 1.0 or _t - float(_e["t0"]) > 12.0:
-				var d := pos - (_e["x0"] as Vector3)
-				d.y = 0.0
-				var dir0: Vector3 = _e["dir0"]
-				var tourne := absf(float(_e["tourne"]))
-				_res[phase] = {"v": float(_e["v1"]) * 3.6, "tourne": rad_to_deg(tourne),
-						"rayon": float(_e["chemin"]) / maxf(tourne, 0.001), "chemin": _e["chemin"],
-						"lateral": (d - dir0 * d.dot(dir0)).length(), "avance": d.dot(dir0), "derive": _e["derive"],
-						"temps": _t - float(_e["t0"]), "penche": _e["penche"], "up_min": _e["up_min"]}
 				return true
 	return false
 
@@ -923,18 +857,6 @@ func _resume() -> void:
 			_faute("%s : freinage fort en tournant, la voiture part (dérive %.0f°)" % [id, fv["derive"]])
 		if float(fv["up_min"]) < cos(deg_to_rad(45.0)):
 			_faute("%s : freinage fort en tournant, le véhicule se couche" % id)
-	for ph in ["frein_braque_50", "frein_braque_80"]:
-		var fb: Dictionary = _res.get(ph, {})
-		if fb.is_empty():
-			continue
-		morceaux.append("%s (S et braquage à fond à %.0f km/h) : trajectoire tournée de %.0f° avant l'arrêt, rayon moyen %.1f m, %.1f m de côté pour %.1f m en avant (%.1f m parcourus, %.2f s), dérive %.0f° au plus, roulis %.1f°" % [
-				ph, fb["v"], fb["tourne"], fb["rayon"], fb["lateral"], fb["avance"], fb["chemin"], fb["temps"], fb["derive"], fb["penche"]])
-		if float(fb["lateral"]) < FREIN_BRAQUE_ECART * maxf(float(fb["avance"]), 0.1):
-			_faute("%s : %s, la voiture va presque tout droit (%.1f m de côté pour %.1f m en avant)" % [id, ph, fb["lateral"], fb["avance"]])
-		if float(fb["derive"]) > FREIN_BRAQUE_DERIVE:
-			_faute("%s : %s, tête-à-queue (dérive %.0f°)" % [id, ph, fb["derive"]])
-		if float(fb["up_min"]) < cos(deg_to_rad(45.0)):
-			_faute("%s : %s, le véhicule se couche" % [id, ph])
 	for ph in ["virage_50", "virage_80", "virage_110", "virage_vmax"]:
 		var v: Dictionary = _res.get(ph, {})
 		if v.is_empty():
