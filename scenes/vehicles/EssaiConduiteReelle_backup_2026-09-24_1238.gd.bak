@@ -2,8 +2,8 @@ extends Node
 
 # ESSAI DE LA CONDUITE RÉALISTE (étape 1, 2026-09-24, CLAUDE.md §13). Posé sur le joueur par Player._ready.
 #  - F7 : bascule arcade / réaliste (Car.conduite_reelle), coupée au lancement. S'applique tout de suite à la voiture
-#    qu'on conduit, en roulant, et aux suivantes. Tous les modèles du catalogue (2026-09-24, chacun réglé sur sa fiche :
-#    CLAUDE.md §14).
+#    qu'on conduit, en roulant, et aux suivantes. Seuls les modèles de Car.CONDUITE_REELLE_MODELES sont concernés : la
+#    berline city_sedan_01.
 #  - F8 : à pied, pose une berline city_sedan_01 devant le joueur (la précédente disparaît si personne n'est dedans).
 #  - un bandeau, pendant qu'on conduit la berline : mode, rapport, vitesse.
 # Outil d'essai : il disparaîtra quand la conduite réaliste sera celle du jeu, ou abandonnée.

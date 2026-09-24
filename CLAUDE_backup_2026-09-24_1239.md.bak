@@ -12,10 +12,7 @@ travail imposée, les commandes exactes, les pièges déjà payés et l'état d'
 > - l'assistance de direction du pack, qui resserrait le virage en manœuvre ; elle est maintenant dosée par la vitesse
 >   (§13, « Direction »).
 >
-> **Puis décision du joueur : conduite FULL RÉALISTE pour le joueur, arcade supprimée, sur les 72 modèles** (§14). Étape
-> A FAITE : une fiche par modèle (`resources/vehicle_physics/fiches_vehicules.csv`), le châssis réglé sur elle, le banc
-> `ChassisBancTest` passé par les 72. Suivent : B, l'arcade retirée pour le joueur ; C, la circulation aux vitesses de
-> chaque modèle ; D, la vraie physique sur les PNJ MESURÉE seulement ; E, les vidéos. Toujours en attente depuis le
+> ARRÊT : le joueur teste le ressenti ce soir avant l'étape 3 (les autres voitures). Toujours en attente depuis le
 > 2026-09-23 : le coût physique d'environ 2 ms (NON TOUCHÉ, le joueur le teste en jeu) et la pose des trois packs
 > d'accessoires convertis (§7).
 
@@ -52,8 +49,7 @@ travail imposée, les commandes exactes, les pièges déjà payés et l'état d'
   des entrées (`RampesEntree.gd`, même jour), **629** depuis le feu d'obstacle de Mk1 (`feu_obstacle.gdshader` et son
   matériau, même jour, §9), **630** depuis l'outil de conversion des packs d'accessoires (`ConversionPacks.gd`, même
   jour, §7), **635** depuis l'essai de la conduite réaliste (`ChassisReel.gd`, `ChassisRoue.gd`, `EssaiConduiteReelle.gd`,
-  `ConduiteReelleTest`, 2026-09-24, §13), **640** depuis les fiches des véhicules (`FichesVehicules.gd`,
-  `ChassisBancTest`, `FichesVehiculesOutil`, même jour, §14). **`ProjectLoadCheck` ne parcourt pas `res://assets`** (seulement scenes, scripts, resources, shaders) : les
+  `ConduiteReelleTest`, 2026-09-24, §13). **`ProjectLoadCheck` ne parcourt pas `res://assets`** (seulement scenes, scripts, resources, shaders) : les
   98 scènes d'accessoires n'entrent pas dans son compte.
 
 ## 2. Méthode de travail (imposée, non négociable)
@@ -229,14 +225,13 @@ attendu. (C'est la voiture du pack telle quelle. Le châssis de la conduite réa
 "$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/CarDrivingTest.tscn  # accélération, virage, freinage : CAR_DRIVING_RESULT
 "$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/CarDropTest.tscn     # chute de 10 m : CAR_DROP_RESULT
 "$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/ConduiteReelleTest.tscn  # conduite réaliste, berline : 108 km/h, freinage, bordure, volant partiel, rampe 16 %, entrée de parking (réaliste ET arcade), sortie, F7, F8, coût, cf. §13
-"$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/ChassisBancTest.tscn  # châssis par fiche, 6 silhouettes (~25 s) ; -- --tous --lot=i/3 pour les 72 (3 x ~2 min en parallèle), cf. §14
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/CarKerbTest.tscn          # bordures : le joueur monte, l'IA non
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/WheelSpinTest.tscn        # roues des 72 modèles : axe, sens, rayon, stroboscope, pivot, braquage, rayon de braquage par modèle
 "$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/ParkingStructureTest.tscn  # parkings à étages : plateaux, escalier, hélice, cf. §11
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/DowntownStreetsTest.tscn
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/DowntownBuildingsTest.tscn
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/ShopBuildingsTest.tscn     # échec ANTÉRIEUR connu
-"$GODOT" --headless --path "$PROJET" --script res://scenes/world/map/tools/ProjectLoadCheck.gd   # attendu : 640 fichiers, 0 échec
+"$GODOT" --headless --path "$PROJET" --script res://scenes/world/map/tools/ProjectLoadCheck.gd   # attendu : 635 fichiers, 0 échec
 ```
 
 Outil d'inspection, hors batterie : `res://scenes/tests/VehicleSortTest.tscn` aligne les véhicules du catalogue
@@ -664,10 +659,9 @@ débogage sur `V`.
   en 2,57 s. Rappel : ce `RigidBody3D` n'est placé dans aucune scène de jeu (les 252 voitures de la
   circulation et la voiture prise dans la rue sont des `Car.gd` arcade) ;
 - **chantier « relier tous les bâtiments à la route »** (cf. ci-dessous).
-- **conduite réaliste** (pack VitaVehicle, §13 et §14) : étape 1 FAITE le 2026-09-24, essai sur la berline city_sedan_01
-  (F7 / F8), et deux défauts des vidéos corrigés le même jour (rampe d'accès des parkings, direction). Puis décision du
-  joueur, le même jour : **full réaliste pour le joueur, arcade supprimée, sur les 72 modèles**, chacun sur sa fiche (§14 ;
-  étape A, les fiches, FAITE). Restent ensuite : les chocs contre la circulation, les sons.
+- **conduite réaliste** (pack VitaVehicle, §13) : étape 1 FAITE le 2026-09-24, essai sur la berline city_sedan_01 (F7 / F8),
+  et deux défauts des vidéos corrigés le même jour (rampe d'accès des parkings, direction) ; le joueur teste le ressenti
+  avant l'étape 3, les autres voitures (puis poids lourds, chocs contre la circulation, tests arcade à réécrire, sons).
 - **ACCESSOIRES PRÊTS À POSER, pas encore posés** (2026-09-23) : trois packs reçus en FBX, convertis en une scène par
   modèle par `scenes/world/props/tools/ConversionPacks.gd` — `assets/airport_ground_vehicles/` (4 véhicules de piste),
   `assets/farm_buildings_quaternius/` (13 bâtiments et objets de ferme), `assets/low_poly_construction/` (81 éléments et
@@ -2304,12 +2298,6 @@ d'analyse laisse Godot bloqué — payé encore une fois dans cette série.
 
 ## 13. Conduite réaliste : essai sur la berline (étape 1, 2026-09-24)
 
-> **Suite au §14** (même jour) : les 72 modèles, chacun sur sa fiche. Deux choses écrites ci-dessous sont FAUSSES, et les
-> chiffres de l'essai de la berline ont été relevés avec le défaut qui les explique : le corps rigide recevait
-> l'amortissement par défaut du projet (0,1 /s, une traînée de 2,5 m/s² à 90 km/h, §14). La « vitesse de pointe, ~145 km/h
-> (bridée ailleurs dans le pack, pas étudiée) » venait de là, pas du pack ; l'arrêt en 15,4 s pied levé aussi. Et le
-> centre de gravité, la coque et le moteur de la berline sont maintenant ceux de sa fiche.
-
 Plan chiffré remis au joueur le 2026-09-24 et validé : **étape 1 = essai sur UNE berline, désactivé par défaut, puis ARRÊT**
 — le joueur teste le ressenti en jeu avant toute suite (réglages au ressenti, autres modèles, poids lourds, chocs contre la
 circulation, tests arcade à réécrire, sons).
@@ -2422,139 +2410,3 @@ moteur du pack.
   et la voiture se repoussaient (0,76 m de chute). Le retirer de l'arbre d'abord.
 - **Le seuil de passage de la boîte automatique du pack est multiplié par le rayon du pneu** (en pieds) : un pneu plus grand,
   des passages plus hauts.
-
-## 14. Conduite réaliste : une fiche par véhicule, les 72 modèles (2026-09-24)
-
-Décision du joueur après l'essai de la berline (§13) : **conduite FULL réaliste pour le joueur, arcade supprimée, sur les 72
-modèles conduisibles**. Ses exigences :
-1. **pas de tonneau** : braquer à fond à haute vitesse fait glisser ou sous-virer, jamais coucher ; essayé à 50, 80, 110 km/h
-   et à la vitesse de pointe, sur chaque silhouette ;
-2. **le pare-chocs ne frotte plus** en entrant dans les parkings ni sur les bordures ;
-3. **chaque véhicule a ses propres caractéristiques, PAS DE CATÉGORIES**, dans un tableau lisible qu'il ajustera à la main ;
-   le poids joue sur la conduite (freine plus long, tourne moins vif, accélère moins) ;
-4. la circulation prend les vitesses et accélérations de chaque modèle ; la vraie physique sur les PNJ est **mesurée
-   seulement**, il décide après ;
-5. d'abord UN modèle de chaque silhouette pour régler, puis les autres ; des vidéos ; un commit par étape ; pas plus de
-   10 min de vérification sans lui demander.
-
-Étapes : **A**, les fiches, le châssis réglé sur elles et le banc (ce chapitre) ; **B**, l'arcade retirée pour le joueur ;
-**C**, la circulation ; **D**, la mesure de la physique hybride sur les PNJ ; **E**, les vidéos.
-
-### Le tableau
-
-`resources/vehicle_physics/fiches_vehicules.csv` : une ligne par modèle, séparateur `;`, décimales avec un point, lignes `#`
-de commentaire. Son en-tête décrit chaque colonne. **Il est importé en `keep`** (`fiches_vehicules.csv.import`) : sans cela
-Godot en ferait une table de traductions. Lu une fois par `scripts/data/FichesVehicules.gd` (classe `FichesVehicules`) ;
-une case vide prend la valeur de la berline (`DEFAUTS`).
-
-Chaque ligne est estimée pour SON modèle, d'après son nom, sa forme et ses dimensions mesurées : masse (750 kg pour la
-micro-citadine, 18 t pour la benne à ordures), transmission, puissance (35 à 588 kW), vitesse de pointe, cx, répartition
-avant, adhérence, freinage, fréquence et amortissement de suspension, barres anti-roulis, garde de la coque, et vitesse et
-accélération dans la circulation (étape C).
-
-Les colonnes CALCULÉES (`cdg_m`, `raideur_av_nmm`, `raideur_ar_nmm`, `amort_av_nsm`, `amort_ar_nsm`) sont écrites par
-`scenes/vehicles/tools/FichesVehiculesOutil.tscn`. L'outil charge le modèle comme en jeu et applique les formules du jeu
-(`FichesVehicules.calculees`). Une case remplie est gardée, une case vide recalculée. **Pour qu'une suspension suive une
-masse modifiée, vider ses cases**, ou passer `-- --recalculer`, qui réécrit tout.
-
-Formules :
-- **centre de gravité** = min(0,38 x hauteur, voie / (2 x `SSF_MIN` x adhérence)), avec `SSF_MIN` = 1,8 : le véhicule
-  glisse avant de pouvoir se coucher ;
-- **ressort** = (2π f)² x masse portée par la roue ; f = `suspension_hz` à l'avant, x 1,08 à l'arrière ;
-- **amortisseur** = `amortissement_pct` de l'amortissement critique 2√(k m) ;
-- **barre anti-roulis** : `AR_Elast` = φ / ((1 - φ) x 2 x écrasement statique), φ = sa part de la raideur en roulis de
-  l'essieu ;
-- **moteur** : multiplicateur du couple du pack k = puissance x 0,85 / 70 (mesuré : 68 à 73 kW aux roues par unité de k,
-  sur 5 gabarits) ; boîte étagée pour la vitesse de pointe à 6 000 tr/min en cinquième, tenue par un limiteur ;
-- **freins** : le couple qui donne la décélération de la fiche. Répartition = la charge sur l'avant au freinage maximal
-  (transfert = hauteur du centre de gravité / empattement x décélération / g), + 3 % ;
-- **traînée** : cx x surface frontale mesurée (boîte du modèle x 0,8), en v².
-
-### Ce que le banc a fait trouver
-
-Tout est corrigé dans `ChassisReel` et `ChassisRoue` ; les fichiers du pack sont intacts.
-
-1. **LE CORPS RIGIDE RECEVAIT L'AMORTISSEMENT DU PROJET.** Défaut de Godot : 0,1 /s en translation comme en rotation
-   (`physics/3d/default_linear_damp` ; `project.godot` n'en règle aucun). C'est une traînée de 0,1 x v : 2,5 m/s² à 90 km/h,
-   5,4 à 195, plus que la traînée et le roulement réels réunis. La berline à 100 kW plafonnait à 81 km/h : ses pneus avant
-   poussaient de 6,4 kN à 90 km/h et elle n'accélérait que de 2,1 m/s². Coupé (`DAMP_MODE_REPLACE`, 0). **Tout RigidBody3D
-   du projet l'a par défaut.**
-2. **Le ralenti du moteur du pack est fragile.** Son frottement interne pèse surtout au ralenti :
-   - multiplié comme le couple, il faisait caler un petit moteur (k < 0,8) ;
-   - sur un gros moteur (k de 1,9 à 3), le ralenti décrochait au premier pas, régime à zéro avant qu'on n'accélère.
-   Le frottement ne suit donc k qu'en dessous de 1. La traînée interne, le gros des pertes à haut régime, suit k : la
-   puissance devient proportionnelle à k.
-3. **Freinage réparti à 73 % sur l'avant**, une constante : la berline partait en tête-à-queue (34,5°), car à 9,5 m/s² son
-   arrière ne porte plus que 17 % du poids. La répartition est maintenant calculée (ci-dessus).
-4. **L'ABS du pack agit sur TOUTES les roues à la fois, par à-coups** (1, puis 0,5, puis 0) : 8,2 m/s² de moyenne pour 9,5
-   demandés, 52 m d'arrêt. Il est coupé et remplacé par un **ABS roue par roue** (`ChassisRoue`) : seule la roue qui glisse
-   de plus de 2 m/s + 5 % de la vitesse est desserrée. Berline : 52 -> 44,5 m.
-5. **Antipatinage trop permissif** (1,5 m/s + 25 % de la vitesse). À 90 km/h, les roues arrière d'une sportive de 588 kW
-   patinaient de 3 à 7 m/s, au-delà de la saturation du pneu : plus rien ne tenait la voiture en travers, et la
-   lowpoly_fenyr tournait en ligne droite, volant au centre. La consigne est maintenant le glissement où le pneu du pack
-   sature, lu dans `wheel.gd` : 0,95 m/s à l'arrêt, 2 m/s à 90 km/h. Fenyr : 92 -> 344 km/h, en ligne droite.
-6. **Le frein moteur manquait**, une fois l'amortissement parasite retiré : pied levé à 49 km/h, la berline roulait encore à
-   17 km/h au bout d'une minute. `FREIN_MOTEUR` = 0,4 m/s², en prise, pied levé : elle s'arrête en 21 s.
-7. **Sur les bordures, la coque touchait EN DESCENDANT, à l'arrière.** Quand les roues arrière tombent de la bordure, la
-   caisse plonge (dépassement de l'amortissement) et l'arrière, encore au-dessus de la bordure, la touche. Corrigé par :
-   - l'amortissement relevé de 12 points sur toutes les fiches (33 -> 45 % pour la berline) ;
-   - une garde de coque de 28 cm au moins, et au dessous du modèle - 2 cm (40 cm au plus) pour les véhicules hauts. Le
-     camion de pompiers, dessous à 0,56 m, touchait avec une coque à 0,28 m.
-8. **Une marge anti-tonneau de 1,4 ne suffisait pas.** Le bus s'est couché à 89 km/h braqué à fond (8,3 m/s², centre de
-   gravité à 1,12 m). Trois effets s'ajoutent : le roulis de la caisse, son dépassement quand on braque d'un coup, et les
-   pneus, qui donnent jusqu'à 1,13 x l'adhérence (mesuré). Avec 1,8 : 5,3° de roulis au pire.
-
-Pièges de MESURE, payés en écrivant le banc :
-- **v x lacet surestime l'accélération latérale** dès que la voiture pivote : 22 m/s² annoncés pour 9,7 réels. Mesurer la
-  variation de la vitesse perpendiculaire à elle-même.
-- **Le dessous d'un modèle, relevé tranche par tranche, comptait des tranches de toit** (la visière d'un fourgon). Leur
-  rayon partait au-dessus de la barre de hauteur du parking et la prenait pour le sol : -0,6 m annoncés, 0,27 m réels. Ne
-  garder que les tranches basses.
-- **`PhysicsDirectBodyState3D.get_contact_local_position` rend une position MONDE**, malgré son nom.
-
-### Le banc : `scenes/tests/ChassisBancTest`
-
-Chaque véhicule, monté en réaliste sur sa fiche, passe les mêmes essais :
-- repos ;
-- accélération pied au plancher : 0-50, 0-100, vitesse atteinte, rapports ;
-- freinage fort depuis 100 km/h ;
-- braquage à fond à 50, 80, 110 km/h et à la vitesse de pointe ;
-- bordures de 0,15 et 0,17 m, de face et à 30° ;
-- entrée d'un parking à étages, à 4 et 7 m/s.
-
-Il échoue sur un tonneau, deux roues d'un même côté en l'air plus de 0,3 s, un contact de coque, une boîte restée en
-première, ou un freinage qui dévie. `-- --trace` imprime l'état du moteur, des roues et des contacts.
-
-**Les 72 modèles passent.** Trois lots en parallèle, 2 min. Les six silhouettes de réglage :
-
-| silhouette | 0-100 | atteint en 40 s (fiche) | freinage 100-0 | roulis au pire | accél. latérale | bordure 15 cm, dessous du modèle |
-|---|---|---|---|---|---|---|
-| city_microcar, 750 kg, 45 kW | 11,8 s | 135 km/h (140) | 46,1 m | 4,1° | 9,3 m/s² | 0,001 m |
-| city_sedan_01, 1 300 kg, 100 kW | 9,7 s | 180 (195) | 44,3 m | 4,1° | 9,8 | 0,033 |
-| city_sports_car_02, 1 500 kg, 420 kW | 4,2 s | 314 (320) | 40,3 m | 1,4° | 10,7 | -0,046 |
-| city_suv_02, 1 900 kg, 170 kW | 8,3 s | 191 (200) | 44,5 m | 3,4° | 9,5 | 0,266 |
-| city_truck_01, 7,5 t, 190 kW | 27,6 s | 106 (110) | 53,9 m | 1,8° | 7,8 | 0,201 |
-| city_bus_01, 12 t, 220 kW | 0-50 en 9,8 s | 86 (90) | 45,0 m depuis 85 km/h | 5,2° | 7,3 | 0,160 |
-
-Sur les 72 :
-- 0-100 de 3,8 s (lowpoly_rally) à 39 s (camion de pompiers) ;
-- freinage 39 à 47 m pour les voitures, 49 à 69 m pour les poids lourds ;
-- roulis au plus 8,5° (voitures anciennes, suspension molle) ;
-- accélération latérale de 7,3 (poids lourds) à 11,2 m/s².
-
-Les vitesses de pointe des véhicules peu puissants ou peu profilés ne sont pas atteintes en 40 s : c'est l'équilibre
-puissance / traînée. La berline a 85 kW aux roues, qui la mèneraient à 199 km/h, mais à 180 km/h il ne lui reste que
-21 kW de surplus.
-
-### Reste : 13 modèles plus bas que les bordures
-
-Ce n'est pas une affaire de suspension. Prise de face, une bordure entre dans le pare-chocs de tout modèle dont le dessous
-est plus bas qu'elle. La coque physique ne touche nulle part, et la voiture passe.
-- **Bordure de 15 cm** : lowpoly_italia 5,7 cm (9,5 cm de garde), city_sports_car_02 et _03 4,5 cm, lowpoly_rally 3,6,
-  city_muscle_car_03 1,2, lowpoly_ghini 0,9, city_retro_car_03 0.
-- **Bordure de 17 cm** (raquette de l'aérogare) : en plus, city_mail_truck, city_microcar, lowpoly_armor, normalcar1, taxi,
-  normalcar2, de 0,1 à 1,8 cm.
-- **Entrée des parkings** : lowpoly_italia 2,1 cm, city_sports_car_02 0,8 cm.
-
-Seul remède : surélever ces caisses sur leurs roues d'autant (6 cm pour l'italia), ce qui se verrait en permanence. Laissé
-au choix du joueur. La balayeuse (city_sweeper) touche par ses brosses, c'est voulu.

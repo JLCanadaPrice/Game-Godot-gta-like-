@@ -1,0 +1,128 @@
+class_name FichesVehicules
+extends RefCounted
+
+# FICHES DES VÉHICULES (2026-09-24, CLAUDE.md §14). Les caractéristiques physiques de CHAQUE modèle du catalogue — masse,
+# puissance, vitesse de pointe, suspension, adhérence, freins, centre de gravité, conduite dans la circulation — lues dans
+# un tableau ajustable à la main : resources/vehicle_physics/fiches_vehicules.csv (séparateur « ; », décimales avec un
+# point, lignes « # » de commentaire ; son en-tête décrit chaque colonne). Importé par Godot en « keep » : le fichier est
+# lu tel quel (et exporté tel quel), sans quoi Godot en ferait une table de traductions.
+# Pas de catégories : chaque ligne est pensée pour son modèle. Les colonnes calculées (cdg_m, raideur_*, amort_*) le sont
+# ici, pour le jeu et pour l'outil qui les écrit (scenes/vehicles/tools/FichesVehiculesOutil.tscn) : une case vide est
+# recalculée, une case remplie est prise telle quelle.
+
+const CHEMIN := "res://resources/vehicle_physics/fiches_vehicules.csv"
+# Anti-tonneau : un véhicule ne se couche pas tant que son adhérence le fait glisser avant. En régime établi, il bascule
+# quand l'accélération latérale dépasse g x voie / (2 x hauteur du centre de gravité) ; l'adhérence la borne à
+# g x adhérence. On garde voie / (2 h) >= SSF_MIN x adhérence : 80 % de marge pour le roulis de la caisse (qui déporte
+# le centre de gravité vers l'extérieur), le dépassement du roulis quand on braque d'un coup, et les pics de force des
+# pneus (jusqu'à 1,13 x l'adhérence, mesuré). 40 % ne suffisaient pas : le bus s'est couché à 89 km/h, braqué à fond.
+const SSF_MIN := 1.8
+const PART_CDG_HAUTEUR := 0.38       # centre de gravité réel estimé : 38 % de la hauteur hors tout
+const ARRIERE_HZ := 1.08             # fréquence de suspension arrière / avant (l'arrière un peu plus ferme)
+const G := 9.81
+# Valeurs par défaut d'une case vide ou d'un modèle absent du tableau : celles de la berline city_sedan_01.
+const DEFAUTS := {"masse_kg": 1300.0, "transmission": "T", "puissance_kw": 100.0, "vitesse_max_kmh": 195.0, "cx": 0.31,
+		"avant_pct": 61.0, "adherence": 1.0, "freinage_ms2": 9.5, "suspension_hz": 1.4, "amortissement_pct": 33.0,
+		"antiroulis_av_pct": 40.0, "antiroulis_ar_pct": 25.0, "garde_cm": 24.0, "trafic_kmh": 43.0, "trafic_accel_ms2": 3.0}
+
+static var _lu := false
+static var _fiches := {}
+
+
+# La fiche d'un modèle : ses cases, nombres convertis (NAN pour une case vide), textes tels quels. {} s'il est absent.
+static func fiche(id: String) -> Dictionary:
+	_charger()
+	return _fiches.get(id, {})
+
+
+static func ids() -> Array:
+	_charger()
+	return _fiches.keys()
+
+
+# Une valeur numérique de la fiche ; celle de DEFAUTS si la case est vide ou le modèle absent.
+static func nombre(f: Dictionary, cle: String) -> float:
+	var v = f.get(cle, NAN)
+	if v is float and not is_nan(v):
+		return v
+	return float(DEFAUTS.get(cle, NAN))
+
+
+static func texte(f: Dictionary, cle: String) -> String:
+	var v = f.get(cle, "")
+	if v is String and v != "":
+		return v
+	return String(DEFAUTS.get(cle, ""))
+
+
+# Relit le tableau (l'outil, après l'avoir réécrit).
+static func recharger() -> void:
+	_lu = false
+	_fiches.clear()
+	_charger()
+
+
+static func _charger() -> void:
+	if _lu:
+		return
+	_lu = true
+	var f := FileAccess.open(CHEMIN, FileAccess.READ)
+	if f == null:
+		push_error("FichesVehicules : %s illisible" % CHEMIN)
+		return
+	var entete := PackedStringArray()
+	while not f.eof_reached():
+		var ligne := f.get_line().strip_edges()
+		if ligne.is_empty() or ligne.begins_with("#"):
+			continue
+		var cases := ligne.split(";")
+		if entete.is_empty():
+			for c in cases:
+				entete.append(c.strip_edges())
+			continue
+		var d := {}
+		for i in entete.size():
+			var brut := cases[i].strip_edges() if i < cases.size() else ""
+			d[entete[i]] = brut if entete[i] in ["id", "nature", "transmission"] else (brut.to_float() if brut.is_valid_float() else NAN)
+		if String(d.get("id", "")) != "":
+			_fiches[String(d["id"])] = d
+
+
+# --- colonnes calculées ---------------------------------------------------------------------------------------------
+
+# Hauteur du centre de gravité pour la physique : l'estimation réelle, bornée par la règle anti-tonneau (cf. SSF_MIN).
+static func cdg(hauteur_m: float, voie_m: float, adherence: float) -> float:
+	return minf(PART_CDG_HAUTEUR * hauteur_m, voie_m / (2.0 * SSF_MIN * maxf(adherence, 0.3)))
+
+
+# Raideur d'UN ressort (N/mm) pour que la masse qu'il porte oscille à `hz` : k = (2 pi f)^2 x m.
+static func raideur_nmm(masse_kg: float, part_essieu: float, roues_essieu: int, hz: float) -> float:
+	var m := masse_kg * part_essieu / float(maxi(roues_essieu, 1))
+	return pow(TAU * hz, 2.0) * m / 1000.0
+
+
+# Amortisseur d'UNE roue (N.s/m) : `pct` % de l'amortissement critique 2 x racine(k x m).
+static func amort_nsm(raideur: float, masse_kg: float, part_essieu: float, roues_essieu: int, pct: float) -> float:
+	var m := masse_kg * part_essieu / float(maxi(roues_essieu, 1))
+	return 2.0 * pct / 100.0 * sqrt(raideur * 1000.0 * m)
+
+
+# Les colonnes calculées d'une fiche, celles qui sont remplies prises telles quelles. `voie_m`, `hauteur_m`, roues par
+# essieu : mesurées sur le modèle (Car._mesures_chassis).
+static func calculees(f: Dictionary, voie_m: float, hauteur_m: float, roues_av: int, roues_ar: int) -> Dictionary:
+	var masse := nombre(f, "masse_kg")
+	var avant := nombre(f, "avant_pct") / 100.0
+	var hz := nombre(f, "suspension_hz")
+	var pct := nombre(f, "amortissement_pct")
+	var out := {}
+	out["cdg_m"] = _ou(f, "cdg_m", cdg(hauteur_m, voie_m, nombre(f, "adherence")))
+	out["raideur_av_nmm"] = _ou(f, "raideur_av_nmm", raideur_nmm(masse, avant, roues_av, hz))
+	out["raideur_ar_nmm"] = _ou(f, "raideur_ar_nmm", raideur_nmm(masse, 1.0 - avant, roues_ar, hz * ARRIERE_HZ))
+	out["amort_av_nsm"] = _ou(f, "amort_av_nsm", amort_nsm(out["raideur_av_nmm"], masse, avant, roues_av, pct))
+	out["amort_ar_nsm"] = _ou(f, "amort_ar_nsm", amort_nsm(out["raideur_ar_nmm"], masse, 1.0 - avant, roues_ar, pct))
+	return out
+
+
+static func _ou(f: Dictionary, cle: String, calcul: float) -> float:
+	var v = f.get(cle, NAN)
+	return v if v is float and not is_nan(v) else calcul

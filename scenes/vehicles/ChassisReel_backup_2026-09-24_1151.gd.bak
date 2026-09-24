@@ -3,19 +3,16 @@ extends "res://assets/car_physics/MAIN/car.gd"
 # CHÂSSIS RÉEL (essai du 2026-09-24, étape 1 de la conduite réaliste, CLAUDE.md §13).
 #
 # La voiture du joueur reste une Car (Car.gd) : son modèle, ses feux, sa zone de tir, sa zone d'écrasement, ses taches,
-# sa place dans la circulation. Quand le joueur prend le volant en conduite réaliste (F7), elle se dote de ce
+# sa place dans la circulation. Quand le joueur prend le volant d'un modèle retenu pour l'essai (F7), elle se dote de ce
 # châssis — le cœur physique du pack VitaVehicle (un RigidBody3D, quatre roues à rayon, boîte automatique, pneus), réparé
 # le 2026-09-21 (f2fe587) — et le SUIT : la Car prend sa position et son cap, son modèle son roulis et son tangage, ses
 # roues leur rotation, leur braquage et leur débattement. Le châssis est invisible et ne porte que la physique.
 #
-# Construit sur les MESURES du modèle (Car._mesures_chassis) et sur la FICHE du véhicule (FichesVehicules, le tableau
-# resources/vehicle_physics/fiches_vehicules.csv, CLAUDE.md §14) : roues posées sur les centres relevés (6 pour un tandem,
-# 2 physiques pour un essieu arrière d'une seule pièce), pneu au rayon relevé, empattement et voie du modèle, coque = la
-# silhouette du modèle (une par pièce de caisse pour les camions, bus et pick-up) relevée à la garde au sol de la fiche ;
-# masse, centre de gravité, puissance, vitesse de pointe, suspension, barres anti-roulis, adhérence, freins, traînée : ceux
-# de la fiche. Convention de masse de l'auteur du pack : Weight = masse en kg, masse du corps = Weight / 10 (ses forces
-# sont au dixième des vraies). Tout ce qui dans le pack ne suit pas la masse est ramené à elle ici, roue par roue (cf.
-# configurer) : ressorts et amortisseurs, raideur des pneus, couple des freins, seuils de l'ABS.
+# Construit sur les MESURES du modèle (Car._mesures_chassis), pas sur la voiture du pack : roues posées sur les centres
+# relevés, pneu au rayon relevé, empattement et voie du modèle, coque = silhouette du modèle relevée à GARDE_AU_SOL.
+# Les réglages de suspension, de pneu, de freins et de moteur sont ceux de PlayerCarPhysics.tscn, la seule voiture de ce
+# pack validée par ses deux tests (CarDrivingTest, CarDropTest) : masse du pack (Weight/10 = 90, sa convention, cf.
+# CLAUDE.md §6), mêmes raideurs, même centre de gravité en proportion.
 #
 # Repère du châssis : celui du pack, avant en +Z, gauche en +X (celui de la Car a l'avant en -Z : demi-tour autour de Y).
 #
@@ -33,9 +30,8 @@ extends "res://assets/car_physics/MAIN/car.gd"
 # Et la voiture du pack n'est PAS une berline : mesuré le 2026-09-24 (ConduiteReelleTest --trace), elle plafonnait à
 # 82,7 km/h en DEUXIÈME, à 6 400 tr/min, sans jamais atteindre les 6 500 tr/min où sa boîte passe la troisième — environ
 # 20 kW aux roues, quand une berline en a 80 à 110, et une traînée LINÉAIRE en vitesse (0,025 x v m/s²), 2,5 fois la
-# vraie à 100 km/h. Réglée ici sur chaque véhicule : traînée en v², sur la surface frontale MESURÉE du modèle et le cx de
-# sa fiche ; couple du moteur multiplié selon la puissance de la fiche (couple_pour) ; boîte étagée pour sa vitesse de
-# pointe, tenue par un limiteur.
+# vraie à 100 km/h. Réglée ici sur une berline : traînée en v², sur la surface frontale MESURÉE du modèle (COEF_TRAINEE,
+# MASSE_REELLE), couple multiplié par COUPLE, choisi pour un 0-100 km/h d'environ 10 s (ConduiteReelleTest).
 # Enfin le pneu du pack est VISQUEUX : sa force naît du glissement, et une voiture freinée en pente doit glisser un peu
 # pour être retenue (mesuré : 3,7 cm en 2 s sur la rampe à 16 %). Freinée et presque arrêtée, elle est maintenant tenue
 # franchement, dans la limite de l'adhérence (_adherence_arret).
@@ -54,19 +50,13 @@ extends "res://assets/car_physics/MAIN/car.gd"
 
 const Roue := preload("res://scenes/vehicles/ChassisRoue.gd")
 
-# Réglages communs à tous les véhicules ; tout ce qui est propre à l'un d'eux vient de sa fiche.
-const DEBATTEMENT := 0.51         # longueur du rayon de roue au-delà du rayon du pneu (la berline de l'étape 1 : 0,81 m)
-const BUTEE := 0.10               # course de compression entre le repos et la butée
-const RPM_VMAX := 6000.0          # régime en cinquième à la vitesse de pointe : celui de la puissance maximale du moteur
-const RPM_MONTEE := 6300.0        # boîte automatique : passage au rapport supérieur, pied au plancher
-const RPM_DESCENTE := 3700.0      # rétrogradage quand le rapport inférieur tomberait sous ce régime, pied au plancher
-const CHARGE_REF := 4.37          # charge (pack, par pas) d'une roue avant de la berline de l'étape 1, où la raideur du pneu
-                                  # du pack était juste : elle suit ici la charge de chaque roue
-const MARGE_FREIN_AV := 0.03      # répartition du freinage : un peu plus sur l'avant que la charge au freinage maximal
+const LONGUEUR_RAYON := 0.81      # rayon de roue de PlayerCarPhysics (m) : course et hauteur de repos en dépendent
+const GARDE_AU_SOL := 0.20        # bas de la coque au-dessus du sol, au repos : une bordure de 0,15 m passe dessous
+const HAUTEUR_CDG := 0.50         # centre de gravité au-dessus du sol (PlayerCarPhysics : 0,49 m)
+const PART_AVANT := 0.595         # part du poids sur l'essieu avant (PlayerCarPhysics : 59,5 %, une traction)
+const RAYON_PNEU_PACK := 0.2832   # rayon de pneu de PlayerCarPhysics (m) : l'étagement de sa boîte y est réglé
+const POIDS := 900.0              # convention du pack : masse du corps = Weight / 10
 const CRR := 0.012                # résistance au roulement d'un pneu de tourisme sur enrobé
-const FREIN_MOTEUR := 0.4         # m/s² : frein moteur, en prise, pied levé (cf. _frein_moteur)
-const KW_ROUES_PAR_K := 70.0      # puissance aux roues par unité du multiplicateur de couple (mesurée, cf. couple_pour)
-const RENDEMENT_TRANSMISSION := 0.85
 const V_MAINTIEN := 1.5           # m/s : sous cette vitesse, sans pédale, le frein ralentit puis tient la voiture
 const FREIN_RALENTIR := 0.35      # pédale de frein appliquée en roulant sous V_MAINTIEN
 const V_ARRET := 0.3              # m/s : en deçà, maintien franc
@@ -74,9 +64,12 @@ const FREIN_MAINTIEN := 1.0
 const DELAI_MARCHE_AVANT := 4     # compte de la boîte (décrémenté de 2 par pas), 60 dans le pack
 const REPOS_V := 0.05             # m/s et rad/s : immobile
 const REPOS_PAS := 30             # pas physiques immobile, sans conducteur, avant de figer le corps
+const COEF_TRAINEE := 0.30        # Cx d'une berline
+const MASSE_REELLE := 1300.0      # kg d'une berline : la traînée se rapporte à elle, pas à la masse de convention du pack
 const MU_ARRET := 0.8             # adhérence d'un pneu arrêté sur enrobé sec
-const GLISSE_SATURATION := 0.945 # m/s : glissement où le pneu du pack sature, à l'arrêt et adhérence 1 (cf. _antipatinage)
-const PART_ANTIPATINAGE := 0.9    # l'antipatinage tient les roues motrices à cette part de ce glissement
+const COUPLE := 2.5               # couple du moteur du pack multiplié par (cf. en tête)
+const GLISSE_ANTIPATINAGE := 1.5  # m/s de glissement des roues motrices tolérés à l'arrêt...
+const GLISSE_RELATIF := 0.25      # ... plus cette part de la vitesse : le pneu du pack pousse avec 20-30 % de glissement
 const GAIN_ANTIPATINAGE := 1.0
 const ASSISTANCE_DERIVE := 1.0    # SteeringAssistance du pack (car.gd), entière au-delà de ASSISTANCE_V1
 const ASSISTANCE_LACET := 0.12    # SteeringAssistanceAngular du pack, idem
@@ -92,38 +85,23 @@ var _pas_repos := 0
 var _cout_car_us := 0
 var _cout_dernier_pas := 0
 var _g := 9.8
-var _tailles := {}                # roue -> rayon du pneu en unités du pack (w_size de wheel.gd, calculé à son 1er pas seulement)
-var fiche := {}                   # la fiche du véhicule (FichesVehicules)
-var v_max := 70.0                 # vitesse de pointe (m/s), tenue par le limiteur (controls)
+var _taille_pneu := 1.0           # rayon du pneu en unités du pack (w_size de wheel.gd, qui ne le calcule qu'au 1er pas)
 var _c_trainee := 0.0             # traînée : décélération = _c_trainee x v² (1/m)
 
 
 # Construit le châssis sur les mesures du modèle (cf. Car._mesures_chassis), AVANT son entrée dans l'arbre : le _ready du
 # pack cherche ses roues motrices par leur nom.
-func configurer(m: Dictionary, braquage_max: float, f: Dictionary) -> void:
+func configurer(m: Dictionary, braquage_max: float) -> void:
 	name = "ChassisReel"
-	fiche = f
-	var masse_kg := FichesVehicules.nombre(f, "masse_kg")
-	Weight = masse_kg                # convention de l'auteur du pack : Weight en kg, masse du corps = Weight / 10
-	mass = masse_kg / 10.0
+	Weight = POIDS
+	mass = POIDS / 10.0
 	LengthScale = 0.3
 	TransmissionType = 1
-	DragCoefficient = 0.0            # la traînée linéaire du pack est remplacée par _trainee()
-	LiftAngle = 0.0                  # le couple cabreur du pack, proportionnel à la vitesse, sans réalité physique
-	regler_couple(couple_pour(FichesVehicules.nombre(f, "puissance_kw")))
-	v_max = FichesVehicules.nombre(f, "vitesse_max_kmh") / 3.6
+	DragCoefficient = 0.0        # la traînée linéaire du pack est remplacée par _trainee()
+	regler_couple(COUPLE)
 	Controlled = false
 	can_sleep = false
 	continuous_cd = true
-	# AMORTISSEMENT DU CORPS (trouvé le 2026-09-24). Un RigidBody3D reçoit par défaut celui du projet, 0,1 /s en
-	# translation comme en rotation (physics/3d/default_linear_damp) : une « traînée » de 0,1 x v, soit 2,5 m/s² à 90 km/h
-	# et 5,4 à 195 — plus que la traînée et le roulement réels réunis. Mesuré sur la berline : ses pneus avant poussaient
-	# de 6,4 kN à 90 km/h, elle n'accélérait que de 2,1 m/s². Traînée et roulement sont modélisés ici (_trainee,
-	# _resistance_roulement), la rotation est amortie par les amortisseurs et les pneus : le corps n'en reçoit pas d'autre.
-	linear_damp_mode = RigidBody3D.DAMP_MODE_REPLACE
-	linear_damp = 0.0
-	angular_damp_mode = RigidBody3D.DAMP_MODE_REPLACE
-	angular_damp = 0.0
 	collision_layer = 4          # la couche des véhicules, comme Car.tscn
 	collision_mask = 5           # décor + véhicules, comme Car.tscn
 	contact_monitor = true
@@ -131,6 +109,16 @@ func configurer(m: Dictionary, braquage_max: float, f: Dictionary) -> void:
 	_g = float(ProjectSettings.get_setting("physics/3d/default_gravity", 9.8))
 	var liste: Array = m["roues"]
 	var y_sol: float = m["y_sol"]
+	# pneu : la largeur et la série de la voiture du pack (185/60, dont dépend la raideur de son modèle de pneu), la
+	# jante au plus près du rayon relevé sur le modèle. wheel.gd en tire w_radius = (222 + 25,4 x jante) x 0,00049035 m.
+	var r_moyen := 0.0
+	for r: Dictionary in liste:
+		r_moyen += float(r["rayon"]) / float(liste.size())
+	var jante := maxi(roundi((r_moyen / 0.00049035 - 222.0) / 25.4), 10)
+	var rayon_pneu := (222.0 + 25.4 * jante) * 0.00049035
+	_taille_pneu = (222.0 + 25.4 * jante) * 0.003269 * 0.5
+	# même étagement par km/h que la voiture du pack : le rapport de pont suit le rayon de roue
+	FinalDriveRatio = 4.25 * rayon_pneu / RAYON_PNEU_PACK
 	var z_av := 0.0
 	var z_ar := 0.0
 	var n_av := 0
@@ -145,124 +133,65 @@ func configurer(m: Dictionary, braquage_max: float, f: Dictionary) -> void:
 	z_av /= float(n_av)
 	z_ar /= float(n_ar)
 	var empattement := z_av - z_ar
-	# géométrie de direction du pack : centre du virage sur l'essieu arrière prolongé (le milieu d'un tandem), à
-	# Steer_Radius de l'axe à fond de braquage — le rayon du modèle bicyclette au même angle (MAX_STEER_RAD de Car.gd)
+	# géométrie de direction du pack : centre du virage sur l'essieu arrière prolongé, à Steer_Radius de l'axe à fond
+	# de braquage — le rayon du modèle bicyclette de Car.gd au même angle (MAX_STEER_RAD), donc le même rayon de braquage
 	AckermannPoint = z_ar
 	Steer_Radius = empattement / tan(braquage_max)
-	var calc := FichesVehicules.calculees(f, float(m["voie"]), float(m["hauteur"]), n_av, n_ar)
-	var avant := FichesVehicules.nombre(f, "avant_pct") / 100.0
-	var cdg := Vector3(0.0, y_sol + float(calc["cdg_m"]), z_ar + avant * empattement)
+	var cdg := Vector3(0.0, y_sol + HAUTEUR_CDG, z_ar + PART_AVANT * empattement)
 	center_of_mass_mode = RigidBody3D.CENTER_OF_MASS_MODE_CUSTOM
 	center_of_mass = cdg
 	var trainee := Marker3D.new()
 	trainee.name = "DRAG_CENTRE"
 	trainee.position = cdg
 	add_child(trainee)
-	_c_trainee = 0.5 * 1.225 * FichesVehicules.nombre(f, "cx") * float(m["surface"]) / masse_kg
-	var k := 0
-	for forme in m["coques"]:
-		var cs := CollisionShape3D.new()
-		cs.name = "Coque" if k == 0 else "Coque_%d" % k
-		cs.shape = forme
-		add_child(cs)
-		k += 1
-	# Roues. Chaque ressort porte sa part du poids : raideur et amortisseur de la fiche (N/mm et N.s/m réels), ramenés aux
-	# unités du pack (forces au dixième, une impulsion par pas de 1/60 s) ; posées au-dessus du centre relevé de la course
-	# à vide moins l'écrasement statique, pour que la roue repose exactement sur le centre de la roue du modèle. Le pneu du
-	# pack a une raideur qui ne suit pas la charge : elle y est ramenée (CHARGE_REF). Barre anti-roulis : le pack module le
-	# ressort d'une roue par l'écart de compression avec sa jumelle ; AR_Elast = phi / ((1 - phi) x 2 x écrasement) donne
-	# à la barre la part phi de la raideur en roulis de l'essieu.
-	var transmission := FichesVehicules.texte(f, "transmission")
+	_c_trainee = 0.5 * 1.225 * COEF_TRAINEE * float(m["surface"]) / MASSE_REELLE
+	var cs := CollisionShape3D.new()
+	cs.name = "Coque"
+	cs.shape = m["coque"]
+	add_child(cs)
+	# roues : montées au-dessus du centre relevé de la course à vide moins l'écrasement statique, pour que la roue se
+	# pose au repos exactement sur le centre de la roue du modèle. Le pack applique la suspension en impulsion par pas :
+	# à l'équilibre, somme des j x raideur = masse x g x pas.
 	var par_pas := mass * _g / float(Engine.physics_ticks_per_second)
-	var adherence := FichesVehicules.nombre(f, "adherence")
-	# Répartition du freinage : celle de la charge au freinage maximal de la fiche (le transfert vers l'avant vaut
-	# hauteur du centre de gravité / empattement x décélération / g), un peu plus sur l'avant. Moins, les roues arrière
-	# bloquent avant les avant et la voiture part en tête-à-queue au freinage (mesuré : 34,5° sur la berline, dont
-	# l'arrière ne porte plus que 17 % du poids à 9,5 m/s²) ; plus, elle freine moins fort qu'elle ne pourrait.
-	var transfert := float(calc["cdg_m"]) / empattement * FichesVehicules.nombre(f, "freinage_ms2") / _g
-	var frein_av := clampf(avant + transfert + MARGE_FREIN_AV, 0.5, 0.9)
-	var somme_biais := 0.0
-	var somme_rayons := 0.0
-	var r_motrices := 0.0
-	var motrices: Array[String] = []
 	for r: Dictionary in liste:
-		var av := bool(r["avant"])
-		var n := n_av if av else n_ar
-		var charge := (avant if av else 1.0 - avant) * par_pas / float(n)
-		var ressort := float(calc["raideur_av_nmm" if av else "raideur_ar_nmm"]) * 1000.0 / 10.0 / 60.0
-		var amort := float(calc["amort_av_nsm" if av else "amort_ar_nsm"]) / 10.0 / 60.0
-		var j0 := charge / ressort
-		var jante := maxi(roundi((float(r["rayon"]) / 0.00049035 - 222.0) / 25.4), 10)
-		var rayon_pneu := (222.0 + 25.4 * jante) * 0.00049035
-		var longueur := rayon_pneu + DEBATTEMENT
+		var avant := bool(r["avant"])
+		var raideur := 55.0 if avant else 47.0
+		var charge := (PART_AVANT if avant else 1.0 - PART_AVANT) * par_pas / float(n_av if avant else n_ar)
+		var j0 := charge / raideur
 		var w = Roue.new()
 		w.name = String(r["nom"])
-		w.target_position = Vector3(0.0, -longueur, 0.0)
-		w.position = (r["centre"] as Vector3) + Vector3(0.0, longueur - j0 - rayon_pneu, 0.0)
-		w.TyreSettings = {"GripInfluence": adherence, "Width (mm)": 185.0, "Aspect Ratio": 60.0, "Rim Size (in)": float(jante)}
-		var gomme: Dictionary = (w.CompoundSettings as Dictionary).duplicate()
-		gomme["Stiffness"] = charge / CHARGE_REF
-		w.CompoundSettings = gomme
-		w.S_Stiffness = ressort
-		w.S_Damping = amort
-		w.S_ReboundDamping = amort
-		w.S_MaxCompression = j0 + BUTEE
-		var biais := (frein_av if av else 1.0 - frein_av) * 2.0 / float(n)
-		w.B_Bias = biais
-		somme_biais += biais
-		somme_rayons += rayon_pneu
-		w.HB_Bias = 0.0 if av else 1.0
-		w.A_Geometry1 = 0.345 * rayon_pneu / 0.2957
+		w.target_position = Vector3(0.0, -LONGUEUR_RAYON, 0.0)
+		w.position = (r["centre"] as Vector3) + Vector3(0.0, LONGUEUR_RAYON - j0 - rayon_pneu, 0.0)
+		w.TyreSettings = {"GripInfluence": 1.0, "Width (mm)": 185.0, "Aspect Ratio": 60.0, "Rim Size (in)": float(jante)}
+		w.S_Stiffness = raideur
+		w.S_Damping = 4.0 if avant else 3.5
+		w.S_ReboundDamping = 4.0 if avant else 3.5
+		w.S_MaxCompression = 0.15
+		w.B_Torque = 30.0
+		w.B_Bias = 0.8 if avant else 0.2
+		w.HB_Bias = 0.0 if avant else 1.0
+		w.A_Geometry1 = 0.345
 		w.SwayBarConnection = String(r["jumelle"])
-		var phi := clampf(FichesVehicules.nombre(f, "antiroulis_av_pct" if av else "antiroulis_ar_pct") / 100.0, 0.0, 0.85)
-		w.AR_Elast = phi / ((1.0 - phi) * 2.0 * j0)
-		if av:
+		if avant:
 			w.Caster = 2.0
-		if transmission == "I" or (transmission == "T") == av:
 			w.Differed_Wheel = String(r["jumelle"])
-			motrices.append(String(r["nom"]))
-			r_motrices += rayon_pneu
 		for chemin in ["geometry", "animation", "animation/camber", "animation/camber/wheel", "velocity", "velocity/step",
 				"velocity2", "velocity2/step"]:
 			var parent: Node = w if not chemin.contains("/") else w.get_node(chemin.get_base_dir())
-			var nd := Marker3D.new()
-			nd.name = chemin.get_file()
-			parent.add_child(nd)
+			var n := Marker3D.new()
+			n.name = chemin.get_file()
+			parent.add_child(n)
 		# repos : la roue sur le centre relevé
-		var centre_local := Vector3(0.0, -(longueur - j0) + rayon_pneu, 0.0)
+		var centre_local := Vector3(0.0, -(LONGUEUR_RAYON - j0) + rayon_pneu, 0.0)
 		(w.get_node("geometry") as Node3D).position = centre_local
 		(w.get_node("animation") as Node3D).position = centre_local
 		add_child(w)
 		roues.append(w)
-		_tailles[w] = rayon_pneu / LengthScale
+	var motrices: Array[String] = []
+	for r: Dictionary in liste:
+		if bool(r["avant"]):
+			motrices.append(String(r["nom"]))
 	Powered_Wheels = motrices
-	# freins : la décélération de la fiche, quelle que soit la masse (la force d'un frein du pack ne la suit pas)
-	var b_couple := mass * FichesVehicules.nombre(f, "freinage_ms2") / (60.0 * (somme_rayons / float(liste.size())) * somme_biais)
-	for w in roues:
-		w.B_Torque = b_couple
-	# l'ABS du pack (toutes les roues à la fois, par à-coups) est coupé : chaque roue a le sien (ChassisRoue)
-	var reglage_abs: Array = ABS.duplicate()
-	reglage_abs[3] = false
-	ABS = reglage_abs
-	# Boîte : le pont pour que la cinquième atteigne la vitesse de pointe à RPM_VMAX ; la boîte automatique décide sur la
-	# vitesse des roues motrices multipliée par leur rayon en pieds (AutoSettings[0] x w_size) : ses seuils y sont ramenés,
-	# faute de quoi elle ne quittait jamais la première au-delà de 0,33 m de rayon (SUV, pick-up, camions, bus), et l'écart
-	# de rétrogradage (300 tr/min x w_size dans le pack) la faisait hésiter entre deux rapports.
-	r_motrices /= float(maxi(motrices.size(), 1))
-	FinalDriveRatio = RPM_VMAX * r_motrices / (float(GearRatios[GearRatios.size() - 1]) * RatioMult * v_max)
-	var taille: float = r_motrices / float(LengthScale)
-	var auto: Array = AutoSettings.duplicate()
-	auto[0] = RPM_MONTEE / taille
-	auto[1] = (RPM_MONTEE - RPM_DESCENTE) / taille
-	AutoSettings = auto
-
-
-# Multiplicateur du couple du moteur du pack pour un moteur de `p_kw`. Mesuré en accélération pied au plancher (sonde hors
-# dépôt, D:/p-recree/sondes/2026-09-24_fiches/sonde_puissance, puissance réelle aux roues = 10 x (m a + traînée +
-# roulement) x v) : KW_ROUES_PAR_K kW aux roues par unité de k, de 68 à 73 selon le véhicule (berline, micro-citadine,
-# sportive, camion, bus, k de 0,3 à 6) ; et la transmission en perd 15 %, comme une vraie.
-static func couple_pour(p_kw: float) -> float:
-	return p_kw * RENDEMENT_TRANSMISSION / KW_ROUES_PAR_K
 
 
 func _ready():
@@ -278,25 +207,18 @@ func regler_couple(k: float) -> void:
 	VVT_BuildUpTorque = 0.0
 	VVT_TorqueRise = 60.0 * k
 	VVT_OffsetTorque = 70.0 * k
-	# Pertes internes du moteur. Sa traînée (proportionnelle au régime, le gros des pertes à haut régime) suit k : la
-	# puissance devient alors proportionnelle à k, sans le décalage de -27 kW qu'elle faisait (mesuré). Son frottement (qui
-	# pèse surtout au ralenti) ne suit k qu'en dessous de 1 : sans quoi un petit moteur (k < 0,8) calait au départ, et au-
-	# dessus le ralenti du pack décrochait au premier pas (k = 1,9 à 3, mesuré : le régime tombait à zéro avant qu'on
-	# n'accélère).
-	EngineFriction = 18000.0 * minf(k, 1.0)
-	EngineDrag = 0.006 * k
 	# l'embrayage du pack transmet au plus ClutchGrip : sans lui, le surcroît de couple le fait patiner, le moteur monte au
 	# limiteur pendant que les roues restent sous le régime de passage, et la boîte ne monte plus (mesuré à k = 3)
-	ClutchGrip = 176.125 * k * 1.15
+	ClutchGrip = 176.125 * k
 
 
 # Premier pas, ou reprise après un gel : vitesse du corps et des roues, relevés de vitesse des roues à jour.
 func repartir(v_monde: Vector3) -> void:
 	linear_velocity = v_monde
 	angular_velocity = Vector3.ZERO
-	var v_av: float = v_monde.dot(global_transform.basis.z) / float(LengthScale)
+	var wv0: float = v_monde.dot(global_transform.basis.z) / float(LengthScale) / _taille_pneu
 	for w in roues:
-		w.repartir(v_monde, v_av / float(_tailles.get(w, 1.0)))
+		w.repartir(v_monde, wv0)
 
 
 # Vitesse le long de l'avant de la voiture (m/s), négative en marche arrière.
@@ -338,7 +260,6 @@ func apres_roues() -> void:
 	var au_sol := _au_sol()
 	if au_sol:
 		_resistance_roulement()
-		_frein_moteur()
 	_trainee()
 	if au_sol:
 		_adherence_arret()
@@ -375,10 +296,6 @@ func controls():
 	gaspedal = clampf(gaspedal, 0.0, MaxThrottle)
 	brakepedal = clampf(brakepedal, 0.0, MaxBrake)
 	handbrakepull = clampf(handbrakepull, 0.0, MaxHandbrake)
-	# LIMITEUR : la vitesse de pointe de la fiche ; les gaz s'effacent sur les 2 derniers m/s
-	var v_av := vitesse_avant()
-	if v_av > v_max - 2.0:
-		gaspedal = minf(gaspedal, clampf((v_max - v_av) / 2.0, 0.0, 1.0))
 	_antipatinage()
 	if gas and _maintien:
 		# on accélère : le maintien lâche tout de suite, sans attendre que la pédale remonte au rythme du pack
@@ -394,26 +311,17 @@ func controls():
 
 
 # ANTIPATINAGE. Le pack en déclare un (TTCS) mais ne l'a jamais écrit : `tcsweight`, qui divise la consigne des gaz,
-# restait à zéro. Sans lui, le couple de la berline de l'étape 1 faisait patiner les roues avant de 20 à 45 m/s au départ.
-# On l'alimente ici : au-delà de la consigne de glissement des roues motrices, les gaz sont coupés en proportion (le
-# rapport engagé et la boîte n'en sont pas affectés : la pédale, elle, reste où le joueur l'a mise).
-# LA CONSIGNE EST LE GLISSEMENT OÙ LE PNEU SATURE (2026-09-24). Le pneu du pack pousse en proportion du glissement jusqu'à
-# son adhérence, puis plafonne ; au-delà, il ne pousse pas plus, mais il n'a plus rien pour tenir la voiture en travers.
-# La consigne était 1,5 m/s + 25 % de la vitesse, bien au-delà : à 90 km/h les roues arrière d'une sportive de 588 kW
-# (lowpoly_fenyr) patinaient de 3 à 7 m/s, et elle partait de travers en ligne droite, volant au centre, jusqu'à faire
-# demi-tour. Ce glissement se lit dans wheel.gd : adhérence / raideur du pneu, où la charge se simplifie (la raideur
-# suit la charge, CHARGE_REF) et où la raideur baisse avec la vitesse (`deviding` = v / 50 + 0,5, en unités du pack, au
-# moins 1) : GLISSE_SATURATION x adhérence x max(1, v / (50 x 0,3) + 0,5), soit 0,95 m/s à l'arrêt, 2 m/s à 90 km/h.
+# restait à zéro. Sans lui, le couple d'une berline (COUPLE) faisait patiner les roues avant de 20 à 45 m/s au départ.
+# On l'alimente ici : au-delà de GLISSE_ANTIPATINAGE entre les roues motrices et le sol, les gaz sont coupés en proportion
+# (le rapport engagé et la boîte n'en sont pas affectés : la pédale, elle, reste où le joueur l'a mise).
 func _antipatinage() -> void:
 	if gear == 0:
 		return
 	var v_sol := absf(vitesse_avant())
 	var glisse := 0.0
 	for w in c_pws:
-		glisse = maxf(glisse, absf(float(w.wv) * float(_tailles.get(w, 1.0)) * float(LengthScale)) - v_sol)
-	var consigne := PART_ANTIPATINAGE * GLISSE_SATURATION * FichesVehicules.nombre(fiche, "adherence")
-	consigne *= maxf(1.0, v_sol / (float(LengthScale) * 50.0) + 0.5)
-	tcsweight = maxf(0.0, glisse - consigne) * GAIN_ANTIPATINAGE
+		glisse = maxf(glisse, absf(float(w.wv) * _taille_pneu * float(LengthScale)) - v_sol)
+	tcsweight = maxf(0.0, glisse - GLISSE_ANTIPATINAGE - GLISSE_RELATIF * v_sol) * GAIN_ANTIPATINAGE
 
 
 func _au_sol() -> bool:
@@ -433,23 +341,7 @@ func _resistance_roulement() -> void:
 	apply_central_impulse(-signf(v) * avant * impulsion)
 
 
-# FREIN MOTEUR (2026-09-24). Pied levé, en prise, une vraie voiture ralentit aussi par son moteur. Celui du pack n'en
-# donne presque pas : sa boîte automatique n'embraye qu'en proportion du régime (plein à 4 000 tr/min), et pied levé le
-# régime tombe. Tant que le corps recevait l'amortissement du projet (cf. configurer), celui-ci en tenait lieu, trop
-# fort : la berline, pied levé à 49 km/h, s'arrêtait en 15 s (0,9 m/s²). Sans lui, elle roulait encore à 17 km/h au bout
-# d'une minute, comme au point mort. FREIN_MOTEUR, plus le roulement et la traînée : ~0,55 m/s² à 50 km/h, l'ordre de
-# grandeur d'une automatique pied levé ; il s'efface sous V_MAINTIEN, où le maintien à l'arrêt prend le relais.
-func _frein_moteur() -> void:
-	if not Controlled or gear <= 0 or gaspedal > 0.05 or brakepedal > 0.05:
-		return
-	var avant := global_transform.basis.z
-	var v := linear_velocity.dot(avant)
-	if v < V_MAINTIEN:
-		return
-	apply_central_impulse(-avant * minf(FREIN_MOTEUR / float(Engine.physics_ticks_per_second), v - V_MAINTIEN) * mass)
-
-
-# Traînée aérodynamique en v² : cx de la fiche, surface frontale mesurée sur le modèle, rapportée à la masse de la fiche.
+# Traînée aérodynamique en v², rapportée à une berline de MASSE_REELLE.
 func _trainee() -> void:
 	var v := linear_velocity
 	var s := v.length()
