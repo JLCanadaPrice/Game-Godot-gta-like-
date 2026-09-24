@@ -17,8 +17,7 @@ travail imposée, les commandes exactes, les pièges déjà payés et l'état d'
 > `ChassisBancTest` passé par les 72. Étape B FAITE : l'arcade retirée pour le joueur, plus de F7, tests migrés. Étape C
 > FAITE : la circulation roule et accélère selon la fiche de chaque modèle. Étape D FAITE (mesure seulement, rien de
 > construit) : une voiture physique coûte 0,21 ms par pas ; la version hybride tient au rond-point mais bloque un carrefour à
-> feux dense — **le joueur décide** (§14). Étape E FAITE : trois vidéos hors dépôt (`D:/p-recree/videos_conduite/`, 5 à
-> 7), évitement à 110 km/h en berline et à 85 km/h en bus, sportive contre camion. Toujours en attente depuis le
+> feux dense — **le joueur décide** (§14). Suit : E, les vidéos. Toujours en attente depuis le
 > 2026-09-23 : le coût physique d'environ 2 ms (NON TOUCHÉ, le joueur le teste en jeu) et la pose des trois packs
 > d'accessoires convertis (§7).
 
@@ -678,9 +677,8 @@ débogage sur `V`.
 - **conduite réaliste** (pack VitaVehicle, §13 et §14) : étape 1 FAITE le 2026-09-24, essai sur la berline city_sedan_01
   (F7 / F8), et deux défauts des vidéos corrigés le même jour (rampe d'accès des parkings, direction). Puis décision du
   joueur, le même jour : **full réaliste pour le joueur, arcade supprimée, sur les 72 modèles**, chacun sur sa fiche (§14 ;
-  étapes A, les fiches, B, l'arcade retirée, C, la circulation par modèle, D, la physique des PNJ mesurée, et E, les
-  vidéos, FAITES). Restent : la décision du joueur sur la physique des PNJ (§14, étape D), les 13 modèles plus bas que
-  les bordures (§14, surélever ou non), les chocs contre la circulation, les sons.
+  étapes A, les fiches, B, l'arcade retirée, et C, la circulation par modèle, FAITES). Restent ensuite : les chocs
+  contre la circulation, les sons.
 - **ACCESSOIRES PRÊTS À POSER, pas encore posés** (2026-09-23) : trois packs reçus en FBX, convertis en une scène par
   modèle par `scenes/world/props/tools/ConversionPacks.gd` — `assets/airport_ground_vehicles/` (4 véhicules de piste),
   `assets/farm_buildings_quaternius/` (13 bâtiments et objets de ferme), `assets/low_poly_construction/` (81 éléments et
@@ -2687,38 +2685,3 @@ physique. Le pilote de la sonde ajoute ~0,1 ms par voiture. Pour 8 voitures phys
 - une reprise des voitures poussées hors de leur voie.
 
 C'est une refonte des décisions de la circulation, pas un réglage.
-
-### Étape E : les vidéos (2026-09-24)
-
-Hors dépôt, dans `D:/p-recree/videos_conduite/`, à côté des vidéos 1 à 4 de l'essai.
-- Outil : `outils/video_etape_e.gd`.
-- Les AVI du Movie Maker sont convertis en MP4 par Blender, puis supprimés.
-- Décor : le vrai monde, piste principale de l'aéroport, 11 h, circulation retirée en mémoire. Le script appuie sur les
-  touches du joueur.
-
-Les trois vidéos :
-- **`5_virage_fort_evitement_berline_110_kmh.mp4`**, berline city_sedan_01 à 110 km/h. La piste ne fait que 45 m de large,
-  et un seul braquage à fond à 110 km/h (rayon ~100 m) la quitterait. D'où un ÉVITEMENT, le test de l'élan :
-  - à fond à droite jusqu'à 25° de cap ;
-  - à fond à gauche jusqu'à revenir dans l'axe ;
-  - volant lâché, puis freinage.
-
-  C'est le pire cas pour le tonneau, puisque le roulis s'inverse. Résultat : 1,00 g, roulis 4,7° au plus, 25 m de décalage
-  latéral.
-- **`6_virage_fort_evitement_bus_85_kmh.mp4`** : la même manœuvre avec le bus city_bus_01 à 85 km/h, celui qui se couchait
-  avant la marge anti-tonneau de 1,8. Résultat : 0,75 g, roulis 5,3° au plus.
-- **`7_sportive_contre_camion_acceleration.mp4`** : écran partagé, une caméra de poursuite par véhicule (deux SubViewport
-  qui partagent le monde). En 10 s pied au plancher :
-  - city_sports_car_02 (420 kW, 1 500 kg) : 0-50 en 2,1 s, 0-100 en 4,2 s, 192 km/h, 300 m ;
-  - city_truck_01 (190 kW, 7 500 kg) : 0-50 en 7,3 s, 59 km/h, 99 m.
-
-Pièges payés en le faisant :
-- **tenir S à l'arrêt passe la marche arrière** : un script qui « freine » un véhicule arrêté le fait reculer. Il faut
-  lâcher les pédales à l'arrêt. Quand deux châssis lisent la même pédale, mettre en stationnement (`Controlled = false`)
-  celui qui s'arrête le premier ;
-- **`trait` est un mot réservé en GDScript 4.7** : une variable de ce nom est une erreur d'analyse. La scène est restée
-  ouverte jusqu'au délai (piège (d) du §12) : faire un essai headless court avant un film ;
-- **un véhicule lancé en mouvement doit partir à sa hauteur de repos**, sinon il rebondit à l'image. Pour ces quatre
-  modèles, elle va de 0,443 à 0,454 m ;
-- l'ancien outil `video_conduite.gd` (vidéos 1 à 4) appelait l'arcade retirée : il est réparé, et son clip 4 roule
-  maintenant en réaliste.
