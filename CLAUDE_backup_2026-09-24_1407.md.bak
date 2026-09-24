@@ -15,9 +15,8 @@ travail imposée, les commandes exactes, les pièges déjà payés et l'état d'
 > **Puis décision du joueur : conduite FULL RÉALISTE pour le joueur, arcade supprimée, sur les 72 modèles** (§14). Étape
 > A FAITE : une fiche par modèle (`resources/vehicle_physics/fiches_vehicules.csv`), le châssis réglé sur elle, le banc
 > `ChassisBancTest` passé par les 72. Étape B FAITE : l'arcade retirée pour le joueur, plus de F7, tests migrés. Étape C
-> FAITE : la circulation roule et accélère selon la fiche de chaque modèle. Étape D FAITE (mesure seulement, rien de
-> construit) : une voiture physique coûte 0,21 ms par pas ; la version hybride tient au rond-point mais bloque un carrefour à
-> feux dense — **le joueur décide** (§14). Suit : E, les vidéos. Toujours en attente depuis le
+> FAITE : la circulation roule et accélère selon la fiche de chaque modèle. Suivent : D, la vraie physique sur les PNJ
+> MESURÉE seulement ; E, les vidéos. Toujours en attente depuis le
 > 2026-09-23 : le coût physique d'environ 2 ms (NON TOUCHÉ, le joueur le teste en jeu) et la pose des trois packs
 > d'accessoires convertis (§7).
 
@@ -2627,61 +2626,3 @@ Vérifié :
   aucune voiture ne la dépasse. Les poids lourds roulent à 39,2 km/h en moyenne, les sportives à 45,9 ;
 - `RoundaboutTrafficTest` : 28 sorties en 300 s (20 exigées ; 21 à 25 avant), aucune file figée, les deux voies servent ;
 - `MapRoadsTest` : 798 m au moins en 70 s (350 exigés).
-
-### Étape D : la vraie physique sur les PNJ, MESURÉE seulement (2026-09-24)
-
-Demande du joueur : « MESURE D'ABORD, ne construis pas [...] Évalue une version hybride : vraie physique seulement sur les
-quelques voitures PNJ proches du joueur, conduite simple au-delà. Dis-moi le coût réel et si l'IA peut piloter une voiture
-physique sans casser la circulation. Je décide après. » **Rien n'est dans le jeu.** Sondes et journaux hors dépôt, dans
-`D:/p-recree/sondes/2026-09-24_hybride/` (avec un LISEZMOI).
-
-**Le prototype** (sonde) :
-- les K voitures de la circulation les plus proches du joueur (à moins de 50 m) deviennent physiques : le châssis réel, réglé
-  sur leur fiche comme celui du joueur, piloté par des champs au lieu du clavier ;
-- l'IA de `Car.gd` les pilote, ses décisions inchangées (suivi, carrefours, feux, rond-point) : un régulateur tient sa
-  vitesse, une poursuite pure depuis l'essieu arrière suit sa voie, et une vitesse de virage borne l'accélération latérale
-  à 4 m/s² ;
-- au-delà de 60 m, elles redeviennent cinématiques.
-
-Il a fallu, pour qu'une voiture physique suive le graphe :
-- faire avancer sa progression par sa vitesse, comme la voiture cinématique : par la seule projection, une voiture qui coupe
-  l'angle au bout d'une arête n'en change jamais ;
-- lui faire connaître l'arête suivante 30 m avant les noeuds du rond-point, pour anticiper l'angle ;
-- raccorder progressivement la voie visée quand elle saute de 2 m d'une arête à l'autre ;
-- ne la convertir que dans l'axe de sa voie : en virage, le cap de la voiture cinématique retarde de jusqu'à 60° sur la voie.
-
-**Coût, mesuré** (N voitures physiques en rond, sol plat, en alternance) : **0,21 à 0,22 ms par voiture et par pas
-physique**, linéaire jusqu'à 64 voitures (13,7 ms). Dont 0,18 à 0,19 ms de scripts du châssis, le reste pour le moteur
-physique. Le pilote de la sonde ajoute ~0,1 ms par voiture. Pour 8 voitures physiques, ~2,5 ms par pas ; pour les 252,
-~75 ms (le joueur estimait 50). Un PC qui rend à 30 images/s fait deux pas par image : le coût par image double.
-
-**La circulation, mesurée** (vrai monde, joueur immobile, K = 8) :
-- **rond-point d'Echo Circle**, circulation ordinaire, 300 s : aucune file figée, aucun contact, aucun décrochage (voiture
-  à plus de 6 m de sa voie), 25 sorties (16 sans voiture physique : c'est le hasard des départs). Écart à la voie 0,40 m en
-  médiane, 1,9 m au 95e centile. Mais seulement 1,9 voiture physique en moyenne : le gel du joueur immobile (§7) laisse
-  l'anneau peu fréquenté ;
-- **carrefour à feux (-28, -316), circulation dense** (gel à 150 m au lieu de 50), 180 s. Sans voiture physique, aucune
-  file figée. Avec 7,5 voitures physiques en moyenne :
-  - **34 voitures figées 40 s**, 22 paires de véhicules en contact, souvent durable ;
-  - 10 décrochages sur 22 conversions ;
-  - aucun passage au rouge.
-
-  Ramener leur vitesse pour que leurs distances d'arrêt redeviennent celles que l'IA suppose n'y change presque rien
-  (38 figées, 7 paires en contact).
-
-**Pourquoi le carrefour casse**, relevé contact par contact :
-1. L'IA décide en supposant que toute voiture freine à 12 m/s² sans délai (`Car.AI_DECEL`). Un châssis réel freine selon sa
-   fiche (6 à 11 m/s²). La voiture physique qui en suit une autre l'emboutit quand celle-ci pile, pour une priorité de virage
-   par exemple.
-2. Les virages de carrefour du graphe sont des angles vifs. Les voitures cinématiques les coupent et s'y chevauchent
-   librement (7,2 m d'écart à leur voie au pire). Des voitures physiques ne se chevauchent pas : elles se touchent sur le
-   côté, puis se poussent hors de leur voie.
-3. Une voiture cinématique a une masse infinie pour la physique : elle pousse la voiture physique qu'elle touche.
-
-**Ce qu'il faudrait pour aller plus loin**, à décider par le joueur :
-- des distances de décision par véhicule (son freinage réel) ;
-- une géométrie de voie lissée aux carrefours ;
-- un évitement latéral en virage ;
-- une reprise des voitures poussées hors de leur voie.
-
-C'est une refonte des décisions de la circulation, pas un réglage.
