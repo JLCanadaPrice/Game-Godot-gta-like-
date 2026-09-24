@@ -10,11 +10,8 @@ extends RefCounted
 # DEPUIS LE 2026-09-24 AU SOIR, CONDUITE FAÇON GTA V (§15) : les colonnes portent les NOMS DU HANDLING.META DE GTA V
 # (fMass, fInitialDriveForce, fBrakeForce, fTractionCurveMax...), à la demande du joueur, « pour que je m'y retrouve ». Ce
 # qu'en fait le jeu est ici : les CONVERSIONS de chaque valeur en grandeur physique (les constantes ci-dessous), que lit le
-# châssis (ChassisGTA). Depuis la deuxième version du même soir (le joueur contre-braque lui-même, plus d'aide de
-# direction), elles suivent la DÉFINITION de GTA V partout où elle est connue : pic du pneu à fTractionCurveLateral / 2,
-# partage de l'adhérence par fTractionBiasFront, inertie par vecInertiaMultiplier, freins qui usent toute l'adhérence
-# au-delà de fTractionCurveMax / 4. Les valeurs sont celles de ce jeu, pensées pour chaque modèle ; la masse est en kg,
-# les angles en degrés, la vitesse de pointe en km/h.
+# châssis (ChassisGTA). Les valeurs sont dans les ordres de grandeur de GTA V quand leur unité le permet (1,0 à 2,7 pour la
+# traction, 0,6 à 1,1 pour les freins...) ; la masse est en kg, les angles en degrés, la vitesse de pointe en km/h.
 
 const CHEMIN := "res://resources/vehicle_physics/fiches_vehicules.csv"
 const G := 9.81
@@ -29,22 +26,21 @@ const PART_CDG_HAUTEUR := 0.38        # hauteur du centre de gravité par défau
 
 # --- CONVERSIONS (le même texte est dans l'en-tête du tableau) ---
 const G_PAR_TRACTION := 0.6           # adhérence maximale du pneu (g) = fTractionCurveMax x 0,6 (2,33 -> 1,4 g)
-const G_PAR_FREIN := 2.4              # décélération demandée aux freins (g) = fBrakeForce x 4 x 0,6 : comme dans GTA V, les freins usent
-                                      # toute l'adhérence dès que fBrakeForce dépasse fTractionCurveMax / 4 (0,8 -> 1,9 g, bornée par les pneus)
-const G_PAR_FREIN_MAIN := 2.4         # force du frein à main sur les roues arrière, en poids du véhicule = fHandBrakeForce x 2,4 (l'unité de fBrakeForce)
+const G_PAR_FREIN := 1.5              # décélération demandée aux freins (g) = fBrakeForce x 1,5 (1,0 -> 1,5 g, bornée par les pneus)
+const G_PAR_FREIN_MAIN := 1.0         # force du frein à main sur les roues arrière, en poids du véhicule = fHandBrakeForce
 const G_PAR_POUSSEE := 3.0            # poussée du moteur au démarrage (g) = fInitialDriveForce x 3 (0,25 -> 0,74 g)
 const PART_VITESSE_COUPLE := 0.2      # la poussée est entière jusqu'à 20 % de la vitesse de pointe, puis à puissance constante
 const PERTE_BASSE_VITESSE := 0.3      # adhérence perdue à l'arrêt par les roues qui poussent, par unité de fLowSpeedTractionLossMult
 const V_PERTE_BASSE_VITESSE := 7.0    # m/s (25 km/h) : cette perte s'efface jusqu'à cette vitesse
+const AMORT_PAR_UNITE := 0.2          # part de l'amortissement critique par unité de fSuspensionCompDamp / fSuspensionReboundDamp
 
 # Valeurs par défaut d'une case vide ou d'un modèle absent du tableau : celles de la berline city_sedan_01.
 const DEFAUTS := {"fMass": 1300.0, "fInitialDriveForce": 0.25, "fInitialDriveMaxFlatVel": 195.0, "fDriveBiasFront": 1.0,
-		"fBrakeForce": 0.8, "fBrakeBiasFront": 0.85, "fHandBrakeForce": 0.6, "fSteeringLock": 40.0, "fTractionCurveMax": 2.33,
-		"fTractionCurveMin": 2.05, "fTractionCurveLateral": 22.0, "fTractionBiasFront": 0.48, "fLowSpeedTractionLossMult": 1.0,
-		"fSuspensionForce": 1.25, "fSuspensionCompDamp": 1.53, "fSuspensionReboundDamp": 2.45, "fAntiRollBarForce": 0.36,
-		"vecCentreOfMassOffset": "0.0,0.26,0.0", "vecInertiaMultiplier": "1.0,1.4,1.5", "garde_cm": 28.0, "trafic_kmh": 43.0,
-		"trafic_accel_ms2": 3.0}
-const TEXTES := ["id", "nature", "vecCentreOfMassOffset", "vecInertiaMultiplier"]
+		"fBrakeForce": 1.0, "fBrakeBiasFront": 0.85, "fHandBrakeForce": 0.93, "fSteeringLock": 35.0, "fTractionCurveMax": 2.33,
+		"fTractionCurveMin": 2.05, "fTractionCurveLateral": 10.0, "fLowSpeedTractionLossMult": 0.8, "fSuspensionForce": 1.25,
+		"fSuspensionCompDamp": 1.6, "fSuspensionReboundDamp": 2.5, "fAntiRollBarForce": 0.5, "vecCentreOfMassOffset": "0.0,0.12,0.0",
+		"garde_cm": 28.0, "trafic_kmh": 43.0, "trafic_accel_ms2": 3.0}
+const TEXTES := ["id", "nature", "vecCentreOfMassOffset"]
 
 # Réglages globaux (multiplicateurs du freinage et de l'adhérence) : un fichier à part, pour les changer sans toucher aux
 # 72 lignes (ReglagesConduite.gd).
@@ -82,8 +78,7 @@ static func texte(f: Dictionary, cle: String) -> String:
 	return String(DEFAUTS.get(cle, ""))
 
 
-# Un vecteur écrit « x,y,z » (vecCentreOfMassOffset, vecInertiaMultiplier), dans le repère de GTA V : x à droite, y vers
-# l'avant, z vers le haut.
+# Un vecteur écrit « x,y,z » (vecCentreOfMassOffset), dans le repère de GTA V : x à droite, y vers l'avant, z vers le haut.
 static func vecteur(f: Dictionary, cle: String) -> Vector3:
 	var p := texte(f, cle).split(",")
 	if p.size() != 3 or not (p[0].strip_edges().is_valid_float() and p[1].strip_edges().is_valid_float() and p[2].strip_edges().is_valid_float()):
@@ -111,8 +106,7 @@ static func reglage(cle: String) -> float:
 
 # --- valeurs EFFECTIVES, celles que roule le châssis (conversions ci-dessus, multiplicateurs globaux compris) -----------
 
-# Adhérence maximale du pneu (g), au pic de sa courbe, avant son partage entre les essieux (fTractionBiasFront : l'avant en
-# a 2 x le biais, l'arrière 2 x le reste ; cf. ChassisGTA.configurer).
+# Adhérence maximale du pneu (g), au pic de sa courbe.
 static func adherence_max(f: Dictionary) -> float:
 	return nombre(f, "fTractionCurveMax") * G_PAR_TRACTION * reglage("multiplicateur_adherence")
 
@@ -135,12 +129,6 @@ static func frein_main_ms2(f: Dictionary) -> float:
 # Poussée du moteur au démarrage, rapportée à la masse (m/s²).
 static func poussee_ms2(f: Dictionary) -> float:
 	return nombre(f, "fInitialDriveForce") * G_PAR_POUSSEE * G
-
-
-# Amortissement d'une colonne (fSuspensionCompDamp, fSuspensionReboundDamp), en part de l'amortissement critique. La
-# définition de GTA V : à fSuspensionForce / 2, l'amortisseur annule le mouvement en un seul rebond (le critique).
-static func amortissement(f: Dictionary, cle: String) -> float:
-	return 2.0 * nombre(f, cle) / maxf(nombre(f, "fSuspensionForce"), 0.1)
 
 
 # Vitesse de pointe (m/s).

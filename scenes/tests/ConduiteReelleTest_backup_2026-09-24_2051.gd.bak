@@ -9,16 +9,12 @@ extends Node3D
 # parking à étages du centre-ville, avec sa rampe à 16 %.
 # Ce qui est mesuré, et ce qui fait échouer :
 #  - au repos : pneus sur le sol (écart <= 3 cm), caisse d'aplomb, aucun recul ;
-#  - départ, 0-50, 0-100, 108 km/h atteints ; double changement de voie à 108 km/h (au stick, le volant en sinus : 5 %
-#    de sa course, soit 2° aux roues, sur 2 s) sans basculer ni partir en tête-à-queue, et la voiture revient dans son axe
-#    d'elle-même (aucune aide de direction : c'est sa physique) ; freinage de 108 km/h à l'arrêt, droit ; puis AUCUN RECUL
-#    à l'arrêt (1 cm au plus en 2 s) ;
+#  - départ, 0-50, 0-100, 108 km/h atteints ; double changement de voie à 108 km/h sans basculer ni partir en tête-à-queue ;
+#    freinage de 108 km/h à l'arrêt, droit ; puis AUCUN RECUL à l'arrêt (1 cm au plus en 2 s) ;
 #  - braquage à fond à 50 km/h sans se coucher (caisse jamais au-delà de 18°) ; roue libre jusqu'à l'arrêt ;
-#  - FREIN À MAIN (2026-09-24) : à 50 km/h, braquage à fond et la vraie touche ESPACE (qui porte aussi le saut, à pied),
-#    jusqu'à 15° de dérive (1 s au plus). Le joueur reste assis, sans sauter ; les roues arrière se bloquent ; l'arrière part
-#    en glisse (plus de 15° de dérive) ; puis LE JOUEUR lâche Espace, CONTRE-BRAQUE au clavier et remet les gaz
-#    (PiloteClavier : ses touches, avec un temps de réaction ; le châssis ne braque jamais à sa place) : la voiture est
-#    droite (dérive sous 5°, lacet sous 0,15 rad/s, tenus 0,3 s) en moins de 2 s ;
+#  - FREIN À MAIN (2026-09-24) : à 50 km/h, braquage à fond et la vraie touche ESPACE (qui porte aussi le saut, à pied)
+#    pendant 1 s. Le joueur reste assis, sans sauter ; les roues arrière se bloquent ; l'arrière part en glisse (plus de
+#    15° de dérive) ; relâchée, la voiture reprend l'adhérence (dérive sous 5° en moins de 2 s) ;
 #  - rayon de braquage à 3 m/s, comparé à la géométrie du modèle (rayon « entre murs », rapporté, pas jugé) ;
 #  - VOLANT PARTIEL (2026-09-24) : à 12 km/h, 45 % de volant tenu, le rayon est celui que demande le volant (épure :
 #    45 % du braquage maximal, à 0,85-1,25 près) — l'assistance de direction du châssis réel le ramenait à 5,3 m au lieu
@@ -41,7 +37,6 @@ extends Node3D
 
 const CAR := preload("res://scenes/vehicles/Car.tscn")
 const CarScript := preload("res://scenes/vehicles/Car.gd")
-const PiloteClavier := preload("res://scenes/tests/PiloteClavier.gd")
 const JOUEUR := preload("res://scenes/player/Player.tscn")
 const BERLINE := "res://assets/vehicle_models_extra/city_vehicles_UNVERIFIED_LICENSE/Sedans/Veh_Sedan_01_Blue.glb"
 const PARKING := "res://scenes/world/downtown/generated/buildings/parking_collision.res"
@@ -54,8 +49,6 @@ const BORDURE_TAILLE := Vector3(30.0, 0.15, 12.0)
 const KMH := 1.0 / 3.6
 const VOLANT_V := 12.0 / 3.6                       # volant partiel : vitesse (m/s)...
 const VOLANT_PART := 0.45                          # ... et part du volant, tenue
-const VOIE_STICK := 0.05                           # double changement de voie à 108 km/h : amplitude du stick...
-const VOIE_PERIODE := 2.0                          # ... et durée (s) de son sinus
 # Entrée du parking (repère du modèle) : départ devant la façade (z 11,87) et la barre de hauteur (z 11,95..12,15),
 # arrivée dans le rez, passage franchi (face intérieure de la tour à z 7,48). [réaliste ?, vitesse m/s]
 const ENTREE_PASSAGES := [4.0, 7.0]                 # vitesses (m/s)
@@ -65,7 +58,6 @@ const ENTREE_GARDE_MIN := 0.02                     # dessous du modèle : au moi
 
 var _voiture: Node3D
 var _joueur: CharacterBody3D
-var _pilote = PiloteClavier.new()   # le joueur qui contre-braque (frein à main)
 var _essai: Node
 var _ch: RigidBody3D
 var _bordure: StaticBody3D
@@ -239,7 +231,6 @@ func _physics_process(delta: float) -> void:
 	if _ch != null and not bool(_ch.get("fige")):
 		_couts_chassis.append(int(_ch.call("cout_dernier_pas_us")))
 		_min_up = minf(_min_up, _ch.global_transform.basis.y.dot(Vector3.UP))
-		_pilote.observer(_ch, _t)
 	if _t > 90.0:
 		_faute("étape « %s » : pas finie en 90 s" % _etapes[_i])
 		_suivante()
@@ -257,7 +248,6 @@ func _suivante() -> void:
 	_i += 1
 	_t = 0.0
 	_e = {}
-	_pilote.oublier()
 
 
 # --- étapes (rendent true quand elles sont finies) -----------------------------------------------------------------
@@ -347,42 +337,25 @@ func _s(d: Dictionary, k: String) -> String:
 	return ("%.1f s" % float(d[k])) if d.has(k) else "jamais"
 
 
-# DOUBLE CHANGEMENT DE VOIE À 108 km/h, au stick (comme une manette : l'action « right » ou « left » à une part de sa
-# course) : le volant suit un sinus de VOIE_STICK sur VOIE_PERIODE s — 2° aux roues, un vrai changement de voie à cette
-# vitesse, où la direction n'est plus réduite —, puis le stick au centre. Aucune aide ne ramène la voiture : elle doit
-# revenir dans son axe par sa seule physique, sans pencher au-delà de 18° ni glisser.
 func _e_vitesse108(_d: float) -> bool:
 	if not _e.has("cap0"):
 		_e["cap0"] = _cap_deg()
 		_e["up"] = 1.0
 		_e["lacet"] = 0.0
-		_e["derive"] = 0.0
-		_e["decal"] = 0.0
-		_e["p0"] = _pos()
-		_e["axe"] = -_voiture.global_transform.basis.z
-	var v := _v()
-	_pedales(v < 108.0 * KMH, v > 108.0 * KMH + 1.5)
-	var dt := _t - 1.0
-	if dt >= 0.0 and dt < VOIE_PERIODE:
-		var stick := VOIE_STICK * sin(TAU * dt / VOIE_PERIODE)
-		Input.action_press("left" if stick > 0.0 else "right", absf(stick))
+	var gauche := _t >= 2.0 and _t < 2.4 or _t >= 3.2 and _t < 3.6
+	var droite := _t >= 2.4 and _t < 3.2
+	_regule(108.0 * KMH, gauche, droite)
 	_e["up"] = minf(float(_e["up"]), _ch.global_transform.basis.y.dot(Vector3.UP))
 	_e["lacet"] = maxf(float(_e["lacet"]), absf(rad_to_deg(_ch.angular_velocity.y)))
-	_e["derive"] = maxf(float(_e["derive"]), absf(PiloteClavier.derive(_ch)))
-	var dp: Vector3 = _pos() - (_e["p0"] as Vector3)
-	var axe: Vector3 = _e["axe"]
-	_e["decal"] = maxf(float(_e["decal"]), (dp - axe * dp.dot(axe)).length())
-	if _t < VOIE_PERIODE + 4.0:
+	if _t < 6.0:
 		return false
 	var derive_cap := absf(wrapf(_cap_deg() - float(_e["cap0"]), -180.0, 180.0))
 	var penche_max := rad_to_deg(acos(clampf(float(_e["up"]), -1.0, 1.0)))
-	_r["vitesse108"] = "double changement de voie à %.0f km/h, au stick (%.0f %%, %.0f s) : %.1f m de côté au plus fort, caisse penchée de %.1f° au plus, lacet %.0f°/s au plus, dérive %.1f° au plus ; cap final à %.1f° du cap initial" % [
-			_v() * 3.6, VOIE_STICK * 100.0, VOIE_PERIODE, float(_e["decal"]), penche_max, float(_e["lacet"]), float(_e["derive"]), derive_cap]
+	_r["vitesse108"] = "double changement de voie à %.0f km/h : caisse penchée de %.1f° au plus, lacet %.0f°/s au plus, cap final à %.1f° du cap initial" % [
+			_v() * 3.6, penche_max, float(_e["lacet"]), derive_cap]
 	if penche_max > 18.0:
 		_faute("changement de voie à 108 km/h : caisse penchée de %.1f°" % penche_max)
-	if float(_e["derive"]) > 10.0:
-		_faute("changement de voie à 108 km/h : la voiture glisse (dérive %.1f°)" % float(_e["derive"]))
-	if derive_cap > 5.0:
+	if derive_cap > 10.0:
 		_faute("changement de voie à 108 km/h : la voiture ne revient pas dans l'axe (%.1f°)" % derive_cap)
 	return true
 
@@ -495,9 +468,6 @@ func _e_frein_main(_d: float) -> bool:
 			_e["bloquees"] = 0
 			_e["saut"] = 0.0
 			_e["reprise"] = -1.0
-			_e["calme"] = 0.0
-			_e["appuis"] = 0
-			_e["touche"] = 0
 			_pedales()
 			Input.action_press("right")
 			_espace(true)
@@ -505,17 +475,18 @@ func _e_frein_main(_d: float) -> bool:
 	var dt := _t - float(_e["t0"])
 	var vh := _ch.linear_velocity
 	vh.y = 0.0
+	var avant := _ch.global_transform.basis.z
+	avant.y = 0.0
 	var roule := vh.length() > 3.0
-	var derive := absf(PiloteClavier.derive(_ch))
+	var derive := rad_to_deg(vh.normalized().angle_to(avant.normalized())) if roule else 0.0
 	_e["saut"] = maxf(float(_e["saut"]), _joueur.velocity.y)
-	_e["derive"] = maxf(float(_e["derive"]), derive)
 	if _joueur.get_parent() != _e["siege"] or not bool(_joueur.get("_driving")):
 		_faute("frein à main : Espace a sorti le joueur de son siège")
 		_espace(false)
 		return true
-	if not _e.has("relache"):
-		# D et Espace tenus jusqu'à 15° de dérive (1 s au plus) : l'arrière part
+	if dt < 1.0:
 		_e["tire_max"] = maxf(float(_e["tire_max"]), float(_ch.get("handbrakepull")))
+		_e["derive"] = maxf(float(_e["derive"]), derive)
 		if dt > 0.15 and roule:
 			_e["pas"] = int(_e["pas"]) + 1
 			var bloquees := true
@@ -524,30 +495,19 @@ func _e_frein_main(_d: float) -> bool:
 					bloquees = false
 			if bloquees:
 				_e["bloquees"] = int(_e["bloquees"]) + 1
-		if derive < 15.0 and dt < 1.0:
-			return false
+		return false
+	if not _e.has("relache"):
 		_e["relache"] = _t
 		_espace(false)
-	# le joueur : Espace lâché, il contre-braque (ses touches) et remet les gaz tant que la voiture glisse
-	var k: int = _pilote.contre_braquer(_ch, _t)
-	if k != 0 and k != int(_e["touche"]):
-		_e["appuis"] = int(_e["appuis"]) + 1
-	_e["touche"] = k
-	_pedales(roule and derive > 8.0, false, k < 0, k > 0)
-	if float(_e["reprise"]) < 0.0:
-		if roule and derive < 5.0 and absf(_ch.angular_velocity.y) < 0.15:
-			_e["calme"] = float(_e["calme"]) + _d
-			if float(_e["calme"]) >= 0.3:
-				_e["reprise"] = _t - float(_e["relache"]) - 0.3
-		else:
-			_e["calme"] = 0.0
+		_pedales()
+	_pedales()
+	if float(_e["reprise"]) < 0.0 and (derive < 5.0 or not roule):
+		_e["reprise"] = _t - float(_e["relache"])
 	if _t - float(_e["relache"]) < 2.5:
 		return false
-	_pedales()
 	var part := float(_e["bloquees"]) / float(maxi(int(_e["pas"]), 1))
-	_r["frein_main"] = "Espace à %.0f km/h, braquage à fond, %.2f s : frein à main tiré à %.2f, roues arrière bloquées %.0f %% du temps, dérive %.0f° au plus ; puis le joueur contre-braque (%d appuis) : droite en %.2f s ; joueur toujours assis, vitesse verticale %.2f m/s au plus" % [
-			float(_e["v0"]) * 3.6, float(_e["relache"]) - float(_e["t0"]), float(_e["tire_max"]), part * 100.0, float(_e["derive"]),
-			int(_e["appuis"]), float(_e["reprise"]), float(_e["saut"])]
+	_r["frein_main"] = "Espace à %.0f km/h, braquage à fond, 1 s : frein à main tiré à %.2f, roues arrière bloquées %.0f %% du temps, dérive %.0f° au plus ; relâché, dérive sous 5° en %.2f s ; joueur toujours assis, vitesse verticale %.2f m/s au plus" % [
+			float(_e["v0"]) * 3.6, float(_e["tire_max"]), part * 100.0, float(_e["derive"]), float(_e["reprise"]), float(_e["saut"])]
 	if float(_e["saut"]) > 0.1:
 		_faute("frein à main : Espace a fait sauter le joueur (%.2f m/s)" % float(_e["saut"]))
 	if float(_e["tire_max"]) < 0.9:
@@ -557,7 +517,7 @@ func _e_frein_main(_d: float) -> bool:
 	if float(_e["derive"]) < 15.0:
 		_faute("frein à main : l'arrière ne part pas en glisse (dérive %.0f°)" % float(_e["derive"]))
 	if float(_e["reprise"]) < 0.0 or float(_e["reprise"]) > 2.0:
-		_faute("frein à main : le joueur ne rattrape pas la glisse en 2 s en contre-braquant")
+		_faute("frein à main : relâchée, la voiture ne reprend pas l'adhérence en 2 s")
 	return true
 
 

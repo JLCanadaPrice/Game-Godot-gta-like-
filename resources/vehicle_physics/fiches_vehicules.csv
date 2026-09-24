@@ -3,51 +3,60 @@
 # Le jeu lit ce fichier au lancement (scripts/data/FichesVehicules.gd) et en règle la conduite du joueur, façon GTA V
 # (scenes/vehicles/ChassisGTA.gd), et celle de la circulation (scenes/vehicles/Car.gd). CLAUDE.md §15.
 #
-# Les réglages de conduite portent les NOMS DU HANDLING.META DE GTA V, et y jouent le même rôle. Leurs valeurs sont dans
-# les mêmes ordres de grandeur quand l'unité le permet ; ce que chaque valeur donne dans CE jeu est écrit ci-dessous (les
-# conversions sont dans FichesVehicules.gd). Les écarts entre modèles sont ceux des vrais véhicules ; le ressenti est
-# celui de GTA V : bien plus d'adhérence qu'en vrai, des freins très forts, une caisse qui bouge beaucoup.
+# Les réglages de conduite portent les NOMS DU HANDLING.META DE GTA V, et y jouent le même rôle, avec la même définition
+# quand elle est connue (angle du pic du pneu, partage de l'adhérence et des freins entre les essieux, inertie, braquage à
+# l'arrêt). Les valeurs sont celles de CE jeu, pensées pour chaque modèle ; ce que chacune donne ici est écrit ci-dessous
+# (les conversions sont dans FichesVehicules.gd). Le ressenti visé est celui de GTA V : bien plus d'adhérence qu'en vrai, des
+# freins très forts sur les voitures, une caisse qui bouge beaucoup, une glisse progressive.
+#
+# LE JOUEUR SEUL TOURNE LES ROUES : ni réduction du braquage avec la vitesse, ni contre-braquage automatique. La tenue de
+# route vient de ces réglages, c'est-à-dire de la physique de la voiture.
 #
 # Colonnes :
 #  id                 modèle du catalogue
 #  nature             ce que c'est (estimé d'après son nom, sa forme et ses dimensions)
 #  longueur_m, largeur_m, hauteur_m   dimensions MESURÉES sur le modèle, pour information (le jeu relit le modèle)
 #
-#  fMass                      masse en kg. Tout en dépend : plus lourd, il accélère, freine et tourne avec les mêmes g,
-#                             mais pousse les autres et encaisse mieux les chocs.
+#  fMass                      masse en kg. Plus lourd, il accélère, freine et tourne avec les mêmes g, mais pousse les autres
+#                             et encaisse mieux les chocs.
 #  fInitialDriveForce         POUSSÉE du moteur. Au démarrage, elle vaut fInitialDriveForce x 3 g (0,25 -> 0,74 g) ; entière
-#                             jusqu'à 20 % de la vitesse de pointe, puis elle baisse à puissance constante. GTA V : 0,1 (bus)
-#                             à 0,4 (supercar). Plus haut, accélération plus nerveuse.
+#                             jusqu'à 20 % de la vitesse de pointe, puis elle baisse à puissance constante. Plus haut,
+#                             accélération plus nerveuse.
 #  fInitialDriveMaxFlatVel    VITESSE DE POINTE sur le plat, en km/h (GTA V l'écrit dans une unité à multiplier par 1,32 :
 #                             150 dans GTA = 198 km/h ici). La traînée est réglée pour que la voiture s'y arrête.
 #  fDriveBiasFront            roues motrices : 0 propulsion, 1 traction, entre les deux une intégrale (part de la poussée
 #                             sur l'avant). Une propulsion survire sous les gaz, une traction sous-vire.
-#  fBrakeForce                FREINS : décélération demandée de fBrakeForce x 1,5 g (1,0 -> 1,5 g). L'adhérence des pneus la
-#                             borne (ABS : une roue freinée au pied ne bloque jamais). GTA V : 0,4 à 1,2.
+#  fBrakeForce                FREINS : décélération demandée de fBrakeForce x 2,4 g. Comme dans GTA V, les freins usent toute
+#                             l'adhérence des pneus dès que fBrakeForce dépasse fTractionCurveMax / 4 : les voitures sont
+#                             au-delà (l'ABS borne alors le freinage à ce que tiennent les pneus, une roue freinée au pied ne
+#                             bloque jamais) ; les camions et les bus en deçà, ils freinent plus long.
 #  fBrakeBiasFront            part du freinage sur l'avant (0,5 = moitié-moitié). Réglée sur la charge de l'avant au freinage
 #                             le plus fort : plus bas, l'arrière décroche au freinage ; plus haut, la voiture freine moins fort.
-#  fHandBrakeForce            FREIN À MAIN (Espace), sur les roues arrière seulement : sa force vaut fHandBrakeForce x le poids
-#                             du véhicule. Plus fort que ce que tiennent les pneus arrière (fTractionCurveMax x 0,6 x part du
-#                             poids sur l'arrière), il les BLOQUE et l'arrière part en glisse : une voiture dérape ; un camion
-#                             ou un bus (frein de parc) ralentit sans déraper.
-#  fSteeringLock              BRAQUAGE maximal des roues avant, en degrés (GTA V : 30 à 45). À vitesse, le jeu le borne à ce
-#                             que tient le pneu avant (fTractionCurveLateral) : braquer à fond donne le virage le plus serré
-#                             qui colle encore, jamais un décrochage.
+#  fHandBrakeForce            FREIN À MAIN (Espace), sur les roues arrière seulement, même unité que fBrakeForce : sa force vaut
+#                             fHandBrakeForce x 2,4 x le poids du véhicule. Plus forte que ce que tiennent les pneus arrière
+#                             (en gros fHandBrakeForce > fTractionCurveMax / 4 x 2 x la part du poids sur l'arrière), elle les
+#                             BLOQUE et l'arrière part en glisse : une voiture dérape ; un camion ou un bus (frein de parc, en
+#                             deçà) ralentit sans déraper.
+#  fSteeringLock              BRAQUAGE maximal des roues avant, en degrés, le même à toute vitesse : c'est le joueur qui dose.
+#                             Braquer à fond à haute vitesse fait glisser les pneus avant au-delà de leur pic : la voiture
+#                             tourne sur leur adhérence de glisse et perd de la vitesse.
 #  fTractionCurveMax          ADHÉRENCE MAXIMALE des pneus, au pic de leur courbe : fTractionCurveMax x 0,6 g d'accélération
-#                             en virage et au freinage (2,33 -> 1,4 g ; une vraie voiture tient 0,9 à 1 g). GTA V : 1,5
-#                             (camion) à 2,7 (supercar). Les pneus arrière tiennent 8 % de plus : à la limite, la voiture
-#                             sous-vire un peu plutôt que de partir en tête-à-queue.
+#                             en virage et au freinage (2,33 -> 1,4 g ; une vraie voiture tient 0,9 à 1 g). Dans ce tableau :
+#                             de 1,55 (bus) à 2,68 (hypercar).
 #  fTractionCurveMin          ADHÉRENCE EN GLISSE, même unité : ce qui reste passé le pic. Proche du maximum, la glisse est
-#                             douce et se rattrape ; plus bas, elle est plus franche. Une roue bloquée au frein à main en a
-#                             90 %.
-#  fTractionCurveLateral      angle de glissement du pneu, en degrés, où l'adhérence est MAXIMALE (le pic de la courbe). Plus
-#                             petit : direction plus directe et voiture plus collée, mais la glisse vient plus vite passé la
-#                             limite ; plus grand : plus doux, plus facile à rattraper. La courbe monte en sinus jusqu'au pic,
-#                             puis descend vers fTractionCurveMin jusqu'au double de cet angle. (GTA V écrit souvent 22,5 :
-#                             sa courbe est plus lente au départ.)
+#                             douce et se rattrape ; plus bas (muscle cars, anciennes), elle est plus franche. Une roue bloquée
+#                             au frein à main en a 90 %.
+#  fTractionCurveLateral      FORME DE LA COURBE du pneu, en degrés (la définition de GTA V) : l'adhérence est maximale quand le
+#                             pneu glisse de la MOITIÉ de cet angle (22 -> pic à 11°), puis elle redescend vers
+#                             fTractionCurveMin, atteinte à l'angle entier. Plus petit : direction plus directe, mais la glisse
+#                             vient plus vite passé la limite ; plus grand : plus doux, plus facile à rattraper.
+#  fTractionBiasFront         PARTAGE DE L'ADHÉRENCE entre l'avant et l'arrière (la définition de GTA V) : l'avant en a 2 x
+#                             fTractionBiasFront, l'arrière 2 x (1 - fTractionBiasFront). Sous 0,5, l'arrière tient plus que
+#                             l'avant (0,48 : 8 % de plus) et la voiture sous-vire à la limite, stable ; vers 0,5, elle devient
+#                             joueuse. C'est le premier réglage de la stabilité.
 #  fLowSpeedTractionLossMult  PATINAGE AU DÉMARRAGE : à l'arrêt, les roues qui poussent perdent fLowSpeedTractionLossMult x
-#                             30 % de leur adhérence, et la retrouvent à 25 km/h. 0 : jamais de patinage ; 1,5 : les grosses
-#                             propulsions fument au départ.
+#                             30 % de leur adhérence, et la retrouvent à 25 km/h. 0 : jamais de patinage ; 1,5 et plus : les
+#                             grosses propulsions fument au départ.
 #  fSuspensionForce           RESSORTS (la définition de GTA V) : la roue se détend de 1 / (4 x fSuspensionForce) m sous sa
 #                             position de repos avant que le ressort ne pousse plus. Fréquence propre ~ racine de
 #                             fSuspensionForce, en Hz. Plus bas, la caisse plonge, s'écrase et penche davantage.
@@ -59,6 +68,10 @@
 #                             l'avant, z vers le haut), depuis le milieu de l'empattement, à 38 % de la hauteur du modèle.
 #                             y > 0 : plus de poids sur l'avant (moteur avant). Monter z fait pencher davantage ; le jeu
 #                             garde quand même le véhicule sur ses roues (ci-dessous).
+#  vecInertiaMultiplier       INERTIE, « x,y,z » (la définition de GTA V) : celle d'une boîte pleine aux dimensions du modèle,
+#                             multipliée par x pour le tangage, y pour le roulis, z pour le lacet. Plus haut, le véhicule met
+#                             plus de temps à pivoter et à s'arrêter de pivoter : un z plus haut rend une glisse plus lente et
+#                             plus facile à rattraper, la direction un peu moins vive.
 #
 #  garde_cm           hauteur minimale du dessous de la caisse physique au-dessus du sol (le modèle peut être plus bas)
 #  trafic_kmh, trafic_accel_ms2       vitesse de croisière et accélération de ce modèle dans la circulation. La vitesse
@@ -74,76 +87,76 @@
 # fHandBrakeForce de chaque ligne) et l'adhérence (fTractionCurveMax et fTractionCurveMin), qui gardent les écarts entre
 # modèles.
 #
-id;nature;longueur_m;largeur_m;hauteur_m;fMass;fInitialDriveForce;fInitialDriveMaxFlatVel;fDriveBiasFront;fBrakeForce;fBrakeBiasFront;fHandBrakeForce;fSteeringLock;fTractionCurveMax;fTractionCurveMin;fTractionCurveLateral;fLowSpeedTractionLossMult;fSuspensionForce;fSuspensionCompDamp;fSuspensionReboundDamp;fAntiRollBarForce;vecCentreOfMassOffset;garde_cm;trafic_kmh;trafic_accel_ms2
-city_ambulance;ambulance à cellule sur châssis de fourgon lourd (type E-450, V8 7,3 l);6.12;2.44;2.62;4800;0.22;140;0.00;0.74;0.79;0.29;38.0;1.98;1.79;12.0;0.30;1.44;1.60;2.56;0.50;0.0,-0.17,0.0;36;42;1.8
-city_bus_01;bus urbain de 10,8 m (diesel 300 ch, bridé);10.77;2.80;3.02;12000;0.13;90;0.00;0.63;0.58;0.20;40.0;1.75;1.57;12.0;0.30;1.00;1.53;2.45;0.61;0.0,-0.79,0.0;33;36;1.2
-city_coach_01;autocar de 11 m à trois essieux (diesel 400 ch, bridé);11.01;2.88;3.14;15500;0.14;105;0.00;0.63;0.55;0.20;40.0;1.75;1.57;12.0;0.30;1.00;1.43;2.28;0.61;0.0,-0.95,0.0;31;38;1.2
-city_coupe_01;petit coupé compact;3.87;1.94;1.34;1250;0.26;205;1.00;1.00;0.85;0.99;35.0;2.33;2.05;10.0;0.70;1.64;1.60;2.56;0.36;0.0,0.28,0.0;28;44;3.3
-city_coupe_02;mini coupé de 3,3 m;3.31;1.85;1.29;1050;0.26;190;1.00;1.00;0.85;0.99;35.0;2.33;2.05;10.0;0.70;1.64;1.60;2.56;0.36;0.0,0.25,0.0;28;44;3.3
-city_coupe_03;grand coupé GT de 4,6 m;4.55;1.88;1.24;1550;0.30;250;0.00;1.11;0.83;1.19;35.0;2.45;2.13;9.0;1.21;2.07;1.70;2.72;0.50;0.0,0.05,0.0;28;45;3.8
-city_emergency_van;fourgon d'intervention équipé (type Sprinter);4.77;2.27;2.17;2900;0.21;160;0.00;0.84;0.85;0.66;35.0;2.10;1.85;11.0;0.59;1.44;1.53;2.45;0.45;0.0,0.00,0.0;37;42;2.5
-city_firetruck;fourgon pompe de 8,9 m (diesel 450 ch);8.92;3.06;3.33;17000;0.14;110;0.00;0.63;0.71;0.20;40.0;1.75;1.57;12.0;0.30;1.64;1.43;2.28;0.75;0.0,-0.35,0.0;40;38;1.3
-city_garbage_truck;benne à ordures à trois essieux (moitié pleine);7.90;2.62;3.17;18000;0.11;90;0.00;0.58;0.63;0.20;38.0;1.75;1.57;12.0;0.30;1.85;1.43;2.28;0.75;0.0,-0.55,0.0;31;35;1.1
-city_hotrod;hot rod : caisse légère, gros V8, aérodynamique médiocre;3.88;2.00;1.55;1150;0.35;200;0.00;0.95;0.80;1.19;35.0;2.45;2.13;9.0;1.60;2.07;1.43;2.28;0.13;0.0,0.00,0.0;28;45;4.0
-city_icecream_van;camion de glaces : fourgon et son équipement frigorifique;4.82;2.35;2.99;3600;0.17;130;0.00;0.74;0.81;0.29;38.0;1.98;1.79;12.0;0.30;1.25;1.50;2.39;0.50;0.0,-0.16,0.0;36;38;1.7
-city_limousine;limousine allongée de 6,3 m;6.25;2.02;1.41;2750;0.25;190;0.00;0.90;0.68;0.73;40.0;2.22;1.95;10.0;0.80;1.00;1.43;2.28;0.32;0.0,0.00,0.0;28;42;2.5
-city_mail_truck;véhicule postal de livraison (type LLV);3.89;1.99;1.89;1500;0.21;115;0.00;0.84;0.85;0.80;35.0;2.10;1.85;11.0;0.60;1.44;1.50;2.39;0.32;0.0,0.00,0.0;28;40;2.2
-city_microcar;micro-citadine deux places de 2,2 m;2.20;1.52;1.28;750;0.23;140;0.00;0.95;0.75;0.93;35.0;2.22;1.95;10.0;0.67;1.85;1.60;2.56;0.32;0.0,-0.12,0.0;28;42;2.8
-city_minivan;monospace compact;4.06;2.16;1.91;1650;0.24;185;1.00;0.95;0.85;0.80;35.0;2.22;1.95;11.0;0.70;1.25;1.53;2.45;0.36;0.0,0.23,0.0;32;43;2.8
-city_muscle_car_01;muscle car américaine (V8 7 l);4.27;2.02;1.35;1600;0.32;230;0.00;0.95;0.85;1.19;35.0;2.33;2.05;10.0;1.43;1.44;1.43;2.28;0.28;0.0,0.13,0.0;28;45;3.8
-city_muscle_car_02;muscle car, plus courte et plus légère;4.37;1.95;1.32;1550;0.31;225;0.00;0.95;0.85;1.19;35.0;2.33;2.05;10.0;1.34;1.44;1.43;2.28;0.28;0.0,0.12,0.0;28;45;3.7
-city_muscle_car_03;muscle car longue et basse, le plus gros V8;4.54;2.05;1.29;1700;0.32;240;0.00;0.95;0.85;1.19;35.0;2.33;2.05;10.0;1.52;1.44;1.43;2.28;0.28;0.0,0.12,0.0;28;45;3.9
-city_news_van;camionnette de reportage, mât et régie à bord;4.69;2.27;2.88;3300;0.19;140;0.00;0.79;0.85;0.53;35.0;1.98;1.75;11.0;0.51;1.25;1.50;2.39;0.50;0.0,-0.06,0.0;37;40;1.9
-city_pickup_01;pick-up intermédiaire;4.70;2.21;1.86;2000;0.25;175;0.00;0.90;0.85;0.86;35.0;2.22;1.95;11.0;0.77;1.44;1.50;2.39;0.28;0.0,0.17,0.0;29;43;2.8
-city_pickup_02;grand pick-up (V8 5 l);5.13;2.36;1.95;2350;0.28;180;0.40;0.90;0.85;0.86;38.0;2.22;1.95;11.0;0.60;1.44;1.50;2.39;0.28;0.0,0.22,0.0;34;43;3.0
-city_pickup_03;pick-up lourd, roues de 0,84 m;5.42;2.26;1.81;2750;0.28;170;0.40;0.84;0.85;0.80;38.0;2.15;1.89;11.0;0.60;1.64;1.50;2.39;0.28;0.0,0.26,0.0;35;42;2.8
-city_police_sedan;berline de police Interceptor;4.30;2.02;1.61;1850;0.29;230;0.00;1.05;0.85;1.13;35.0;2.33;2.05;10.0;1.06;1.64;1.60;2.56;0.45;0.0,0.09,0.0;28;44;3.5
-city_police_suv;SUV de police;4.03;2.20;1.88;2200;0.28;210;0.40;1.00;0.85;0.93;35.0;2.26;1.99;11.0;0.58;1.64;1.60;2.56;0.45;0.0,0.11,0.0;28;44;3.3
-city_police_truck;fourgon cellulaire de 6,9 m;6.90;2.14;2.39;4600;0.21;140;0.00;0.74;0.71;0.29;40.0;1.98;1.79;12.0;0.30;1.44;1.53;2.45;0.50;0.0,-0.21,0.0;38;40;1.9
-city_police_van;fourgon de police;4.83;2.27;2.17;2900;0.21;160;0.00;0.84;0.85;0.66;35.0;2.10;1.85;11.0;0.59;1.44;1.53;2.45;0.45;0.0,0.00,0.0;28;42;2.4
-city_retro_car_01;berline des années 1950;4.58;1.82;1.42;1350;0.23;150;0.00;0.79;0.80;0.80;35.0;1.98;1.67;12.0;0.66;1.00;1.26;2.01;0.08;0.0,0.11,0.0;28;40;2.2
-city_retro_car_02;petite voiture populaire ancienne (type Coccinelle);3.95;1.62;1.48;850;0.20;115;0.00;0.74;0.67;0.80;35.0;1.98;1.67;12.0;0.54;1.08;1.26;2.01;0.06;0.0,-0.21,0.0;28;38;1.6
-city_retro_car_03;grande américaine des années 1950 (V8);4.93;1.91;1.33;1750;0.26;170;0.00;0.79;0.79;0.80;35.0;1.98;1.67;12.0;0.84;1.00;1.26;2.01;0.08;0.0,0.14,0.0;33;41;2.6
-city_sedan_01;berline compacte;4.16;2.02;1.41;1300;0.25;195;1.00;1.00;0.85;0.93;35.0;2.33;2.05;10.0;0.70;1.25;1.53;2.45;0.36;0.0,0.26,0.0;28;43;3.0
-city_sedan_02;berline familiale;4.49;1.92;1.38;1450;0.26;210;1.00;1.00;0.85;0.93;35.0;2.33;2.05;10.0;0.70;1.25;1.53;2.45;0.36;0.0,0.26,0.0;28;43;3.2
-city_sedan_03;berline moyenne;4.31;1.97;1.36;1400;0.26;200;1.00;1.00;0.85;0.93;35.0;2.33;2.05;10.0;0.70;1.25;1.53;2.45;0.36;0.0,0.28,0.0;28;43;3.1
-city_sports_car_01;sportive compacte à moteur arrière (type 911);4.01;1.87;1.15;1450;0.33;290;0.00;1.16;0.72;1.46;35.0;2.57;2.23;9.0;1.60;2.56;1.77;2.83;0.55;0.0,-0.21,0.0;28;46;4.3
-city_sports_car_02;supercar large et basse;4.07;2.12;1.14;1500;0.36;320;0.40;1.16;0.72;1.46;35.0;2.57;2.23;9.0;0.80;2.80;1.77;2.83;0.55;0.0,-0.19,0.0;28;46;4.6
-city_sports_car_03;supercar, la plus puissante du pack city;4.23;2.06;1.13;1550;0.36;330;0.40;1.16;0.70;1.46;35.0;2.57;2.23;9.0;0.80;2.80;1.77;2.83;0.55;0.0,-0.20,0.0;28;46;4.7
-city_stepvan_01;camion de livraison à marchepied (type UPS);5.74;2.59;2.59;5000;0.17;110;0.00;0.68;0.77;0.24;38.0;1.98;1.79;12.0;0.30;1.44;1.50;2.39;0.61;0.0,-0.17,0.0;39;38;1.4
-city_suv_01;SUV compact;3.96;2.20;1.69;1550;0.25;190;1.00;0.95;0.85;0.86;35.0;2.22;1.95;10.0;0.70;1.44;1.53;2.45;0.45;0.0,0.22,0.0;33;43;2.9
-city_suv_02;SUV familial;4.26;2.10;1.81;1900;0.26;200;0.40;0.95;0.85;0.86;35.0;2.26;1.99;11.0;0.53;1.44;1.53;2.45;0.45;0.0,0.17,0.0;40;43;3.0
-city_suv_03;tout-terrain court (type Wrangler 2 portes);3.76;1.97;1.75;1800;0.28;170;0.40;0.90;0.85;0.80;35.0;2.15;1.89;10.0;0.60;1.25;1.43;2.28;0.28;0.0,0.11,0.0;40;42;3.0
-city_swat_apc_01;blindé d'intervention large (type BearCat);5.95;3.11;2.69;8000;0.18;120;0.40;0.68;0.85;0.24;38.0;1.98;1.79;12.0;0.30;1.64;1.60;2.56;0.75;0.0,0.00,0.0;40;38;1.5
-city_swat_apc_02;SUV blindé d'intervention;5.16;2.32;2.29;5200;0.21;140;0.40;0.74;0.85;0.33;35.0;1.98;1.79;12.0;0.30;1.64;1.60;2.56;0.75;0.0,0.06,0.0;28;40;1.8
-city_swat_tank;blindé lourd à roues de 1,44 m;6.04;2.57;2.72;14000;0.15;100;0.40;0.63;0.84;0.20;38.0;1.98;1.79;12.0;0.30;1.25;1.60;2.56;0.75;0.0,0.00,0.0;40;36;1.2
-city_sweeper;balayeuse de voirie compacte;3.95;1.93;2.00;4500;0.14;50;0.00;0.63;0.81;0.24;35.0;1.87;1.68;12.0;0.30;1.64;1.43;2.28;0.50;0.0,-0.09,0.0;28;35;1.2
-city_taxi;berline taxi;4.24;2.02;1.73;1450;0.25;190;1.00;1.00;0.85;0.93;35.0;2.33;2.05;10.0;0.70;1.25;1.53;2.45;0.36;0.0,0.23,0.0;28;44;3.1
-city_truck_01;camion porteur à caisse de 8 m, deux essieux;8.01;2.23;2.75;7500;0.16;110;0.00;0.68;0.67;0.24;40.0;1.87;1.68;12.0;0.30;1.85;1.43;2.28;0.61;0.0,-0.27,0.0;38;38;1.5
-city_truck_02;petit camion à caisse (3,5 t);5.39;2.10;2.66;3500;0.18;130;0.00;0.74;0.85;0.33;35.0;1.98;1.79;12.0;0.30;1.64;1.50;2.39;0.50;0.0,-0.06,0.0;30;40;2.0
-city_truck_02_flat;petit camion plateau;5.39;2.10;1.94;3000;0.20;135;0.00;0.74;0.81;0.53;35.0;1.98;1.75;11.0;0.53;1.64;1.50;2.39;0.50;0.0,0.00,0.0;30;40;2.1
-city_truck_03;gros porteur à caisse, trois essieux;7.81;2.78;3.49;12000;0.15;100;0.00;0.63;0.67;0.20;40.0;1.75;1.57;12.0;0.30;1.85;1.43;2.28;0.75;0.0,-0.56,0.0;28;37;1.3
-city_truck_03_flat;gros porteur plateau, trois essieux;7.81;2.78;3.17;10500;0.16;100;0.00;0.63;0.66;0.20;40.0;1.75;1.57;12.0;0.30;1.85;1.43;2.28;0.75;0.0,-0.47,0.0;28;37;1.4
-city_truck_03_tank;camion-citerne, trois essieux;7.88;2.78;3.20;13000;0.14;95;0.00;0.61;0.62;0.20;40.0;1.75;1.57;12.0;0.30;1.85;1.43;2.28;0.75;0.0,-0.65,0.0;28;36;1.2
-city_utility_truck;camion de service à caisson outils;5.67;2.41;2.18;4200;0.22;140;0.40;0.74;0.77;0.29;38.0;1.98;1.79;12.0;0.30;1.64;1.53;2.45;0.50;0.0,-0.07,0.0;34;40;1.9
-city_van_01;fourgonnette;4.69;2.27;1.92;2200;0.21;160;1.00;0.90;0.85;0.73;35.0;2.10;1.85;11.0;0.70;1.44;1.53;2.45;0.36;0.0,0.23,0.0;37;42;2.5
-city_van_02;fourgon tôlé haut;4.77;2.27;2.12;2400;0.21;155;1.00;0.90;0.85;0.66;35.0;2.10;1.85;11.0;0.70;1.44;1.53;2.45;0.36;0.0,0.18,0.0;28;41;2.3
-city_van_03;grand fourgon long;5.47;2.32;2.26;2700;0.21;155;0.00;0.84;0.85;0.60;38.0;2.10;1.85;11.0;0.59;1.44;1.53;2.45;0.36;0.0,0.07,0.0;28;41;2.3
-lowpoly_armor;voiture blindée;5.15;2.47;1.97;3500;0.23;150;0.40;0.79;0.82;0.37;38.0;2.10;1.89;12.0;0.30;1.64;1.60;2.56;0.61;0.0,0.06,0.0;28;41;2.2
-lowpoly_coupe;grand coupé;5.14;2.35;1.74;1700;0.29;220;0.00;1.00;0.85;1.13;38.0;2.33;2.05;10.0;1.05;1.64;1.60;2.56;0.40;0.0,0.09,0.0;28;44;3.4
-lowpoly_fenyr;hypercar (type Fenyr SuperSport);4.88;2.22;1.30;1350;0.39;350;0.00;1.21;0.69;1.52;35.0;2.68;2.33;9.0;1.60;2.80;1.84;2.94;0.68;0.0,-0.29,0.0;28;46;4.8
-lowpoly_ghini;sportive italienne des années 1970 (type Miura);4.79;1.97;1.38;1300;0.33;280;0.00;1.05;0.71;1.33;35.0;2.45;2.13;9.0;1.60;2.31;1.70;2.72;0.50;0.0,-0.23,0.0;28;45;4.2
-lowpoly_italia;sportive italienne à moteur central (type 458);5.24;2.50;1.34;1450;0.36;325;0.00;1.21;0.70;1.52;38.0;2.61;2.27;9.0;1.60;2.80;1.84;2.94;0.68;0.0,-0.25,0.0;28;46;4.6
-lowpoly_jeep;tout-terrain (type Jeep);4.45;2.28;2.03;1900;0.27;165;0.40;0.90;0.85;0.80;35.0;2.10;1.85;11.0;0.57;1.25;1.43;2.28;0.22;0.0,0.13,0.0;30;42;2.8
-lowpoly_kamaro;muscle car moderne (type Camaro);4.87;2.01;1.36;1650;0.33;260;0.00;1.05;0.82;1.26;35.0;2.45;2.13;9.0;1.60;1.85;1.60;2.56;0.45;0.0,0.12,0.0;28;45;4.0
-lowpoly_lamb;supercar V12 (type Aventador);4.62;2.07;1.33;1600;0.37;340;0.40;1.21;0.77;1.52;35.0;2.68;2.33;9.0;0.80;2.80;1.84;2.94;0.68;0.0,-0.17,0.0;28;46;4.8
-lowpoly_mobil;grande berline de luxe;5.34;2.16;1.51;2000;0.29;250;0.00;1.00;0.79;0.93;38.0;2.33;2.05;10.0;1.10;1.08;1.53;2.45;0.40;0.0,0.06,0.0;28;43;3.3
-lowpoly_police;grande berline de police;5.72;2.25;1.67;1950;0.29;230;0.00;1.05;0.84;1.13;38.0;2.33;2.05;10.0;1.05;1.64;1.60;2.56;0.45;0.0,0.13,0.0;28;44;3.4
-lowpoly_rally;voiture de rallye (rapports courts);4.02;1.97;1.62;1250;0.34;200;0.40;1.11;0.85;1.39;35.0;2.57;2.23;9.0;0.80;2.07;1.70;2.72;0.40;0.0,0.13,0.0;28;45;4.3
-lowpoly_van;fourgonnette;4.98;2.12;1.96;2100;0.23;165;1.00;0.90;0.85;0.73;38.0;2.10;1.85;11.0;0.70;1.44;1.53;2.45;0.36;0.0,0.21,0.0;28;42;2.5
-normalcar1;berline;4.22;1.81;1.18;1300;0.25;190;1.00;1.00;0.85;0.93;35.0;2.33;2.05;10.0;0.70;1.25;1.53;2.45;0.36;0.0,0.27,0.0;28;43;3.0
-normalcar2;citadine;3.31;1.64;1.15;1000;0.23;160;1.00;0.95;0.85;0.93;35.0;2.22;1.95;10.0;0.70;1.44;1.53;2.45;0.32;0.0,0.24,0.0;28;42;2.4
-sportscar;coupé sportif;3.97;1.80;1.16;1350;0.32;270;0.00;1.11;0.74;1.39;35.0;2.52;2.19;9.0;1.50;2.31;1.70;2.72;0.55;0.0,-0.12,0.0;28;45;4.1
-sportscar2;coupé sportif, plus puissant;3.93;1.87;1.20;1400;0.33;280;0.00;1.14;0.75;1.43;35.0;2.57;2.23;9.0;1.60;2.56;1.77;2.83;0.55;0.0,-0.13,0.0;28;45;4.3
-suv;SUV;4.21;2.11;1.53;1800;0.26;200;0.40;0.95;0.85;0.86;35.0;2.22;1.95;10.0;0.53;1.44;1.53;2.45;0.45;0.0,0.15,0.0;28;43;2.9
-taxi;berline taxi;4.22;1.81;1.31;1350;0.25;185;1.00;1.00;0.85;0.93;35.0;2.33;2.05;10.0;0.70;1.25;1.53;2.45;0.36;0.0,0.27,0.0;28;43;3.0
+id;nature;longueur_m;largeur_m;hauteur_m;fMass;fInitialDriveForce;fInitialDriveMaxFlatVel;fDriveBiasFront;fBrakeForce;fBrakeBiasFront;fHandBrakeForce;fSteeringLock;fTractionCurveMax;fTractionCurveMin;fTractionCurveLateral;fTractionBiasFront;fLowSpeedTractionLossMult;fSuspensionForce;fSuspensionCompDamp;fSuspensionReboundDamp;fAntiRollBarForce;vecCentreOfMassOffset;vecInertiaMultiplier;garde_cm;trafic_kmh;trafic_accel_ms2
+city_ambulance;ambulance à cellule sur châssis de fourgon lourd (type E-450, V8 7,3 l);6.12;2.44;2.62;4800;0.22;140;0.00;0.48;0.73;0.15;38.0;1.83;1.61;20.0;0.475;0.30;1.44;0.79;1.15;0.50;0.0,-0.17,0.0;1.0,1.3,1.2;36;42;1.8
+city_bus_01;bus urbain de 10,8 m (diesel 300 ch, bridé);10.77;2.80;3.02;12000;0.13;90;0.00;0.30;0.58;0.15;40.0;1.55;1.44;17.0;0.470;0.00;1.00;0.50;0.80;0.61;0.0,-0.79,0.0;1.2,1.5,1.4;33;36;1.2
+city_coach_01;autocar de 11 m à trois essieux (diesel 400 ch, bridé);11.01;2.88;3.14;15500;0.14;105;0.00;0.30;0.55;0.15;40.0;1.55;1.44;17.0;0.470;0.00;1.00;0.50;0.80;0.61;0.0,-0.95,0.0;1.2,1.5,1.5;31;38;1.2
+city_coupe_01;petit coupé compact;3.87;1.94;1.34;1250;0.26;205;1.00;0.70;0.86;0.50;40.0;2.33;2.03;22.0;0.485;0.80;1.64;0.82;1.23;0.36;0.0,0.28,0.0;1.0,1.2,0.9;28;44;3.3
+city_coupe_02;mini coupé de 3,3 m;3.31;1.85;1.29;1050;0.26;190;1.00;0.70;0.87;0.50;40.0;2.33;2.03;22.0;0.485;0.80;1.64;0.82;1.23;0.36;0.0,0.25,0.0;1.0,1.2,0.9;28;44;3.3
+city_coupe_03;grand coupé GT de 4,6 m;4.55;1.88;1.24;1550;0.30;250;0.00;0.85;0.81;0.65;40.0;2.45;2.16;22.0;0.485;1.20;2.07;1.09;1.60;0.50;0.0,0.05,0.0;1.0,1.4,1.0;28;45;3.8
+city_emergency_van;fourgon d'intervention équipé (type Sprinter);4.77;2.27;2.17;2900;0.21;160;0.00;0.60;0.80;0.46;38.0;1.97;1.73;21.0;0.480;0.80;1.44;0.72;1.08;0.45;0.0,0.00,0.0;1.0,1.3,1.1;37;42;2.5
+city_firetruck;fourgon pompe de 8,9 m (diesel 450 ch);8.92;3.06;3.33;17000;0.14;110;0.00;0.36;0.68;0.15;40.0;1.65;1.45;18.0;0.470;0.20;1.64;0.94;1.35;0.75;0.0,-0.35,0.0;1.0,1.3,1.2;40;38;1.3
+city_garbage_truck;benne à ordures à trois essieux (moitié pleine);7.90;2.62;3.17;18000;0.11;90;0.00;0.30;0.57;0.15;38.0;1.65;1.45;18.0;0.470;0.20;1.85;1.06;1.53;0.75;0.0,-0.55,0.0;1.0,1.3,1.2;31;35;1.1
+city_hotrod;hot rod : caisse légère, gros V8, aérodynamique médiocre;3.88;2.00;1.55;1150;0.35;200;0.00;0.85;0.80;0.75;40.0;2.37;1.99;23.0;0.490;1.80;2.07;0.83;1.29;0.13;0.0,0.00,0.0;1.0,1.3,0.95;28;45;4.0
+city_icecream_van;camion de glaces : fourgon et son équipement frigorifique;4.82;2.35;2.99;3600;0.17;130;0.00;0.48;0.72;0.15;38.0;1.85;1.63;21.0;0.480;0.80;1.25;0.62;0.94;0.50;0.0,-0.16,0.0;1.0,1.3,1.1;36;38;1.7
+city_limousine;limousine allongée de 6,3 m;6.25;2.02;1.41;2750;0.25;190;0.00;0.75;0.80;0.55;40.0;2.15;1.83;20.0;0.480;1.00;1.00;0.45;0.70;0.32;0.0,0.00,0.0;1.0,1.5,1.4;28;42;2.5
+city_mail_truck;véhicule postal de livraison (type LLV);3.89;1.99;1.89;1500;0.21;115;0.00;0.55;0.80;0.46;38.0;1.97;1.73;21.0;0.480;0.80;1.44;0.72;1.08;0.32;0.0,0.00,0.0;1.0,1.3,1.05;28;40;2.2
+city_microcar;micro-citadine deux places de 2,2 m;2.20;1.52;1.28;750;0.23;140;0.00;0.70;0.68;0.60;40.0;2.22;1.93;22.0;0.485;0.60;1.85;0.93;1.39;0.32;0.0,-0.12,0.0;1.0,1.1,1.0;28;42;2.8
+city_minivan;monospace compact;4.06;2.16;1.91;1650;0.24;185;1.00;0.60;0.85;0.45;38.0;2.12;1.87;21.0;0.480;0.90;1.25;0.62;0.94;0.36;0.0,0.23,0.0;1.0,1.3,1.05;32;43;2.8
+city_muscle_car_01;muscle car américaine (V8 7 l);4.27;2.02;1.35;1600;0.32;230;0.00;0.85;0.83;0.75;40.0;2.25;1.91;23.0;0.485;1.60;1.44;0.58;0.90;0.28;0.0,0.13,0.0;1.0,1.4,1.1;28;45;3.8
+city_muscle_car_02;muscle car, plus courte et plus légère;4.37;1.95;1.32;1550;0.31;225;0.00;0.85;0.82;0.75;40.0;2.25;1.91;23.0;0.485;1.60;1.44;0.58;0.90;0.28;0.0,0.12,0.0;1.0,1.4,1.1;28;45;3.7
+city_muscle_car_03;muscle car longue et basse, le plus gros V8;4.54;2.05;1.29;1700;0.32;240;0.00;0.85;0.82;0.75;40.0;2.25;1.91;23.0;0.485;1.80;1.44;0.58;0.90;0.28;0.0,0.12,0.0;1.0,1.4,1.1;28;45;3.9
+city_news_van;camionnette de reportage, mât et régie à bord;4.69;2.27;2.88;3300;0.19;140;0.00;0.50;0.77;0.45;38.0;1.85;1.63;21.0;0.480;0.80;1.25;0.62;0.94;0.50;0.0,-0.06,0.0;1.0,1.3,1.1;37;40;1.9
+city_pickup_01;pick-up intermédiaire;4.70;2.21;1.86;2000;0.25;175;0.00;0.65;0.83;0.50;38.0;2.10;1.83;20.0;0.485;1.50;1.44;0.68;1.04;0.28;0.0,0.17,0.0;1.1,1.4,1.1;29;43;2.8
+city_pickup_02;grand pick-up (V8 5 l);5.13;2.36;1.95;2350;0.28;180;0.40;0.65;0.83;0.50;38.0;2.10;1.83;20.0;0.485;1.50;1.44;0.68;1.04;0.28;0.0,0.22,0.0;1.1,1.4,1.1;34;43;3.0
+city_pickup_03;pick-up lourd, roues de 0,84 m;5.42;2.26;1.81;2750;0.28;170;0.40;0.65;0.84;0.50;38.0;2.03;1.77;20.0;0.485;1.50;1.64;0.78;1.19;0.28;0.0,0.26,0.0;1.1,1.4,1.1;35;42;2.8
+city_police_sedan;berline de police Interceptor;4.30;2.02;1.61;1850;0.29;230;0.00;0.90;0.82;0.65;40.0;2.33;2.05;22.0;0.480;1.00;1.64;0.82;1.23;0.45;0.0,0.09,0.0;1.0,1.4,1.0;28;44;3.5
+city_police_suv;SUV de police;4.03;2.20;1.88;2200;0.28;210;0.40;0.75;0.82;0.55;38.0;2.18;1.90;20.0;0.480;1.30;1.64;0.82;1.23;0.45;0.0,0.11,0.0;1.1,1.5,1.15;28;44;3.3
+city_police_truck;fourgon cellulaire de 6,9 m;6.90;2.14;2.39;4600;0.21;140;0.00;0.45;0.73;0.15;38.0;1.83;1.61;19.0;0.475;0.30;1.44;0.79;1.15;0.50;0.0,-0.21,0.0;1.0,1.3,1.2;38;40;1.9
+city_police_van;fourgon de police;4.83;2.27;2.17;2900;0.21;160;0.00;0.60;0.80;0.46;38.0;1.97;1.73;21.0;0.480;0.80;1.44;0.72;1.08;0.45;0.0,0.00,0.0;1.0,1.3,1.1;28;42;2.4
+city_retro_car_01;berline des années 1950;4.58;1.82;1.42;1350;0.23;150;0.00;0.60;0.82;0.50;40.0;2.03;1.75;23.0;0.480;1.00;1.00;0.38;0.60;0.08;0.0,0.11,0.0;1.0,1.4,1.1;28;40;2.2
+city_retro_car_02;petite voiture populaire ancienne (type Coccinelle);3.95;1.62;1.48;850;0.20;115;0.00;0.60;0.68;0.54;40.0;2.03;1.75;23.0;0.485;1.00;1.08;0.41;0.65;0.06;0.0,-0.21,0.0;1.0,1.3,1.0;28;38;1.6
+city_retro_car_03;grande américaine des années 1950 (V8);4.93;1.91;1.33;1750;0.26;170;0.00;0.60;0.83;0.50;40.0;2.03;1.75;23.0;0.480;1.00;1.00;0.38;0.60;0.08;0.0,0.14,0.0;1.0,1.4,1.1;33;41;2.6
+city_sedan_01;berline compacte;4.16;2.02;1.41;1300;0.25;195;1.00;0.80;0.86;0.60;40.0;2.33;2.05;22.0;0.480;1.00;1.25;0.62;0.94;0.36;0.0,0.26,0.0;1.0,1.4,1.0;28;43;3.0
+city_sedan_02;berline familiale;4.49;1.92;1.38;1450;0.26;210;1.00;0.80;0.85;0.60;40.0;2.33;2.05;22.0;0.480;1.00;1.25;0.62;0.94;0.36;0.0,0.26,0.0;1.0,1.4,1.0;28;43;3.2
+city_sedan_03;berline moyenne;4.31;1.97;1.36;1400;0.26;200;1.00;0.80;0.85;0.60;40.0;2.33;2.05;22.0;0.480;1.00;1.25;0.62;0.94;0.36;0.0,0.28,0.0;1.0,1.4,1.0;28;43;3.1
+city_sports_car_01;sportive compacte à moteur arrière (type 911);4.01;1.87;1.15;1450;0.33;290;0.00;0.95;0.65;0.75;40.0;2.57;2.31;21.0;0.490;1.30;2.56;1.41;2.05;0.55;0.0,-0.21,0.0;1.0,1.3,0.95;28;46;4.3
+city_sports_car_02;supercar large et basse;4.07;2.12;1.14;1500;0.36;320;0.40;1.00;0.68;0.75;38.0;2.57;2.39;20.0;0.485;1.00;2.80;1.61;2.31;0.55;0.0,-0.19,0.0;1.0,1.3,0.9;28;46;4.6
+city_sports_car_03;supercar, la plus puissante du pack city;4.23;2.06;1.13;1550;0.36;330;0.40;1.00;0.68;0.75;38.0;2.57;2.39;20.0;0.485;1.00;2.80;1.61;2.31;0.55;0.0,-0.20,0.0;1.0,1.3,0.9;28;46;4.7
+city_stepvan_01;camion de livraison à marchepied (type UPS);5.74;2.59;2.59;5000;0.17;110;0.00;0.42;0.73;0.15;38.0;1.83;1.61;19.0;0.475;0.30;1.44;0.79;1.15;0.61;0.0,-0.17,0.0;1.0,1.3,1.2;39;38;1.4
+city_suv_01;SUV compact;3.96;2.20;1.69;1550;0.25;190;1.00;0.70;0.85;0.50;38.0;2.14;1.86;20.0;0.480;1.30;1.44;0.72;1.08;0.45;0.0,0.22,0.0;1.1,1.5,1.15;33;43;2.9
+city_suv_02;SUV familial;4.26;2.10;1.81;1900;0.26;200;0.40;0.70;0.83;0.50;38.0;2.18;1.90;20.0;0.480;1.30;1.44;0.72;1.08;0.45;0.0,0.17,0.0;1.1,1.5,1.15;40;43;3.0
+city_suv_03;tout-terrain court (type Wrangler 2 portes);3.76;1.97;1.75;1800;0.28;170;0.40;0.70;0.82;0.50;38.0;2.07;1.80;21.0;0.480;1.00;1.25;0.62;0.94;0.28;0.0,0.11,0.0;1.1,1.5,1.15;40;42;3.0
+city_swat_apc_01;blindé d'intervention large (type BearCat);5.95;3.11;2.69;8000;0.18;120;0.40;0.40;0.85;0.15;38.0;1.88;1.69;19.0;0.460;0.30;1.64;0.90;1.31;0.75;0.0,0.00,0.0;1.0,1.4,1.4;40;38;1.5
+city_swat_apc_02;SUV blindé d'intervention;5.16;2.32;2.29;5200;0.21;140;0.40;0.45;0.86;0.15;38.0;1.88;1.69;20.0;0.460;0.30;1.64;0.90;1.31;0.75;0.0,0.06,0.0;1.0,1.4,1.4;28;40;1.8
+city_swat_tank;blindé lourd à roues de 1,44 m;6.04;2.57;2.72;14000;0.15;100;0.40;0.36;0.85;0.15;38.0;1.88;1.69;19.0;0.440;0.30;1.25;0.69;1.00;0.75;0.0,0.00,0.0;1.0,1.4,1.4;40;36;1.2
+city_sweeper;balayeuse de voirie compacte;3.95;1.93;2.00;4500;0.14;50;0.00;0.40;0.72;0.15;38.0;1.72;1.51;19.0;0.475;0.30;1.64;0.90;1.31;0.50;0.0,-0.09,0.0;1.0,1.3,1.2;28;35;1.2
+city_taxi;berline taxi;4.24;2.02;1.73;1450;0.25;190;1.00;0.80;0.85;0.60;40.0;2.33;2.05;22.0;0.480;1.00;1.25;0.62;0.94;0.36;0.0,0.23,0.0;1.0,1.4,1.0;28;44;3.1
+city_truck_01;camion porteur à caisse de 8 m, deux essieux;8.01;2.23;2.75;7500;0.16;110;0.00;0.33;0.73;0.15;40.0;1.77;1.56;18.0;0.470;0.20;1.85;1.06;1.53;0.61;0.0,-0.27,0.0;1.0,1.3,1.2;38;38;1.5
+city_truck_02;petit camion à caisse (3,5 t);5.39;2.10;2.66;3500;0.18;130;0.00;0.42;0.77;0.15;38.0;1.83;1.61;19.0;0.475;0.30;1.64;0.90;1.31;0.50;0.0,-0.06,0.0;1.0,1.3,1.2;30;40;2.0
+city_truck_02_flat;petit camion plateau;5.39;2.10;1.94;3000;0.20;135;0.00;0.45;0.80;0.45;38.0;1.83;1.61;19.0;0.475;0.30;1.64;0.90;1.31;0.50;0.0,0.00,0.0;1.0,1.3,1.2;30;40;2.1
+city_truck_03;gros porteur à caisse, trois essieux;7.81;2.78;3.49;12000;0.15;100;0.00;0.33;0.62;0.15;40.0;1.65;1.45;18.0;0.470;0.20;1.85;1.06;1.53;0.75;0.0,-0.56,0.0;1.0,1.3,1.2;28;37;1.3
+city_truck_03_flat;gros porteur plateau, trois essieux;7.81;2.78;3.17;10500;0.16;100;0.00;0.33;0.65;0.15;40.0;1.65;1.45;18.0;0.470;0.20;1.85;1.06;1.53;0.75;0.0,-0.47,0.0;1.0,1.3,1.2;28;37;1.4
+city_truck_03_tank;camion-citerne, trois essieux;7.88;2.78;3.20;13000;0.14;95;0.00;0.30;0.59;0.15;40.0;1.65;1.45;18.0;0.470;0.20;1.85;1.06;1.53;0.75;0.0,-0.65,0.0;1.0,1.3,1.2;28;36;1.2
+city_utility_truck;camion de service à caisson outils;5.67;2.41;2.18;4200;0.22;140;0.40;0.42;0.77;0.15;38.0;1.83;1.61;19.0;0.475;0.30;1.64;0.90;1.31;0.50;0.0,-0.07,0.0;1.0,1.3,1.2;34;40;1.9
+city_van_01;fourgonnette;4.69;2.27;1.92;2200;0.21;160;1.00;0.55;0.84;0.45;38.0;1.97;1.73;21.0;0.480;0.80;1.44;0.72;1.08;0.36;0.0,0.23,0.0;1.0,1.3,1.1;37;42;2.5
+city_van_02;fourgon tôlé haut;4.77;2.27;2.12;2400;0.21;155;1.00;0.55;0.83;0.45;38.0;1.97;1.73;21.0;0.480;0.80;1.44;0.72;1.08;0.36;0.0,0.18,0.0;1.0,1.3,1.1;28;41;2.3
+city_van_03;grand fourgon long;5.47;2.32;2.26;2700;0.21;155;0.00;0.55;0.81;0.45;38.0;1.97;1.73;21.0;0.480;0.80;1.44;0.72;1.08;0.36;0.0,0.07,0.0;1.0,1.3,1.1;28;41;2.3
+lowpoly_armor;voiture blindée;5.15;2.47;1.97;3500;0.23;150;0.40;0.45;0.86;0.15;38.0;2.00;1.80;20.0;0.460;0.30;1.64;0.90;1.31;0.61;0.0,0.06,0.0;1.0,1.4,1.4;28;41;2.2
+lowpoly_coupe;grand coupé;5.14;2.35;1.74;1700;0.29;220;0.00;0.85;0.81;0.65;40.0;2.33;2.05;22.0;0.485;1.20;1.64;0.86;1.27;0.40;0.0,0.09,0.0;1.0,1.4,1.0;28;44;3.4
+lowpoly_fenyr;hypercar (type Fenyr SuperSport);4.88;2.22;1.30;1350;0.39;350;0.00;1.05;0.65;0.75;38.0;2.68;2.49;20.0;0.485;1.20;2.80;1.61;2.31;0.68;0.0,-0.29,0.0;1.0,1.3,0.9;28;46;4.8
+lowpoly_ghini;sportive italienne des années 1970 (type Miura);4.79;1.97;1.38;1300;0.33;280;0.00;0.95;0.68;0.75;40.0;2.45;2.16;22.0;0.485;1.30;2.31;1.27;1.85;0.50;0.0,-0.23,0.0;1.0,1.3,0.95;28;45;4.2
+lowpoly_italia;sportive italienne à moteur central (type 458);5.24;2.50;1.34;1450;0.36;325;0.00;1.05;0.68;0.75;38.0;2.61;2.43;20.0;0.485;1.20;2.80;1.61;2.31;0.68;0.0,-0.25,0.0;1.0,1.3,0.9;28;46;4.6
+lowpoly_jeep;tout-terrain (type Jeep);4.45;2.28;2.03;1900;0.27;165;0.40;0.70;0.82;0.50;38.0;2.02;1.76;21.0;0.480;1.00;1.25;0.62;0.94;0.22;0.0,0.13,0.0;1.1,1.5,1.15;30;42;2.8
+lowpoly_kamaro;muscle car moderne (type Camaro);4.87;2.01;1.36;1650;0.33;260;0.00;0.85;0.82;0.75;40.0;2.37;2.01;23.0;0.485;1.70;1.85;0.74;1.16;0.45;0.0,0.12,0.0;1.0,1.4,1.1;28;45;4.0
+lowpoly_lamb;supercar V12 (type Aventador);4.62;2.07;1.33;1600;0.37;340;0.40;1.05;0.69;0.75;38.0;2.68;2.49;20.0;0.485;1.00;2.80;1.61;2.31;0.68;0.0,-0.17,0.0;1.0,1.3,0.9;28;46;4.8
+lowpoly_mobil;grande berline de luxe;5.34;2.16;1.51;2000;0.29;250;0.00;0.80;0.81;0.60;40.0;2.33;2.05;21.0;0.480;1.00;1.08;0.54;0.81;0.40;0.0,0.06,0.0;1.0,1.5,1.2;28;43;3.3
+lowpoly_police;grande berline de police;5.72;2.25;1.67;1950;0.29;230;0.00;0.85;0.82;0.60;40.0;2.33;2.05;22.0;0.480;1.00;1.64;0.82;1.23;0.45;0.0,0.13,0.0;1.0,1.4,1.0;28;44;3.4
+lowpoly_rally;voiture de rallye (rapports courts);4.02;1.97;1.62;1250;0.34;200;0.40;0.95;0.83;0.80;40.0;2.57;2.36;22.0;0.485;1.00;2.07;1.14;1.66;0.40;0.0,0.13,0.0;1.0,1.3,0.95;28;45;4.3
+lowpoly_van;fourgonnette;4.98;2.12;1.96;2100;0.23;165;1.00;0.55;0.83;0.45;38.0;1.97;1.73;21.0;0.480;0.80;1.44;0.72;1.08;0.36;0.0,0.21,0.0;1.0,1.3,1.1;28;42;2.5
+normalcar1;berline;4.22;1.81;1.18;1300;0.25;190;1.00;0.80;0.86;0.60;40.0;2.33;2.05;22.0;0.480;1.00;1.25;0.62;0.94;0.36;0.0,0.27,0.0;1.0,1.4,1.0;28;43;3.0
+normalcar2;citadine;3.31;1.64;1.15;1000;0.23;160;1.00;0.70;0.86;0.50;40.0;2.22;1.93;22.0;0.485;0.80;1.44;0.72;1.08;0.32;0.0,0.24,0.0;1.0,1.2,0.9;28;42;2.4
+sportscar;coupé sportif;3.97;1.80;1.16;1350;0.32;270;0.00;0.95;0.73;0.75;40.0;2.52;2.27;21.0;0.485;1.30;2.31;1.27;1.85;0.55;0.0,-0.12,0.0;1.0,1.3,0.95;28;45;4.1
+sportscar2;coupé sportif, plus puissant;3.93;1.87;1.20;1400;0.33;280;0.00;0.95;0.72;0.75;40.0;2.57;2.31;21.0;0.485;1.30;2.56;1.41;2.05;0.55;0.0,-0.13,0.0;1.0,1.3,0.95;28;45;4.3
+suv;SUV;4.21;2.11;1.53;1800;0.26;200;0.40;0.70;0.83;0.50;38.0;2.14;1.86;20.0;0.480;1.30;1.44;0.72;1.08;0.45;0.0,0.15,0.0;1.1,1.5,1.15;28;43;2.9
+taxi;berline taxi;4.22;1.81;1.31;1350;0.25;185;1.00;0.80;0.86;0.60;40.0;2.33;2.05;22.0;0.480;1.00;1.25;0.62;0.94;0.36;0.0,0.27,0.0;1.0,1.4,1.0;28;43;3.0
