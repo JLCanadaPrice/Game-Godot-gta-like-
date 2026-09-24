@@ -66,7 +66,29 @@ const VehicleCatalog := preload("res://scripts/data/VehicleCatalog.gd")
 # du noeud de roue dans le modèle importé (sinon la roue "cabre" au lieu de braquer).
 @export var wheel_steer_axis := Vector3(0, 1, 0)
 
-# --- conduite du joueur : le châssis réel (cf. CONDUITE DU JOUEUR) ---
+# --- conduite ---
+const DRIVE_ACCEL := 16.0
+const DRIVE_MAX_SPEED := 24.0
+const DRIVE_REVERSE_MAX := 8.0
+const DRIVE_FRICTION := 9.0
+const DRIVE_BRAKE := 26.0
+# RAYON DE BRAQUAGE DU JOUEUR, PAR MODÈLE (2026-09-22). Historique : le lacet valait TURN_RATE x v / DRIVE_MAX_SPEED,
+# soit un rayon CONSTANT de 24 / 2,4 = 10 m à toute vitesse et pour tous les modèles ; le 2026-09-21 il descendait à
+# 5,5 m sous 4 m/s, toujours le même pour une citadine et un autocar. C'est maintenant le modèle BICYCLETTE, sur
+# l'empattement L MESURÉ du modèle (_mesurer_empattement) : lacet = v x tan(δ) / L, δ = consigne x angle_braquage(v).
+#  - À l'arrêt et à basse vitesse, δ vaut MAX_STEER_RAD (29,8°), l'angle que les roues avant montrent à fond : le
+#    rayon décrit par l'origine de la voiture est L / tan(δ), et le rayon « entre murs » des fiches techniques (roue
+#    avant extérieure, cf. rayon_entre_murs) en découle — environ 5,5 m pour une berline, plus de 12 m pour l'autocar.
+#  - Pour rester stable à vitesse, le braquage se réduit : δ ne dépasse pas l'angle qui tient l'accélération latérale
+#    à BRAQUAGE_A_LAT (tan δ = L x a / v²). Le rayon croît alors comme v² / a, pour tous les modèles.
+# Les roues avant montrent l'angle δ réellement appliqué (cf. _physics_process). La circulation n'est pas concernée :
+# elle suit son graphe, et ses roues prennent l'angle de son virage (_braquage_ia).
+const BRAQUAGE_A_LAT := 15.0      # m/s² : accélération latérale au plus, braquage à fond (~1,5 g, voiture d'arcade)
+# Franchissement de bordure, JOUEUR SEULEMENT (cf. _try_step_up). 0,22 m : les bordures de la carte font
+# 0,150 m mesurés sur la collision cuite, la marge couvre les raccords de tuiles sans rendre franchissable un
+# muret. 0,32 m d'avance testée : un peu plus que ce que la voiture parcourt en une frame à pleine vitesse.
+const STEP_UP_MAX := 0.22
+const STEP_UP_AHEAD := 0.32
 const ABANDON_DESPAWN := 25.0
 const GRAVITY := 18.0
 const WHEEL_RADIUS := 0.34
@@ -214,12 +236,31 @@ var _abandon_gen := 0                 # numéro de la dernière sortie du joueur
 var _drive_speed := 0.0
 var _player_braking := false
 var _player_near := false
+var _steer_input := 0.0
 
 # choc
 var _knock_time := 0.0
 var _knock_vel := Vector3.ZERO
+var _recoil_vel := Vector3.ZERO
 var _tilt_pitch := 0.0
 var _tilt_roll := 0.0
+# ASSIETTE SUR UNE PENTE (2026-09-21). La boîte de collision de la voiture ne s'incline jamais : move_and_slide la
+# fait monter une rampe, mais elle reste horizontale, appuyée sur son arête avant (en montée) ou arrière (en
+# descente). Sur 12 %, une voiture de 4,5 m roulait donc l'essieu arrière suspendu 0,27 m au-dessus de la rampe.
+# Le MODÈLE prend l'angle du sol et descend pour que ses deux essieux touchent la pente. Visuel seulement : la
+# physique ne change pas.
+# REFAIT LE 2026-09-24 : le sol est relevé AU RAYON SOUS CHAQUE ESSIEU (_poser_assiette), le modèle cabré de l'écart entre
+# les deux et descendu pour que chaque essieu se pose sur le sien. Avant, il prenait la normale du sol sous la BOÎTE et
+# descendait d'une demi-longueur x tan(angle) — juste sur une pente continue, faux à chaque raccord : au pied d'une rampe,
+# la boîte (qui glisse sur son arête avant) touche déjà la pente alors que les roues sont encore sur le plat, et le modèle
+# était cabré de tout l'angle de la rampe et descendu d'autant. Mesuré à l'entrée d'un parking à étages (rampe d'accès
+# de 27 %, ConduiteReelleTest, étape « entree ») : le dessous de la berline à 0,5 m SOUS le sol ; encore 2 cm sous le
+# sol sur la rampe adoucie à 9,6 %. Sur une pente continue, les deux calculs donnent la même pose.
+var _pente := 0.0
+var _abaisse := 0.0                       # descente du modèle (m) pour que ses essieux se posent sur leur sol
+var _sol_essieux := Vector2(NAN, NAN)     # sol relevé sous l'essieu avant (x) et arrière (y), suivi à vitesse bornée
+var _z_essieu_av := -1.3                  # essieux, repère de la voiture (avant = -z), MESURÉS (cf. _mesurer_empattement)
+var _z_essieu_ar := 1.3
 var _stains := 0
 
 # visuel
@@ -258,7 +299,7 @@ func _ready() -> void:
 	$InteractZone.body_entered.connect(_on_zone_entered)
 	$InteractZone.body_exited.connect(_on_zone_exited)
 	$CrushZone.body_entered.connect(_on_crush_zone_entered)
-	set_process(false)   # _process ne sert qu'à la voiture du joueur (cf. CONDUITE DU JOUEUR)
+	set_process(false)   # _process ne sert qu'à la conduite réaliste (cf. CONDUITE RÉALISTE)
 	call_deferred("_print_ride_diag")
 
 # Diagnostic ponctuel : compare la géométrie de collision de la voiture au sol
@@ -421,9 +462,8 @@ func boite_caisse() -> AABB:
 #  - les RÉTROVISEURS ne gonflent pas l'enveloppe : les sommets plus larges que la caisse sous la ceinture (bas 55 % de
 #    la hauteur, où il n'y a ni rétroviseur ni galerie) sont ramenés à cette largeur ;
 #  - sous les pare-chocs, l'enveloppe descend VERTICALEMENT jusqu'au sol, comme la boîte : c'est cette face basse qui
-#    touche les bordures de 0,15 m, et l'arrêt de la circulation devant elles (CarKerbTest) en dépend. Capot, toit et
-#    coffre gardent leur pente. (La voiture du JOUEUR roule sur son châssis réel, qui a sa propre coque : cf. CONDUITE DU
-#    JOUEUR.)
+#    touche les bordures de 0,15 m, et le franchissement du joueur (_try_step_up) comme l'arrêt de la circulation devant
+#    elles (CarKerbTest) en dépendent. Capot, toit et coffre gardent leur pente.
 # Repli : la boîte, si le modèle n'a rien de mesurable.
 # Camions, bus et pick-up : enveloppes PAR PIÈCE, faites dans Blender (tools/enveloppes_pieces.py, à partir de
 # tools/EnveloppesExport.gd) et lues ici : une enveloppe unique relierait le toit de la cabine au bout de la benne.
@@ -563,13 +603,16 @@ func setup(path: CircuitPath, start_node: int, speed: float, lateral: float, edg
 
 func _physics_process(delta: float) -> void:
 	if _chassis != null:
-		# voiture du joueur (cf. CONDUITE DU JOUEUR) : la physique est celle du châssis, la voiture le suit
+		# conduite réaliste (cf. CONDUITE RÉALISTE) : la physique est celle du châssis, la voiture le suit
 		_suivre_chassis()
 		_drive_speed = _chassis.vitesse_avant()
 		_player_braking = driven_by_player and _chassis.freine()
 		return
 	if driven_by_player:
-		return      # la voiture du joueur est son châssis ; sans châssis (modèle sans roues mesurables), elle ne bouge pas
+		_drive_physics(delta)
+		# les roues avant montrent l'angle de braquage réellement appliqué (réduit à vitesse, cf. angle_braquage)
+		_update_visuals(delta, _drive_speed, _steer_input * angle_braquage(_drive_speed) / MAX_STEER_RAD)
+		return
 
 	if _knock_time > 0.0:
 		_knock_time -= delta
@@ -1300,12 +1343,165 @@ func nears_node(node: int, except_edge: int, radius: float) -> bool:
 
 # --- conduite ---------------------------------------------------
 
-# Rayon de braquage « entre murs », celui des fiches techniques : la roue avant EXTÉRIEURE, braquage à fond (MAX_STEER_RAD,
-# l'angle que montrent les roues avant et celui du châssis réel, cf. ChassisReel.configurer), à basse vitesse. Le centre du
-# virage est sur l'essieu arrière prolongé, à L / tan(δ) du milieu de la voiture.
+func _drive_physics(delta: float) -> void:
+	var throttle := Input.get_axis("move_back", "move_forward")
+	_steer_input = Input.get_axis("move_right", "move_left")
+
+	# Feux de freinage du JOUEUR : la pédale, pas la vitesse. brake_lights_on() ne regardait que
+	# _drive_speed < BRAKE_STOP_SPEED, donc les feux ne s'allumaient qu'une fois la voiture presque
+	# arrêtée — appuyer sur S en roulant ne faisait rien. C'est ici, et nulle part ailleurs, que la
+	# voiture du joueur décide de freiner : marche arrière demandée alors qu'on avance encore.
+	_player_braking = throttle < 0.0 and _drive_speed > 0.5
+	if throttle > 0.0:
+		_drive_speed = move_toward(_drive_speed, DRIVE_MAX_SPEED, DRIVE_ACCEL * delta)
+	elif throttle < 0.0:
+		if _drive_speed > 0.5:
+			_drive_speed = move_toward(_drive_speed, 0.0, DRIVE_BRAKE * delta)
+		else:
+			_drive_speed = move_toward(_drive_speed, -DRIVE_REVERSE_MAX, DRIVE_ACCEL * delta)
+	else:
+		_drive_speed = move_toward(_drive_speed, 0.0, DRIVE_FRICTION * delta)
+
+	if absf(_drive_speed) > 0.3:
+		# modèle bicyclette (cf. BRAQUAGE_A_LAT) : lacet = v x tan(δ) / L ; en marche arrière, v < 0 et la voiture
+		# tourne de l'autre côté, comme une vraie
+		rotate_y(_drive_speed * tan(_steer_input * angle_braquage(_drive_speed)) / _empattement * delta)
+
+	# Montée de trottoir : voir _try_step_up, appelée après move_and_slide.
+	# (La réponse précédente était scenes/world/CurbRamp.gd, qui construisait des rampes de collision le
+	# long des trottoirs. Il ne reconnaissait que des StaticBody3D nommés *Walk* portant une seule
+	# BoxShape3D — la disposition du monde d'essai d'origine — alors que les trottoirs de la carte cuite
+	# sont des trimesh de RoadCell et des piles de boîtes sous Sol_*, et il n'était attaché à aucun nœud
+	# de World.tscn : il ne tournait plus du tout. Supprimé le 2026-09-19.)
+
+	# recul de choc (décroît vite)
+	_recoil_vel = _recoil_vel.lerp(Vector3.ZERO, clampf(delta * 6.0, 0.0, 1.0))
+
+	if not is_on_floor():
+		velocity.y -= GRAVITY * delta
+	else:
+		velocity.y = 0.0
+	var fwd := -global_transform.basis.z
+	velocity.x = fwd.x * _drive_speed + _recoil_vel.x
+	velocity.z = fwd.z * _drive_speed + _recoil_vel.z
+	move_and_slide()
+	_try_step_up(fwd)
+	_resolve_drive_collisions(fwd)
+	# assiette sur une pente (cf. ASSIETTE)
+	_poser_assiette(delta)
+
+
+# ASSIETTE : le sol sous chaque essieu, relevé au rayon (décor seulement, calque 1), suivi à ASSIETTE_VITESSE au plus —
+# une pente continue est suivie exactement, une marche (bordure de 15 cm) est montée en ~0,06 s, comme par un pneu. En
+# l'air, le modèle revient dans l'axe de la boîte. Le modèle est cabré de asin((avant - arrière) / empattement) et
+# descendu pour que l'essieu arrière se pose sur son sol (l'avant suit, par construction) : _pente et _abaisse, que
+# _update_visuals applique.
+const ASSIETTE_VITESSE := 2.5            # m/s : vitesse verticale maximale du sol suivi sous un essieu
+const ENVELOPPE_BAS := 0.02              # bas des pneus (et de l'enveloppe) au-dessus du bas de _boite_caisse (sa marge)
+
+func _poser_assiette(delta: float) -> void:
+	var xf := global_transform
+	var bas := xf.origin.y + _boite_caisse.position.y + ENVELOPPE_BAS    # bas des pneus, modèle au repos
+	var cible := Vector2(bas, bas)
+	if is_on_floor():
+		var espace := get_world_3d().direct_space_state
+		var exclure: Array[RID] = [get_rid()]
+		for k in 2:
+			var p := xf * Vector3(0.0, 0.0, _z_essieu_av if k == 0 else _z_essieu_ar)
+			var hit := espace.intersect_ray(PhysicsRayQueryParameters3D.create(Vector3(p.x, bas + 0.6, p.z), Vector3(p.x, bas - 0.8, p.z), 1, exclure))
+			if not hit.is_empty():
+				if k == 0:
+					cible.x = (hit["position"] as Vector3).y
+				else:
+					cible.y = (hit["position"] as Vector3).y
+	if is_nan(_sol_essieux.x) or absf(_sol_essieux.x - cible.x) > 1.0 or absf(_sol_essieux.y - cible.y) > 1.0:
+		_sol_essieux = cible          # première fois, ou voiture déplacée : pas de rattrapage à l'écran
+	else:
+		var pas := ASSIETTE_VITESSE * delta
+		_sol_essieux = Vector2(move_toward(_sol_essieux.x, cible.x, pas), move_toward(_sol_essieux.y, cible.y, pas))
+	var s := clampf((_sol_essieux.x - _sol_essieux.y) / maxf(_z_essieu_ar - _z_essieu_av, 0.5), -0.6, 0.6)
+	_pente = asin(s)
+	_abaisse = clampf(_sol_essieux.y - bas + _z_essieu_ar * s, -1.0, 0.05)
+
+
+# Angle de braquage à fond à la vitesse `v` (cf. BRAQUAGE_A_LAT) : MAX_STEER_RAD tant que l'accélération latérale
+# reste sous BRAQUAGE_A_LAT, puis l'angle qui l'y tient.
+func angle_braquage(v: float) -> float:
+	var v2 := v * v
+	if v2 < 0.01:
+		return MAX_STEER_RAD
+	return minf(MAX_STEER_RAD, atan(_empattement * BRAQUAGE_A_LAT / v2))
+
+
+# Rayon décrit par l'origine de la voiture, braquage à fond, à la vitesse `v` : L / tan(δ).
+func rayon_braquage(v: float) -> float:
+	return _empattement / tan(angle_braquage(v))
+
+
+# Rayon de braquage « entre murs », celui des fiches techniques : la roue avant EXTÉRIEURE, braquage à fond, à basse
+# vitesse. Le centre du virage est sur l'essieu arrière prolongé, à L / tan(δ) du milieu de la voiture.
 func rayon_entre_murs() -> float:
 	var r := _empattement / tan(MAX_STEER_RAD) + _voie * 0.5
 	return sqrt(r * r + _empattement * _empattement)
+
+# Franchissement de bordure. move_and_slide() ne monte AUCUNE marche verticale, si basse soit-elle : mesuré, la
+# voiture arcade s'arrête net devant les bordures de 0,150 m, à 3, 6, 10 et 15 m/s, aussi bien sur le trimesh
+# d'une artère que sur les boîtes du centre-ville. On relève donc la caisse à la main quand elle bute sur une
+# face verticale basse ayant du sol juste derrière.
+#
+# Réservé au joueur : `driven_by_player` est faux pour les 252 voitures de la circulation, qui gardent donc
+# exactement le comportement d'avant et restent arrêtées par les bordures. Les PNJ ne passent pas par ici.
+func _try_step_up(fwd: Vector3) -> void:
+	if not driven_by_player or not is_on_floor() or absf(_drive_speed) < 0.5:
+		return
+	# sens de MARCHE, pas d'orientation : en marche arrière la bordure est derrière la voiture
+	var dir := fwd * signf(_drive_speed)
+	var bute := false
+	for i in get_slide_collision_count():
+		var n := get_slide_collision(i).get_normal()
+		# face quasi verticale, prise de face : une pente reste gérée par move_and_slide
+		if absf(n.y) <= 0.35 and dir.dot(-n) > 0.3:
+			bute = true
+			break
+	if not bute:
+		return
+	var lift := Vector3.UP * STEP_UP_MAX
+	if test_move(global_transform, lift):
+		return                                   # pas la place de se relever : tunnel, pont, autre voiture
+	var releve := global_transform.translated(lift)
+	var devant := dir * STEP_UP_AHEAD
+	if test_move(releve, devant):
+		return                                   # vrai mur : la caisse ne passe pas non plus au-dessus
+	var contact := KinematicCollision3D.new()
+	if not test_move(releve.translated(devant), Vector3.DOWN * (STEP_UP_MAX + 0.05), contact):
+		return                                   # rien sur quoi se reposer : un trou, pas une marche
+	# On pose la caisse exactement là où l'essai vient de la faire atterrir : relevée, avancée, puis redescendue
+	# jusqu'au contact. Se contenter de la relever sur place ne suffit pas — mesuré : à 3 m/s la voiture se
+	# relevait 14 fois de suite et retombait à chaque fois sur la chaussée, parce qu'avec 0,05 m parcourus par
+	# frame sa caisse restait presque entièrement au-dessus de la route et que l'accrochage au sol
+	# (floor_snap_length) la ramenait aussitôt contre la face de la bordure.
+	global_position += lift + devant + contact.get_travel()
+
+func _resolve_drive_collisions(fwd: Vector3) -> void:
+	for i in get_slide_collision_count():
+		var c := get_slide_collision(i)
+		var n := c.get_normal()
+		if absf(n.y) > 0.7:
+			continue   # sol / marche, pas un mur
+		var other := c.get_collider()
+		var frontality := clampf(-fwd.dot(n), -1.0, 1.0)   # 1 = choc pile de face
+
+		if other != null and other.is_in_group("vehicle") and other.has_method("knock"):
+			other.knock(-n, absf(_drive_speed) * 0.6 + 4.0)
+			_drive_speed *= 0.35
+			_recoil_vel = n * (absf(_drive_speed) * 0.4 + 4.0)
+			_tilt_pitch = -0.12 * maxf(frontality, 0.3)
+		else:
+			# mur / obstacle statique : on tue la vitesse selon la frontalité
+			_drive_speed *= clampf(1.0 - 0.95 * maxf(frontality, 0.0), 0.0, 1.0)
+			_recoil_vel = n * (3.0 + 3.0 * maxf(frontality, 0.0))
+			_tilt_pitch = -0.10 * maxf(frontality, 0.2)
+		_tilt_roll = clampf(n.dot(global_transform.basis.x), -1.0, 1.0) * 0.08
 
 func knock(dir: Vector3, strength: float) -> void:
 	if _chassis != null:
@@ -1368,10 +1564,13 @@ func _update_visuals(delta: float, fwd_speed: float, steer_target: float) -> voi
 	_tilt_pitch = lerpf(_tilt_pitch, 0.0, clampf(delta * 6.0, 0.0, 1.0))
 	_tilt_roll = lerpf(_tilt_roll, 0.0, clampf(delta * 6.0, 0.0, 1.0))
 	if _model != null:
-		_model.rotation.x = _tilt_pitch
+		# la rotation du modèle se compose avec son lacet de catalogue (ordre YXZ) : avec le lacet de 180°, un angle
+		# positif autour de son X BAISSE le nez de la voiture ; pour le lever d'un angle `_pente`, il faut donc
+		# _pente x cos(lacet) (vérifié par WheelSpinTest / ParkingStructureTest sur le nez du modèle)
+		_model.rotation.x = _tilt_pitch + _pente * cos(deg_to_rad(model_yaw_deg))
 		_model.rotation.z = _tilt_roll
 		_model.rotation.y = deg_to_rad(model_yaw_deg)
-		_model.position.y = model_y_offset
+		_model.position.y = model_y_offset + _abaisse
 
 # ROUES QUI ROULENT À L'ENDROIT (2026-09-21). Toutes les roues tournaient autour du X LOCAL de leur noeud,
 # dans le même sens, quel que soit le modèle. Relevé sur les 72 modèles du catalogue posés comme ici
@@ -1411,8 +1610,8 @@ const ROUE_PAS_DEFAUT := 0.35         # rad par image (20°), pour une roue sans
 # moyeu horizontal (carrossage nul), angle de braquage exact, bon côté, centre de la roue immobile.
 
 # Empattement : distance, le long de la voiture, entre le milieu des roues avant et le milieu des autres, mesurée
-# sur leurs centres (repère de la voiture) ; voie : écart latéral entre les roues avant. Servent au braquage visuel de la
-# circulation (_braquage_ia) et au rayon « entre murs » (rayon_entre_murs).
+# sur leurs centres (repère de la voiture) ; voie : écart latéral entre les roues avant. Servent au braquage du
+# joueur (modèle bicyclette, cf. BRAQUAGE_A_LAT) et au braquage visuel de la circulation.
 func _mesurer_empattement() -> void:
 	var za := 0.0
 	var na := 0
@@ -1430,6 +1629,8 @@ func _mesurer_empattement() -> void:
 			nr += 1
 	if na > 0 and nr > 0:
 		_empattement = maxf(absf(zr / float(nr) - za / float(na)), 0.5)
+		_z_essieu_av = za / float(na)
+		_z_essieu_ar = zr / float(nr)
 	if na >= 2:
 		_voie = maxf(xa.y - xa.x, 0.5)
 
@@ -1438,7 +1639,8 @@ func _mesurer_empattement() -> void:
 # _update_visuals : leurs roues avant ne pivotaient jamais, même dans un virage serré. On le déduit du virage
 # qu'elles décrivent réellement : un cap qui tourne de ω rad/s à la vitesse v trace un rayon R = v / ω, et des
 # roues avant à l'empattement L font alors l'angle atan(L / R) = atan(L·ω / v). Un cap qui augmente tourne à
-# gauche (rotation autour de +Y). Visuel seulement : la conduite n'en dépend pas.
+# gauche (rotation autour de +Y), comme _steer_input > 0 chez le joueur. Visuel seulement : la conduite n'en
+# dépend pas.
 func _braquage_ia(dcap_deg: float, delta: float) -> float:
 	if delta <= 0.0:
 		return 0.0
@@ -1645,25 +1847,26 @@ func set_simulation_active(active: bool) -> void:
 static func _keep_awake(o: Object) -> void:
 	o.set_meta(SIM_KEEP_AWAKE_META, Engine.get_physics_frames() + SIM_KEEP_AWAKE_FRAMES)
 
-# --- CONDUITE DU JOUEUR : LE CHÂSSIS RÉEL (2026-09-24, CLAUDE.md §13 et §14) --------------------------------------
+# --- CONDUITE RÉALISTE : ESSAI (2026-09-24, étape 1, CLAUDE.md §13) ---------------------------------------------------
 #
-# La voiture du joueur n'a plus qu'une conduite : quand il prend le volant, la voiture se dote d'un châssis physique réglé
-# sur la fiche de son modèle (ChassisReel, le cœur du pack VitaVehicle ; FichesVehicules, §14) et le SUIT. L'arcade
-# (Car._drive_physics, franchissement de bordure à la main, assiette de la boîte sur les pentes, braquage réduit à
-# vitesse) a été SUPPRIMÉE le 2026-09-24 sur décision du joueur ; la bascule F7 de l'essai avec elle. Les 252 voitures de
-# la circulation gardent leur conduite cinématique sur le graphe : elles ne passent pas par ici.
-# La voiture garde son nœud et tout ce qui y est accroché — modèle, feux, gyrophares, zone de tir, zone d'écrasement,
-# taches, place dans la circulation — et prend la position et le cap du châssis ; son modèle prend en plus le roulis et
-# le tangage, ses roues leur rotation, leur braquage et leur débattement. Ce qui lit la voiture continue de marcher :
-# `_drive_speed` (écrasement, caméra), `_player_braking` (feux de freinage), `driven_by_player` (feux, gyrophares,
-# culler). Son corps cinématique est coupé (couches à zéro) tant que le châssis existe, c'est-à-dire pour toujours une
-# fois qu'on l'a conduite : à la descente, le châssis reste — pédales à zéro, frein à main — et se fige une fois arrêté ;
-# la voiture reste là où elle s'est arrêtée, penchée sur une rampe s'il le faut.
+# F7 (EssaiConduiteReelle, sur le joueur) bascule `conduite_reelle`, coupée au lancement. Quand elle est active et que le
+# joueur conduit un modèle dont le châssis se mesure (les 72 : cf. _mesures_chassis), la voiture se dote d'un châssis
+# physique réglé sur sa fiche (ChassisReel, le cœur du pack VitaVehicle ; FichesVehicules, CLAUDE.md §14) et le SUIT au
+# lieu de rouler en arcade. Elle garde son nœud et tout ce qui y est accroché — modèle,
+# feux, gyrophares, zone de tir, zone d'écrasement, taches, place dans la circulation — et prend la position et le cap du
+# châssis ; son modèle prend en plus le roulis et le tangage, ses roues leur rotation, leur braquage et leur débattement.
+# Ce qui lit la voiture continue de marcher : `_drive_speed` (écrasement, caméra), `_player_braking` (feux de freinage),
+# `driven_by_player` (feux, gyrophares, culler). Le corps arcade est coupé (couches à zéro) tant que le châssis existe.
+# À la descente, le châssis reste — pédales à zéro, frein à main — et se fige une fois arrêté : la voiture reste là où
+# elle s'est arrêtée, penchée sur une rampe s'il le faut. Il n'est rendu à l'arcade que si on remonte (ou si on bascule)
+# F7 coupé : un corps arcade ne sait pas s'incliner, une voiture arrêtée en pente sauterait.
 const ChassisReel := preload("res://scenes/vehicles/ChassisReel.gd")
+static var conduite_reelle := false
 static var _mesures_chassis_cache := {}   # model_path -> mesures, dans le repère du châssis
 var _chassis: RigidBody3D = null
 var _roue_chassis := {}      # roue du modèle -> roue du châssis
 var _centre_repos := {}      # roue du modèle -> centre de sa roue de châssis au repos (repère du châssis)
+var _couches_arcade := Vector2i(-1, -1)
 var _cap_chassis := 0.0
 var _model_repos := Transform3D.IDENTITY
 var cout_visuels_us := 0     # dernière image : suivi du châssis + modèle + roues (mesure du coût, ConduiteReelleTest)
@@ -1685,23 +1888,24 @@ func fiche_physique() -> Dictionary:
 	return FichesVehicules.fiche(data.id) if data != null else {}
 
 
-# À la montée : le châssis (créé, ou dégelé s'il existe déjà).
+# Met la voiture conduite dans le mode choisi (F7) : à la montée, et à la bascule en roulant.
 func appliquer_mode_conduite() -> void:
 	if not driven_by_player:
 		return
-	if conduite_reelle_possible():
+	if conduite_reelle and conduite_reelle_possible():
 		_activer_chassis()
-	else:
-		push_warning("Car : %s n'a pas de roues mesurables, pas de châssis : la voiture ne roulera pas" % model_path)
+	elif _chassis != null:
+		_retirer_chassis()
 
 
 func chassis() -> RigidBody3D:
 	return _chassis
 
 
-# Pour le compteur (EssaiConduiteReelle) : rapport engagé et vitesse.
+# Pour le bandeau de l'essai (EssaiConduiteReelle).
 func infos_conduite() -> Dictionary:
-	return {"rapport": _chassis.rapport() if _chassis != null else "", "kmh": absf(_drive_speed) * 3.6}
+	return {"essai": conduite_reelle_possible(), "reelle": _chassis != null,
+			"rapport": _chassis.rapport() if _chassis != null else "", "kmh": absf(_drive_speed) * 3.6}
 
 
 # Corps à exclure d'une requête de place autour de la voiture (Player._sortie_libre) : elle-même et son châssis.
@@ -1734,6 +1938,7 @@ func _activer_chassis() -> void:
 				_roue_chassis[w] = ch.get_node(String(r["nom"]))
 				_centre_repos[w] = r["centre"]
 		ch.repartir(-global_transform.basis.z * _drive_speed + Vector3(0.0, velocity.y, 0.0))
+		_couches_arcade = Vector2i(collision_layer, collision_mask)
 		collision_layer = 0
 		collision_mask = 0
 		_cap_chassis = rotation.y
@@ -1744,6 +1949,28 @@ func _activer_chassis() -> void:
 	else:
 		_chassis.degeler()
 	_chassis.Controlled = true
+
+
+func _retirer_chassis() -> void:
+	var ch := _chassis
+	_suivre_chassis()
+	var v: Vector3 = ch.linear_velocity
+	_chassis = null
+	_roue_chassis.clear()
+	_centre_repos.clear()
+	# hors de l'espace physique TOUT DE SUITE : libéré en différé, il restait un pas à la même place que la voiture arcade
+	# qui reprend, et les deux corps se repoussaient (mesuré : 0,76 m de chute à la bascule F7)
+	remove_child(ch)
+	ch.queue_free()
+	if _couches_arcade.x >= 0:
+		collision_layer = _couches_arcade.x
+		collision_mask = _couches_arcade.y
+	velocity = v
+	_drive_speed = v.dot(-global_transform.basis.z)
+	if _model != null:
+		_model.transform = _model_repos
+	process_priority = 0
+	set_process(false)
 
 
 func _pose_repos_modele() -> Transform3D:

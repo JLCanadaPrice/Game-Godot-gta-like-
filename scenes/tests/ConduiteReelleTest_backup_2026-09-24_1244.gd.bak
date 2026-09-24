@@ -1,33 +1,32 @@
 extends Node3D
 
-# CONDUITE RÉALISTE DU JOUEUR, SUR LA BERLINE (essai de l'étape 1, 2026-09-24, CLAUDE.md §13 ; la seule conduite du joueur
-# depuis le même jour, chaque modèle réglé sur sa fiche : §14).
+# CONDUITE RÉALISTE — ESSAI SUR LA BERLINE (étape 1, 2026-09-24, CLAUDE.md §13).
 #
-# Le VRAI joueur (Player.tscn) monte dans une VRAIE berline city_sedan_01 (Car.tscn), qui se dote de son châssis réel, et la
-# conduit au clavier virtuel (gas / brake / left / right, les actions que lit le pack). Sol d'essai plat, une bordure de
-# 0,15 m (la hauteur relevée sur la collision cuite des trottoirs de la carte), et la collision CUITE d'un parking à étages
-# du centre-ville, avec sa rampe à 16 %.
+# Le VRAI joueur (Player.tscn) monte dans une VRAIE berline city_sedan_01 (Car.tscn) avec la conduite réaliste activée
+# (Car.conduite_reelle, ce que fait F7), et la conduit au clavier virtuel (gas / brake / left / right, les actions que lit
+# le pack). Sol d'essai plat, une bordure de 0,15 m (la hauteur relevée sur la collision cuite des trottoirs de la carte),
+# et la collision CUITE d'un parking à étages du centre-ville, avec sa rampe à 16 %.
 # Ce qui est mesuré, et ce qui fait échouer :
 #  - au repos : pneus sur le sol (écart <= 3 cm), caisse d'aplomb, aucun recul ;
 #  - départ, 0-50, 0-100, 108 km/h atteints ; double changement de voie à 108 km/h sans basculer ni partir en tête-à-queue ;
 #    freinage de 108 km/h à l'arrêt, droit ; puis AUCUN RECUL à l'arrêt (1 cm au plus en 2 s) ;
 #  - braquage à fond à 50 km/h sans se coucher (caisse jamais au-delà de 18°) ; roue libre jusqu'à l'arrêt ;
-#  - rayon de braquage à 3 m/s, comparé à la géométrie du modèle (rayon « entre murs », rapporté, pas jugé) ;
+#  - rayon de braquage à 3 m/s, comparé à celui de la voiture arcade du même modèle (rapporté, pas jugé) ;
 #  - VOLANT PARTIEL (2026-09-24) : à 12 km/h, 45 % de volant tenu, le rayon est celui que demande le volant (épure du
 #    pack, à 0,85-1,25 près) — l'assistance de direction du pack le ramenait à 5,3 m au lieu de 9 (cf. ChassisReel) ;
 #  - bordure de 0,15 m de face et en biais (30°) : franchie, montée ET descente, sans que la coque la touche ;
 #  - rampe à 16 % : montée sans que la coque touche, arrêt en pleine pente SANS RECULER (2 cm au plus en 2 s),
 #    redémarrage en côte, arrivée au niveau 1 ;
 #  - ENTRÉE du parking (rampe d'accès du passage, refaite le 2026-09-24 : elle faisait 27 % et le pare-chocs la touchait),
-#    traversée à 4 et 7 m/s : aucun contact de la coque, et le DESSOUS DU MODÈLE — ce qu'on voit, roues exceptées —
-#    jamais à moins de 2 cm du sol ;
+#    traversée en réaliste PUIS en arcade, à 4 et 7 m/s : aucun contact de la coque (réaliste), et le DESSOUS DU MODÈLE
+#    — ce qu'on voit, roues exceptées — jamais à moins de 2 cm du sol, dans les deux modes ; en arcade, les pneus posés
+#    sur le sol à 5 cm près tout du long (assiette du modèle au pied et en haut de la rampe, refaite le même jour) ;
 #  - SORTIE en gardant W enfoncé, puis W et S pressés à côté : la voiture s'arrête et ne bouge plus (5 cm au plus), le
 #    joueur est dehors ; remontée dans les 25 s : la voiture ne disparaît pas sous lui (défaut corrigé le 2026-09-24) ;
+#  - bascule arcade / réaliste en roulant (F7) : aucun saut de position, la vitesse est gardée ;
 #  - F8 : une berline posée devant le joueur, sur le sol ;
-#  - COÛT PHYSIQUE : temps des scripts du châssis (corps + 4 roues) par pas physique, et temps d'une image complète sans
-#    rendu, voiture conduite (rapportés).
-# Jusqu'au 2026-09-24, il vérifiait aussi la bascule arcade / réaliste en roulant (F7) et la conduite arcade à l'entrée du
-# parking : l'arcade a été supprimée ce jour-là.
+#  - COÛT PHYSIQUE : temps des scripts du châssis (corps + 4 roues) par pas physique, et temps total d'un pas physique
+#    en réaliste et en arcade, en alternant, sur la même conduite (rapporté).
 #
 # Lancer : Godot --headless --fixed-fps 60 res://scenes/tests/ConduiteReelleTest.tscn
 
@@ -47,10 +46,11 @@ const VOLANT_V := 12.0 / 3.6                       # volant partiel : vitesse (m
 const VOLANT_PART := 0.45                          # ... et part du volant, tenue
 # Entrée du parking (repère du modèle) : départ devant la façade (z 11,87) et la barre de hauteur (z 11,95..12,15),
 # arrivée dans le rez, passage franchi (face intérieure de la tour à z 7,48). [réaliste ?, vitesse m/s]
-const ENTREE_PASSAGES := [4.0, 7.0]                 # vitesses (m/s)
+const ENTREE_PASSAGES := [[true, 4.0], [true, 7.0], [false, 4.0], [false, 7.0]]
 const ENTREE_DEPART_Z := 24.0
 const ENTREE_FIN_Z := 1.0
 const ENTREE_GARDE_MIN := 0.02                     # dessous du modèle : au moins 2 cm au-dessus du sol
+const ENTREE_ROUES_MAX := 0.05                     # arcade : pneus posés sur le sol à 5 cm près (assiette du modèle)
 
 var _voiture: Node3D
 var _joueur: CharacterBody3D
@@ -93,6 +93,7 @@ func _ready() -> void:
 	_joueur.position = Vector3(-3.0, 1.0, 0.0)   # AVANT l'entrée dans l'arbre : posé à l'origine, il portait la voiture
 	add_child(_joueur)
 	_essai = _joueur.get_node("EssaiConduiteReelle")
+	CarScript.conduite_reelle = false
 	print("CONDUITE_REELLE_TEST debut")
 
 
@@ -251,12 +252,13 @@ func _suivante() -> void:
 func _e_pose(_d: float) -> bool:
 	if _t < 1.5:
 		return false
-	_r["h_garee"] = _pos().y      # la voiture garée, avant qu'on la conduise (corps cinématique)
-	_r["rayon_geometrie"] = float(_voiture.call("rayon_entre_murs"))
+	_r["h_arcade"] = _pos().y
+	_r["rayon_arcade"] = float(_voiture.call("rayon_entre_murs"))
 	return true
 
 
 func _e_montee(_d: float) -> bool:
+	CarScript.conduite_reelle = true
 	_joueur.call("_enter_vehicle", _voiture)
 	_ch = _voiture.call("chassis")
 	if _ch == null:
@@ -264,7 +266,7 @@ func _e_montee(_d: float) -> bool:
 		_i = _etapes.size() - 2
 		return true
 	if int(_voiture.get("collision_layer")) != 0:
-		_faute("le corps cinématique de la voiture n'est pas coupé (couche %d)" % int(_voiture.get("collision_layer")))
+		_faute("le corps arcade de la voiture n'est pas coupé (couche %d)" % int(_voiture.get("collision_layer")))
 	var roues: Array = _ch.get("roues")
 	var w0 = roues[0]
 	_r["pneu"] = "jante %s, rayon %.3f m (modèle %.3f m)" % [w0.TyreSettings["Rim Size (in)"], (222.0 + 25.4 * float(w0.TyreSettings["Rim Size (in)"])) * 0.00049035,
@@ -289,8 +291,8 @@ func _e_repos(_d: float) -> bool:
 		var c: Vector3 = w.global_transform * (centres.get(w, Vector3.ZERO) as Vector3)
 		ecart_max = maxf(ecart_max, absf(c.y - float(rayons.get(w, 0.34))))
 	var derive := (_pos() - (_e["p15"] as Vector3)).length()
-	_r["repos"] = "origine à %.3f m (garée %.3f), pneus à %.3f m du sol au pire, caisse penchée de %.2f°, dérive %.4f m en 1,5 s" % [
-			_h_repos, float(_r["h_garee"]), ecart_max, _penche(), derive]
+	_r["repos"] = "origine à %.3f m (arcade %.3f), pneus à %.3f m du sol au pire, caisse penchée de %.2f°, dérive %.4f m en 1,5 s" % [
+			_h_repos, float(_r["h_arcade"]), ecart_max, _penche(), derive]
 	if ecart_max > 0.03:
 		_faute("au repos, un pneu est à %.3f m du sol" % ecart_max)
 	if _penche() > 1.5:
@@ -459,8 +461,8 @@ func _e_rayon(_d: float) -> bool:
 		return false
 	var r_ext := _rayon_cercle(PackedVector2Array(_e["pts"]))
 	var r_o := _rayon_cercle(PackedVector2Array(_e["pts_o"]))
-	_r["rayon"] = "à 3 m/s, braquage à fond : %.2f m entre murs (roue avant extérieure), %.2f m au centre de la voiture ; géométrie du modèle %.2f m entre murs" % [
-			r_ext, r_o, float(_r["rayon_geometrie"])]
+	_r["rayon"] = "à 3 m/s, braquage à fond : %.2f m entre murs (roue avant extérieure), %.2f m au centre de la voiture ; arcade du même modèle %.2f m entre murs" % [
+			r_ext, r_o, float(_r["rayon_arcade"])]
 	return true
 
 
@@ -632,9 +634,10 @@ func _e_rampe(_d: float) -> bool:
 
 
 # ENTRÉE DU PARKING (2026-09-24). Les vidéos ont montré la rampe d'accès du passage (0,36 m sur 1,35 m, 27 %) toucher le
-# pare-chocs avant de la berline, puis l'arrière frotter le sol. Deux traversées de l'entrée, à 4 et 7 m/s. Deux mesures :
-# les contacts de la coque du châssis, et la garde au sol du DESSOUS DU MODÈLE — ce qu'on voit — relevée au rayon sous
-# chacun de ses points bas, à chaque pas.
+# pare-chocs avant de la berline, puis l'arrière frotter le sol. Quatre traversées de l'entrée, réaliste puis arcade, à 4
+# et 7 m/s. Deux mesures : les contacts de la coque du châssis (réaliste), et la garde au sol du DESSOUS DU MODÈLE — ce
+# qu'on voit — relevée au rayon sous chacun de ses points bas, à chaque pas (arcade comme réaliste : en arcade, la
+# collision de la voiture glisse sur la rampe, c'est le modèle posé en pente qui pourrait s'y enfoncer).
 func _e_entree(_d: float) -> bool:
 	if not _e.has("k"):
 		_e["k"] = -1
@@ -650,7 +653,7 @@ func _e_entree(_d: float) -> bool:
 					_dessous = _profil_dessous()
 				_e["phase"] = "route"
 		"route":
-			_regule(float(ENTREE_PASSAGES[_e["k"]]))
+			_regule(float(ENTREE_PASSAGES[_e["k"]][1]))
 			if z < 20.0:
 				var g := _garde_dessous()
 				if g < float(_e["garde"]):
@@ -670,11 +673,14 @@ func _e_entree(_d: float) -> bool:
 				_pedales(false, true)
 			else:
 				_pedales()
-				var nom := "à %.0f m/s" % float(ENTREE_PASSAGES[_e["k"]])
-				(_e["lignes"] as Array).append("%s : dessous du modèle à %.3f m du sol au plus près (voiture à z %.1f), roues à %+.3f m du sol au pire (z %.1f), modèle incliné de %.1f° au plus, coque en contact %d pas" % [
+				var reel: bool = ENTREE_PASSAGES[_e["k"]][0]
+				var nom := "%s à %.0f m/s" % ["réaliste" if reel else "arcade", float(ENTREE_PASSAGES[_e["k"]][1])]
+				(_e["lignes"] as Array).append("%s : dessous du modèle à %.3f m du sol au plus près (voiture à z %.1f), roues à %+.3f m du sol au pire (z %.1f), modèle incliné de %.1f° au plus%s" % [
 						nom, float(_e["garde"]), float(_e["garde_z"]), float(_e["roues"]), float(_e["roues_z"]), float(_e["penche"]),
-						int(_e["contact"])])
-				if int(_e["contact"]) > 0:
+						(", coque en contact %d pas" % int(_e["contact"])) if reel else ""])
+				if not reel and absf(float(_e["roues"])) > ENTREE_ROUES_MAX:
+					_faute("entrée du parking, %s : une roue à %+.3f m du sol (voiture à z %.1f)" % [nom, float(_e["roues"]), float(_e["roues_z"])])
+				if reel and int(_e["contact"]) > 0:
 					_faute("entrée du parking, %s : la coque touche (%d pas)" % [nom, int(_e["contact"])])
 				if float(_e["garde"]) < ENTREE_GARDE_MIN:
 					_faute("entrée du parking, %s : le dessous du modèle passe à %.3f m du sol (voiture à z %.1f)" % [nom, float(_e["garde"]), float(_e["garde_z"])])
@@ -687,10 +693,16 @@ func _e_entree(_d: float) -> bool:
 	return false
 
 
-# Traversée suivante : voiture posée devant l'entrée. Rend true quand elles sont toutes faites.
+# Traversée suivante : bon mode de conduite (F7), voiture posée devant l'entrée. Rend true quand elles sont toutes faites,
+# la voiture laissée en réaliste pour la suite.
 func _entree_suivante() -> bool:
 	_e["k"] = int(_e["k"]) + 1
-	if int(_e["k"]) >= ENTREE_PASSAGES.size():
+	var fini := int(_e["k"]) >= ENTREE_PASSAGES.size()
+	var reel: bool = true if fini else ENTREE_PASSAGES[_e["k"]][0]
+	if (_voiture.call("chassis") != null) != reel:
+		_essai.call("basculer")
+	_ch = _voiture.call("chassis")
+	if fini:
 		return true
 	_placer(PARKING_POS + Vector3(0.0, 0.0, ENTREE_DEPART_Z), 0.0)
 	_e["phase"] = "attente"
@@ -704,7 +716,8 @@ func _entree_suivante() -> bool:
 	return false
 
 
-# Inclinaison du MODÈLE (deg), ce qu'on voit : angle entre son axe vertical et la verticale (roulis et tangage du châssis).
+# Inclinaison du MODÈLE (deg), ce qu'on voit : angle entre son axe vertical et la verticale (assiette en arcade, roulis et
+# tangage du châssis en réaliste).
 func _incline_modele() -> float:
 	var modele: Node3D = _voiture.get("_model")
 	return rad_to_deg(acos(clampf(modele.global_transform.basis.y.normalized().dot(Vector3.UP), -1.0, 1.0)))
@@ -730,7 +743,7 @@ func _ecart_roues() -> float:
 
 # Dessous du modèle, roues exceptées : le point le plus bas de chaque tranche de 3 cm le long de la voiture, relevé sur les
 # sommets de ses maillages, voiture posée à plat ; rangé dans le repère du nœud du modèle, qui porte la pose (roulis et
-# tangage du châssis).
+# tangage du châssis en réaliste, assiette en pente en arcade).
 func _profil_dessous() -> PackedVector3Array:
 	var modele: Node3D = _voiture.get("_model")
 	var roues: Array = _voiture.get("_wheels")
@@ -822,25 +835,56 @@ func _e_remontee(_d: float) -> bool:
 	return true
 
 
-# Coût d'une image complète sans rendu (scène d'essai : voiture conduite, joueur, sol), en ligne droite à 54 km/h, sur 20 s.
-# (Jusqu'au 2026-09-24, comparé à la voiture arcade en alternance, par F7 en roulant : l'arcade a été supprimée.)
+# Coût : même conduite (ligne droite à 54 km/h), réaliste et arcade en alternance toutes les 5 s (F7 en roulant).
 func _e_cout(_d: float) -> bool:
-	if not _e.has("images"):
+	if not _e.has("seg"):
 		_placer(Vector3(0.0, 0.0, 500.0), 0.0)
-		_e["images"] = []
+		_e["seg"] = 0
+		_e["t_seg"] = 0.0
+		_e["reel"] = []
+		_e["arcade"] = []
+		_e["saut"] = 0.0
+		_e["dv"] = 0.0
 		return false
 	_regule(15.0)
-	if _t > 2.0 and _image_us > 0:
-		(_e["images"] as Array).append(_image_us / 1000.0)
-	if _t < 22.0:
-		return false
-	_r["cout_pas"] = "image complète sans rendu (scène d'essai : voiture conduite, joueur, sol), %d images à 54 km/h : médiane %.3f ms" % [
-			(_e["images"] as Array).size(), _mediane(PackedFloat32Array(_e["images"]))]
-	return true
+	var t_seg := _t - float(_e["t_seg"])
+	var mode_reel := _voiture.call("chassis") != null
+	if _e.has("avant_bascule"):
+		var av: Array = _e["avant_bascule"]
+		var attendu: Vector3 = (av[0] as Vector3) + (av[2] as Vector3) * (av[1] as float) / 60.0
+		var ecart: Vector3 = _pos() - attendu
+		print("CONDUITE_REELLE bascule vers %s : écart au pas suivant %s m (vitesse %.2f -> %.2f m/s)" % ["réaliste" if mode_reel else "arcade", str(ecart.snappedf(0.001)), float(av[1]), _v()])
+		_e["saut"] = maxf(float(_e["saut"]), ecart.length())
+		_e["dv"] = maxf(float(_e["dv"]), absf(_v() - float(av[1])))
+		_e.erase("avant_bascule")
+	if t_seg > 1.0 and _e["seg"] > 0 and _image_us > 0:
+		(_e["reel" if mode_reel else "arcade"] as Array).append(_image_us / 1000.0)
+	if t_seg >= 5.0:
+		if int(_e["seg"]) >= 7:
+			_r["cout_pas"] = "image complète sans rendu (scène d'essai : voiture, joueur, sol), médianes : réaliste %.3f ms, arcade %.3f ms, écart %+.3f ms" % [
+					_mediane(PackedFloat32Array(_e["reel"])), _mediane(PackedFloat32Array(_e["arcade"])),
+					_mediane(PackedFloat32Array(_e["reel"])) - _mediane(PackedFloat32Array(_e["arcade"]))]
+			_r["bascule"] = "bascules arcade <-> réaliste en roulant (6) : saut de position %.3f m au plus, écart de vitesse %.2f m/s au plus" % [
+					float(_e["saut"]), float(_e["dv"])]
+			if float(_e["saut"]) > 0.5:
+				_faute("bascule F7 en roulant : la voiture saute de %.2f m" % float(_e["saut"]))
+			if float(_e["dv"]) > 2.0:
+				_faute("bascule F7 en roulant : la vitesse change de %.2f m/s" % float(_e["dv"]))
+			return true
+		_e["avant_bascule"] = [_pos(), _v(), -_voiture.global_transform.basis.z]
+		_essai.call("basculer")
+		_ch = _voiture.call("chassis")
+		if _ch != null:
+			pass
+		_e["seg"] = int(_e["seg"]) + 1
+		_e["t_seg"] = _t
+	return false
 
 
 func _e_descente(_d: float) -> bool:
 	if not _e.has("phase"):
+		if _voiture.call("chassis") == null:
+			_essai.call("basculer")   # finir en réaliste
 		_ch = _voiture.call("chassis")
 		_e["phase"] = "arret"
 	if _v() > 0.3:
@@ -875,11 +919,11 @@ func _e_f8(_d: float) -> bool:
 		return false
 	var v: Node3D = _e["voiture"]
 	var d := Vector2(v.global_position.x - _joueur.global_position.x, v.global_position.z - _joueur.global_position.z).length()
-	_r["f8"] = "F8 : berline posée à %.1f m du joueur, origine à %.3f m du sol (garée %.3f), modèle %s" % [
-			d, v.global_position.y, float(_r["h_garee"]), String(v.get("model_path")).get_file()]
+	_r["f8"] = "F8 : berline posée à %.1f m du joueur, origine à %.3f m du sol (repos arcade %.3f), modèle %s" % [
+			d, v.global_position.y, float(_r["h_arcade"]), String(v.get("model_path")).get_file()]
 	if d < 5.0 or d > 15.0:
 		_faute("F8 : berline posée à %.1f m" % d)
-	if absf(v.global_position.y - float(_r["h_garee"])) > 0.15:
+	if absf(v.global_position.y - float(_r["h_arcade"])) > 0.15:
 		_faute("F8 : berline pas posée sur le sol (%.3f m)" % v.global_position.y)
 	return true
 
@@ -896,9 +940,10 @@ func _e_fin(_d: float) -> bool:
 	if _min_up < 0.95:
 		_faute("caisse penchée de plus de 18° pendant l'essai (%.1f°)" % rad_to_deg(acos(clampf(_min_up, -1.0, 1.0))))
 	for k in ["pneu", "geometrie", "repos", "depart", "vitesse108", "freinage", "virage50", "roue_libre", "rayon", "volant_partiel",
-			"bordure_0", "bordure_30", "rampe", "entree", "sortie", "disparition", "cout_pas", "cout_scripts", "tenue", "f8"]:
+			"bordure_0", "bordure_30", "rampe", "entree", "sortie", "disparition", "bascule", "cout_pas", "cout_scripts", "tenue", "f8"]:
 		if _r.has(k):
 			print("CONDUITE_REELLE %s : %s" % [k, _r[k]])
 	print("CONDUITE_REELLE_RESULT %s" % ("OK" if _fautes.is_empty() else "FAIL : " + " ; ".join(_fautes)))
+	CarScript.conduite_reelle = false
 	get_tree().quit()
 	return true

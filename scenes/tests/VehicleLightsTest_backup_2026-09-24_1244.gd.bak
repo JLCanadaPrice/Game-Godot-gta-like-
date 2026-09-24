@@ -5,9 +5,7 @@ extends Node3D
 # Ce que le test couvre, et pourquoi :
 #  - FREINS DU JOUEUR : appuyer sur S en roulant doit allumer les feux. C'est le défaut corrigé le
 #    2026-09-20 : brake_lights_on() ne regardait que la vitesse quand le joueur conduisait, donc les
-#    feux ne s'allumaient qu'une fois la voiture presque arrêtée, et jamais en roulant. Depuis le
-#    2026-09-24, la voiture du joueur roule sur son châssis réel (CLAUDE.md §14) : c'est sa pédale de
-#    frein (action « brake ») qui allume les feux ;
+#    feux ne s'allumaient qu'une fois la voiture presque arrêtée, et jamais en roulant ;
 #  - VOITURE GARÉE : feux éteints. Sans cette règle, un véhicule à l'arrêt (vitesse nulle) allumerait
 #    ses feux de freinage en permanence — ce que la section « véhicules garés » aurait introduit sur
 #    les quatorze véhicules des lieux ;
@@ -66,24 +64,27 @@ func _freins_joueur() -> void:
 	car.forced_model_path = BERLINE
 	add_child(car)
 	car.global_position = Vector3(0, 400, 0)
-	_rouler(car, 10.0)
+	car.driven_by_player = true
+	car.set("_drive_speed", 10.0)
 	# pas de pédale : en roulant, les feux doivent être ÉTEINTS
-	Input.action_release("brake")
+	Input.action_release("move_back")
 	for k in 3:
 		await get_tree().physics_frame
 	var au_repos: bool = car.call("brake_lights_on")
 	# pédale enfoncée en roulant : les feux doivent être ALLUMÉS, de jour comme de nuit
-	Input.action_press("brake")
+	car.set("_drive_speed", 10.0)
+	Input.action_press("move_back")
 	for k in 3:
 		await get_tree().physics_frame
 	var en_freinant: bool = car.call("brake_lights_on")
-	Input.action_release("brake")
+	Input.action_release("move_back")
 	if au_repos:
 		_fautes.append("feux de freinage allumés alors que le joueur roule sans freiner")
 	if not en_freinant:
 		_fautes.append("feux de freinage ÉTEINTS alors que le joueur appuie sur le frein en roulant")
 	# voiture garée : personne au volant, feux éteints
-	car.call("stop_drive")
+	car.driven_by_player = false
+	car.call("park")
 	for k in 2:
 		await get_tree().physics_frame
 	var garee: bool = car.call("brake_lights_on")
@@ -91,17 +92,6 @@ func _freins_joueur() -> void:
 		_fautes.append("feux de freinage allumés sur une voiture garée")
 	print("VEHICLE_LIGHTS_FREINS roule %s / freine %s / garee %s" % [str(au_repos), str(en_freinant), str(garee)])
 	car.queue_free()
-
-
-# Le joueur au volant (start_drive : la voiture se dote de son châssis réel), lancé à `v` m/s vers l'avant. En l'air, à
-# plusieurs centaines de mètres au-dessus du monde : rien ne le freine pendant les quelques pas du test.
-func _rouler(car: Node3D, v: float) -> void:
-	car.call("start_drive")
-	var ch: RigidBody3D = car.call("chassis")
-	if ch == null:
-		_fautes.append("pas de châssis réel pour la voiture du joueur")
-		return
-	ch.call("repartir", -car.global_transform.basis.z * v)
 
 
 # --- la flaque de freinage tombe DERRIERE la voiture ----------------------------------------------
@@ -116,8 +106,9 @@ func _flaque_de_frein() -> void:
 	car.forced_model_path = BERLINE
 	add_child(car)
 	car.global_position = Vector3(0, 300, 0)
-	_rouler(car, 10.0)
-	Input.action_press("brake")
+	car.driven_by_player = true
+	car.set("_drive_speed", 10.0)
+	Input.action_press("move_back")
 	# la camera doit voir la voiture : VehicleLights ne pose que ce qui est a portee
 	var cam := Camera3D.new()
 	add_child(cam)
@@ -130,7 +121,7 @@ func _flaque_de_frein() -> void:
 		cycle.call("set_hour", 1.0)
 	for k in 10:
 		await get_tree().process_frame
-	Input.action_release("brake")
+	Input.action_release("move_back")
 	var spots: Array = []
 	for n in vl.get_children():
 		if n is SpotLight3D and String(n.name).begins_with("Frein_") and (n as SpotLight3D).visible:

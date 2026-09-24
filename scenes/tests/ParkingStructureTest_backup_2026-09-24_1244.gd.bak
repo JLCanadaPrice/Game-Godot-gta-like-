@@ -9,22 +9,21 @@ extends Node3D
 #     Les quatre exemplaires : les trois du centre-ville et celui de l'aéroport (PlacesBake._parking_etages).
 #  1b. EMPRISE DE L'AÉROPORT : aucun point d'une chaussée (RoadNetwork), aucun noeud ni arête du graphe de
 #     circulation, aucun noeud du PedGraph ni du Circuit sous le parking de l'aéroport (emprise + 0,5 m).
-#  2. RAYON DE BRAQUAGE DU JOUEUR, PAR MODÈLE : la voiture du joueur roule sur son châssis réel (CLAUDE.md §14). Braquage
-#     à fond à 3 m/s, conduite comme au clavier, rayon mesuré au centre de la voiture (arc parcouru / lacet) pour une
-#     berline, un camion et le bus : il suit la géométrie de chaque modèle (empattement mesuré, rayon du pack), et celui
-#     de la berline tient dans les demi-tours des rampes (4,70 m). Les véhicules braquent l'un après l'autre : ils lisent
-#     les mêmes pédales. (Jusqu'au 2026-09-24, mesuré aussi à 8 et 16 m/s contre le braquage réduit de la conduite
-#     arcade, supprimée ce jour-là ; l'adhérence à vitesse est vérifiée par ChassisBancTest.)
+#  2. RAYON DE BRAQUAGE DU JOUEUR, PAR MODÈLE, mesuré sur le vrai Car._drive_physics (arc parcouru / lacet), braquage
+#     à fond, pour une berline, un camion et le bus, à 3, 8 et 16 m/s : il suit l'empattement mesuré de chaque modèle
+#     (Car.rayon_braquage, modèle bicyclette) — 4,1 m pour la berline à 3 m/s, plus de 9 m pour le camion et le bus —,
+#     et à vitesse l'accélération latérale reste à BRAQUAGE_A_LAT pour tous. Il valait 10 m à toute vitesse et pour
+#     tous les modèles, puis 5,5 m à basse vitesse pour tous (2026-09-21).
 #  3. RAMPE À 12 % : la voiture du joueur monte une vraie pente continue de 12 % (plat, pente, plat, sans ressaut aux
-#     raccords), arrive en haut, puis redescend en marche arrière (S tenu à l'arrêt, comme au clavier). À mi-pente, son
-#     modèle prend le tangage du châssis (nez levé en montée) et ses roues touchent la pente : écart entre le bas de
-#     chaque roue et la pente sous 8 cm.
+#     raccords), arrive en haut, puis redescend en marche arrière. À mi-pente, son modèle a l'assiette de la pente
+#     (nez levé en montée) et ses roues touchent la pente : écart entre le bas de chaque roue et la pente sous 8 cm.
+#     La boîte de collision restant horizontale, l'essieu arrière flottait avant à 0,27 m.
 #  4. ESCALIER : dans chacun des quatre parkings, un piéton monte du rez au TOIT par l'escalier de la bande arrière
 #     (déplacé le 2026-09-23 : il était dans la tour vitrée, devant l'entrée des voitures) — départ à l'est du pied
 #     des volées, puis à chaque étage volée A, palier, volée B, arrivée ; au toit, sortie vers l'est — et finit posé
 #     sur le toit. À l'aéroport, c'est le VRAI joueur (Player.tscn), piloté comme au clavier (move_forward, corps
 #     tourné vers le repère suivant) ; ailleurs, sa capsule.
-#  4b. GARDE-CORPS, PIÉTON ET VOITURE : un piéton (capsule du joueur) poussé à 3 m/s et une voiture lancée à 4 m/s contre
+#  4b. GARDE-CORPS, PIÉTON ET VOITURE : un piéton (capsule du joueur) et une voiture poussés à 3 et 4 m/s contre
 #     chaque garde-corps — paroi de l'escalier côté rampe, au palier de chaque volée ; couloir de la volée A au toit ;
 #     les DEUX parapets de chaque rampe, les deux bords de chaque trémie de rampe (côté sud, à l'est de l'escalier),
 #     et le bout ouest de la trémie du toit. Aucun ne passe par-dessus ni ne tombe : chacun reste du bon côté et
@@ -40,11 +39,9 @@ extends Node3D
 #     de rampe dans une place, et la voiture cuite se retrouve encastrée. Et chaque fiche de véhicule garé doit
 #     tomber sur une place de parking, dans son sens.
 #  4c. BARRE DE HAUTEUR : à l'entrée de l'aéroport, un camion (2,79 m de caisse) et une berline (1,45 m) lancés à
-#     4 m/s vers le passage, sur leur châssis réel, pied levé. Le camion est arrêté DEHORS par le portique, la berline
-#     entre.
-#  5. RAMPES INTÉRIEURES (2026-09-22) : la voiture du joueur, sur son châssis réel, conduite comme au clavier (gas /
-#     brake / left / right, poursuite d'un tracé ; le volant du pack suit la consigne à sa vitesse de clavier), monte
-#     du rez AU TOIT par les quatre rampes empilées — demi-tour de 4,70 m de
+#     4 m/s vers le passage. Le camion est arrêté DEHORS par le portique, la berline entre.
+#  5. RAMPES INTÉRIEURES (2026-09-22) : la voiture du joueur, conduite comme au clavier (move_forward / move_left /
+#     move_right, poursuite d'un tracé), monte du rez AU TOIT par les quatre rampes empilées — demi-tour de 4,70 m de
 #     rayon à chaque bout, allée de retour côté façade —, puis redescend jusqu'au rez. Pente relevée sur la COLLISION
 #     (rayons tous les 0,25 m sur l'axe et les deux bords de chaque rampe) : 16 % au plus, aucun ressaut de plus de
 #     2 cm. C'est le VRAI joueur de l'escalier qui monte dans la voiture (Player._enter_vehicle) et qui en SORT sur le
@@ -62,7 +59,6 @@ const MONDE := "res://scenes/world/World.tscn"
 const Network := preload("res://scenes/world/map/tools/RoadNetwork.gd")
 const JOUEUR := preload("res://scenes/player/Player.tscn")
 const CAR := preload("res://scenes/vehicles/Car.tscn")
-const CarScript := preload("res://scenes/vehicles/Car.gd")
 const BERLINE := "res://assets/vehicle_models_extra/city_vehicles_UNVERIFIED_LICENSE/Sedans/Veh_Sedan_01_Blue.glb"
 const CATALOGUE := "res://resources/vehicle_models"
 # véhicules lourds mesurés en plus de la berline : [modèle du catalogue, position de départ sur le sol témoin]
@@ -83,8 +79,8 @@ var _repos_voiture := 0.0    # hauteur de l'origine d'une voiture posée sur un 
 var _temoin: Node3D
 var _phase := "dalles"
 var _pilote: Node3D          # voiture conduite par le « joueur » (start_drive), sur le sol témoin
-const V_BRAQUAGE := 3.0      # m/s : braquage à fond, rayon mesuré
-var _k_braqueur := 0
+var _vitesses := [3.0, 8.0, 16.0]
+var _k_vitesse := 0
 var _t_phase := 0.0
 var _arc := 0.0
 var _lacet := 0.0
@@ -130,7 +126,6 @@ func _ready() -> void:
 	_pilote = CAR.instantiate() as Node3D
 	_pilote.set("forced_model_path", BERLINE)
 	_pilote.name = "Pilote"
-	_pilote.set("is_player_owned", true)   # sinon stop_drive() l'efface 25 s après qu'on l'a quitté
 	add_child(_pilote)
 	_pilote.global_position = Vector3(0, 1.0, TEMOIN_Z + 30.0)
 	_braqueurs.append([_pilote, "berline city_sedan_01", 0.0, 0.0, Vector3.ZERO, 0.0])
@@ -292,6 +287,8 @@ func _physics_process(delta: float) -> void:
 				corps.move_and_slide()
 			if _t >= DUREE:
 				_bilan_dalles()
+				for b: Array in _braqueurs:
+					(b[0] as Node).call("start_drive")
 				_lumieres()
 				_places()
 				_phase = "braquage"
@@ -313,101 +310,56 @@ func _physics_process(delta: float) -> void:
 
 
 func _braquage(delta: float) -> void:
-	var b: Array = _braqueurs[_k_braqueur]
-	var car: Node3D = b[0]
-	if _t_phase == 0.0:
-		car.call("start_drive")
-		_lancer(car, V_BRAQUAGE)
+	var v: float = _vitesses[_k_vitesse]
+	Input.action_press("move_left")
 	_t_phase += delta
-	var ch: RigidBody3D = car.call("chassis")
-	if ch == null:
-		_fautes.append("braquage : pas de chassis reel pour %s" % b[1])
-		_t_phase = 99.0
-	else:
-		var v: float = ch.call("vitesse_avant")
-		_pedales(v < V_BRAQUAGE, v > V_BRAQUAGE + 1.0, true)
+	for b: Array in _braqueurs:
+		var car: Node3D = b[0]
+		car.set("_drive_speed", v)
 		var p := car.global_position
 		var lacet := car.global_rotation.y
-		if _t_phase > 2.0:
+		if _t_phase > 0.5:
 			b[2] = float(b[2]) + Vector2(p.x - (b[4] as Vector3).x, p.z - (b[4] as Vector3).z).length()
 			b[3] = float(b[3]) + absf(wrapf(lacet - float(b[5]), -PI, PI))
 		b[4] = p
 		b[5] = lacet
-	if _t_phase < 4.0:
-		return
-	if ch != null:
-		# attendu : la géométrie du pack, le centre du virage sur l'essieu arrière prolongé, à Steer_Radius de l'axe ;
-		# l'origine de la voiture est à -AckermannPoint devant cet essieu
-		var sr: float = ch.get("Steer_Radius")
-		var d: float = -float(ch.get("AckermannPoint"))
-		_rayons.append([b[1], V_BRAQUAGE, float(b[2]) / maxf(float(b[3]), 0.0001), sqrt(sr * sr + d * d), float(car.get("_empattement"))])
-	_pedales()
-	car.call("stop_drive")
-	_t_phase = 0.0
-	_k_braqueur += 1
-	if _k_braqueur < _braqueurs.size():
-		return
-	for b2: Array in _braqueurs.slice(1):
-		(b2[0] as Node).queue_free()
-	_braqueurs = _braqueurs.slice(0, 1)
-	_phase = "rampe"
-	_teleporter(_pilote, Vector3(RAMPE_X, 0.5, TEMOIN_Z + 8.0), 0.0)
+	if _t_phase >= 1.5:
+		for b: Array in _braqueurs:
+			var car: Node3D = b[0]
+			_rayons.append([b[1], v, float(b[2]) / maxf(float(b[3]), 0.0001), float(car.call("rayon_braquage", v)),
+					float(car.get("_empattement"))])
+			b[2] = 0.0
+			b[3] = 0.0
+		_t_phase = 0.0
+		_k_vitesse += 1
+		if _k_vitesse >= _vitesses.size():
+			Input.action_release("move_left")
+			for b: Array in _braqueurs.slice(1):
+				(b[0] as Node).queue_free()
+			_braqueurs = _braqueurs.slice(0, 1)
+			_phase = "rampe"
+			_pilote.set("_drive_speed", 0.0)
+			_pilote.global_position = Vector3(RAMPE_X, 1.0, TEMOIN_Z + 8.0)
+			_pilote.global_rotation = Vector3.ZERO
+			_pilote.set("velocity", Vector3.ZERO)
 
 
-# Pédales du clavier virtuel : celles que lit le châssis réel (gas / brake / left / right).
-func _pedales(gaz := false, frein := false, gauche := false, droite := false) -> void:
-	for a in ["gas", "brake", "left", "right"]:
-		Input.action_release(a)
-	if gaz:
-		Input.action_press("gas")
-	if frein:
-		Input.action_press("brake")
-	if gauche:
-		Input.action_press("left")
-	if droite:
-		Input.action_press("right")
-
-
-# Voiture (et son châssis réel, s'il existe) posée en `p`, cap `cap` (rotation.y de la voiture), arrêtée.
-func _teleporter(car: Node3D, p: Vector3, cap: float) -> void:
-	car.global_transform = Transform3D(Basis(Vector3.UP, cap), p)
-	var ch: RigidBody3D = car.call("chassis")
-	if ch != null:
-		ch.global_transform = car.global_transform * CarScript.repere_chassis()
-		ch.call("repartir", Vector3.ZERO)
-
-
-# Le châssis de la voiture lancé à `v` m/s vers son avant (après start_drive).
-func _lancer(car: Node3D, v: float) -> void:
-	var ch: RigidBody3D = car.call("chassis")
-	if ch != null:
-		ch.call("repartir", -car.global_transform.basis.z * v)
-
-
-# Montée de la rampe à 12 % vers -z (l'avant de la voiture), accélérateur autour de 4 m/s ; en haut, arrêt puis
-# redescente en marche arrière : S tenu à l'arrêt (la boîte passe la marche arrière), vitesse tenue vers 3 m/s.
 func _montee(delta: float) -> void:
-	if _t_phase == 0.0:
-		_pilote.call("start_drive")
 	_t_phase += delta
-	var ch: RigidBody3D = _pilote.call("chassis")
 	var p := _pilote.global_position
 	_rampe_y_max = maxf(_rampe_y_max, p.y)
-	var v: float = ch.call("vitesse_avant") if ch != null else 0.0
 	if _rampe_haut < 0.0:
-		_pedales(v < 4.0, v > 5.0)
+		_pilote.set("_drive_speed", 4.0)
 		if _rampe_mi.is_empty() and p.z < TEMOIN_Z - RAMPE_LONG * 0.5 and p.z > TEMOIN_Z - RAMPE_LONG * 0.5 - 1.0 and _t_phase > 1.0:
 			_rampe_mi = _releve_roues()
 		if p.z < TEMOIN_Z - RAMPE_LONG - 4.0:
 			_rampe_haut = _t_phase
 	else:
-		var recule: bool = ch != null and int(ch.get("gear")) == -1
-		_pedales(recule and v < -4.0, not recule or v > -3.0)
+		_pilote.set("_drive_speed", -3.0)
 		if p.z > TEMOIN_Z + 3.0:
 			_rampe_bas = _t_phase
-	if _rampe_bas > 0.0 or _t_phase > 40.0:
-		_pedales()
-		_pilote.call("stop_drive")
+	if _rampe_bas > 0.0 or _t_phase > 30.0:
+		_pilote.set("_drive_speed", 0.0)
 		_debut_escalier()
 
 
@@ -566,17 +518,15 @@ func _debut_garde_corps() -> void:
 					"%s, parapet de la rampe du rez, cote %s (voiture en biais)" % [b.name, cote])
 
 
-# `voiture` : au lieu du piéton, une VRAIE voiture, conduite comme par le joueur (son châssis réel), lancée à 4 m/s au
-# même endroit, pied levé (toutes les voitures lancées lisent les mêmes pédales).
+# `voiture` : au lieu du piéton, une VRAIE voiture poussée au même endroit (4 m/s, conduite comme par le joueur).
 func _pousse(b: Node3D, local: Vector3, dir: Vector3, limite: float, plancher: float, libelle: String, voiture: bool) -> void:
 	if not voiture:
 		var corps := _pieton(b.global_transform * (local + Vector3(0, 1.0, 0)))
 		_pousses.append([corps, b, dir, limite, plancher, libelle + " (pieton)", false, false])
 		return
 	var car := _voiture(b.global_transform * (local + Vector3(0, 0.9, 0)), libelle)
-	car.global_rotation = Vector3(0, b.global_rotation.y + atan2(-dir.x, -dir.z), 0)
 	car.call("start_drive")
-	_lancer(car, 4.0)
+	car.global_rotation = Vector3(0, b.global_rotation.y + atan2(-dir.x, -dir.z), 0)
 	_pousses.append([car, b, dir, limite, plancher, libelle + " (voiture)", true, false])
 
 
@@ -585,20 +535,20 @@ func _pousse(b: Node3D, local: Vector3, dir: Vector3, limite: float, plancher: f
 # alors celui de la rampe à l'abscisse où elle finit, d'où le drapeau `rampe`.
 func _pousse_oblique(b: Node3D, local: Vector3, sz: float, limite: float, libelle: String) -> void:
 	var car := _voiture(b.global_transform * (local + Vector3(0, 0.9, 0)), libelle)
-	car.global_rotation = Vector3(0, b.global_rotation.y + atan2(-1.0, 0.0) - sz * deg_to_rad(20.0), 0)
 	car.call("start_drive")
-	_lancer(car, 4.0)
+	car.global_rotation = Vector3(0, b.global_rotation.y + atan2(-1.0, 0.0) - sz * deg_to_rad(20.0), 0)
 	_pousses.append([car, b, Vector3(0, 0, sz), limite, 0.0, libelle, true, true])
 
 
 func _garde_corps(delta: float) -> void:
 	_t_pousse += delta
-	_pedales()
 	for e: Array in _pousses:
 		var corps: CharacterBody3D = e[0]
 		var b: Node3D = e[1]
 		if bool(e[6]):
-			continue      # voiture : lancée à 4 m/s, pied levé (cf. _pousse)
+			# voiture : on pousse comme le joueur, l'accélérateur au plancher dans son cap
+			corps.set("_drive_speed", 4.0)
+			continue
 		var v: Vector3 = b.global_transform.basis * ((e[2] as Vector3) * 3.0)
 		corps.velocity.x = v.x
 		corps.velocity.z = v.z
@@ -629,8 +579,8 @@ func _garde_corps(delta: float) -> void:
 		var pied := local.y - repos
 		var tolerance := 0.15
 		if bool(e[7]):
-			# sur la rampe : le plancher attendu est celui de la voie à l'abscisse où le corps a fini ; l'origine de la
-			# voiture, qui suit la pente, est au-dessus de ce point à la hauteur de repos près
+			# sur la rampe : le plancher attendu est celui de la voie à l'abscisse où le corps a fini, et la boîte de
+			# collision restant horizontale sur la pente, l'origine monte d'une demi-longueur x pente (0,34 m)
 			var sols2: PackedFloat32Array = Kit.planchers((b.get_node("Mesh") as MeshInstance3D).mesh if b.has_node("Mesh") else (b as MeshInstance3D).mesh)
 			var h2: float = float(sols2[1]) - float(sols2[0])
 			e[4] = float(sols2[0]) + Kit.rampe_hauteur(local.x, Kit.rampe_bouts(h2), h2)
@@ -641,7 +591,7 @@ func _garde_corps(delta: float) -> void:
 		else:
 			arretes += 1
 		corps.queue_free()
-	print("PARKING_GARDE_CORPS %d pousses contre les garde-corps (%d pietons a 3 m/s, %d voitures lancees a 4 m/s) : %d arretes du bon cote, debout sur leur plancher"
+	print("PARKING_GARDE_CORPS %d pousses contre les garde-corps (%d pietons a 3 m/s, %d voitures a 4 m/s) : %d arretes du bon cote, debout sur leur plancher"
 			% [_pousses.size(), pietons, voitures, arretes])
 	_pousses.clear()
 	_debut_barre()
@@ -838,13 +788,13 @@ func _debut_barre() -> void:
 		var vers := _aeroport.global_transform.basis * Vector3(0, 0, -1)   # vers l'intérieur du parking
 		car.global_rotation = Vector3(0, atan2(-vers.x, -vers.z), 0)
 		car.call("start_drive")
-		_lancer(car, 4.0)
 		_barres.append([car, String(e[0]), bool(e[2])])
 
 
 func _barre(delta: float) -> void:
 	_t_barre += delta
-	_pedales()      # lancées à 4 m/s, pied levé
+	for e: Array in _barres:
+		(e[0] as Node).set("_drive_speed", 4.0)
 	if _t_barre < 6.0:
 		return
 	for e: Array in _barres:
@@ -865,8 +815,6 @@ func _barre(delta: float) -> void:
 
 const RAMPE_RU := 4.7          # rayon des demi-tours aux deux bouts (option A, choisie par le joueur)
 const RAMPE_RECUL := 0.5       # ligne droite entre la fin d'un demi-tour et le pied (ou le haut) de la rampe
-const RAMPE_ANTICIPE := 0.3    # s : suivi du tracé, anticipation de sa courbure (cf. _rampe_int)
-const RAMPE_K_ECART := 1.6     # suivi du tracé : gain sur l'écart latéral
 
 
 func _debut_rampe_int() -> void:
@@ -876,6 +824,7 @@ func _debut_rampe_int() -> void:
 	_pente_rampe_int()
 	_phase = "rampe_int"
 	_sens = "montee"
+	_pilote.set("is_player_owned", true)   # sinon stop_drive() l'efface 25 s après la sortie du joueur
 	_preparer_trace(_trace_montee())
 	if _joueur != null:
 		_joueur.call("_enter_vehicle", _pilote)
@@ -887,7 +836,10 @@ func _preparer_trace(pts: PackedVector3Array) -> void:
 	_t_rampe_int = 0.0
 	_immobile = 0.0
 	var d := _trace[1] - _trace[0]
-	_teleporter(_pilote, _trace[0] + Vector3(0, 0.6, 0), atan2(-d.x, -d.z))
+	_pilote.set("_drive_speed", 0.0)
+	_pilote.set("velocity", Vector3.ZERO)
+	_pilote.global_position = _trace[0] + Vector3(0, 0.8, 0)
+	_pilote.global_rotation = Vector3(0, atan2(-d.x, -d.z), 0)
 
 
 # Trace de la montée, repère du modèle puis monde : allée de retour côté façade, demi-tour au bout ouest, rampe vers
@@ -904,12 +856,10 @@ func _trace_montee() -> PackedVector3Array:
 		var b := Kit.rampe_bouts(h)
 		var xo := b.x - RAMPE_RECUL
 		var xe := b.y + RAMPE_RECUL
-		# un repère tous les 1,5 m, comme sur la rampe : la poursuite du tracé vise à 3 m, et des repères espacés de 6 m
-		# la faisaient viser trop loin à la sortie des demi-tours (la voiture redressait trop tard, vers les places)
-		var x := float(pts[pts.size() - 1].x) - 1.5
+		var x := float(pts[pts.size() - 1].x) - 6.0
 		while x > xo:
 			pts.append(Vector3(x, y0, za))
-			x -= 1.5
+			x -= 6.0
 		for t in range(0, 181, 10):
 			var a := deg_to_rad(float(t))
 			pts.append(Vector3(xo - RAMPE_RU * sin(a), y0, zc + RAMPE_RU * cos(a)))
@@ -921,10 +871,7 @@ func _trace_montee() -> PackedVector3Array:
 			var a := deg_to_rad(float(t))
 			pts.append(Vector3(xe + RAMPE_RU * sin(a), sols[k + 1], zc - RAMPE_RU * cos(a)))
 	var yt: float = sols[sols.size() - 1]
-	var xt := float(pts[pts.size() - 1].x) - 1.5
-	while xt > 0.0:
-		pts.append(Vector3(xt, yt, za))
-		xt -= 1.5
+	pts.append(Vector3(6.0, yt, za))
 	pts.append(Vector3(0.0, yt, za))
 	return _monde(pts)
 
@@ -945,88 +892,55 @@ func _monde(pts: Array) -> PackedVector3Array:
 	return out
 
 
-# Conduite comme au clavier : poursuite du tracé à 4 m devant ; le volant du pack (steer2, positif à droite) mené vers la
-# consigne par left / right, à sa vitesse de clavier ; accélérateur et frein autour de 4,5 m/s.
+# Conduite comme au clavier : poursuite du tracé à 4 m devant, direction par move_left / move_right (force
+# proportionnelle à l'angle), accélérateur par move_forward autour de 4,5 m/s.
 func _rampe_int(delta: float) -> void:
 	_t_rampe_int += delta
 	var pos := _pilote.global_position
-	var ch: RigidBody3D = _pilote.call("chassis")
-	var f3 := -_pilote.global_transform.basis.z
-	var f := Vector2(f3.x, f3.z).normalized()
-	var p := Vector2(pos.x, pos.z)
-	# SUIVI DU TRACÉ, comme au volant : la courbure du tracé un peu plus loin (le volant du pack met ~0,7 s d'une butée à
-	# l'autre : on l'anticipe de RAMPE_ANTICIPE), corrigée de l'écart de cap et de l'écart latéral (commande de Stanley).
-	# Un volant proportionnel à l'angle du cap, qui suffisait à l'arcade, et même une poursuite pure, sortaient des
-	# demi-tours de 4,70 m en retard, encore tournés vers les places : la voiture y touchait les voitures garées.
+	# repère le plus proche en avant
 	var meilleur := _k_trace
 	var d_min := INF
 	for k in range(_k_trace, mini(_k_trace + 12, _trace.size())):
-		var dd := p.distance_to(Vector2(_trace[k].x, _trace[k].z))
+		var dd := Vector2(_trace[k].x - pos.x, _trace[k].z - pos.z).length()
 		if dd < d_min:
 			d_min = dd
 			meilleur = k
 	_k_trace = meilleur
-	var k0 := mini(_k_trace, _trace.size() - 2)
-	var a := Vector2(_trace[k0].x, _trace[k0].z)
-	var tp := (Vector2(_trace[k0 + 1].x, _trace[k0 + 1].z) - a).normalized()
-	var gp := Vector2(tp.y, -tp.x)                       # la gauche du tracé
-	var psi := atan2(f.dot(gp), f.dot(tp))               # > 0 : la voiture pointe à gauche du tracé
-	var ecart := (p - a).dot(gp)                         # > 0 : la voiture est à gauche du tracé
+	var cible := _trace[_trace.size() - 1]
+	var cumul := 0.0
+	for k in range(_k_trace, _trace.size() - 1):
+		cumul += Vector2(_trace[k + 1].x - _trace[k].x, _trace[k + 1].z - _trace[k].z).length()
+		if cumul >= 4.0:
+			cible = _trace[k + 1]
+			break
+	var f := -_pilote.global_transform.basis.z
+	var t := Vector3(cible.x - pos.x, 0, cible.z - pos.z).normalized()
+	var angle := atan2(f.z * t.x - f.x * t.z, f.x * t.x + f.z * t.z)
+	var braquage := clampf(angle * 2.5, -1.0, 1.0)
+	Input.action_release("move_left")
+	Input.action_release("move_right")
+	if braquage > 0.02:
+		Input.action_press("move_left", braquage)
+	elif braquage < -0.02:
+		Input.action_press("move_right", -braquage)
 	var v: float = _pilote.get("_drive_speed")
-	var emp: float = _pilote.get("_empattement")
-	var kappa := _courbure(_indice_a(_k_trace, maxf(absf(v), 1.0) * RAMPE_ANTICIPE))
-	var braq := atan(emp * kappa) - psi - atan(RAMPE_K_ECART * ecart / (absf(v) + 1.0))   # > 0 : à gauche
-	var consigne := clampf(-braq / float(_pilote.get("MAX_STEER_RAD")), -1.0, 1.0)      # volant du pack : positif à droite
-	var volant: float = ch.get("steer2") if ch != null else 0.0
-	# plus lent là où le tracé tourne, dans les 4 m qui viennent
-	var v_cible := 4.5
-	for d in [0.0, 2.0, 4.0]:
-		if absf(_courbure(_indice_a(_k_trace, d))) > 0.1:
-			v_cible = 3.0
-	_pedales(v < v_cible, v > v_cible + 1.0, volant > consigne + 0.02, volant < consigne - 0.02)
-	if OS.get_cmdline_user_args().has("--trace") and Engine.get_physics_frames() % 15 == 0:
-		var loc := _aeroport.global_transform.affine_inverse() * pos
-		var contacts := []
-		if ch != null:
-			for c in ch.get_colliding_bodies():
-				contacts.append(String(c.name))
-		print("RAMPE_INT_TRACE %s t=%.2f k=%d loc=%s v=%.2f volant=%.2f consigne=%.2f ecart=%.2f cap=%.1f contacts=%s" % [_sens,
-				_t_rampe_int, _k_trace, str(loc.snappedf(0.01)), v, volant, consigne, ecart, rad_to_deg(psi), str(contacts)])
+	if v < 4.5:
+		Input.action_press("move_forward")
+	else:
+		Input.action_release("move_forward")
 	_immobile = _immobile + delta if absf(v) < 0.3 else 0.0
 	# arrivée : au bout du tracé ET près de son dernier point (en plan, le départ au rez et l'arrivée au niveau 1
 	# ne sont qu'à 2 m l'un de l'autre)
 	var arrivee := _k_trace >= _trace.size() - 3 and (_trace[_trace.size() - 1] - pos).length() < 2.5
 	if arrivee or _immobile > 4.0 or _t_rampe_int > 150.0:
-		_pedales()
+		Input.action_release("move_forward")
+		Input.action_release("move_left")
+		Input.action_release("move_right")
 		_rampe_int_bilan[_sens] = {"arrivee": arrivee, "temps": _t_rampe_int, "pos": pos, "immobile": _immobile > 4.0, "repere": _k_trace, "reperes": _trace.size()}
 		if _joueur != null:
 			_joueur.call("_exit_vehicle")
 		_phase = "sortie"
 		_t_sortie = 0.0
-
-
-# Indice du repère du tracé à la distance `d` (le long du tracé) du repère `k`.
-func _indice_a(k: int, d: float) -> int:
-	var cumul := 0.0
-	var i := k
-	while i < _trace.size() - 1 and cumul < d:
-		cumul += Vector2(_trace[i + 1].x - _trace[i].x, _trace[i + 1].z - _trace[i].z).length()
-		i += 1
-	return i
-
-
-# Courbure du tracé au repère `k` (1/m, > 0 : il tourne à gauche), par le cercle qui passe par ses deux voisins.
-func _courbure(k: int) -> float:
-	if k <= 0 or k >= _trace.size() - 1:
-		return 0.0
-	var a := Vector2(_trace[k - 1].x, _trace[k - 1].z)
-	var b := Vector2(_trace[k].x, _trace[k].z)
-	var c := Vector2(_trace[k + 1].x, _trace[k + 1].z)
-	var ab := b - a
-	var bc := c - b
-	var produit := ab.x * bc.y - ab.y * bc.x              # < 0 : à gauche (x, z, Y vers le haut)
-	var n := ab.length() * bc.length() * (c - a).length()
-	return -2.0 * produit / n if n > 1e-6 else 0.0
 
 
 # Le joueur vient de sortir de la voiture : on le laisse retomber, puis on relève où il se tient. Plancher attendu :
@@ -1092,8 +1006,7 @@ func _pente_rampe_int() -> void:
 		_fautes.append("rampe interieure : %d releves seulement, la collision de la voie n'est pas la" % releves)
 
 
-# À mi-pente : écart du bas de chaque roue du modèle à la pente, tangage du châssis, et le nez du modèle plus haut que son
-# arrière (le modèle suit le tangage du châssis).
+# À mi-pente : assiette du modèle et écart du bas de chaque roue à la pente.
 func _releve_roues() -> Dictionary:
 	var pire := 0.0
 	var ecarts := PackedStringArray()
@@ -1118,9 +1031,34 @@ func _releve_roues() -> Dictionary:
 		ecarts.append("%s %+.3f" % [w.name, ecart])
 	var modele: Node3D = _pilote.get("_model")
 	var nez := (modele.global_transform * Vector3(0, 0.5, 2.0)).y - (modele.global_transform * Vector3(0, 0.5, -2.0)).y
-	var ch: RigidBody3D = _pilote.call("chassis")
-	var tangage := rad_to_deg(asin(clampf(ch.global_transform.basis.z.y, -1.0, 1.0))) if ch != null else 0.0
-	return {"pire": pire, "ecarts": ", ".join(ecarts), "tangage": tangage, "nez_moins_arriere": nez}
+	var out := {"pire": pire, "ecarts": ", ".join(ecarts), "pente": rad_to_deg(float(_pilote.get("_pente"))), "nez_moins_arriere": nez}
+	# même relevé SANS l'assiette (le comportement d'avant) : la physique est la même, seul le modèle change
+	var pente: float = _pilote.get("_pente")
+	var abaisse: float = _pilote.get("_abaisse")
+	_pilote.set("_pente", 0.0)
+	_pilote.set("_abaisse", 0.0)
+	_pilote.call("_update_visuals", 0.0, 0.0, 0.0)
+	var sans := 0.0
+	for w: Node3D in _pilote.get("_wheels"):
+		var bas := INF
+		var xz := Vector2.ZERO
+		var meshes := w.find_children("*", "MeshInstance3D", true, false)
+		if w is MeshInstance3D:
+			meshes.append(w)
+		for mi_n in meshes:
+			var mi := mi_n as MeshInstance3D
+			for s in mi.mesh.get_surface_count():
+				for v: Vector3 in mi.mesh.surface_get_arrays(s)[Mesh.ARRAY_VERTEX]:
+					var g := mi.global_transform * v
+					if g.y < bas:
+						bas = g.y
+						xz = Vector2(g.x, g.z)
+		sans = maxf(sans, bas - _hauteur_rampe(xz.y))
+	out["sans_assiette"] = sans
+	_pilote.set("_pente", pente)
+	_pilote.set("_abaisse", abaisse)
+	_pilote.call("_update_visuals", 0.0, 0.0, 0.0)
+	return out
 
 
 func _bilan_dalles() -> void:
@@ -1164,28 +1102,34 @@ func _bilan() -> void:
 					% [sens, so[0], so[1], "au sol" if so[2] else "EN L'AIR"])
 			if absf(float(so[0]) - float(so[1])) > 0.1 or not so[2]:
 				_fautes.append("rampe interieure, %s : a la sortie de la voiture, pied a %.2f m pour un sol a %.2f" % [sens, so[0], so[1]])
+	var a_lat: float = _pilote.get("BRAQUAGE_A_LAT")
 	var bas := {}
 	for r: Array in _rayons:
 		var mesure: float = r[2]
 		var attendu: float = r[3]
-		print("PARKING_BRAQUAGE %-22s empattement %.2f m, %2.0f m/s, braquage a fond : rayon mesure au centre de la voiture %6.2f m, geometrie du pack %6.2f m"
-				% [r[0], r[4], r[1], mesure, attendu])
-		if absf(mesure - attendu) > 0.1 * attendu:
+		print("PARKING_BRAQUAGE %-22s empattement %.2f m, %2.0f m/s : rayon mesure %6.2f m, attendu %6.2f m, acceleration laterale %.1f m/s2"
+				% [r[0], r[4], r[1], mesure, attendu, float(r[1]) * float(r[1]) / mesure])
+		if absf(mesure - attendu) > maxf(0.35, 0.03 * attendu):
 			_fautes.append("rayon de braquage de %s a %.0f m/s : %.2f m mesures pour %.2f attendus" % [r[0], r[1], mesure, attendu])
-		bas[r[0]] = mesure
-	# la berline doit tenir dans les demi-tours des rampes ; le camion et le bus braquent bien plus large
-	if float(bas.get("berline city_sedan_01", 99.0)) > RAMPE_RU or float(bas.get("city_truck_01", 0.0)) < 8.5 or float(bas.get("city_bus_01", 0.0)) < 8.5:
-		_fautes.append("braquage a 3 m/s : berline %.2f m (au plus %.2f, les demi-tours des rampes), camion %.2f m et bus %.2f m (attendus > 8,5)"
-				% [bas.get("berline city_sedan_01", -1.0), RAMPE_RU, bas.get("city_truck_01", -1.0), bas.get("city_bus_01", -1.0)])
+		if float(r[1]) * float(r[1]) / mesure > a_lat * 1.05:
+			_fautes.append("%s a %.0f m/s : acceleration laterale %.1f m/s2 au-dela de %.1f" % [r[0], r[1], float(r[1]) * float(r[1]) / mesure, a_lat])
+		if float(r[1]) < 4.0:
+			bas[r[0]] = mesure
+	# à basse vitesse le rayon suit le modèle : berline ~4 m (origine de la voiture ; ~5,3 m entre murs), camion et bus
+	# au-delà de 9 m ; et à 16 m/s, tous au rayon de l'accélération latérale plafonnée
+	if float(bas.get("berline city_sedan_01", 99.0)) > 4.6 or float(bas.get("city_truck_01", 0.0)) < 8.5 or float(bas.get("city_bus_01", 0.0)) < 8.5:
+		_fautes.append("braquage a 3 m/s : berline %.2f m (attendu ~4,1), camion %.2f m et bus %.2f m (attendus > 8,5)"
+				% [bas.get("berline city_sedan_01", -1.0), bas.get("city_truck_01", -1.0), bas.get("city_bus_01", -1.0)])
 	if _rampe_mi.is_empty():
 		_fautes.append("rampe a 12 pour cent : la voiture n'a jamais atteint le milieu de la pente (y max %.2f)" % _rampe_y_max)
 	else:
-		print("PARKING_RAMPE a mi-pente : tangage du chassis %.2f deg (pente %.2f deg), nez du modele %+.3f m au-dessus de l'arriere, roues : %s"
-				% [_rampe_mi["tangage"], rad_to_deg(atan(PENTE)), _rampe_mi["nez_moins_arriere"], _rampe_mi["ecarts"]])
+		print("PARKING_RAMPE a mi-pente : assiette %.2f deg (pente %.2f deg), nez %+.3f m au-dessus de l'arriere, roues : %s"
+				% [_rampe_mi["pente"], rad_to_deg(atan(PENTE)), _rampe_mi["nez_moins_arriere"], _rampe_mi["ecarts"]])
+		print("PARKING_RAMPE sans l'assiette (le comportement d'avant, meme physique) : la roue la plus haute flottait a %.3f m de la pente" % _rampe_mi["sans_assiette"])
 		if float(_rampe_mi["pire"]) > 0.08:
 			_fautes.append("rampe a 12 pour cent : une roue a %.3f m de la pente" % _rampe_mi["pire"])
-		if absf(float(_rampe_mi["tangage"]) - rad_to_deg(atan(PENTE))) > 1.5 or float(_rampe_mi["nez_moins_arriere"]) <= 0.0:
-			_fautes.append("rampe a 12 pour cent : tangage %.2f deg, nez %+.3f m (le nez doit etre plus haut en montee)" % [_rampe_mi["tangage"], _rampe_mi["nez_moins_arriere"]])
+		if absf(float(_rampe_mi["pente"]) - rad_to_deg(atan(PENTE))) > 0.8 or float(_rampe_mi["nez_moins_arriere"]) <= 0.0:
+			_fautes.append("rampe a 12 pour cent : assiette %.2f deg, nez %+.3f m (le nez doit etre plus haut en montee)" % [_rampe_mi["pente"], _rampe_mi["nez_moins_arriere"]])
 	print("PARKING_RAMPE montee jusqu'en haut en %.1f s, redescente en marche arriere en %.1f s (y max %.2f m pour un palier a %.2f)"
 			% [_rampe_haut, _rampe_bas - _rampe_haut if _rampe_bas > 0.0 else -1.0, _rampe_y_max, PENTE * RAMPE_LONG])
 	if _rampe_haut < 0.0:

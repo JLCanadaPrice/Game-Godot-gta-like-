@@ -30,12 +30,11 @@ extends Node3D
 #     était exprimé dans le repère du parent de la roue, tourné de 90° autour de X ;
 #  8. CIRCULATION : le braquage visuel d'une voiture de la circulation est l'angle géométrique du virage
 #     qu'elle décrit, atan(empattement / rayon), du bon côté, et nul en ligne droite.
-#  9. RAYON DE BRAQUAGE PAR MODÈLE (2026-09-22) : calculé sur l'empattement et la voie MESURÉS de chaque modèle et
-#     relevé par famille. Rayon « entre murs » (roue avant extérieure, braquage à fond, MAX_STEER_RAD) de 5 à 6,5 m pour
-#     une berline, plus grand pour les camions, et le plus grand pour le bus et l'autocar. C'est aussi la géométrie du
-#     châssis réel (Steer_Radius = empattement / tan(MAX_STEER_RAD)) ; ce qu'il en fait à vitesse — l'adhérence qui
-#     borne l'accélération latérale — est vérifié par ChassisBancTest. (Jusqu'au 2026-09-24, ce contrôle vérifiait aussi
-#     le braquage réduit à vitesse de la conduite arcade du joueur, supprimée ce jour-là.)
+#  9. RAYON DE BRAQUAGE PAR MODÈLE (2026-09-22) : calculé sur l'empattement et la voie MESURÉS de chaque modèle
+#     (modèle bicyclette, Car.angle_braquage) et relevé par famille. Rayon « entre murs » (roue avant extérieure,
+#     braquage à fond) de 5 à 6,5 m pour une berline, plus grand pour les camions, et le plus grand pour le bus et
+#     l'autocar ; à basse vitesse, braquage à fond ; à vitesse, l'accélération latérale ne dépasse jamais
+#     BRAQUAGE_A_LAT (le braquage se réduit), et l'angle ne fait que décroître avec la vitesse.
 #
 # Lancer : Godot --headless --path <projet> res://scenes/tests/WheelSpinTest.tscn
 
@@ -305,14 +304,16 @@ func _famille(nom: String) -> String:
 
 
 func _rayons_par_famille(voitures: Array) -> void:
+	var a_lat: float = CAR.instantiate().get("BRAQUAGE_A_LAT") if false else 15.0
 	var par := {}
 	for pair: Array in voitures:
 		var nom: String = pair[0]
 		var car: Node3D = pair[1]
+		a_lat = float(car.get("BRAQUAGE_A_LAT"))
 		var fam := _famille(nom)
 		var murs: float = car.call("rayon_entre_murs")
+		var r0: float = car.call("rayon_braquage", 0.0)
 		var emp: float = car.get("_empattement")
-		var r0: float = emp / tan(float(car.get("MAX_STEER_RAD")))
 		var voie: float = car.get("_voie")
 		var e: Array = par.get(fam, [INF, -INF, "", "", 0])
 		if murs < float(e[0]):
@@ -328,6 +329,19 @@ func _rayons_par_famille(voitures: Array) -> void:
 				% [fam, nom, emp, voie, murs, r0, caisse.z, caisse.x, caisse.y])
 		if fam == "?":
 			_fautes.append("%s : famille inconnue pour le controle du rayon de braquage" % nom)
+		# basse vitesse : braquage à fond ; vitesse : accélération latérale plafonnée, angle décroissant
+		var max_steer: float = car.get("MAX_STEER_RAD")
+		if absf(float(car.call("angle_braquage", 2.0)) - max_steer) > 1e-4:
+			_fautes.append("%s : a 2 m/s le braquage n'est pas a fond (%.1f deg)" % [nom, rad_to_deg(float(car.call("angle_braquage", 2.0)))])
+		var prec := INF
+		for v in [2.0, 6.0, 10.0, 14.0, 18.0, 24.0]:
+			var ang: float = car.call("angle_braquage", v)
+			var r: float = car.call("rayon_braquage", v)
+			if ang > prec + 1e-6:
+				_fautes.append("%s : le braquage CROIT avec la vitesse a %.0f m/s" % [nom, v])
+			prec = ang
+			if v * v / r > a_lat + 0.01:
+				_fautes.append("%s : a %.0f m/s, acceleration laterale %.1f m/s2 au-dela de %.1f" % [nom, v, v * v / r, a_lat])
 	for f: Array in FAMILLES:
 		if not par.has(f[0]):
 			continue

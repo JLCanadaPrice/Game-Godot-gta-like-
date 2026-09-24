@@ -14,8 +14,8 @@ travail imposée, les commandes exactes, les pièges déjà payés et l'état d'
 >
 > **Puis décision du joueur : conduite FULL RÉALISTE pour le joueur, arcade supprimée, sur les 72 modèles** (§14). Étape
 > A FAITE : une fiche par modèle (`resources/vehicle_physics/fiches_vehicules.csv`), le châssis réglé sur elle, le banc
-> `ChassisBancTest` passé par les 72. Étape B FAITE : l'arcade retirée pour le joueur, plus de F7, tests migrés. Suivent :
-> C, la circulation aux vitesses de chaque modèle ; D, la vraie physique sur les PNJ MESURÉE seulement ; E, les vidéos. Toujours en attente depuis le
+> `ChassisBancTest` passé par les 72. Suivent : B, l'arcade retirée pour le joueur ; C, la circulation aux vitesses de
+> chaque modèle ; D, la vraie physique sur les PNJ MESURÉE seulement ; E, les vidéos. Toujours en attente depuis le
 > 2026-09-23 : le coût physique d'environ 2 ms (NON TOUCHÉ, le joueur le teste en jeu) et la pose des trois packs
 > d'accessoires convertis (§7).
 
@@ -228,7 +228,7 @@ attendu. (C'est la voiture du pack telle quelle. Le châssis de la conduite réa
 "$GODOT" --headless --path "$PROJET" --fixed-fps 60 --quit-after 300 res://scenes/tests/VehicleCatalogTest.tscn  # catalogue des véhicules, 20 000 tirages
 "$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/CarDrivingTest.tscn  # accélération, virage, freinage : CAR_DRIVING_RESULT
 "$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/CarDropTest.tscn     # chute de 10 m : CAR_DROP_RESULT
-"$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/ConduiteReelleTest.tscn  # conduite réaliste, berline : 108 km/h, freinage, bordure, volant partiel, rampe 16 %, entrée de parking, sortie, F8, coût, cf. §13 et §14
+"$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/ConduiteReelleTest.tscn  # conduite réaliste, berline : 108 km/h, freinage, bordure, volant partiel, rampe 16 %, entrée de parking (réaliste ET arcade), sortie, F7, F8, coût, cf. §13
 "$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/ChassisBancTest.tscn  # châssis par fiche, 6 silhouettes (~25 s) ; -- --tous --lot=i/3 pour les 72 (3 x ~2 min en parallèle), cf. §14
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/CarKerbTest.tscn          # bordures : le joueur monte, l'IA non
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/WheelSpinTest.tscn        # roues des 72 modèles : axe, sens, rayon, stroboscope, pivot, braquage, rayon de braquage par modèle
@@ -409,11 +409,6 @@ sans cela, une capture tombe au hasard dans son clignotement.
   une fois pour toutes, si. Cf. §11, étape 11.
 - Les `.tscn` cuits changent textuellement à chaque cuisson (identifiants de sous-ressources tirés
   au hasard) : un `git status` « modifié » ne prouve pas un changement de contenu.
-- **CORRECTION du 2026-09-24 : le joueur ne conduit plus la `Car` arcade.** Quand il prend le volant, la voiture se
-  dote de son châssis réel (`ChassisReel`, le cœur du même pack VitaVehicle, réglé sur la fiche du modèle, §14) et le
-  suit ; la conduite arcade du joueur a été SUPPRIMÉE. `Car.gd` cinématique ne sert plus qu'aux 252 voitures de la
-  circulation et aux voitures garées ; `PlayerCarPhysics` reste la voiture de démonstration du pack, placée dans aucune
-  scène de jeu. La suite de cette note date d'avant :
 - **Il y a DEUX voitures dans ce jeu, et elles ne réagissent pas pareil au décor.** `Car.gd` est un
   `CharacterBody3D` arcade : c'est le modèle des 252 voitures de la circulation ET ce que le joueur
   conduit quand il prend une voiture dans la rue. `PlayerCarPhysics` (`PlayerCarController.gd` sur le
@@ -493,9 +488,6 @@ sans cela, une capture tombe au hasard dans son clignotement.
   disposition du monde d'essai d'origine — et **il n'était attaché à aucun nœud de `World.tscn`**, donc
   il ne tournait plus du tout. **Supprimé le 2026-09-19** (avec son `.uid`) ; il ne reste que dans
   l'historique git et dans `World_backup_avant_integration.tscn.bak`. Ne pas le ressusciter.
-  **`Car._try_step_up` a été SUPPRIMÉ à son tour le 2026-09-24**, avec l'arcade du joueur : la voiture du joueur roule
-  sur son châssis réel, dont les roues à rayon montent les bordures (CarKerbTest : 4 modèles, 3 à 15 m/s, coque sans
-  contact) ; la circulation, elle, reste arrêtée par elles.
 - **À PIED, `StepClimb` SOULEVAIT TOUJOURS DE 0,40 m, ET LE SNAP DU JOUEUR FAIT 0,40 m** (corrigé le 2026-09-23,
   `4ee4532`). Quand la capsule n'avait pas encore passé l'arête (marche vue à 0,2 m) ou ne pouvait pas monter dessus
   (socle de 9 cm au pied d'un mur), `floor_snap_length` ne retrouvait plus le sol resté 0,40 m plus bas : le joueur
@@ -675,7 +667,7 @@ débogage sur `V`.
 - **conduite réaliste** (pack VitaVehicle, §13 et §14) : étape 1 FAITE le 2026-09-24, essai sur la berline city_sedan_01
   (F7 / F8), et deux défauts des vidéos corrigés le même jour (rampe d'accès des parkings, direction). Puis décision du
   joueur, le même jour : **full réaliste pour le joueur, arcade supprimée, sur les 72 modèles**, chacun sur sa fiche (§14 ;
-  étapes A, les fiches, et B, l'arcade retirée, FAITES). Restent ensuite : les chocs contre la circulation, les sons.
+  étape A, les fiches, FAITE). Restent ensuite : les chocs contre la circulation, les sons.
 - **ACCESSOIRES PRÊTS À POSER, pas encore posés** (2026-09-23) : trois packs reçus en FBX, convertis en une scène par
   modèle par `scenes/world/props/tools/ConversionPacks.gd` — `assets/airport_ground_vehicles/` (4 véhicules de piste),
   `assets/farm_buildings_quaternius/` (13 bâtiments et objets de ferme), `assets/low_poly_construction/` (81 éléments et
@@ -1460,8 +1452,7 @@ du joueur) et une voiture à 1 m au-dessus de chaque plateau de chaque exemplair
 plateaux y sont relevés sur le maillage cuit (`planchers()`) : **0,36 / 4,93 / 9,49 / 14,05 / 18,61 m** au centimètre.
 
 **Étape 3 — la voiture du joueur : rayon de braquage et assiette en pente** (`Car.gd`, commit séparé parce que ça
-touche toute la conduite). *Supprimé le 2026-09-24 avec l'arcade du joueur : sa voiture roule sur son châssis réel (§14),
-qui prend la pente par ses roues et braque selon la géométrie du pack ; ParkingStructureTest le vérifie.*
+touche toute la conduite).
 - **Rayon de braquage.** Le lacet valait `TURN_RATE x v / DRIVE_MAX_SPEED` : un rayon CONSTANT de 24 / 2,4 = **10 m à
   toute vitesse**, le double d'une vraie voiture. Impossible de faire demi-tour dans un étage (19 m entre les murets,
   poteaux au milieu), de suivre une rampe en hélice ou d'entrer à angle droit dans une travée. `rayon_braquage(v)` :
@@ -1535,8 +1526,7 @@ correspond plus au modèle.
 - Vues au sol `parking_aeroport_rampe_*`, `_travee_niveau1`, `_porte_rez`, `_escalier`, `_escalier_haut`,
   `parking_centre_3_escalier*`.
 
-**Étape 6 — rayon de braquage par modèle, réduit à vitesse** (`Car.gd`, 2026-09-22 ; *supprimé le 2026-09-24 avec
-l'arcade du joueur, §14 : le rayon « entre murs » reste la géométrie de chaque modèle, et c'est celle du châssis réel*). Modèle BICYCLETTE sur
+**Étape 6 — rayon de braquage par modèle, réduit à vitesse** (`Car.gd`, 2026-09-22). Modèle BICYCLETTE sur
 l'empattement MESURÉ de chaque modèle : lacet = v · tan(δ) / L. À basse vitesse δ = `MAX_STEER_RAD` (29,8°, l'angle
 que montrent les roues avant à fond) ; à vitesse, δ se réduit pour que l'accélération latérale ne dépasse jamais
 `BRAQUAGE_A_LAT` = 15 m/s² (tan δ = L · a / v²) — c'est le seul réglage. Les roues avant montrent l'angle réellement
@@ -2327,15 +2317,15 @@ circulation, tests arcade à réécrire, sons).
 **L'essayer (F5).**
 - À pied, **F8** pose une berline `city_sedan_01` à 7-13 m devant le joueur (la précédente disparaît si personne n'est
   dedans) ; **E** pour monter.
-- ~~**F7** bascule arcade / réaliste~~ : **F7 n'existe plus depuis le 2026-09-24** (§14), la conduite réaliste est la seule.
-  Le bandeau en bas de l'écran est devenu un compteur (rapport, vitesse), pour toute voiture conduite.
+- **F7** bascule arcade / réaliste, à tout moment, même en roulant. Coupé au lancement. Un bandeau en bas de l'écran rappelle
+  le mode, le rapport et la vitesse tant qu'on conduit la berline.
 - Commandes réalistes (mêmes touches physiques que l'arcade) : W accélère ; S freine puis, TENU ~0,5 s à l'arrêt, passe la
   marche arrière (S accélère alors en arrière, W freine) ; A/D braquent ; Espace est le frein à main.
-- ~~Seul `city_sedan_01` passe en réaliste~~ : tous les modèles depuis le 2026-09-24, chacun sur sa fiche (§14).
+- Seul `city_sedan_01` passe en réaliste (`Car.CONDUITE_REELLE_MODELES`) ; tous les autres modèles restent arcade.
 
 **Architecture** (`Car.gd` section CONDUITE RÉALISTE, `ChassisReel.gd`, `ChassisRoue.gd`, `EssaiConduiteReelle.gd` posé par
 `Player._ready`).
-- La voiture reste une `Car`. En montant, elle se dote d'un châssis `ChassisReel` — le cœur du pack VitaVehicle,
+- La voiture reste une `Car`. En montant, F7 actif, elle se dote d'un châssis `ChassisReel` — le cœur du pack VitaVehicle,
   un RigidBody3D, quatre roues à rayon, boîte automatique, pneus — enfant `top_level` de la Car, et le SUIT : la Car prend sa
   position et son cap (jamais son roulis ni son tangage : caméra, sortie, circulation et zones voient une voiture droite),
   le modèle son roulis et son tangage, chaque roue sa rotation, son braquage et son débattement. Le corps arcade est coupé
@@ -2345,7 +2335,7 @@ circulation, tests arcade à réécrire, sons).
   l'arcade ; centre de gravité à 0,50 m du sol, 59,5 % sur l'avant ; coque = silhouette du modèle relevée à 0,20 m, pour que
   les bordures de 0,15 m passent dessous.
 - À la descente : pédales à zéro, frein de parking et frein à main ; le corps se fige une fois arrêté et ne coûte plus rien ;
-  remonter le dégèle. (Il était rendu à l'arcade si on remontait F7 coupé : l'arcade a été supprimée le 2026-09-24.)
+  remonter le dégèle. Il n'est rendu à l'arcade que si on remonte, ou si on bascule, F7 coupé.
 - Ce qui lit la Car marche sans changement : phares (le modèle est reposé à l'image AVANT VehicleLights,
   `process_priority` -10), feux de freinage (`ChassisReel.freine()` -> `_player_braking`), gyrophares et R, zone de tir,
   écrasement (`_drive_speed`), culler (gel et dégel du châssis), `knock` (le châssis encaisse), sortie (`rids_exclus`).
@@ -2568,41 +2558,3 @@ est plus bas qu'elle. La coque physique ne touche nulle part, et la voiture pass
 
 Seul remède : surélever ces caisses sur leurs roues d'autant (6 cm pour l'italia), ce qui se verrait en permanence. Laissé
 au choix du joueur. La balayeuse (city_sweeper) touche par ses brosses, c'est voulu.
-
-### Étape B : l'arcade retirée pour le joueur (2026-09-24)
-
-Le joueur n'a plus qu'une conduite : quand il prend le volant de n'importe quel modèle, la voiture se dote de son châssis
-réel, réglé sur sa fiche (`Car.appliquer_mode_conduite`). Retiré de `Car.gd` : `_drive_physics`, `_try_step_up`,
-`_resolve_drive_collisions`, l'assiette de la boîte sur les pentes (`_poser_assiette`, `_pente`, `_abaisse`), le braquage
-réduit à vitesse (`angle_braquage`, `rayon_braquage`, `BRAQUAGE_A_LAT`), les constantes `DRIVE_*`, la bascule F7
-(`conduite_reelle`, `_retirer_chassis`). `rayon_entre_murs` reste : c'est la géométrie du modèle, celle du châssis réel.
-`EssaiConduiteReelle` garde F8 (poser une berline, outil de débogage) et un compteur, rapport et vitesse. La caméra de
-conduite finit de reculer à `Player.DRIVE_ZOOM_SPEED` = 30 m/s ; c'était 24, la vitesse maximale de l'arcade.
-
-**Défaut trouvé en migrant, corrigé** : à la création du châssis, le délai du pack avant la marche arrière (`sassistdel`)
-valait 0 au lieu de 60, sa valeur de repos. Un S enfoncé dès la montée passait aussitôt la marche arrière, et S accélérait
-alors en arrière au lieu de freiner. Trouvé par `VehicleLightsTest`, dont la voiture freinait dès son lancement.
-
-Tests migrés, tous OK :
-- `CarKerbTest` : la voiture du joueur, sur son châssis réel, monte la bordure de 0,15 m à 3, 6, 10 et 15 m/s puis la
-  redescend en marche arrière (S tenu à l'arrêt) ; aucun contact de coque, pour le modèle tiré au sort, le pick-up, le camion
-  et le bus. La voiture de la circulation sans conducteur reste arrêtée devant.
-- `VehicleLightsTest` : feux de freinage par la pédale du châssis ; flaque derrière la poupe.
-- `ParkingStructureTest` :
-  - rayon à 3 m/s, braquage à fond, au centre de la voiture : berline 4,30 m (géométrie du pack 4,19), camion 10,12 m,
-    bus 10,13 m. La berline tient dans les demi-tours de 4,70 m ;
-  - rampe à 12 % : montée en 8,6 s, redescente en marche arrière en 9,0 s, roues à 7 mm de la pente, tangage 7,2° ;
-  - 88 poussées contre les garde-corps (les voitures lancées à 4 m/s), barre de hauteur ;
-  - rampes intérieures, le vrai joueur au volant : du rez au toit en 94,5 s, retour en 89,9 s.
-- `WheelSpinTest`, contrôle 9 : le rayon « entre murs » par famille (le braquage réduit à vitesse n'existe plus).
-- `ConduiteReelleTest` : sans F7 ni passages en arcade ; coût d'une image, voiture conduite, 0,46 ms en médiane.
-
-**Piège payé en migrant `ParkingStructureTest` : un pilote automatique d'arcade ne sait pas conduire le châssis réel.**
-Le volant proportionnel à l'angle du cap suffisait à l'arcade, qui braque sans retard. Le volant du pack met ~0,7 s d'une
-butée à l'autre, et le demi-tour de 4,70 m demande 0,87 de volant pour 0,95 disponible. La voiture en sortait en retard,
-tournée vers les places, et touchait la voiture garée du test ; même une poursuite pure, même à 2 m/s. Ce qui tient, c'est
-la commande des vidéos :
-- la courbure du tracé 0,3 s plus loin, pour anticiper le retard du volant ;
-- corrigée de l'écart de cap et de l'écart latéral (commande de Stanley) ;
-- sur un tracé dense (un repère tous les 1,5 m). Des repères espacés de 6 m, ou un trou de 9 m au toit, suffisaient à la
-  mettre en défaut.

@@ -113,10 +113,6 @@ func configurer(m: Dictionary, braquage_max: float, f: Dictionary) -> void:
 	regler_couple(couple_pour(FichesVehicules.nombre(f, "puissance_kw")))
 	v_max = FichesVehicules.nombre(f, "vitesse_max_kmh") / 3.6
 	Controlled = false
-	# délai de la boîte avant la marche arrière (S tenu au point mort) : 60, sa valeur de repos dans le pack. Il valait 0
-	# à la création du châssis, et un S enfoncé dès la montée passait la marche arrière aussitôt — S accélérait alors en
-	# arrière au lieu de freiner (trouvé par VehicleLightsTest, 2026-09-24)
-	sassistdel = 60
 	can_sleep = false
 	continuous_cd = true
 	# AMORTISSEMENT DU CORPS (trouvé le 2026-09-24). Un RigidBody3D reçoit par défaut celui du projet, 0,1 /s en

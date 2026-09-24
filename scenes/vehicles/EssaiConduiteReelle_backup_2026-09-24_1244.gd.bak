@@ -1,11 +1,14 @@
 extends Node
 
-# OUTILS DE CONDUITE, posés sur le joueur par Player._ready (né comme essai de la conduite réaliste, étape 1, 2026-09-24,
-# CLAUDE.md §13 ; la conduite réaliste est la seule du joueur depuis le même jour, §14 : la bascule F7 a disparu).
+# ESSAI DE LA CONDUITE RÉALISTE (étape 1, 2026-09-24, CLAUDE.md §13). Posé sur le joueur par Player._ready.
+#  - F7 : bascule arcade / réaliste (Car.conduite_reelle), coupée au lancement. S'applique tout de suite à la voiture
+#    qu'on conduit, en roulant, et aux suivantes. Tous les modèles du catalogue (2026-09-24, chacun réglé sur sa fiche :
+#    CLAUDE.md §14).
 #  - F8 : à pied, pose une berline city_sedan_01 devant le joueur (la précédente disparaît si personne n'est dedans).
-#    Outil de débogage.
-#  - un compteur en bas de l'écran, tant qu'on conduit : rapport engagé et vitesse.
+#  - un bandeau, pendant qu'on conduit la berline : mode, rapport, vitesse.
+# Outil d'essai : il disparaîtra quand la conduite réaliste sera celle du jeu, ou abandonnée.
 
+const CarScript := preload("res://scenes/vehicles/Car.gd")
 const CAR := preload("res://scenes/vehicles/Car.tscn")
 const MODELE := "res://resources/vehicle_models/city_sedan_01.tres"
 const DISTANCES := [7.0, 9.0, 11.0, 13.0]
@@ -48,8 +51,21 @@ func _unhandled_input(event: InputEvent) -> void:
 	if not (event is InputEventKey and event.pressed and not event.echo):
 		return
 	match (event as InputEventKey).keycode:
+		KEY_F7:
+			basculer()
 		KEY_F8:
 			faire_apparaitre()
+
+
+func basculer() -> void:
+	CarScript.conduite_reelle = not CarScript.conduite_reelle
+	var voiture = _joueur.get("_current_car")
+	if voiture != null and is_instance_valid(voiture) and voiture.has_method("appliquer_mode_conduite"):
+		voiture.appliquer_mode_conduite()
+	var texte := "Conduite réaliste %s (essai : berline city_sedan_01, F8 pour en poser une)" \
+			% ("ACTIVÉE" if CarScript.conduite_reelle else "désactivée")
+	afficher(texte)
+	print("ESSAI_CONDUITE %s" % texte)
 
 
 # Pose une berline devant le joueur à pied : au plus près parmi DISTANCES, sur un sol à peu près plat et dans une place
@@ -85,7 +101,7 @@ func faire_apparaitre() -> Node3D:
 		if not espace.intersect_shape(q, 1).is_empty():
 			continue
 		var voiture := _poser((sol["position"] as Vector3), cap)
-		afficher("Berline posée à %.0f m devant toi — E pour monter" % d)
+		afficher("Berline posée à %.0f m devant toi — E pour monter, F7 pour la conduite réaliste" % d)
 		return voiture
 	afficher("F8 : pas de place libre devant toi")
 	return null
@@ -123,6 +139,10 @@ func _process(_delta: float) -> void:
 	var voiture = _joueur.get("_current_car")
 	if bool(_joueur.get("_driving")) and voiture != null and is_instance_valid(voiture) and voiture.has_method("infos_conduite"):
 		var i: Dictionary = voiture.infos_conduite()
-		_tableau.text = "rapport %s · %d km/h" % [i["rapport"], roundi(float(i["kmh"]))]
-		montre = true
+		if bool(i.get("essai", false)):
+			if bool(i["reelle"]):
+				_tableau.text = "Réaliste · rapport %s · %d km/h   (F7 : arcade)" % [i["rapport"], roundi(float(i["kmh"]))]
+			else:
+				_tableau.text = "Arcade · %d km/h   (F7 : réaliste)" % roundi(float(i["kmh"]))
+			montre = true
 	_tableau.visible = montre

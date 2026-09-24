@@ -96,6 +96,7 @@ func _ready() -> void:
 			continue
 		_modeles.append([String(ids[j]), String(d.model_paths[0])])
 	print("CHASSIS_BANC %d véhicule(s) : %s" % [_modeles.size(), ", ".join(_modeles.map(func(m): return m[0]))])
+	CarScript.conduite_reelle = true
 	_suivant()
 
 
@@ -629,4 +630,5 @@ func _fin() -> void:
 	for l in _tableau:
 		print("CHASSIS_BANC_JSON " + l)
 	print("CHASSIS_BANC_RESULT %s" % ("OK" if _fautes.is_empty() else "FAIL : " + " ; ".join(_fautes)))
+	CarScript.conduite_reelle = false
 	get_tree().quit()

@@ -100,8 +100,6 @@ var _air_blend := 0.0                 # 0 au sol, 1 en l'air (fondu)
 const FOOT_SPRING_LENGTH := 4.0
 const DRIVE_SPRING_LENGTH := 8.0     # caméra reculée en conduite
 const DRIVE_ZOOM_EXTRA := 3.5        # dézoom supplémentaire à vitesse max
-const DRIVE_ZOOM_SPEED := 30.0       # m/s (108 km/h) : la caméra a fini de reculer (24, la vitesse maximale de l'arcade,
-                                     # supprimée le 2026-09-24 ; une voiture réaliste va de 50 à 350 km/h)
 
 # --- intérieur (ApartmentInterior -> set_indoor) ---
 const FOOT_PIVOT_HEIGHT := 1.6       # hauteur de la SpringArm dans Player.tscn
@@ -1056,6 +1054,6 @@ func _update_drive_camera(delta: float) -> void:
 	var sp := 0.0
 	if _current_car.has_method("get_drive_speed"):
 		sp = absf(_current_car.get_drive_speed())
-	var t := clampf(sp / DRIVE_ZOOM_SPEED, 0.0, 1.0)
+	var t := clampf(sp / 24.0, 0.0, 1.0)   # 24 = DRIVE_MAX_SPEED de Car.gd
 	var target_len := DRIVE_SPRING_LENGTH + t * DRIVE_ZOOM_EXTRA
 	spring_arm.spring_length = lerpf(spring_arm.spring_length, target_len, clampf(delta * 3.0, 0.0, 1.0))
