@@ -236,7 +236,7 @@ attendu. (C'est la voiture du pack telle quelle. Le châssis de la conduite réa
 "$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/CarDrivingTest.tscn  # accélération, virage, freinage : CAR_DRIVING_RESULT
 "$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/CarDropTest.tscn     # chute de 10 m : CAR_DROP_RESULT
 "$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/ConduiteReelleTest.tscn  # conduite réaliste, berline : 108 km/h, freinage, frein à main (Espace), bordure, volant partiel, rampe 16 %, entrée de parking, sortie, F8, coût, cf. §13 et §14
-"$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/ChassisBancTest.tscn  # châssis par fiche, frein à main et dérapage compris, 6 silhouettes (~25 s) ; -- --tous --lot=i/3 pour les 72 (3 x ~2 min en parallèle ; les trois passent depuis le 2026-09-24, l'échec ANTÉRIEUR du lot 1 est corrigé : garde de city_truck_02 à 30 cm), cf. §14
+"$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/ChassisBancTest.tscn  # châssis par fiche, frein à main et dérapage compris, 6 silhouettes (~25 s) ; -- --tous --lot=i/3 pour les 72 (3 x ~2 min en parallèle ; échec ANTÉRIEUR connu dans le lot 1), cf. §14
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/CarKerbTest.tscn          # bordures : le joueur monte, l'IA non
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/WheelSpinTest.tscn        # roues des 72 modèles : axe, sens, rayon, stroboscope, pivot, braquage, rayon de braquage par modèle
 "$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/ParkingStructureTest.tscn  # parkings à étages : plateaux, escalier, hélice, cf. §11
@@ -2539,8 +2539,6 @@ Pièges de MESURE, payés en écrivant le banc :
   rayon partait au-dessus de la barre de hauteur du parking et la prenait pour le sol : -0,6 m annoncés, 0,27 m réels. Ne
   garder que les tranches basses.
 - **`PhysicsDirectBodyState3D.get_contact_local_position` rend une position MONDE**, malgré son nom.
-- **Au banc, un « contact de coque » est une coque à moins de 2 cm**, pas une coque qui touche : Jolt signale ses contacts
-  spéculatifs (note en fin de chapitre). Pour savoir de combien elle passe, couler la coque vers le bas (`cast_motion`).
 
 ### Le banc : `scenes/tests/ChassisBancTest`
 
@@ -2830,28 +2828,10 @@ toujours droite.
 - **La dérive d'une voiture presque arrêtée n'a pas de sens** : à 1 m/s, une voiture qui pivote encore peut avoir une vitesse
   de n'importe quel sens. Ne la compter qu'au-dessus de 3 m/s.
 
-**Échec ANTÉRIEUR relevé en passant, CORRIGÉ le 2026-09-24 : la garde de coque de city_truck_02 passe de 28 à 30 cm**
-(colonne `garde_cm`). Dans le banc complet (`--tous --lot=1/3`), city_truck_02 échouait sur la bordure de 17 cm prise à 30° :
-« la coque touche », pendant 1 à 2 pas.
-- Rejoué SEUL, il passait.
-- Rejoué sur `b6801b5`, sans le frein à main, le même lot échouait de la même façon (1 pas).
+**Échec ANTÉRIEUR relevé en passant, non corrigé.** Dans le banc complet (`--tous --lot=1/3`), la coque de city_truck_02 touche
+la bordure de 17 cm prise à 30°, pendant 1 à 2 pas.
+- Rejoué SEUL, il passe.
+- Rejoué sur HEAD (`b6801b5`, sans le frein à main), le même lot échoue de la même façon (1 pas).
 
-**La coque ne touchait pas la bordure.** Une sonde hors dépôt (`D:/p-recree/sondes/2026-09-24_garde_city_truck_02/`, avec un
-LISEZMOI) coule chaque forme de la coque vers le bas, sol exclu (`cast_motion`), au même pas que le banc :
-- dans le lot, la coque passait à **1,80 cm** de la bordure au plus près, sans jamais y entrer ; seule, à 3,44 cm. L'écart
-  dépend bien de l'état du moteur physique, que laissent les véhicules passés avant le camion dans le lot. Le reste du lot 1
-  passait à 3,67 cm au moins ;
-- **Jolt signale un contact dès que deux formes sont à moins de 2 cm** : c'est sa distance de contact spéculatif
-  (`physics/jolt_physics_3d/simulation/speculative_contact_distance`, 0,02 par défaut, que `project.godot` ne règle pas). Les
-  deux pas comptés par le banc sont exactement ceux où l'écart du pas précédent était sous 2 cm (1,80 cm ; à 2,03 cm, plus de
-  contact). **Au banc, « la coque touche » veut donc dire « la coque passe à moins de 2 cm »** ;
-- l'endroit : le coin arrière droit du bas de la caisse (x -0,88, z -2,52 dans le repère du châssis, 1,6 m derrière l'essieu
-  arrière), juste après que la roue arrière droite tombe de la bordure. C'est le cas du point 7 ci-dessus.
-
-**À 30 cm : 4,38 cm au plus près**, seul comme dans le lot.
-- Les trois lots passent (72 modèles), les six silhouettes aussi.
-- Les autres essais du camion ne bougent qu'à l'arrondi (freinage 50,5 -> 50,4 m, roulis + 0,1 à 0,2°). Il reste arrêté
-  par la barre du parking (2,66 m de haut).
-- Son dessous visible est à 0,239 m, et la coque est invisible : rien ne change à l'œil.
-
-C'est une exception à la règle du point 7 (28 cm au moins, ou le dessous du modèle - 2 cm), qui lui donnait 28 cm.
+C'est un contact en limite, qui dépend de l'état du moteur physique après les véhicules qui le précèdent dans le lot. Remède
+probable, à décider : monter sa garde de coque de 28 à 30 cm (colonne `garde_cm`).
