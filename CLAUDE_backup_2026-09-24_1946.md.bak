@@ -24,12 +24,9 @@ travail imposée, les commandes exactes, les pièges déjà payés et l'état d'
 > voiture, Espace n'est plus que le frein à main ; il bloque les roues arrière quand la fiche le dit plus fort que les pneus
 > arrière (voitures, SUV, fourgons légers), pas sur les camions et les bus ; vidéo 8 hors dépôt. **Puis, après l'essai en jeu
 > du joueur (freins mous, voiture qui glisse) : freins et pneus renforcés, direction bornée à vitesse** (§14), par trois
-> réglages globaux dans `resources/vehicle_physics/reglages_conduite.tres`. **Puis, le soir, décision du joueur : « la
-> conduite de GTA V, pas une conduite réaliste ». FAIT** (§15) : un modèle de conduite à nous, inspiré de celui de GTA V
-> (`ChassisGTA`), à la place du pack VitaVehicle ; les fiches aux noms du handling.meta de GTA V (fMass, fBrakeForce,
-> fTractionCurveMax...), chacun documenté dans l'en-tête du tableau ; les 72 modèles au banc ; vidéos 9 à 12 hors dépôt.
-> Toujours en attente depuis le 2026-09-23 : le coût physique d'environ 2 ms (NON TOUCHÉ, le joueur le teste en jeu) et la
-> pose des trois packs d'accessoires convertis (§7).
+> réglages globaux dans `resources/vehicle_physics/reglages_conduite.tres`. Toujours en attente depuis le
+> 2026-09-23 : le coût physique d'environ 2 ms (NON TOUCHÉ, le joueur le teste en jeu) et la pose des trois packs
+> d'accessoires convertis (§7).
 
 ## 1. Le projet
 
@@ -64,11 +61,9 @@ travail imposée, les commandes exactes, les pièges déjà payés et l'état d'
   des entrées (`RampesEntree.gd`, même jour), **629** depuis le feu d'obstacle de Mk1 (`feu_obstacle.gdshader` et son
   matériau, même jour, §9), **630** depuis l'outil de conversion des packs d'accessoires (`ConversionPacks.gd`, même
   jour, §7), **635** depuis l'essai de la conduite réaliste (`ChassisReel.gd`, `ChassisRoue.gd`, `EssaiConduiteReelle.gd`,
-  `ConduiteReelleTest`, 2026-09-24, §13), **640** depuis les fiches des véhicules (`FichesVehicules.gd`,
-  `ChassisBancTest`, `FichesVehiculesOutil`, même jour, §14), **642** depuis les réglages globaux de la conduite
-  (`ReglagesConduite.gd`, `reglages_conduite.tres`, même jour, §14), et de nouveau **640** depuis la conduite façon GTA V
-  (même jour au soir, §15 : `ChassisGTA.gd` et `RoueGTA.gd` ajoutés ; `ChassisReel.gd`, `ChassisRoue.gd` et l'outil
-  `FichesVehiculesOutil` — son script et sa scène — retirés). **`ProjectLoadCheck` ne parcourt pas `res://assets`** (seulement scenes, scripts, resources, shaders) : les
+  `ConduiteReelleTest`, 2026-09-24, §13), **642** depuis les réglages globaux de la conduite (`ReglagesConduite.gd`,
+  `reglages_conduite.tres`, même jour, §14), **640** avant, depuis les fiches des véhicules (`FichesVehicules.gd`,
+  `ChassisBancTest`, `FichesVehiculesOutil`, même jour, §14). **`ProjectLoadCheck` ne parcourt pas `res://assets`** (seulement scenes, scripts, resources, shaders) : les
   98 scènes d'accessoires n'entrent pas dans son compte.
 
 ## 2. Méthode de travail (imposée, non négociable)
@@ -221,7 +216,8 @@ y gagne `brake_from`, `stop_time`, `stop_dist`, et `final_speed` passe à 5 déc
 chiffres reste utile : temps et distance d'arrêt, `final_drift` et `settle_time` de la chute.
 Après un arrêt sec, la voiture recule encore de ~5 cm/s en décroissant (le tangage se relâche et le
 modèle du pack n'a AUCUNE résistance au roulement) : `final_speed` sort donc juste sous 0,05, c'est
-attendu. (C'est la voiture du pack telle quelle, qui n'est plus conduite en jeu : le joueur conduit `ChassisGTA`, §15.)
+attendu. (C'est la voiture du pack telle quelle. Le châssis de la conduite réaliste en jeu, `ChassisReel`, corrige ce recul :
+§13.)
 
 ```bash
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/MapRoadsTest.tscn          # rubans, croisements, pentes
@@ -242,15 +238,15 @@ attendu. (C'est la voiture du pack telle quelle, qui n'est plus conduite en jeu 
 "$GODOT" --headless --path "$PROJET" --fixed-fps 60 --quit-after 300 res://scenes/tests/VehicleCatalogTest.tscn  # catalogue des véhicules, 20 000 tirages
 "$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/CarDrivingTest.tscn  # accélération, virage, freinage : CAR_DRIVING_RESULT
 "$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/CarDropTest.tscn     # chute de 10 m : CAR_DROP_RESULT
-"$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/ConduiteReelleTest.tscn  # conduite du joueur (façon GTA V), berline : 108 km/h, freinage, frein à main (Espace), bordure, volant partiel, rampe 16 %, entrée de parking, sortie, F8, coût, cf. §15
-"$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/ChassisBancTest.tscn  # châssis par fiche (façon GTA V) : accélération et patinage, freinage et plongée, virages sans tonneau, frein à main et dérapage, bordures, parking ; 6 silhouettes (~20 s) ; -- --tous --lot=i/3 pour les 72 (3 x ~1 min en parallèle), cf. §15
+"$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/ConduiteReelleTest.tscn  # conduite réaliste, berline : 108 km/h, freinage, frein à main (Espace), bordure, volant partiel, rampe 16 %, entrée de parking, sortie, F8, coût, cf. §13 et §14
+"$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/ChassisBancTest.tscn  # châssis par fiche, frein à main et dérapage compris, 6 silhouettes (~25 s) ; -- --tous --lot=i/3 pour les 72 (3 x ~2 min en parallèle ; les trois passent depuis le 2026-09-24, l'échec ANTÉRIEUR du lot 1 est corrigé : garde de city_truck_02 à 30 cm), cf. §14
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/CarKerbTest.tscn          # bordures : le joueur monte, l'IA non
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/WheelSpinTest.tscn        # roues des 72 modèles : axe, sens, rayon, stroboscope, pivot, braquage, rayon de braquage par modèle
 "$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/ParkingStructureTest.tscn  # parkings à étages : plateaux, escalier, hélice, cf. §11
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/DowntownStreetsTest.tscn
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/DowntownBuildingsTest.tscn
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/ShopBuildingsTest.tscn     # échec ANTÉRIEUR connu
-"$GODOT" --headless --path "$PROJET" --script res://scenes/world/map/tools/ProjectLoadCheck.gd   # attendu : 640 fichiers, 0 échec
+"$GODOT" --headless --path "$PROJET" --script res://scenes/world/map/tools/ProjectLoadCheck.gd   # attendu : 642 fichiers, 0 échec
 ```
 
 Outil d'inspection, hors batterie : `res://scenes/tests/VehicleSortTest.tscn` aligne les véhicules du catalogue
@@ -424,9 +420,8 @@ sans cela, une capture tombe au hasard dans son clignotement.
 - Les `.tscn` cuits changent textuellement à chaque cuisson (identifiants de sous-ressources tirés
   au hasard) : un `git status` « modifié » ne prouve pas un changement de contenu.
 - **CORRECTION du 2026-09-24 : le joueur ne conduit plus la `Car` arcade.** Quand il prend le volant, la voiture se
-  dote d'un châssis physique réglé sur la fiche du modèle et le suit ; la conduite arcade du joueur a été SUPPRIMÉE. Ce
-  châssis a d'abord été le « châssis réel » (`ChassisReel`, le cœur du même pack VitaVehicle, §14) ; c'est depuis le soir
-  du même jour `ChassisGTA`, la conduite façon GTA V, un modèle à nous (§15). `Car.gd` cinématique ne sert plus qu'aux 252 voitures de la
+  dote de son châssis réel (`ChassisReel`, le cœur du même pack VitaVehicle, réglé sur la fiche du modèle, §14) et le
+  suit ; la conduite arcade du joueur a été SUPPRIMÉE. `Car.gd` cinématique ne sert plus qu'aux 252 voitures de la
   circulation et aux voitures garées ; `PlayerCarPhysics` reste la voiture de démonstration du pack, placée dans aucune
   scène de jeu. La suite de cette note date d'avant :
 - **Il y a DEUX voitures dans ce jeu, et elles ne réagissent pas pareil au décor.** `Car.gd` est un
@@ -693,9 +688,7 @@ débogage sur `V`.
   étapes A, les fiches, B, l'arcade retirée, C, la circulation par modèle, D, la physique des PNJ mesurée, et E, les
   vidéos, FAITES), et le frein à main pour déraper, le même jour (§14). Décisions du joueur, toujours le 2026-09-24 : la
   vraie physique sur les PNJ, non (la circulation reste cinématique) ; les 13 modèles plus bas que les bordures ne sont pas
-  surélevés. **Puis, le soir : « la conduite de GTA V, pas une conduite réaliste » — FAIT** (§15), un modèle à nous à la
-  place du pack, les fiches aux noms du handling.meta de GTA V. Restent : le réglage au ressenti par le joueur, les chocs
-  contre la circulation (puce suivante), les sons.
+  surélevés. Restent : les chocs contre la circulation (puce suivante), les sons.
 - **chocs réels contre la circulation**, plus tard (idée retenue par le joueur le 2026-09-24, après la mesure de l'étape D
   du §14) : ne passer en physique QUE la voiture que le joueur percute, au moment du choc. Aujourd'hui une voiture de la
   circulation est cinématique, de masse infinie pour le châssis du joueur : il rebondit sur elle, et elle n'est que
@@ -2342,10 +2335,6 @@ d'analyse laisse Godot bloqué — payé encore une fois dans cette série.
 
 ## 13. Conduite réaliste : essai sur la berline (étape 1, 2026-09-24)
 
-> **REMPLACÉ LE SOIR MÊME par la conduite façon GTA V (§15)** : le châssis décrit ici (`ChassisReel`, `ChassisRoue`, le cœur
-> du pack VitaVehicle) n'existe plus dans le jeu (il reste dans l'historique git et dans ses `.bak`). Ce chapitre et le §14
-> gardent ce qu'on en a appris ; les fiches ont changé de colonnes (§15).
-
 > **Suite au §14** (même jour) : les 72 modèles, chacun sur sa fiche. Deux choses écrites ci-dessous sont FAUSSES, et les
 > chiffres de l'essai de la berline ont été relevés avec le défaut qui les explique : le corps rigide recevait
 > l'amortissement par défaut du projet (0,1 /s, une traînée de 2,5 m/s² à 90 km/h, §14). La « vitesse de pointe, ~145 km/h
@@ -2466,14 +2455,6 @@ moteur du pack.
   des passages plus hauts.
 
 ## 14. Conduite réaliste : une fiche par véhicule, les 72 modèles (2026-09-24)
-
-> **REMPLACÉ LE SOIR MÊME par la conduite façon GTA V (§15).** Restent vrais : une fiche par modèle, sans catégories, dans
-> `resources/vehicle_physics/fiches_vehicules.csv` ; la garde de coque (`garde_cm`) et les colonnes de la circulation
-> (`trafic_kmh`, `trafic_accel_ms2`, étape C) ; l'arcade retirée pour le joueur (étape B) ; la mesure de la physique des
-> PNJ (étape D) ; les réglages globaux (`reglages_conduite.tres`), réduits à deux multiplicateurs. Ne sont plus vrais : le
-> châssis du pack (`ChassisReel`, `ChassisRoue`), les colonnes réalistes (masse_kg, puissance_kw, adherence, freinage_ms2...)
-> et leurs colonnes calculées (cdg_m, raideur_*, amort_*, et l'outil `FichesVehiculesOutil` qui les écrivait), la borne de
-> direction `glissement_avant_max`. Les chiffres ci-dessous sont ceux de ce châssis-là.
 
 Décision du joueur après l'essai de la berline (§13) : **conduite FULL réaliste pour le joueur, arcade supprimée, sur les 72
 modèles conduisibles**. Ses exigences :
@@ -2964,174 +2945,3 @@ fichiers, 0 échec) passent. Le banc juge maintenant le blocage au frein à main
 - `multiplicateur_adherence` : plus haut, plus de grip. Le centre de gravité descend tout seul pour que rien ne se couche.
 - `glissement_avant_max` : plus haut, la voiture tourne plus serré à vitesse et glisse davantage à la limite ; 0 rend la
   direction du pack seul (le braquage à fond au clavier qui faisait glisser).
-
-## 15. Conduite façon GTA V : un modèle à nous (2026-09-24 au soir)
-
-Le joueur, après avoir conduit le châssis réel (§13, §14) : « Je n'aime pas la conduite actuelle. Je veux la conduite de GTA
-V, pas une conduite réaliste. » Ce qui fait ce ressenti, dans ses mots :
-- beaucoup plus d'adhérence qu'en vrai : les voitures tournent fort et collent à la route ;
-- des freins très puissants, ça s'arrête net ;
-- une carrosserie qui bouge beaucoup : elle plonge au freinage, s'écrase à l'accélération, penche en virage, mais ne se
-  couche jamais (sa règle reste) ;
-- au-delà de la limite, une glisse PROGRESSIVE et contrôlable, pas un décrochage ;
-- du patinage possible au démarrage ;
-- un frein à main qui ne bloque que les roues arrière, pour partir en glisse facilement ;
-- une direction réactive et vive, même au clavier ;
-- une accélération nerveuse.
-
-Ses consignes : les réglages des fiches aux MÊMES NOMS que le handling.meta de GTA V, « pour que je m'y retrouve », chacun
-documenté ; les 72 modèles, leurs masses et leurs écarts gardés, réglés dans l'esprit de GTA V ; lui dire d'abord si le pack
-VitaVehicle peut donner ce comportement ; garder l'absence de tonneau, le frein à main qui dérape et la circulation telle
-quelle ; des vidéos (virage fort, freinage, dérapage au frein à main) ; les tests concernés seulement.
-
-### Le pack réglé autrement, ou un modèle à nous ? Un modèle à nous
-
-Réponse donnée au joueur avant de coder :
-- **le pneu du pack n'a pas de courbe d'adhérence** : sa force naît du glissement et monte avec lui, sans pic ni palier. Il ne
-  tient qu'en glissant ; il ne sait ni coller, ni glisser progressivement passé une limite. C'est pourtant exactement ce que
-  décrivent fTractionCurveMax, fTractionCurveMin et fTractionCurveLateral ;
-- **son moteur (régime, embrayage, boîte automatique)** a demandé six corrections (§13) et reste mou ; GTA V pousse
-  directement (fInitialDriveForce) jusqu'à une vitesse de pointe (fInitialDriveMaxFlatVel) ;
-- **son frein n'arrive pas à bloquer une grande roue**, et son assistance de direction contrarie une direction vive ;
-- **il compte en pieds, avec des forces au dixième**, et coûtait 0,2 ms par voiture.
-
-### Ce qui a été fait
-
-- `scenes/vehicles/ChassisGTA.gd`, le châssis, et `scenes/vehicles/RoueGTA.gd` (réglages et état d'une roue ; tout le calcul
-  est dans le châssis, en un appel par pas), à la place de `ChassisReel` et `ChassisRoue` (supprimés). `Car.gd` le crée à la
-  montée et le suit comme avant (mêmes noms : `vitesse_avant`, `freine`, `rapport`, `repartir`, `pousser`, `figer`,
-  `activer_simulation`, `Controlled`, `roues` avec `wv`, `w_size` et l'enfant `animation`) ; il ajoute seulement la boîte du
-  modèle à ses mesures (`boite`, pour l'inertie).
-- `scripts/data/FichesVehicules.gd` : les colonnes aux noms de GTA V et leurs CONVERSIONS en grandeurs physiques (constantes
-  `G_PAR_*`, `PERTE_BASSE_VITESSE`, `AMORT_PAR_UNITE`), que lit le châssis.
-- `resources/vehicle_physics/fiches_vehicules.csv` : 72 lignes réécrites (script de conversion hors dépôt), et un en-tête qui
-  dit, pour chaque colonne, ce qu'elle fait dans CE jeu, son unité, et sa place dans GTA V. Les valeurs sont tirées des
-  anciennes fiches de chaque modèle (masse, puissance, freins, adhérence, suspension, répartition) et de sa géométrie relevée
-  (empattement, voie, hauteur), dans l'esprit de GTA V : adhérence x 1,4, décélérations des freins x 1,55, suspensions plus
-  souples. Les écarts entre modèles restent ceux des vrais véhicules.
-- **Colonnes** : `fMass`, `fInitialDriveForce`, `fInitialDriveMaxFlatVel` (en km/h : GTA V l'écrit dans une unité à multiplier
-  par 1,32), `fDriveBiasFront` (remplace `transmission`), `fBrakeForce`, `fBrakeBiasFront`, `fHandBrakeForce`,
-  `fSteeringLock`, `fTractionCurveMax`, `fTractionCurveMin`, `fTractionCurveLateral`, `fLowSpeedTractionLossMult`,
-  `fSuspensionForce`, `fSuspensionCompDamp`, `fSuspensionReboundDamp`, `fAntiRollBarForce`, `vecCentreOfMassOffset`
-  (« x,y,z », repère de GTA V ; remplace `avant_pct`). Gardées : `garde_cm`, `trafic_kmh`, `trafic_accel_ms2` (la
-  circulation lit les mêmes valeurs qu'avant). Plus de colonnes calculées : `FichesVehiculesOutil` est supprimé.
-- `reglages_conduite.tres` : deux multiplicateurs (freinage, adhérence), remis à 1 : les fiches portent maintenant le niveau
-  de GTA V. `glissement_avant_max` supprimé (la direction se borne d'elle-même, ci-dessous).
-
-**Conversions** (le détail est dans l'en-tête du tableau) :
-
-| colonne | dans ce jeu |
-|---|---|
-| fTractionCurveMax / Min | adhérence du pneu (g) = valeur x 0,6 (2,33 -> 1,4 g), au pic / en glisse ; l'arrière 8 % de plus |
-| fTractionCurveLateral | angle de glissement du pic de la courbe, en degrés (courbe en sinus jusqu'au pic, puis vers Min au double) |
-| fBrakeForce | décélération demandée = valeur x 1,5 g, bornée par l'adhérence (ABS) |
-| fHandBrakeForce | force sur l'essieu arrière = valeur x le poids du véhicule |
-| fInitialDriveForce | poussée au démarrage = valeur x 3 g, entière jusqu'à 20 % de la vitesse de pointe, puis à puissance constante |
-| fSuspensionForce | détente sans effort sous le repos = 1 / (4 x valeur) m (la définition de GTA V) ; fréquence ~ racine(valeur) Hz |
-| fSuspensionCompDamp / ReboundDamp | valeur x 20 % de l'amortissement critique |
-| fAntiRollBarForce | raideur en roulis de l'essieu = ressorts x (1 + valeur) |
-| fLowSpeedTractionLossMult | à l'arrêt, les roues qui poussent perdent valeur x 30 % d'adhérence, retrouvée à 25 km/h |
-
-### Comment il marche
-
-- **Suspension à rayons** : trois rayons par roue, répartis le long du pneu ; la roue monte une bordure par son arête avant.
-  Ressort (fSuspensionForce), amortisseur (Comp / Rebound), barre anti-roulis, butée. La course de détente va au moins
-  jusqu'où le ressort pousse encore.
-- **Pneu** : en travers, la courbe de traction ; le long, poussée, frein au pied (ABS), frein à main ; le cercle d'adhérence
-  entre les deux. Une roue motrice qui pousse plus que son pneu ne tient PATINE et tient moins en travers (une propulsion
-  survire sous les gaz).
-- **Frein à main, décidé pour l'essieu** : il bloque les roues arrière quand il dépasse ce que tiennent ENSEMBLE leurs pneus ;
-  sinon il freine selon la charge de chaque roue, avec ce que le pneu garde après le virage (un camion ralentit sans
-  déraper). Il débraye les roues qu'il tient.
-- **Direction** : au clavier, le volant va du centre à la butée en 0,14 s à l'arrêt (0,22 s à 108 km/h), revient ou change de
-  côté à 9 par seconde. À vitesse, l'angle des roues avant
-  est borné par leur pneu (au pic de la courbe, 85 % au-delà de 108 km/h) par rapport à leur trajectoire : braquer à fond
-  donne le virage le plus serré qui colle, et le contre-braquage reste entier. Volant lâché, les roues suivent la trajectoire.
-- **Stabilité** : quand l'essieu arrière approche le pic de sa courbe (freinage, pied levé, gaz sur une propulsion), la borne
-  des roues avant se resserre du côté qui ferait tourner la voiture davantage.
-- **Assistance de glisse** : quand la dérive, PRÉVUE 0,3 s plus tard, dépasse 12° (18° si le frein à main bloque l'arrière :
-  on veut déraper) et que les roues avant font encore tourner la voiture dans le sens de la glisse, elles contre-braquent
-  d'elles-mêmes, entièrement à 35° (45°). La glisse se tient au lieu de finir en tête-à-queue.
-- **Pas de tonneau** : les forces des pneus en travers s'appliquent au centre de roulis, placé pour que le bras de levier du
-  roulis vaille au plus voie / (2 x 1,8 x adhérence) (`FichesVehicules.SSF_MIN`, comme fRollCentreHeight dans GTA V) ; celles
-  le long, au centre de tangage, placé pour qu'au freinage le plus fort l'essieu arrière garde 25 % de sa charge.
-- Pas de boîte : le rapport affiché est une tranche de la vitesse de pointe. Coût : 60 à 80 µs par pas (le pack : 200).
-
-### Pièges payés en le faisant
-
-- **Appliquées roue après roue, les forces des pneus tordaient la voiture** : chaque roue voyait le lacet laissé par les
-  précédentes, toujours dans le même ordre. Freinage en ligne droite : 2 à 4° de cap ; frein à main : 10°. Toutes les forces
-  sont maintenant calculées sur le même état du corps, puis appliquées ensemble ; ce qui annule un glissement (basse vitesse,
-  arrêt) n'en annule que la part de sa roue.
-- **Le ressort poussé le long du haut de la CAISSE retenait la voiture** : caisse plongée de 5,8°, 1,3 kN vers l'avant, soit
-  1 m/s² de freinage en moins ; 7° de roulis retiraient autant de tenue en virage. Il pousse le long de la normale du sol.
-- **Le frein à main décidé roue par roue bloquait la roue intérieure** d'un virage, délestée (8,6 kN au lieu de 20 sur le
-  camion) : l'arrière du camion partait à 31°.
-- **Une assistance de glisse réglée sur la dérive seule arrivait trop tard** : 2 rad/s de lacet déjà pris à 15° de dérive, et
-  D + Espace tenus 1,2 s faisaient pivoter la voiture de 110 à 160°. Elle regarde la dérive prévue 0,3 s plus tard.
-- **L'avant tenu au pic de son pneu demandait à l'arrière plus qu'il ne tient** dès qu'un peu de charge passait vers l'avant
-  (camion freinant à 107 km/h en braquant : 40 kN devant, 48,9 kN demandés derrière pour 47,3) : d'où la stabilité.
-- **Une suspension souple perdait ses roues intérieures avant de les délester** (limousine, 1 / (4 x 0,77) = 0,33 m de
-  détente sans effort pour 0,16 de course) : roues en l'air 0,13 s, 11,6° de roulis. La course de détente suit maintenant la
-  détente sans effort, et fSuspensionForce vaut au moins 1.
-- **Deux modèles touchaient une bordure de 17 cm de face** : `city_truck_02_flat` (même châssis que `city_truck_02`, garde
-  portée à 30 cm comme lui) et `city_retro_car_03` (1,1 m de porte-à-faux arrière sur une suspension souple : le bout
-  arrière tape l'arête quand les roues arrière en descendent ; garde 33 cm).
-
-### Avant / après
-
-`ChassisBancTest` ; avant : le châssis réel avec ses réglages globaux (§14, « Freins, pneus et direction à vitesse »).
-
-| | 0-100 | freinage 100-0 | accélération latérale au plus | dérive à 80 / 110 km/h | dérapage au frein à main 50 / 80 / 110 | roulis au plus | plongée |
-|---|---|---|---|---|---|---|---|
-| city_sports_car_02 | 4,2 -> **3,2 s** (patinage 4,5 m/s) | 32,0 -> **26,6 m** | 13,3 -> **15,5 m/s²** (1,58 g) | 2,6 / 3,3 -> 4,5 / 5,8° | 44 / 36 / 37 -> **55 / 38 / 38°** | 2,6° | 2,9° |
-| city_sedan_01 | 9,7 -> **6,6 s** (patinage 3,6 m/s) | 35,4 -> **30,2 m** | 12,3 -> **14,6 m/s²** (1,49 g) | 2,6 / 4,1 -> 3,8 / 5,3° | 38 / 38 / 37 -> **53 / 41 / 39°** | 7,8° | 6,6° |
-| city_truck_01 | 27,6 -> **24,4 s** | 42,7 -> **38,8 m** | 9,9 -> **11,2 m/s²** | 0,9 / 4,1 -> 5,2 / 8,4° | 10 / 6 / 7 -> **8 / 8 / 11°** | 3,0° | 1,4° |
-
-La dérive à la limite a un peu monté : c'est la glisse progressive demandée, à une adhérence bien plus haute.
-
-**Sur les 72** (trois lots, tous OK) :
-- **aucun tonneau, aucune roue levée**, à 50, 80, 110 km/h, à la vitesse de pointe et au frein à main ; roulis au pire 11,2°
-  (city_retro_car_01, suspension souple des années 1950) ;
-- freinage depuis 100 km/h de 25,6 m (lowpoly_fenyr) à 42,5 m (autocar), médiane 31,5 m ; toujours droit (0,7° au pire) ;
-- 0-100 de 2,9 s (lowpoly_fenyr) à 35 s (autocar), médiane 6,7 s ; patinage au départ sur 40 modèles (6,4 m/s au plus, la
-  muscle car lowpoly_kamaro) ;
-- plongée au freinage de 1,4° (camion) à 7,4° (balayeuse), médiane 4,5° ; roulis en virage de 1,8 à 11,2°, médiane 5,7° ;
-- accélération latérale à 80 km/h de 9,5 (autocar) à 15,3 m/s² (lowpoly_lamb), médiane 12,8 ;
-- frein à main : 53 modèles bloquent leurs roues arrière et dérapent (jusqu'à 63°, city_coupe_03) ; les 19 poids lourds et
-  blindés ralentissent sans bloquer (8 à 11° de dérive pour le camion) ; relâché, l'adhérence revient en 0,67 s au pire.
-
-`ConduiteReelleTest` (le vrai joueur au clavier, la berline) : roule 0,12 s après W ; 0-100 en 6,6 s ; double changement de
-voie à 108 km/h, 8,4° de caisse, cap repris à 3,8° près ; freinage de 108 km/h à l'arrêt en 34,4 m (40,2 avant), droit ;
-braquage à fond à 50 km/h, 1,24 g ; pied levé depuis 49 km/h, arrêtée en 12,4 s ; Espace à 49 km/h, 44° de dérive,
-adhérence reprise en 0,73 s ; rayon à 3 m/s, 4,65 m entre murs (35° de braquage) ; 45 % de volant, rayon à l'épure (x 0,99) ;
-bordures et rampe à 16 % sans toucher ; script du châssis 79 µs par pas en médiane.
-
-### Tests
-
-Passés : `ChassisBancTest` (six silhouettes, et les 72 en trois lots), `ConduiteReelleTest`, `CarKerbTest`,
-`VehicleLightsTest`, `ParkingStructureTest`, `WorldTrafficSmokeTest` (croisière de chaque modèle à 0,000 m/s de sa fiche,
-aucune au-delà : la circulation n'a pas changé), `ProjectLoadCheck` (640 fichiers, 0 échec).
-- `ChassisBancTest` et `ConduiteReelleTest` migrés (plus de champs du pack) ; le banc rapporte en plus le patinage au départ,
-  l'écrasement à l'accélération et la plongée au freinage, et juge le blocage du frein à main sur ce que dit le châssis
-  (`frein_main_bloque`).
-- `ParkingStructureTest` : le camion et le bus braquaient « au moins 8,5 m » à 3 m/s, seuil écrit quand tous braquaient de
-  29,8°. Chaque modèle a maintenant son braquage (fSteeringLock : 35° pour les voitures, 38 à 40° pour les longs
-  véhicules) : 6,6 m pour le camion et le bus. Le contrôle vérifie ce qu'il visait, qu'ils braquent bien plus large que la
-  berline (au moins 1,5 fois ; 3,5 m) et que les demi-tours des rampes (4,70 m).
-- `WorldTrafficSmokeTest` : il ne relève que quelques voitures ayant atteint leur croisière dans sa durée (2 sur 84) ; le
-  code d'avant ce chantier en relève autant (5 sur 88, rejoué sur 14092cf).
-
-### Vidéos
-
-Hors dépôt, dans `D:/p-recree/videos_conduite/`, outil `outils/video_gta.gd` (clips 9 à 12) :
-- `9_virage_fort_berline_110_kmh_gta.mp4` : évitement braqué à fond à 110 km/h, 1,43 g, caisse penchée de 8,2° ;
-- `10_freinage_sportive_et_camion_100_kmh_gta.mp4` : depuis 100 km/h, vues de côté ; sportive 26,4 m, caisse plongée de
-  2,9° ; camion 38,5 m, 1,4° ;
-- `11_derapage_frein_a_main_sportive_80_kmh_gta.mp4` : deux dérapages, 36° de dérive, reprise au relâcher ;
-- `12_depart_arrete_sportive_et_camion_gta.mp4` : pied au plancher 8 s ; sportive 0-100 en 3,2 s, 4,5 m/s de patinage.
-
-### Reste
-
-Le réglage au ressenti, par le joueur, en jeu (le tableau et les deux multiplicateurs sont faits pour ça) ; les chocs contre
-la circulation (§7) ; les sons.
