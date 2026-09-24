@@ -5,8 +5,8 @@ travail imposée, les commandes exactes, les pièges déjà payés et l'état d'
 
 > **Série du 2026-09-24.** Plafonniers des parkings à étages : un seul modèle, celui du parking, copié là où il en
 > manquait (§11, étape 13). **Conduite réaliste, étape 1 FAITE** (§13) : essai sur la berline city_sedan_01, coupé par
-> défaut, F7 bascule arcade / réaliste, F8 pose une berline (B depuis le soir, §13). Puis, après les vidéos de l'essai
-> (hors dépôt, `D:/p-recree/videos_conduite/`), deux défauts corrigés :
+> défaut, F7 bascule arcade / réaliste, F8 pose une berline. Puis, après les vidéos de l'essai (hors dépôt,
+> `D:/p-recree/videos_conduite/`), deux défauts corrigés :
 > - la rampe d'accès des parkings à étages (27 % -> 9,6 %), avec l'assiette de l'arcade, fausse à chaque raccord (§11,
 >   étape 14) ;
 > - l'assistance de direction du pack, qui resserrait le virage en manœuvre ; elle est maintenant dosée par la vitesse
@@ -34,8 +34,6 @@ travail imposée, les commandes exactes, les pièges déjà payés et l'état d'
 > `vecInertiaMultiplier`, amortisseurs au critique, report de charge au freinage borné, répartiteur de freinage) ; les
 > fiches recalées sur une étude du handling.meta de GTA V (fichier de référence hors dépôt, jamais recopié). Les tests et
 > les vidéos 13 à 15 (hors dépôt) contre-braquent au clavier par `scenes/tests/PiloteClavier.gd`.
-> **Puis, le même soir : la berline de débogage se pose avec B, plus avec F8** (§13) : F8 est le raccourci de l'éditeur de
-> Godot pour ARRÊTER le jeu qu'il a lancé, et le jeu se coupait. Aucune touche du jeu sur F1 à F12 (§6).
 > Toujours en attente depuis le 2026-09-23 : le coût physique d'environ 2 ms (NON TOUCHÉ, le joueur le teste en jeu) et la
 > pose des trois packs d'accessoires convertis (§7).
 
@@ -251,7 +249,7 @@ attendu. (C'est la voiture du pack telle quelle, qui n'est plus conduite en jeu 
 "$GODOT" --headless --path "$PROJET" --fixed-fps 60 --quit-after 300 res://scenes/tests/VehicleCatalogTest.tscn  # catalogue des véhicules, 20 000 tirages
 "$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/CarDrivingTest.tscn  # accélération, virage, freinage : CAR_DRIVING_RESULT
 "$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/CarDropTest.tscn     # chute de 10 m : CAR_DROP_RESULT
-"$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/ConduiteReelleTest.tscn  # conduite du joueur (façon GTA V), berline : 108 km/h et changement de voie au stick, freinage, frein à main (Espace) rattrapé par le joueur au clavier, bordure, volant partiel, rampe 16 %, entrée de parking, sortie, touche B (berline posée ; F8 ne pose plus rien), coût, cf. §15
+"$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/ConduiteReelleTest.tscn  # conduite du joueur (façon GTA V), berline : 108 km/h et changement de voie au stick, freinage, frein à main (Espace) rattrapé par le joueur au clavier, bordure, volant partiel, rampe 16 %, entrée de parking, sortie, F8, coût, cf. §15
 "$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/ChassisBancTest.tscn  # châssis par fiche (façon GTA V) : accélération et patinage, freinage et plongée, freinage fort en tournant, virages braqués à fond sans tonneau, frein à main, dérapages rattrapés par le joueur au clavier, bordures, parking ; 6 silhouettes (~30 s) ; -- --tous --lot=i/3 pour les 72 (3 x ~1 min en parallèle), cf. §15
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/CarKerbTest.tscn          # bordures : le joueur monte, l'IA non
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/WheelSpinTest.tscn        # roues des 72 modèles : axe, sens, rayon, stroboscope, pivot, braquage, rayon de braquage par modèle
@@ -616,22 +614,6 @@ sans cela, une capture tombe au hasard dans son clignotement.
   relevée. Décision prise en conséquence : l'UHD 750 n'est plus la machine de référence du jeu (§3), et les cartes
   Intel seront servies par un mode graphique léger (§7). Si on le reprend : le reproduire d'abord sur un PC de
   l'école — le PC de la maison ne le montre pas —, avec `RenderPerfTest`, avant de toucher au moindre réglage.
-- **AUCUNE TOUCHE DU JEU SUR F1 À F12** (payé le 2026-09-24 au soir). La berline de débogage se posait avec F8, qui est
-  aussi le raccourci de l'éditeur de Godot pour ARRÊTER le jeu qu'il a lancé : lancé par F5, le jeu se coupait au lieu
-  de poser la voiture. L'éditeur 4.7 transmet au jeu qu'il lance ses raccourcis d'arrêt, de suspension et d'image
-  suivante, et le jeu les lui renvoie même quand sa fenêtre a le focus (relevé dans les chaînes du binaire 4.7.2 :
-  `scene:setup_embedded_shortcuts`, `SceneDebugger::_handle_embed_input`, `request_quit`) ; les autres touches de
-  fonction sont aussi des raccourcis de l'éditeur (aide, lancer, pause, débogueur). La berline se pose maintenant avec
-  **B**. Avant de donner une touche à une commande, relever TOUT ce qui est déjà pris, relevé du 2026-09-24 :
-  - actions de `project.godot` (touches PHYSIQUES, donc ZQSD sur un clavier AZERTY) : W A S D, Espace, E, M, I, T, R, 1,
-    Maj, Alt, Ctrl, clic gauche ; `[` et `]` (boîte manuelle) ne sont lues que par le pack VitaVehicle, et
-    `toggle_debug_mode` (F1) aussi, par `assets/car_physics/MAIN/car.gd`, une voiture placée dans aucune scène de jeu ;
-  - touches lues en dur dans les scripts (`KEY_*`, touche LOGIQUE) : N, Maj+N, Ctrl+N (`DayNightCycle`), R
-    (`VehicleLights`, gyrophare en conduite), B (`EssaiConduiteReelle`) ; Échap (`ui_cancel`, `Player`) ; la scène de tri
-    des véhicules lit en plus Z, Q, les flèches et Entrée ;
-  - raccourcis personnalisés de l'éditeur : aucun sur ce PC (`editor_settings-4.7.tres`, `shortcuts = []`).
-  `toggle_contacts` (lue par `ContactsPanel.gd`) n'existe pas dans `project.godot`, mais ce panneau n'est plus instancié
-  nulle part.
 
 ## 7. État d'avancement
 
@@ -713,9 +695,8 @@ débogage sur `V`.
   circulation et la voiture prise dans la rue sont des `Car.gd` arcade) ;
 - **chantier « relier tous les bâtiments à la route »** (cf. ci-dessous).
 - **conduite réaliste** (pack VitaVehicle, §13 et §14) : étape 1 FAITE le 2026-09-24, essai sur la berline city_sedan_01
-  (F7 / F8 ; F7 retirée depuis, F8 devenue B, §13), et deux défauts des vidéos corrigés le même jour (rampe d'accès des
-  parkings, direction). Puis décision du joueur, le même jour : **full réaliste pour le joueur, arcade supprimée, sur les
-  72 modèles**, chacun sur sa fiche (§14 ;
+  (F7 / F8), et deux défauts des vidéos corrigés le même jour (rampe d'accès des parkings, direction). Puis décision du
+  joueur, le même jour : **full réaliste pour le joueur, arcade supprimée, sur les 72 modèles**, chacun sur sa fiche (§14 ;
   étapes A, les fiches, B, l'arcade retirée, C, la circulation par modèle, D, la physique des PNJ mesurée, et E, les
   vidéos, FAITES), et le frein à main pour déraper, le même jour (§14). Décisions du joueur, toujours le 2026-09-24 : la
   vraie physique sur les PNJ, non (la circulation reste cinématique) ; les 13 modèles plus bas que les bordures ne sont pas
@@ -2384,11 +2365,8 @@ Plan chiffré remis au joueur le 2026-09-24 et validé : **étape 1 = essai sur 
 circulation, tests arcade à réécrire, sons).
 
 **L'essayer (F5).**
-- À pied, **B** pose une berline `city_sedan_01` à 7-13 m devant le joueur (la précédente disparaît si personne n'est
-  dedans) ; **E** pour monter. **C'était F8 jusqu'au soir du 2026-09-24** : F8 est aussi le raccourci de l'éditeur de
-  Godot pour ARRÊTER le jeu qu'il a lancé, et le jeu se coupait (§6). B n'est prise par aucune action du projet ni par
-  aucune touche lue dans un script, et elle est à la même place en AZERTY et en QWERTY. `ConduiteReelleTest` la tape
-  comme au clavier et vérifie que F8 ne pose plus rien.
+- À pied, **F8** pose une berline `city_sedan_01` à 7-13 m devant le joueur (la précédente disparaît si personne n'est
+  dedans) ; **E** pour monter.
 - ~~**F7** bascule arcade / réaliste~~ : **F7 n'existe plus depuis le 2026-09-24** (§14), la conduite réaliste est la seule.
   Le bandeau en bas de l'écran est devenu un compteur (rapport, vitesse), pour toute voiture conduite.
 - Commandes réalistes (mêmes touches physiques que l'arcade) : W accélère ; S freine puis, TENU ~0,5 s à l'arrêt, passe la
@@ -2468,7 +2446,7 @@ branché sur `queue_free` sans condition). Chaque sortie a maintenant son numér
 | sortie en gardant W, puis W et S pressés à côté | 0 mm, corps figé ; joueur à 2,8 m |
 | remontée dans les 25 s | la voiture est toujours là 48 s après la première sortie |
 | F7 en roulant (6 bascules) | vitesse gardée (0,16 m/s d'écart) ; un pas de roulage d'écart (0,25 m à 54 km/h), aucun saut |
-| F8 (devenue B le soir même) | berline posée à 7 m, au sol (0,449 m) |
+| F8 | berline posée à 7 m, au sol (0,449 m) |
 
 **Coût.** Scripts du châssis (corps + 4 roues), par pas physique : **0,20 ms en médiane** dans la scène d'essai (0,24 en
 moyenne, 0,40 au 95e centile, 0,50 au plus), **0,21 ms dans le vrai monde** (`World.tscn`, circulation et PNJ ; sonde hors
@@ -2649,9 +2627,8 @@ réel, réglé sur sa fiche (`Car.appliquer_mode_conduite`). Retiré de `Car.gd`
 `_resolve_drive_collisions`, l'assiette de la boîte sur les pentes (`_poser_assiette`, `_pente`, `_abaisse`), le braquage
 réduit à vitesse (`angle_braquage`, `rayon_braquage`, `BRAQUAGE_A_LAT`), les constantes `DRIVE_*`, la bascule F7
 (`conduite_reelle`, `_retirer_chassis`). `rayon_entre_murs` reste : c'est la géométrie du modèle, celle du châssis réel.
-`EssaiConduiteReelle` garde F8 (poser une berline, outil de débogage ; **B depuis le soir**, §13) et un compteur, rapport
-et vitesse. La caméra de conduite finit de reculer à `Player.DRIVE_ZOOM_SPEED` = 30 m/s ; c'était 24, la vitesse
-maximale de l'arcade.
+`EssaiConduiteReelle` garde F8 (poser une berline, outil de débogage) et un compteur, rapport et vitesse. La caméra de
+conduite finit de reculer à `Player.DRIVE_ZOOM_SPEED` = 30 m/s ; c'était 24, la vitesse maximale de l'arcade.
 
 **Défaut trouvé en migrant, corrigé** : à la création du châssis, le délai du pack avant la marche arrière (`sassistdel`)
 valait 0 au lieu de 60, sa valeur de repos. Un S enfoncé dès la montée passait aussitôt la marche arrière, et S accélérait
