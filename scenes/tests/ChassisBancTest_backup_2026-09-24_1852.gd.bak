@@ -1,15 +1,13 @@
 extends Node3D
 
-# BANC D'ESSAI DES CHÂSSIS (2026-09-24, CLAUDE.md §14 ; depuis le soir même, le châssis façon GTA V, §15). Chaque
-# véhicule, conduit par le joueur avec les réglages de SA fiche (FichesVehicules, resources/vehicle_physics/
-# fiches_vehicules.csv, aux noms du handling.meta de GTA V), passe les mêmes essais sur un sol plat de 8 km, deux bordures
-# (0,15 m, celle des trottoirs de la carte ; 0,17 m, celle de la raquette de l'aérogare) et la collision cuite d'un parking
-# à étages :
+# BANC D'ESSAI DES CHÂSSIS (2026-09-24, CLAUDE.md §14). Chaque véhicule, monté en conduite réaliste avec les réglages de
+# SA fiche (FichesVehicules, resources/vehicle_physics/fiches_vehicules.csv), passe les mêmes essais sur un sol plat de
+# 8 km, deux bordures (0,15 m, celle des trottoirs de la carte ; 0,17 m, celle de la raquette de l'aérogare) et la
+# collision cuite d'un parking à étages :
 #  - repos : garde au sol de la coque, pneus sur le sol ;
-#  - accélération pied au plancher : 0-50, 0-100 km/h, vitesse atteinte, rapports affichés, PATINAGE au démarrage (roues
-#    motrices plus vite que le sol) et ÉCRASEMENT de la caisse (cabrage, rapporté) ;
-#  - freinage fort depuis 100 km/h (sa vitesse de pointe si elle est plus basse) : distance, droit, et PLONGÉE de la caisse
-#    (rapportée) ;
+#  - accélération pied au plancher : 0-50, 0-100 km/h, vitesse atteinte, rapports (et rétrogradages en pleine
+#    accélération : une boîte qui hésite) ;
+#  - freinage fort depuis 100 km/h (sa vitesse de pointe si elle est plus basse) : distance, et droit ;
 #  - PAS DE TONNEAU : braquage à fond, vitesse tenue, à 50, 80, 110 km/h et à la vitesse de pointe : roulis, roues levées,
 #    glissade. Il glisse ou il sous-vire ; il ne se couche pas ;
 #  - FREIN À MAIN (2026-09-24) : en ligne droite depuis 50 km/h, seul puis avec le frein au pied ; s'il est plus fort que
@@ -19,7 +17,7 @@ extends Node3D
 #  - bordures de 0,15 et 0,17 m, de face et à 30°, à 3 m/s : la coque ne touche pas ;
 #  - entrée du parking à étages à 4 et 7 m/s, s'il passe sous la barre de 2,15 m : la coque ne touche pas.
 # Échoue sur : une caisse à plus de 45° de la verticale, deux roues d'un même côté en l'air plus de 0,3 s, un contact de
-# coque sur une bordure ou à l'entrée du parking, 50 km/h (ou sa vitesse de pointe si elle
+# coque sur une bordure ou à l'entrée du parking, une boîte restée en première, 50 km/h (ou sa vitesse de pointe si elle
 # est plus basse) pas atteints en 30 s, un freinage qui dévie de plus de 15°, un véhicule sans châssis ; un frein à main
 # plus fort que les pneus arrière qui ne les bloque pas (80 % du temps au moins), seul ou avec le frein au pied, ou qui fait
 # tourner la voiture en ligne droite (5° au plus) ; un dérapage sans reprise de l'adhérence dans les 3 s ; une sportive qui
@@ -144,7 +142,7 @@ func _fiche() -> Dictionary:
 
 
 func _vmax() -> float:
-	return FichesVehicules.vitesse_max(_fiche())
+	return FichesVehicules.nombre(_fiche(), "vitesse_max_kmh") * KMH
 
 
 # --- boucle ------------------------------------------------------------------------------------------------------
@@ -199,16 +197,14 @@ func _physics_process(delta: float) -> void:
 		fini = bool(call("_p_" + phase, phase))
 	if _trace and Engine.get_physics_frames() % 15 == 0:
 		var glisse := 0.0
-		for w in _ch.get("roues"):
-			if bool(w.motrice):
-				glisse = maxf(glisse, absf(float(w.wv) * float(w.w_size) * float(_ch.get("LengthScale"))) - absf(_v()))
+		for w in _ch.get("c_pws"):
+			glisse = maxf(glisse, absf(float(w.wv) * float(w.w_size) * float(_ch.get("LengthScale"))) - absf(_v()))
 		var roues := []
 		for w in _ch.get("roues"):
-			roues.append("%s %.1f/%.0fN/%.1f°" % [w.name, float(w.wv) * float(w.w_size) * float(_ch.get("LengthScale")), float(w.charge),
-					rad_to_deg(float(w.derive_pneu))])
-		print("BANC_TRACE %s %s t=%.2f v=%.1f km/h rapport=%s gaz=%.2f frein=%.2f glisse=%.1f penche=%.1f° tangage=%.1f° pos=%s volant=%.3f lacet=%.3f roues=%s" % [
-				_id(), phase, _t, _v() * 3.6, _ch.call("rapport"), float(_ch.get("gaspedal")), float(_ch.get("brakepedal")),
-				glisse, _penche(), _tangage(), str(_ch.global_position.snappedf(0.01)), float(_ch.get("steer")), _ch.angular_velocity.y, str(roues)])
+			roues.append("%s %.1f" % [w.name, float(w.wv) * float(w.w_size) * float(_ch.get("LengthScale"))])
+		print("BANC_TRACE %s %s t=%.2f v=%.1f km/h rapport=%s tr/min=%.0f gaz=%.2f glisse=%.1f penche=%.1f° pos=%s volant=%.3f lacet=%.3f roues=%s" % [
+				_id(), phase, _t, _v() * 3.6, _ch.call("rapport"), float(_ch.get("rpm")), float(_ch.get("gaspedal")),
+				glisse, _penche(), str(_ch.global_position.snappedf(0.01)), float(_ch.get("steer")), _ch.angular_velocity.y, str(roues)])
 	if _trace and _t < 0.02:
 		var pos := []
 		for w in _ch.get("roues"):
@@ -251,20 +247,6 @@ func _regule(cible: float, droite := false) -> void:
 
 func _penche() -> float:
 	return rad_to_deg(acos(clampf(_ch.global_transform.basis.y.dot(Vector3.UP), -1.0, 1.0)))
-
-
-# Tangage de la caisse (deg) : + le nez en l'air (écrasement à l'accélération), - le nez plongé (freinage).
-func _tangage() -> float:
-	return rad_to_deg(asin(clampf(_ch.global_transform.basis.z.normalized().y, -1.0, 1.0)))
-
-
-# Plus grand patinage des roues motrices (m/s) : vitesse du pneu moins celle du sol.
-func _patinage() -> float:
-	var p := 0.0
-	for w in _ch.get("roues"):
-		if bool(w.motrice) and w.is_colliding():
-			p = maxf(p, absf(float(w.wv) * float(w.w_size)) - absf(_v()))
-	return p
 
 
 func _placer(sol: Vector3, cap: float, v := 0.0) -> void:
@@ -410,12 +392,7 @@ func _p_acceleration(_phase: String) -> bool:
 		_e["hesitations"] = 0
 		_e["rapport"] = int(_ch.get("gear"))
 		_e["t_vmax"] = -1.0
-		_e["patinage"] = 0.0
-		_e["cabre"] = 0.0
 	_pedales(true)
-	if _t < 3.0:
-		_e["patinage"] = maxf(float(_e["patinage"]), _patinage())
-		_e["cabre"] = maxf(float(_e["cabre"]), _tangage())
 	var g := int(_ch.get("gear"))
 	if g != int(_e["rapport"]):
 		if g > int(_e["rapport"]):
@@ -435,8 +412,7 @@ func _p_acceleration(_phase: String) -> bool:
 	if _t < ACCEL_DUREE and not plafond:
 		return false
 	_res["acceleration"] = {"t50": _e["t50"], "t100": _e["t100"], "vmax": float(_e["vmax"]) * 3.6, "t_vmax": _e["t_vmax"],
-			"rapport_max": _e["rapport_max"], "montees": _e["montees"], "hesitations": _e["hesitations"],
-			"patinage": _e["patinage"], "cabre": _e["cabre"]}
+			"rapport_max": _e["rapport_max"], "montees": _e["montees"], "hesitations": _e["hesitations"]}
 	return true
 
 
@@ -455,25 +431,22 @@ func _p_freinage(_phase: String) -> bool:
 				_e["cap0"] = _voiture.rotation.y
 				_e["t0"] = _t
 				_e["v0"] = _v()
-				_e["plonge"] = 0.0
 		"freine":
 			_pedales(false, true)
-			_e["plonge"] = minf(float(_e["plonge"]), _tangage())
 			if _trace and Engine.get_physics_frames() % 6 == 0:
 				var gl := []
 				for w in _ch.get("roues"):
-					gl.append("%s %.1f/%.0fN/fx %.0fN" % [w.name, float(w.wv) * float(w.w_size) * float(_ch.get("LengthScale")) - _v(), float(w.charge), float(w.fx)])
-				print("BANC_FREIN %s t=%.2f v=%.1f km/h pedale=%.2f tangage=%.1f° glisse=%s" % [_id(), _t - float(_e["t0"]),
-						_v() * 3.6, float(_ch.get("brakepedal")), _tangage(), str(gl)])
+					gl.append("%s %.1f" % [w.name, float(w.wv) * float(w.w_size) * float(_ch.get("LengthScale")) - _v()])
+				print("BANC_FREIN %s t=%.2f v=%.1f km/h pedale=%.2f ligne=%.2f abs=%.2f glisse=%s" % [_id(), _t - float(_e["t0"]),
+						_v() * 3.6, float(_ch.get("brakepedal")), float(_ch.get("brakeline")), float(_ch.get("brake_allowed")), str(gl)])
 			if _v() < 0.3:
 				var d := (_voiture.global_position - (_e["x0"] as Vector3))
 				d.y = 0.0
 				var dcap := rad_to_deg(absf(wrapf(_voiture.rotation.y - float(_e["cap0"]), -PI, PI)))
-				_res["freinage"] = {"v0": float(_e["v0"]) * 3.6, "distance": d.length(), "temps": _t - float(_e["t0"]), "cap": dcap,
-						"plonge": _e["plonge"]}
+				_res["freinage"] = {"v0": float(_e["v0"]) * 3.6, "distance": d.length(), "temps": _t - float(_e["t0"]), "cap": dcap}
 				return true
 			if _t - float(_e.get("t0", _t)) > 20.0:
-				_res["freinage"] = {"v0": float(_e["v0"]) * 3.6, "distance": -1.0, "temps": -1.0, "cap": 0.0, "plonge": _e["plonge"]}
+				_res["freinage"] = {"v0": float(_e["v0"]) * 3.6, "distance": -1.0, "temps": -1.0, "cap": 0.0}
 				return true
 	return false
 
@@ -515,8 +488,7 @@ func _p_frein_main(_phase: String) -> bool:
 				var duree := _t - float(_e["t0"])
 				_res["frein_main_pied" if pied else "frein_main"] = {"v0": float(_e["v0"]) * 3.6, "decel": (float(_e["v0"]) - v) / maxf(duree, 0.01),
 						"bloquees": float(_e["bloquees"]) / float(maxi(int(_e["pas"]), 1)),
-						"cap": rad_to_deg(absf(wrapf(_voiture.rotation.y - float(_e["cap0"]), -PI, PI))),
-						"bloque_attendu": bool(_ch.call("frein_main_bloque"))}
+						"cap": rad_to_deg(absf(wrapf(_voiture.rotation.y - float(_e["cap0"]), -PI, PI)))}
 				if pied:
 					return true
 				_pedales()
@@ -774,14 +746,16 @@ func _resume() -> void:
 		morceaux.append("repos : coque à %.3f m du sol, dessous du modèle à %.3f m, pneus à %.3f m" % [r["garde_coque"], r["garde_dessous"], r["pneus"]])
 	var a: Dictionary = _res.get("acceleration", {})
 	if not a.is_empty():
-		morceaux.append("0-50 %s, 0-100 %s, %.0f km/h atteints (%s), rapport affiché %d, patinage au départ %.1f m/s, caisse cabrée de %.1f°" % [
-				_temps(a["t50"]), _temps(a["t100"]), a["vmax"], _temps(a["t_vmax"]), a["rapport_max"], a["patinage"], a["cabre"]])
-		var cible50 := minf(50.0, FichesVehicules.vitesse_max(f) * 3.6 * 0.9)
+		morceaux.append("0-50 %s, 0-100 %s, %.0f km/h atteints (%s), rapport %d, %d rétrogradage(s) en pleine accélération" % [
+				_temps(a["t50"]), _temps(a["t100"]), a["vmax"], _temps(a["t_vmax"]), a["rapport_max"], a["hesitations"]])
+		if int(a["rapport_max"]) < 2:
+			_faute("%s : la boîte ne quitte pas la première" % id)
+		var cible50 := minf(50.0, FichesVehicules.nombre(f, "vitesse_max_kmh") * 0.9)
 		if a["vmax"] < cible50 - 0.1 and (float(a["t50"]) < 0.0 or float(a["t50"]) > 30.0):
 			_faute("%s : %.0f km/h pas atteints en 30 s (%.0f au plus)" % [id, cible50, a["vmax"]])
 	var fr: Dictionary = _res.get("freinage", {})
 	if not fr.is_empty():
-		morceaux.append("freinage depuis %.0f km/h : %.1f m en %.2f s, cap %.1f°, caisse plongée de %.1f°" % [fr["v0"], fr["distance"], fr["temps"], fr["cap"], -float(fr["plonge"])])
+		morceaux.append("freinage depuis %.0f km/h : %.1f m en %.2f s, cap %.1f°" % [fr["v0"], fr["distance"], fr["temps"], fr["cap"]])
 		if float(fr["cap"]) > 15.0 or float(fr["distance"]) < 0.0:
 			_faute("%s : freinage instable (cap %.1f°, distance %.1f m)" % [id, fr["cap"], fr["distance"]])
 	for ph in ["virage_50", "virage_80", "virage_110", "virage_vmax"]:
@@ -796,12 +770,11 @@ func _resume() -> void:
 			_faute("%s : %s, deux roues d'un même côté en l'air %.2f s" % [id, ph, v["leve"]])
 	var fm: Dictionary = _res.get("frein_main", {})
 	if not fm.is_empty():
-		# plus fort que ses pneus arrière (le châssis le dit, sur les valeurs EFFECTIVES : la fiche x les multiplicateurs
-		# globaux de reglages_conduite.tres), il doit les bloquer
-		var bloque := bool(fm.get("bloque_attendu", false))
-		morceaux.append("frein à main seul depuis %.0f km/h : %.1f m/s² (fiche, multiplicateur compris : %.1f ; %s), roues arrière bloquées %.0f %% du temps, cap %.1f°" % [
-				fm["v0"], fm["decel"], FichesVehicules.frein_main_ms2(f), "plus fort que les pneus arrière" if bloque else "sous ce que tiennent les pneus arrière",
-				float(fm["bloquees"]) * 100.0, fm["cap"]])
+		# valeurs EFFECTIVES : la fiche x les multiplicateurs globaux (reglages_conduite.tres), celles que roule le châssis
+		var limite := FichesVehicules.adherence_effective(f) * 9.81 * (1.0 - FichesVehicules.nombre(f, "avant_pct") / 100.0)
+		var bloque := FichesVehicules.frein_main_effectif(f) > limite
+		morceaux.append("frein à main seul depuis %.0f km/h : %.1f m/s² (fiche, multiplicateur compris : %.1f ; pneus arrière %.1f à l'arrêt), roues arrière bloquées %.0f %% du temps, cap %.1f°" % [
+				fm["v0"], fm["decel"], FichesVehicules.frein_main_effectif(f), limite, float(fm["bloquees"]) * 100.0, fm["cap"]])
 		var fp: Dictionary = _res.get("frein_main_pied", {})
 		if not fp.is_empty():
 			morceaux.append("avec le frein au pied : %.1f m/s², roues arrière bloquées %.0f %% du temps, cap %.1f°" % [fp["decel"], float(fp["bloquees"]) * 100.0, fp["cap"]])
@@ -840,9 +813,8 @@ func _resume() -> void:
 		morceaux.append("entrée de parking : coque %d pas, dessous du modèle %.3f m" % [p["contact"], p["garde_dessous"]])
 		if int(p["contact"]) > 0:
 			_faute("%s : entrée de parking, la coque touche (%d pas)" % [id, p["contact"]])
-	print("CHASSIS_BANC %s (%s kg, poussée %s, %s km/h, traction %s) : %s" % [id, FichesVehicules.nombre(f, "fMass"),
-			FichesVehicules.nombre(f, "fInitialDriveForce"), FichesVehicules.nombre(f, "fInitialDriveMaxFlatVel"),
-			FichesVehicules.nombre(f, "fTractionCurveMax"), " ; ".join(morceaux)])
+	print("CHASSIS_BANC %s (%s kg, %s kW, %s km/h) : %s" % [id, FichesVehicules.nombre(f, "masse_kg"),
+			FichesVehicules.nombre(f, "puissance_kw"), FichesVehicules.nombre(f, "vitesse_max_kmh"), " ; ".join(morceaux)])
 	_tableau.append(JSON.stringify({"id": id, "res": _res}))
 	_tous[id] = _res
 

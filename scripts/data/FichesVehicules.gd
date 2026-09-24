@@ -1,34 +1,51 @@
 class_name FichesVehicules
 extends RefCounted
 
-# FICHES DES VÉHICULES (2026-09-24, CLAUDE.md §14). Les caractéristiques physiques de CHAQUE modèle du catalogue — masse,
-# puissance, vitesse de pointe, suspension, adhérence, freins, centre de gravité, conduite dans la circulation — lues dans
-# un tableau ajustable à la main : resources/vehicle_physics/fiches_vehicules.csv (séparateur « ; », décimales avec un
-# point, lignes « # » de commentaire ; son en-tête décrit chaque colonne). Importé par Godot en « keep » : le fichier est
-# lu tel quel (et exporté tel quel), sans quoi Godot en ferait une table de traductions.
-# Pas de catégories : chaque ligne est pensée pour son modèle. Les colonnes calculées (cdg_m, raideur_*, amort_*) le sont
-# ici, pour le jeu et pour l'outil qui les écrit (scenes/vehicles/tools/FichesVehiculesOutil.tscn) : une case vide est
-# recalculée, une case remplie est prise telle quelle.
+# FICHES DES VÉHICULES (CLAUDE.md §14 et §15). Les réglages de conduite de CHAQUE modèle du catalogue, lus dans un tableau
+# ajustable à la main : resources/vehicle_physics/fiches_vehicules.csv (séparateur « ; », décimales avec un point, lignes
+# « # » de commentaire ; son en-tête décrit chaque colonne). Importé par Godot en « keep » : le fichier est lu tel quel (et
+# exporté tel quel), sans quoi Godot en ferait une table de traductions.
+# Pas de catégories : chaque ligne est pensée pour son modèle.
+#
+# DEPUIS LE 2026-09-24 AU SOIR, CONDUITE FAÇON GTA V (§15) : les colonnes portent les NOMS DU HANDLING.META DE GTA V
+# (fMass, fInitialDriveForce, fBrakeForce, fTractionCurveMax...), à la demande du joueur, « pour que je m'y retrouve ». Ce
+# qu'en fait le jeu est ici : les CONVERSIONS de chaque valeur en grandeur physique (les constantes ci-dessous), que lit le
+# châssis (ChassisGTA). Les valeurs sont dans les ordres de grandeur de GTA V quand leur unité le permet (1,0 à 2,7 pour la
+# traction, 0,6 à 1,1 pour les freins...) ; la masse est en kg, les angles en degrés, la vitesse de pointe en km/h.
 
 const CHEMIN := "res://resources/vehicle_physics/fiches_vehicules.csv"
-# Anti-tonneau : un véhicule ne se couche pas tant que son adhérence le fait glisser avant. En régime établi, il bascule
-# quand l'accélération latérale dépasse g x voie / (2 x hauteur du centre de gravité) ; l'adhérence la borne à
-# g x adhérence. On garde voie / (2 h) >= SSF_MIN x adhérence : 80 % de marge pour le roulis de la caisse (qui déporte
-# le centre de gravité vers l'extérieur), le dépassement du roulis quand on braque d'un coup, et les pics de force des
-# pneus (jusqu'à 1,13 x l'adhérence, mesuré). 40 % ne suffisaient pas : le bus s'est couché à 89 km/h, braqué à fond.
-const SSF_MIN := 1.8
-const PART_CDG_HAUTEUR := 0.38       # centre de gravité réel estimé : 38 % de la hauteur hors tout
-const ARRIERE_HZ := 1.08             # fréquence de suspension arrière / avant (l'arrière un peu plus ferme)
 const G := 9.81
-# Valeurs par défaut d'une case vide ou d'un modèle absent du tableau : celles de la berline city_sedan_01.
-const DEFAUTS := {"masse_kg": 1300.0, "transmission": "T", "puissance_kw": 100.0, "vitesse_max_kmh": 195.0, "cx": 0.31,
-		"avant_pct": 61.0, "adherence": 1.0, "freinage_ms2": 9.5, "frein_main_ms2": 7.0, "suspension_hz": 1.4,
-		"amortissement_pct": 33.0, "antiroulis_av_pct": 40.0, "antiroulis_ar_pct": 25.0, "garde_cm": 24.0, "trafic_kmh": 43.0,
-		"trafic_accel_ms2": 3.0}
+# Anti-tonneau (règle du joueur : un véhicule ne se couche jamais en virage). En régime établi, il basculerait quand
+# l'accélération latérale dépasse g x voie / (2 x bras de levier du roulis) ; ses pneus la bornent à g x adhérence. Le
+# châssis place la hauteur où s'appliquent les forces des pneus en travers (centre de roulis, comme fRollCentreHeight dans
+# GTA) pour que voie / (2 x bras) >= SSF_MIN x adhérence : 80 % de marge pour le dépassement du roulis quand on braque d'un
+# coup et le report de charge d'un essieu sur l'autre. La caisse penche toujours (c'est la suspension qui le décide) ; elle
+# ne peut plus se coucher. 40 % de marge ne suffisaient pas au bus (mesuré le 2026-09-24 avec le châssis réel).
+const SSF_MIN := 1.8
+const PART_CDG_HAUTEUR := 0.38        # hauteur du centre de gravité par défaut : 38 % de la hauteur hors tout du modèle
 
-# Réglages globaux (multiplicateurs du freinage et de l'adhérence, borne de la direction à vitesse) : un fichier à part,
-# pour les changer sans toucher aux 72 lignes (ReglagesConduite.gd).
+# --- CONVERSIONS (le même texte est dans l'en-tête du tableau) ---
+const G_PAR_TRACTION := 0.6           # adhérence maximale du pneu (g) = fTractionCurveMax x 0,6 (2,33 -> 1,4 g)
+const G_PAR_FREIN := 1.5              # décélération demandée aux freins (g) = fBrakeForce x 1,5 (1,0 -> 1,5 g, bornée par les pneus)
+const G_PAR_FREIN_MAIN := 1.0         # force du frein à main sur les roues arrière, en poids du véhicule = fHandBrakeForce
+const G_PAR_POUSSEE := 3.0            # poussée du moteur au démarrage (g) = fInitialDriveForce x 3 (0,25 -> 0,74 g)
+const PART_VITESSE_COUPLE := 0.2      # la poussée est entière jusqu'à 20 % de la vitesse de pointe, puis à puissance constante
+const PERTE_BASSE_VITESSE := 0.3      # adhérence perdue à l'arrêt par les roues qui poussent, par unité de fLowSpeedTractionLossMult
+const V_PERTE_BASSE_VITESSE := 7.0    # m/s (25 km/h) : cette perte s'efface jusqu'à cette vitesse
+const AMORT_PAR_UNITE := 0.2          # part de l'amortissement critique par unité de fSuspensionCompDamp / fSuspensionReboundDamp
+
+# Valeurs par défaut d'une case vide ou d'un modèle absent du tableau : celles de la berline city_sedan_01.
+const DEFAUTS := {"fMass": 1300.0, "fInitialDriveForce": 0.25, "fInitialDriveMaxFlatVel": 195.0, "fDriveBiasFront": 1.0,
+		"fBrakeForce": 1.0, "fBrakeBiasFront": 0.85, "fHandBrakeForce": 0.93, "fSteeringLock": 35.0, "fTractionCurveMax": 2.33,
+		"fTractionCurveMin": 2.05, "fTractionCurveLateral": 10.0, "fLowSpeedTractionLossMult": 0.8, "fSuspensionForce": 1.25,
+		"fSuspensionCompDamp": 1.6, "fSuspensionReboundDamp": 2.5, "fAntiRollBarForce": 0.5, "vecCentreOfMassOffset": "0.0,0.12,0.0",
+		"garde_cm": 28.0, "trafic_kmh": 43.0, "trafic_accel_ms2": 3.0}
+const TEXTES := ["id", "nature", "vecCentreOfMassOffset"]
+
+# Réglages globaux (multiplicateurs du freinage et de l'adhérence) : un fichier à part, pour les changer sans toucher aux
+# 72 lignes (ReglagesConduite.gd).
 const REGLAGES := "res://resources/vehicle_physics/reglages_conduite.tres"
+const CLES_REGLAGES := ["multiplicateur_freinage", "multiplicateur_adherence"]
 
 static var _lu := false
 static var _fiches := {}
@@ -61,7 +78,15 @@ static func texte(f: Dictionary, cle: String) -> String:
 	return String(DEFAUTS.get(cle, ""))
 
 
-# Relit le tableau (l'outil, après l'avoir réécrit).
+# Un vecteur écrit « x,y,z » (vecCentreOfMassOffset), dans le repère de GTA V : x à droite, y vers l'avant, z vers le haut.
+static func vecteur(f: Dictionary, cle: String) -> Vector3:
+	var p := texte(f, cle).split(",")
+	if p.size() != 3 or not (p[0].strip_edges().is_valid_float() and p[1].strip_edges().is_valid_float() and p[2].strip_edges().is_valid_float()):
+		p = String(DEFAUTS.get(cle, "0,0,0")).split(",")
+	return Vector3(p[0].to_float(), p[1].to_float(), p[2].to_float())
+
+
+# Relit le tableau et les réglages globaux.
 static func recharger() -> void:
 	_lu = false
 	_fiches.clear()
@@ -69,29 +94,46 @@ static func recharger() -> void:
 	_charger()
 
 
-# Un réglage global (reglages_conduite.tres) : `multiplicateur_freinage`, `multiplicateur_adherence`,
-# `glissement_avant_max`. Fichier absent : 1 pour un multiplicateur, 0 pour le glissement (les fiches telles quelles, la
-# direction du pack seule).
+# Un réglage global (reglages_conduite.tres) : `multiplicateur_freinage`, `multiplicateur_adherence`. Fichier absent : 1.
 static func reglage(cle: String) -> float:
 	if _reglages.is_empty():
 		var r := load(REGLAGES) if ResourceLoader.exists(REGLAGES) else null
-		for k in ["multiplicateur_freinage", "multiplicateur_adherence", "glissement_avant_max"]:
+		for k in CLES_REGLAGES:
 			var v = r.get(k) if r != null else null
-			_reglages[k] = float(v) if v != null else (0.0 if k == "glissement_avant_max" else 1.0)
+			_reglages[k] = float(v) if v != null else 1.0
 	return float(_reglages.get(cle, 1.0))
 
 
-# Valeurs EFFECTIVES, celles que roule le châssis : la fiche x le multiplicateur global.
-static func adherence_effective(f: Dictionary) -> float:
-	return nombre(f, "adherence") * reglage("multiplicateur_adherence")
+# --- valeurs EFFECTIVES, celles que roule le châssis (conversions ci-dessus, multiplicateurs globaux compris) -----------
+
+# Adhérence maximale du pneu (g), au pic de sa courbe.
+static func adherence_max(f: Dictionary) -> float:
+	return nombre(f, "fTractionCurveMax") * G_PAR_TRACTION * reglage("multiplicateur_adherence")
 
 
-static func freinage_effectif(f: Dictionary) -> float:
-	return nombre(f, "freinage_ms2") * reglage("multiplicateur_freinage")
+# Adhérence du pneu en glisse franche (g), passé le pic.
+static func adherence_glisse(f: Dictionary) -> float:
+	return minf(nombre(f, "fTractionCurveMin"), nombre(f, "fTractionCurveMax")) * G_PAR_TRACTION * reglage("multiplicateur_adherence")
 
 
-static func frein_main_effectif(f: Dictionary) -> float:
-	return nombre(f, "frein_main_ms2") * reglage("multiplicateur_freinage")
+# Décélération demandée aux freins (m/s²) ; ce que tiennent les pneus la borne (ABS).
+static func freinage_ms2(f: Dictionary) -> float:
+	return nombre(f, "fBrakeForce") * G_PAR_FREIN * G * reglage("multiplicateur_freinage")
+
+
+# Force du frein à main sur les roues arrière, rapportée à la masse (m/s²).
+static func frein_main_ms2(f: Dictionary) -> float:
+	return nombre(f, "fHandBrakeForce") * G_PAR_FREIN_MAIN * G * reglage("multiplicateur_freinage")
+
+
+# Poussée du moteur au démarrage, rapportée à la masse (m/s²).
+static func poussee_ms2(f: Dictionary) -> float:
+	return nombre(f, "fInitialDriveForce") * G_PAR_POUSSEE * G
+
+
+# Vitesse de pointe (m/s).
+static func vitesse_max(f: Dictionary) -> float:
+	return nombre(f, "fInitialDriveMaxFlatVel") / 3.6
 
 
 static func _charger() -> void:
@@ -115,53 +157,6 @@ static func _charger() -> void:
 		var d := {}
 		for i in entete.size():
 			var brut := cases[i].strip_edges() if i < cases.size() else ""
-			d[entete[i]] = brut if entete[i] in ["id", "nature", "transmission"] else (brut.to_float() if brut.is_valid_float() else NAN)
+			d[entete[i]] = brut if entete[i] in TEXTES else (brut.to_float() if brut.is_valid_float() else NAN)
 		if String(d.get("id", "")) != "":
 			_fiches[String(d["id"])] = d
-
-
-# --- colonnes calculées ---------------------------------------------------------------------------------------------
-
-# Hauteur du centre de gravité pour la physique : l'estimation réelle, bornée par la règle anti-tonneau (cf. SSF_MIN).
-static func cdg(hauteur_m: float, voie_m: float, adherence: float) -> float:
-	return minf(PART_CDG_HAUTEUR * hauteur_m, cdg_max(voie_m, adherence))
-
-
-# La hauteur au-delà de laquelle un véhicule de cette voie pourrait se coucher avec cette adhérence (règle SSF_MIN). Le
-# châssis la réapplique avec l'adhérence EFFECTIVE (multiplicateur global compris) : la colonne cdg_m du tableau, elle,
-# est calculée sur l'adhérence de la fiche.
-static func cdg_max(voie_m: float, adherence: float) -> float:
-	return voie_m / (2.0 * SSF_MIN * maxf(adherence, 0.3))
-
-
-# Raideur d'UN ressort (N/mm) pour que la masse qu'il porte oscille à `hz` : k = (2 pi f)^2 x m.
-static func raideur_nmm(masse_kg: float, part_essieu: float, roues_essieu: int, hz: float) -> float:
-	var m := masse_kg * part_essieu / float(maxi(roues_essieu, 1))
-	return pow(TAU * hz, 2.0) * m / 1000.0
-
-
-# Amortisseur d'UNE roue (N.s/m) : `pct` % de l'amortissement critique 2 x racine(k x m).
-static func amort_nsm(raideur: float, masse_kg: float, part_essieu: float, roues_essieu: int, pct: float) -> float:
-	var m := masse_kg * part_essieu / float(maxi(roues_essieu, 1))
-	return 2.0 * pct / 100.0 * sqrt(raideur * 1000.0 * m)
-
-
-# Les colonnes calculées d'une fiche, celles qui sont remplies prises telles quelles. `voie_m`, `hauteur_m`, roues par
-# essieu : mesurées sur le modèle (Car._mesures_chassis).
-static func calculees(f: Dictionary, voie_m: float, hauteur_m: float, roues_av: int, roues_ar: int) -> Dictionary:
-	var masse := nombre(f, "masse_kg")
-	var avant := nombre(f, "avant_pct") / 100.0
-	var hz := nombre(f, "suspension_hz")
-	var pct := nombre(f, "amortissement_pct")
-	var out := {}
-	out["cdg_m"] = _ou(f, "cdg_m", cdg(hauteur_m, voie_m, nombre(f, "adherence")))
-	out["raideur_av_nmm"] = _ou(f, "raideur_av_nmm", raideur_nmm(masse, avant, roues_av, hz))
-	out["raideur_ar_nmm"] = _ou(f, "raideur_ar_nmm", raideur_nmm(masse, 1.0 - avant, roues_ar, hz * ARRIERE_HZ))
-	out["amort_av_nsm"] = _ou(f, "amort_av_nsm", amort_nsm(out["raideur_av_nmm"], masse, avant, roues_av, pct))
-	out["amort_ar_nsm"] = _ou(f, "amort_ar_nsm", amort_nsm(out["raideur_ar_nmm"], masse, 1.0 - avant, roues_ar, pct))
-	return out
-
-
-static func _ou(f: Dictionary, cle: String, calcul: float) -> float:
-	var v = f.get(cle, NAN)
-	return v if v is float and not is_nan(v) else calcul

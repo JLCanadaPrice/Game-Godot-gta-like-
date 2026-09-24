@@ -1173,13 +1173,9 @@ func _bilan() -> void:
 		if absf(mesure - attendu) > 0.1 * attendu:
 			_fautes.append("rayon de braquage de %s a %.0f m/s : %.2f m mesures pour %.2f attendus" % [r[0], r[1], mesure, attendu])
 		bas[r[0]] = mesure
-	# la berline doit tenir dans les demi-tours des rampes ; le camion et le bus braquent bien plus large : au moins 1,5 fois
-	# la berline, et plus large que les demi-tours (le seuil était de 8,5 m quand tous braquaient de 29,8° ; depuis la conduite
-	# façon GTA V, chaque modèle a son braquage, fSteeringLock de sa fiche, CLAUDE.md §15)
-	var r_berline := float(bas.get("berline city_sedan_01", 99.0))
-	var r_min_lourds := minf(float(bas.get("city_truck_01", 0.0)), float(bas.get("city_bus_01", 0.0)))
-	if r_berline > RAMPE_RU or r_min_lourds < 1.5 * r_berline or r_min_lourds < RAMPE_RU:
-		_fautes.append("braquage a 3 m/s : berline %.2f m (au plus %.2f, les demi-tours des rampes), camion %.2f m et bus %.2f m (attendus au moins 1,5 fois la berline et plus larges que les demi-tours)"
+	# la berline doit tenir dans les demi-tours des rampes ; le camion et le bus braquent bien plus large
+	if float(bas.get("berline city_sedan_01", 99.0)) > RAMPE_RU or float(bas.get("city_truck_01", 0.0)) < 8.5 or float(bas.get("city_bus_01", 0.0)) < 8.5:
+		_fautes.append("braquage a 3 m/s : berline %.2f m (au plus %.2f, les demi-tours des rampes), camion %.2f m et bus %.2f m (attendus > 8,5)"
 				% [bas.get("berline city_sedan_01", -1.0), RAMPE_RU, bas.get("city_truck_01", -1.0), bas.get("city_bus_01", -1.0)])
 	if _rampe_mi.is_empty():
 		_fautes.append("rampe a 12 pour cent : la voiture n'a jamais atteint le milieu de la pente (y max %.2f)" % _rampe_y_max)

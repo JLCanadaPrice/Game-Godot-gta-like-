@@ -1,12 +1,12 @@
 extends Node3D
 
-# CONDUITE DU JOUEUR, SUR LA BERLINE (né comme essai de la conduite réaliste, 2026-09-24, CLAUDE.md §13 et §14 ; depuis le
-# soir même, la conduite façon GTA V, §15 : le châssis ChassisGTA, réglé sur la fiche du modèle).
+# CONDUITE RÉALISTE DU JOUEUR, SUR LA BERLINE (essai de l'étape 1, 2026-09-24, CLAUDE.md §13 ; la seule conduite du joueur
+# depuis le même jour, chaque modèle réglé sur sa fiche : §14).
 #
-# Le VRAI joueur (Player.tscn) monte dans une VRAIE berline city_sedan_01 (Car.tscn), qui se dote de son châssis, et la
-# conduit au clavier virtuel (gas / brake / left / right / handbrake, les actions que lit le châssis). Sol d'essai plat, une
-# bordure de 0,15 m (la hauteur relevée sur la collision cuite des trottoirs de la carte), et la collision CUITE d'un
-# parking à étages du centre-ville, avec sa rampe à 16 %.
+# Le VRAI joueur (Player.tscn) monte dans une VRAIE berline city_sedan_01 (Car.tscn), qui se dote de son châssis réel, et la
+# conduit au clavier virtuel (gas / brake / left / right, les actions que lit le pack). Sol d'essai plat, une bordure de
+# 0,15 m (la hauteur relevée sur la collision cuite des trottoirs de la carte), et la collision CUITE d'un parking à étages
+# du centre-ville, avec sa rampe à 16 %.
 # Ce qui est mesuré, et ce qui fait échouer :
 #  - au repos : pneus sur le sol (écart <= 3 cm), caisse d'aplomb, aucun recul ;
 #  - départ, 0-50, 0-100, 108 km/h atteints ; double changement de voie à 108 km/h sans basculer ni partir en tête-à-queue ;
@@ -16,9 +16,8 @@ extends Node3D
 #    pendant 1 s. Le joueur reste assis, sans sauter ; les roues arrière se bloquent ; l'arrière part en glisse (plus de
 #    15° de dérive) ; relâchée, la voiture reprend l'adhérence (dérive sous 5° en moins de 2 s) ;
 #  - rayon de braquage à 3 m/s, comparé à la géométrie du modèle (rayon « entre murs », rapporté, pas jugé) ;
-#  - VOLANT PARTIEL (2026-09-24) : à 12 km/h, 45 % de volant tenu, le rayon est celui que demande le volant (épure :
-#    45 % du braquage maximal, à 0,85-1,25 près) — l'assistance de direction du châssis réel le ramenait à 5,3 m au lieu
-#    de 9 ;
+#  - VOLANT PARTIEL (2026-09-24) : à 12 km/h, 45 % de volant tenu, le rayon est celui que demande le volant (épure du
+#    pack, à 0,85-1,25 près) — l'assistance de direction du pack le ramenait à 5,3 m au lieu de 9 (cf. ChassisReel) ;
 #  - bordure de 0,15 m de face et en biais (30°) : franchie, montée ET descente, sans que la coque la touche ;
 #  - rampe à 16 % : montée sans que la coque touche, arrêt en pleine pente SANS RECULER (2 cm au plus en 2 s),
 #    redémarrage en côte, arrivée au niveau 1 ;
@@ -28,8 +27,8 @@ extends Node3D
 #  - SORTIE en gardant W enfoncé, puis W et S pressés à côté : la voiture s'arrête et ne bouge plus (5 cm au plus), le
 #    joueur est dehors ; remontée dans les 25 s : la voiture ne disparaît pas sous lui (défaut corrigé le 2026-09-24) ;
 #  - F8 : une berline posée devant le joueur, sur le sol ;
-#  - COÛT PHYSIQUE : temps du script du châssis par pas physique, et temps d'une image complète sans rendu, voiture
-#    conduite (rapportés).
+#  - COÛT PHYSIQUE : temps des scripts du châssis (corps + 4 roues) par pas physique, et temps d'une image complète sans
+#    rendu, voiture conduite (rapportés).
 # Jusqu'au 2026-09-24, il vérifiait aussi la bascule arcade / réaliste en roulant (F7) et la conduite arcade à l'entrée du
 # parking : l'arcade a été supprimée ce jour-là.
 #
@@ -271,11 +270,10 @@ func _e_montee(_d: float) -> bool:
 		_faute("le corps cinématique de la voiture n'est pas coupé (couche %d)" % int(_voiture.get("collision_layer")))
 	var roues: Array = _ch.get("roues")
 	var w0 = roues[0]
-	_r["pneu"] = "rayon %.3f m (modèle %.3f m)" % [float(w0.rayon), float((_voiture.get("_wheel_radius") as Dictionary).values()[0])]
-	_r["geometrie"] = "empattement %.2f m, braquage %.1f°, rayon de l'essieu arrière à fond %.2f m, centre de gravité %s (%.0f %% sur l'avant) à %.2f m du sol, centre de roulis à %.2f m, de tangage à %.2f m" % [
-			float(_ch.get("empattement")), rad_to_deg(float(_ch.get("braquage_max"))), float(_ch.get("Steer_Radius")),
-			str(_ch.center_of_mass.snappedf(0.01)), float(_ch.get("part_avant")) * 100.0, float(_ch.get("h_cdg")), float(_ch.get("h_roulis")),
-			float(_ch.get("h_tangage"))]
+	_r["pneu"] = "jante %s, rayon %.3f m (modèle %.3f m)" % [w0.TyreSettings["Rim Size (in)"], (222.0 + 25.4 * float(w0.TyreSettings["Rim Size (in)"])) * 0.00049035,
+			float((_voiture.get("_wheel_radius") as Dictionary).values()[0])]
+	_r["geometrie"] = "empattement %.2f m, Steer_Radius %.2f m, centre de gravité %s, pont %.3f" % [
+			float(_voiture.get("_empattement")), float(_ch.get("Steer_Radius")), str(_ch.center_of_mass.snappedf(0.01)), float(_ch.get("FinalDriveRatio"))]
 	return true
 
 
@@ -313,9 +311,9 @@ func _e_depart(_d: float) -> bool:
 	_pedales(true)
 	var v := _v()
 	if "--trace" in OS.get_cmdline_user_args() and Engine.get_physics_frames() % 15 == 0:
-		print("TRACE t=%.2f v=%.1f km/h rapport=%s tr/min=%.0f gaz=%.2f frein=%.2f wv=%.1f patinage=%.2f m/s" % [_t, v * 3.6, _ch.call("rapport"),
-				float(_ch.get("rpm")), float(_ch.get("gaspedal")), float(_ch.get("brakepedal")),
-				float(_ch.get("roues")[0].wv), float(_ch.get("roues")[0].patinage)])
+		print("TRACE t=%.2f v=%.1f km/h rapport=%s rpm=%.0f gaz=%.2f embrayage=%.2f frein=%.2f wv=%.1f couple=%.1f" % [_t, v * 3.6, _ch.call("rapport"),
+				float(_ch.get("rpm")), float(_ch.get("gaspedal")), float(_ch.get("clutchpedal")), float(_ch.get("brakepedal")),
+				float(_ch.get("roues")[0].wv), float(_ch.get("readout_torque"))])
 	if not _e.has("t_mouv") and v > 0.1:
 		_e["t_mouv"] = _t
 	for seuil: Array in [["t50", 50.0], ["t100", 100.0], ["t108", 108.0]]:
@@ -556,31 +554,33 @@ func _e_arret_rayon(_d: float) -> bool:
 	return _t > 0.5
 
 
-# VOLANT PARTIEL (2026-09-24). Le joueur, après les vidéos du châssis réel : « 45 % de volant donne 5,8 m de rayon au lieu
-# de 9 à 12 km/h » (c'était l'assistance de direction du pack VitaVehicle). Volant tenu directement (volant_impose du
-# châssis, négatif : à gauche) ; rayon au centre de la voiture, cercle ajusté sur 4 s de virage établi ; comparé à l'épure
-# (roues avant à 45 % du braquage maximal, centre du virage sur l'essieu arrière prolongé). Le glissement des pneus
-# l'élargit un peu.
+# VOLANT PARTIEL (2026-09-24). Le joueur, après les vidéos : « 45 % de volant donne 5,8 m de rayon au lieu de 9 à
+# 12 km/h ». C'était l'assistance de direction du pack (cf. ChassisReel, DIRECTION), dosée depuis par la vitesse. Volant
+# posé directement (steer2, négatif : à gauche), retour au centre coupé le temps de la mesure ; rayon au centre de la
+# voiture, cercle ajusté sur 4 s de virage établi ; comparé à l'épure du pack (centre du virage sur l'essieu arrière, à
+# Steer_Radius / volant). Le glissement des pneus l'élargit d'environ 10 %.
 func _e_volant_partiel(_d: float) -> bool:
 	if not _e.has("pts"):
 		_placer(Vector3(-300.0, 0.0, 300.0), 0.0)
 		_e["pts"] = []
+		_e["retour"] = float(_ch.get("KeyboardReturnSpeed"))
+		_ch.set("KeyboardReturnSpeed", 0.0)
 		return false
 	_regule(VOLANT_V)
 	if _t > 2.0:
-		_ch.set("volant_impose", -VOLANT_PART)
+		_ch.set("steer2", -VOLANT_PART)
 	if _t > 7.0:
 		(_e["pts"] as Array).append(Vector2(_pos().x, _pos().z))
 	if _t < 11.0:
 		return false
-	_ch.set("volant_impose", NAN)
+	_ch.set("KeyboardReturnSpeed", float(_e["retour"]))
+	_ch.set("steer2", 0.0)
 	_pedales()
 	var r := _rayon_cercle(PackedVector2Array(_e["pts"]))
-	var emp := float(_ch.get("empattement"))
-	var r_ar := emp / tan(VOLANT_PART * float(_ch.get("braquage_max")))
+	var sr := float(_ch.get("Steer_Radius"))
 	var demi := float(_voiture.get("_empattement")) * 0.5
-	var epure := sqrt(r_ar * r_ar + demi * demi)
-	_r["volant_partiel"] = "à %.0f km/h, %.0f %% de volant tenu : rayon %.2f m au centre de la voiture, épure %.2f m (x %.2f)" % [
+	var epure := sqrt(pow(sr / VOLANT_PART, 2.0) + demi * demi)
+	_r["volant_partiel"] = "à %.0f km/h, %.0f %% de volant tenu : rayon %.2f m au centre de la voiture, épure du pack %.2f m (x %.2f)" % [
 			VOLANT_V * 3.6, VOLANT_PART * 100.0, r, epure, r / epure]
 	if r / epure < 0.85 or r / epure > 1.25:
 		_faute("volant partiel à %.0f km/h : rayon %.2f m pour une épure de %.2f m (x %.2f) : le rayon ne suit pas le volant" % [
@@ -677,7 +677,7 @@ func _e_rampe(_d: float) -> bool:
 			var dt := _t - float(_e["t_tenue"])
 			if "--trace" in OS.get_cmdline_user_args() and Engine.get_physics_frames() % 10 == 0:
 				print("TENUE dt=%.2f v=%s frein=%.2f gaz=%.2f main=%.2f maintien=%s rapport=%s sol=%s" % [dt, str(_ch.linear_velocity.snappedf(0.0001)),
-						float(_ch.get("brakepedal")), float(_ch.get("gaspedal")), float(_ch.get("handbrakepull")), str(_ch.get("_maintien")), _ch.call("rapport"), str(_ch.call("au_sol"))])
+						float(_ch.get("brakepedal")), float(_ch.get("gaspedal")), float(_ch.get("handbrakepull")), str(_ch.get("_maintien")), _ch.call("rapport"), str(_ch.call("_au_sol"))])
 			if dt >= 1.0 and not _e.has("p1"):
 				_e["p1"] = _pos()
 			if dt >= 3.0:
@@ -972,7 +972,7 @@ func _e_fin(_d: float) -> bool:
 	var moy := 0.0
 	for c in cs:
 		moy += float(c) / float(maxi(cs.size(), 1))
-	_r["cout_scripts"] = "script du châssis par pas physique, %d pas : médiane %d µs, moyenne %.0f µs, 95 %% %d µs, max %d µs ; suivi + modèle + roues visibles par image : médiane %d µs" % [
+	_r["cout_scripts"] = "scripts du châssis (corps + 4 roues) par pas physique, %d pas : médiane %d µs, moyenne %.0f µs, 95 %% %d µs, max %d µs ; suivi + modèle + roues visibles par image : médiane %d µs" % [
 			cs.size(), _centile(cs, 0.5), moy, _centile(cs, 0.95), _centile(cs, 1.0), _centile(_couts_visuels, 0.5)]
 	_r["tenue"] = "caisse penchée de %.1f° au plus sur tout l'essai" % rad_to_deg(acos(clampf(_min_up, -1.0, 1.0)))
 	if _min_up < 0.95:

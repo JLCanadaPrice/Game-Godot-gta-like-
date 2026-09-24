@@ -1,0 +1,846 @@
+extends RigidBody3D
+
+# CHÂSSIS FAÇON GTA V (2026-09-24 au soir, CLAUDE.md §15). Remplace le châssis réel du même jour (ChassisReel : le cœur
+# physique du pack VitaVehicle, réglé sur une fiche par modèle, §13 et §14). Le joueur, après l'avoir conduit : « Je n'aime
+# pas la conduite actuelle. Je veux la conduite de GTA V, pas une conduite réaliste. » Ce qui fait ce ressenti, dans ses
+# mots : bien plus d'adhérence qu'en vrai ; des freins très puissants ; une carrosserie qui bouge beaucoup (elle plonge au
+# freinage, s'écrase à l'accélération, penche en virage) mais ne se couche jamais ; au-delà de la limite une glisse
+# PROGRESSIVE et contrôlable ; du patinage possible au démarrage ; un frein à main qui ne bloque que l'arrière ; une
+# direction vive, même au clavier ; une accélération nerveuse.
+#
+# UN MODÈLE À NOUS, INSPIRÉ DE CELUI DE GTA V, ET PAS LE PACK RÉGLÉ AUTREMENT. Le pneu du pack n'a pas de courbe
+# d'adhérence : sa force naît du glissement et monte avec lui, sans pic ni palier. Il ne tient donc qu'en glissant, et ne
+# sait ni coller à la route ni glisser progressivement passé une limite. Son moteur (régime, embrayage, boîte automatique)
+# a demandé six corrections et reste mou ; son frein n'arrive pas à bloquer une grande roue ; son assistance de direction
+# contrarie toute direction vive. Chaque réglage de GTA V y aurait demandé un correctif de plus autour d'un modèle qui
+# compte en pieds, avec des forces au dixième. Ici, chaque réglage du handling.meta est une vraie commande du modèle.
+#
+# CE QUE C'EST. Un RigidBody3D de la masse de la fiche, dont la coque est la silhouette du modèle relevée à la garde au sol
+# (Car._mesures_chassis), porté par une suspension à RAYONS roue par roue (RoueGTA : réglages et état ; tout le calcul est
+# ici, en un appel par pas). À chaque pas physique :
+#  1. le sol sous chaque roue, par trois rayons répartis le long du pneu (_sonder) : la roue monte une bordure par son
+#     arête avant, progressivement, au lieu d'y sauter quand son centre la passe ;
+#  2. le ressort de chaque roue (fSuspensionForce), son amortisseur (fSuspensionCompDamp à la compression,
+#     fSuspensionReboundDamp à la détente), la barre anti-roulis de l'essieu (fAntiRollBarForce), une butée en fin de
+#     course (_ressort). L'effort du ressort est la charge que porte le pneu ;
+#  3. le pneu (_pneu) : en travers, la COURBE DE TRACTION de GTA V — l'adhérence monte jusqu'à fTractionCurveMax quand
+#     l'angle de glissement atteint fTractionCurveLateral, puis redescend en douceur vers fTractionCurveMin (la glisse
+#     progressive) ; le long, la poussée du moteur, le frein au pied (ABS : la roue ne bloque jamais, sa force est bornée par
+#     l'adhérence), le frein à main sur l'arrière, qui BLOQUE la roue quand il est plus fort que son pneu ; et le cercle
+#     d'adhérence entre les deux. Une roue motrice qui pousse plus que son pneu ne tient PATINE (et tient moins en travers) ;
+#     à basse vitesse son adhérence baisse (fLowSpeedTractionLossMult), d'où le patinage au démarrage ;
+#  4. traînée, résistance au roulement, frein moteur (_trainee).
+# Les impulsions sont appliquées à l'état direct du corps, roue après roue : chaque roue voit la vitesse que lui ont laissée
+# les précédentes (pas de rebond, même à l'arrêt).
+#
+# PAS DE TONNEAU. Les forces des pneus en travers s'appliquent à la hauteur d'un CENTRE DE ROULIS (comme fRollCentreHeight
+# dans GTA V), calculé pour chaque modèle : le bras de levier du roulis vaut au plus voie / (2 x SSF_MIN x adhérence), de
+# sorte que l'adhérence la plus forte ne peut pas soulever les roues intérieures (FichesVehicules.SSF_MIN). La caisse penche
+# autant que le veulent ses ressorts et sa barre ; elle ne se couche pas. Au freinage le plus fort, de même, l'essieu
+# arrière garde une part de sa charge (centre de tangage, MARGE_TANGAGE) : la voiture plonge, elle ne passe pas sur le nez.
+#
+# DIRECTION (_direction). Au clavier, le volant va du centre à la butée en 0,14 s à l'arrêt (0,22 s à 108 km/h), et revient
+# au centre en 0,11 s. À vitesse, l'angle des roues avant est BORNÉ par leur pneu : il ne glisse pas au-delà du pic de sa
+# courbe (fTractionCurveLateral) par rapport à sa trajectoire. Braquer à fond donne donc le virage le plus serré que
+# tiennent les pneus avant, à toute vitesse, sans les faire décrocher ; et comme la borne suit la trajectoire, le contre-
+# braquage d'une glisse reste entier. Volant lâché, les roues avant suivent la trajectoire (ALIGNEMENT) : la voiture se
+# redresse d'elle-même au sortir d'une glisse, comme un volant qu'on laisse filer.
+#
+# Repère du châssis : l'avant en +Z, la gauche en +X (celui du pack, gardé : Car.repere_chassis, Car._mesures_chassis).
+
+const Roue := preload("res://scenes/vehicles/RoueGTA.gd")
+
+const DEBATTEMENT_HAUT := 0.10      # m : course de compression au-dessus du repos, avant la butée
+const DEBATTEMENT_BAS := 0.16       # m : course de détente sous le repos (au moins jusqu'où le ressort pousse encore, cf. configurer),
+                                    # et roue pendante, en l'air, au plus
+const BUTEE := 8.0                  # raideur de la butée, en raideurs du ressort
+const AMORT_MAX := 2.5              # effort de l'amortisseur au plus, en charges statiques de la roue (un choc sec ne lance pas la voiture)
+const RAYONS := [-0.6, 0.0, 0.6]    # rayons de sol d'une roue, décalés le long du pneu, en rayons du pneu
+const BIAIS_ARRIERE := 1.08         # adhérence arrière / avant : à la limite la voiture sous-vire un peu (stable), sauf gaz ou frein à main
+const GLISSE_BLOQUEE := 0.9         # adhérence d'une roue bloquée, en adhérence de glisse (fTractionCurveMin)
+const PATINAGE_ADHERENCE := 0.9     # poussée d'une roue qui patine, en adhérence disponible
+const PATINAGE_MAX := 12.0          # m/s
+const PATINAGE_MONTEE := 25.0       # m/s² : le patinage s'installe...
+const PATINAGE_DESCENTE := 30.0     # ... et se résorbe
+const A_ROULEMENT := 0.12           # m/s² : résistance au roulement
+const FREIN_MOTEUR := 0.9           # m/s² : en prise, pied levé (jusqu'au maintien à l'arrêt, V_MAINTIEN)
+const V_ARRET := 0.5                # m/s : en deçà, S tenu passe la marche arrière, W la marche avant
+const V_TENUE := 0.35               # m/s : freinée et en deçà, la roue tient (adhérence statique)
+const V_MAINTIEN := 1.2             # m/s : sans pédale et en deçà, le maintien ralentit puis tient la voiture
+const DELAI_MARCHE_ARRIERE := 0.25  # s : S tenu à l'arrêt avant de reculer
+const PART_MARCHE_ARRIERE := 0.6    # poussée en marche arrière, en poussée au démarrage
+const V_MARCHE_ARRIERE := 12.0      # m/s (43 km/h) au plus en marche arrière
+const PEDALE_GAZ := 8.0             # par seconde : accélérateur enfoncé en 0,125 s
+const PEDALE_FREIN := 10.0          # frein enfoncé en 0,1 s
+const PEDALE_FREIN_MAIN := 20.0     # frein à main tiré en 0,05 s
+const VOLANT_BAS := 7.0             # /s : vitesse du volant au clavier à l'arrêt...
+const VOLANT_HAUT := 4.5            # ... et à VOLANT_V
+const VOLANT_V := 30.0              # m/s
+const VOLANT_RETOUR := 9.0          # /s : retour au centre, et changement de côté
+const LIMITE_V0 := 4.0              # m/s : au-delà, la direction commence à être bornée par le pneu avant...
+const LIMITE_V1 := 8.0              # ... et l'est entièrement au-delà
+const LIMITE_AVANT := 1.0           # glissement permis au pneu avant, en angle du pic de sa courbe (fTractionCurveLateral)...
+const LIMITE_AVANT_VITE := 0.85     # ... et à LIMITE_VITE_V1 et au-delà : l'arrière garde de la marge sous son pic (stable)
+const LIMITE_VITE_V0 := 15.0        # m/s (54 km/h)
+const LIMITE_VITE_V1 := 30.0        # m/s (108 km/h)
+const ALIGNEMENT := 0.8             # volant lâché, les roues avant suivent la trajectoire à cette part
+const ASSIST_DERIVE_0 := 0.21       # rad (12°) : dérive au centre de gravité où commence l'assistance de glisse...
+const ASSIST_DERIVE_1 := 0.61       # ... (35°) et où elle est entière (cf. _direction)
+const STABILITE_0 := 0.85          # glissement de l'essieu arrière, en angle du pic de sa courbe, où la stabilité resserre
+const STABILITE_1 := 1.2            # la borne des roues avant côté virage... et où elle la ferme (cf. _direction)
+const ASSIST_MAIN_0 := 0.31         # rad (18°) : les mêmes quand le frein à main bloque l'arrière (on veut déraper)...
+const ASSIST_MAIN_1 := 0.79         # ... (45°)
+const ASSIST_ANTICIPE := 0.3        # s : l'assistance de glisse regarde la dérive qu'on aura dans ce temps
+const ASSIST_CONTRE := 1.0          # contre-braquage de l'assistance, en angle du pic du pneu avant
+const MARGE_TANGAGE := 0.25         # au freinage le plus fort, l'essieu délesté garde cette part de sa charge statique
+const INERTIE := 0.85               # inertie : celle d'une boîte pleine aux dimensions du modèle, x ce nombre (direction vive)
+const RAPPORTS := [0.0, 0.18, 0.33, 0.49, 0.66, 0.83]   # rapports AFFICHÉS : début de chacun, en part de la vitesse de pointe
+const REPOS_V := 0.05               # m/s et rad/s : immobile
+const REPOS_PAS := 30               # pas immobile, sans conducteur, avant de figer le corps
+
+# --- noms repris du pack VitaVehicle, que lisent la voiture, les tests et les outils -------------------------------------
+var Controlled := false             # le joueur conduit (sinon : stationnement)
+var LengthScale := 1.0              # les roues comptent en mètres (Car._visuels_chassis : wv x w_size x LengthScale)
+var gear := 1                       # rapport affiché : -1 marche arrière, 1 à 6
+var steer := 0.0                    # braquage des roues avant / braquage maximal (+ : à droite)
+var steer2 := 0.0                   # volant (clavier), -1..1 (+ : à droite)
+var gaspedal := 0.0
+var brakepedal := 0.0
+var handbrakepull := 0.0
+var rpm := 0.0                      # régime affiché
+var Steer_Radius := 4.0             # m : rayon de l'essieu arrière, braquage à fond (empattement / tan(fSteeringLock))
+var AckermannPoint := -1.2          # z de l'essieu arrière (repère du châssis)
+
+var roues: Array = []               # les roues (RoueGTA), dans l'ordre des mesures
+var fige := false
+var fiche := {}
+var v_max := 50.0                   # m/s
+var volant_impose := NAN            # outils et tests : volant tenu à cette valeur (-1..1), sans retour ni alignement
+var part_avant := 0.6               # part du poids sur l'essieu avant
+var braquage_max := 0.6             # rad (fSteeringLock)
+var derive_pic := 0.17              # rad (fTractionCurveLateral)
+var empattement := 2.5
+var voie := 1.5
+var h_cdg := 0.5                    # m : hauteur du centre de gravité au repos
+var h_roulis := 0.0                 # m : hauteur où s'appliquent les forces des pneus en travers (centre de roulis)
+var h_tangage := 0.0                # m : hauteur où s'appliquent les forces le long (centre de tangage)
+var adherence_av := 1.4             # g
+var adherence_ar := 1.47
+var _poussee := 7.0                 # m/s² au démarrage
+var _v1 := 10.0                     # m/s : poussée entière jusque-là, puis à puissance constante
+var _trainee_vmax := 1.4            # m/s² : traînée à la vitesse de pointe
+var _freinage := 13.0               # m/s² demandés aux freins
+var _frein_main := 9.0              # m/s² : force du frein à main / masse
+var _perte_basse := 0.24            # adhérence perdue à l'arrêt par les roues qui poussent
+var _sens := 1                      # 1 marche avant, -1 marche arrière
+var _t_arret_s := 0.0
+var _gauche := false
+var _droite := false
+var _maintien := false
+var _rapport := 1
+var _z_av := 1.0
+var _y_roues := 0.3
+var _anims: Array = []
+var _requete: PhysicsRayQueryParameters3D
+var _gel_culler := false
+var _pas_repos := 0
+var _cout := 0
+var _sol := 0                       # roues au sol au dernier pas
+var _g := 9.8
+var _beta_avant := 0.0
+var _beta_valide := false
+var _vitesse_derive := 0.0          # rad/s, lissée
+var _arriere_bloque := false        # le frein à main bloque les roues arrière
+var _main_total := 0.0              # N : force du frein à main
+var _charge_arriere := 0.0          # N : charge des roues arrière au sol
+
+
+# Construit le châssis sur les mesures du modèle (Car._mesures_chassis) et sa fiche (FichesVehicules), AVANT son entrée
+# dans l'arbre. `_braquage_pack` : l'angle de braquage des voitures de la circulation (Car.MAX_STEER_RAD), plus utilisé :
+# le braquage est celui de la fiche (fSteeringLock).
+func configurer(m: Dictionary, _braquage_pack: float, f: Dictionary) -> void:
+	name = "ChassisGTA"
+	fiche = f
+	var g := float(ProjectSettings.get_setting("physics/3d/default_gravity", 9.8))
+	_g = g
+	mass = FichesVehicules.nombre(f, "fMass")
+	v_max = maxf(FichesVehicules.vitesse_max(f), 5.0)
+	_poussee = FichesVehicules.poussee_ms2(f)
+	_v1 = FichesVehicules.PART_VITESSE_COUPLE * v_max
+	# la traînée égale la poussée à la vitesse de pointe : c'est elle qui l'arrête là
+	_trainee_vmax = maxf(_poussee * _v1 / v_max - A_ROULEMENT, 0.1)
+	_freinage = FichesVehicules.freinage_ms2(f)
+	_frein_main = FichesVehicules.frein_main_ms2(f)
+	_perte_basse = clampf(FichesVehicules.nombre(f, "fLowSpeedTractionLossMult") * FichesVehicules.PERTE_BASSE_VITESSE, 0.0, 0.8)
+	braquage_max = deg_to_rad(clampf(FichesVehicules.nombre(f, "fSteeringLock"), 5.0, 60.0))
+	derive_pic = deg_to_rad(clampf(FichesVehicules.nombre(f, "fTractionCurveLateral"), 2.0, 45.0))
+	adherence_av = maxf(FichesVehicules.adherence_max(f), 0.1)
+	adherence_ar = adherence_av * BIAIS_ARRIERE
+	var glisse := clampf(FichesVehicules.adherence_glisse(f) / adherence_av, 0.3, 1.0)
+	can_sleep = false
+	continuous_cd = true
+	# Pas d'amortissement du corps (celui du projet, 0,1 /s, freinait la voiture comme une traînée : CLAUDE.md §14) :
+	# traînée, roulement et frein moteur sont dans _trainee.
+	linear_damp_mode = RigidBody3D.DAMP_MODE_REPLACE
+	linear_damp = 0.0
+	angular_damp_mode = RigidBody3D.DAMP_MODE_REPLACE
+	angular_damp = 0.0
+	collision_layer = 4          # la couche des véhicules, comme Car.tscn
+	collision_mask = 5           # décor + véhicules
+	contact_monitor = true
+	max_contacts_reported = 4
+	# géométrie mesurée
+	var liste: Array = m["roues"]
+	var y_sol: float = m["y_sol"]
+	var z_ar := 0.0
+	var n_av := 0
+	var n_ar := 0
+	_z_av = 0.0
+	for r: Dictionary in liste:
+		if bool(r["avant"]):
+			_z_av += (r["centre"] as Vector3).z
+			n_av += 1
+		else:
+			z_ar += (r["centre"] as Vector3).z
+			n_ar += 1
+	_z_av /= float(n_av)
+	z_ar /= float(n_ar)
+	empattement = maxf(_z_av - z_ar, 0.5)
+	voie = float(m["voie"])
+	var voie_min := voie
+	for r: Dictionary in liste:
+		voie_min = minf(voie_min, 2.0 * absf((r["centre"] as Vector3).x))
+	Steer_Radius = empattement / tan(braquage_max)
+	AckermannPoint = z_ar
+	# centre de gravité : 38 % de la hauteur, au milieu de l'empattement, décalé de vecCentreOfMassOffset (repère de GTA V :
+	# x à droite, y vers l'avant, z vers le haut ; celui du châssis a la gauche en +x)
+	var decale := FichesVehicules.vecteur(f, "vecCentreOfMassOffset")
+	var hauteur := float(m["hauteur"])
+	h_cdg = clampf(FichesVehicules.PART_CDG_HAUTEUR * hauteur + decale.z, 0.2, hauteur * 0.8)
+	var cdg := Vector3(-decale.x, y_sol + h_cdg, 0.5 * (_z_av + z_ar) + decale.y)
+	part_avant = clampf((cdg.z - z_ar) / empattement, 0.15, 0.85)
+	center_of_mass_mode = RigidBody3D.CENTER_OF_MASS_MODE_CUSTOM
+	center_of_mass = cdg
+	var boite: Vector3 = m.get("boite", Vector3(voie + 0.4, hauteur, empattement + 1.6))
+	inertia = Vector3(boite.y * boite.y + boite.z * boite.z, boite.x * boite.x + boite.z * boite.z,
+			boite.x * boite.x + boite.y * boite.y) * (mass / 12.0 * INERTIE)
+	var k := 0
+	for forme in m["coques"]:
+		var cs := CollisionShape3D.new()
+		cs.name = "Coque" if k == 0 else "Coque_%d" % k
+		cs.shape = forme
+		add_child(cs)
+		k += 1
+	# PAS DE TONNEAU : bras de levier du roulis au plus voie / (2 x SSF_MIN x adhérence) (cf. en tête)
+	var bras_roulis := minf(h_cdg, voie_min / (2.0 * FichesVehicules.SSF_MIN * adherence_ar))
+	h_roulis = h_cdg - bras_roulis
+	# ... et du tangage : au freinage (ou à l'accélération) le plus fort, l'essieu délesté garde MARGE_TANGAGE de sa charge
+	var a_max := maxf(minf(_freinage, adherence_ar * g), minf(_poussee, adherence_ar * g))
+	var bras_tangage := minf(h_cdg, (1.0 - MARGE_TANGAGE) * minf(part_avant, 1.0 - part_avant) * empattement * g / maxf(a_max, 0.1))
+	h_tangage = h_cdg - bras_tangage
+	# ressorts : 1 / (4 x fSuspensionForce) de détente sous le repos, et le ressort ne pousse plus (la définition de GTA V) ;
+	# fréquence propre ~ racine(fSuspensionForce) Hz
+	var l0 := clampf(1.0 / (4.0 * maxf(FichesVehicules.nombre(f, "fSuspensionForce"), 0.1)), 0.04, 0.6)
+	var comp := FichesVehicules.nombre(f, "fSuspensionCompDamp") * FichesVehicules.AMORT_PAR_UNITE
+	var detente := FichesVehicules.nombre(f, "fSuspensionReboundDamp") * FichesVehicules.AMORT_PAR_UNITE
+	var barre := maxf(FichesVehicules.nombre(f, "fAntiRollBarForce"), 0.0)
+	var motrice_av := clampf(FichesVehicules.nombre(f, "fDriveBiasFront"), 0.0, 1.0)
+	var frein_av := clampf(FichesVehicules.nombre(f, "fBrakeBiasFront"), 0.1, 0.9)
+	var par_nom := {}
+	for r: Dictionary in liste:
+		var av := bool(r["avant"])
+		var n := n_av if av else n_ar
+		var w := Roue.new()
+		w.name = String(r["nom"])
+		w.avant = av
+		w.repos = r["centre"]
+		w.position = w.repos
+		w.gauche = w.repos.x > 0.0
+		w.rayon = maxf(float(r["rayon"]), 0.1)
+		w.w_size = w.rayon
+		w.charge_statique = (part_avant if av else 1.0 - part_avant) * mass * g / float(n)
+		w.l0 = l0
+		# la roue cherche le sol tant que son ressort pousse encore : sans quoi une suspension souple (limousine, l0 = 0,33 m)
+		# perdait le contact de ses roues intérieures en virage avant d'être délestée, et la caisse basculait d'un coup
+		# (mesuré au banc : roues intérieures en l'air 0,13 s, 11,6° de roulis)
+		w.detente_max = maxf(DEBATTEMENT_BAS, l0 + 0.02)
+		w.raideur = w.charge_statique / l0
+		var critique := 2.0 * sqrt(w.raideur * w.charge_statique / g)
+		w.amort_comp = comp * critique
+		w.amort_detente = detente * critique
+		w.raideur_barre = 0.5 * barre * w.raideur
+		w.adherence = adherence_av if av else adherence_ar
+		w.adherence_glisse = w.adherence * glisse
+		w.part_moteur = (motrice_av if av else 1.0 - motrice_av) / float(n)
+		w.motrice = w.part_moteur > 0.0
+		w.part_frein = (frein_av if av else 1.0 - frein_av) / float(n)
+		w.part_frein_main = 0.0 if av else 1.0 / float(n)
+		w.detente_avant = INF
+		var anim := Node3D.new()
+		anim.name = "animation"
+		w.add_child(anim)
+		add_child(w)
+		roues.append(w)
+		_anims.append(anim)
+		par_nom[w.name] = w
+		_y_roues = w.repos.y
+	for r: Dictionary in liste:
+		var w: Roue = par_nom[String(r["nom"])]
+		w.jumelle = par_nom.get(String(r.get("jumelle", "")), null)
+
+
+func _ready() -> void:
+	body_entered.connect(_contact)
+	_requete = PhysicsRayQueryParameters3D.new()
+	_requete.collision_mask = 1
+	_requete.hit_from_inside = true
+	_requete.exclude = [get_rid()]
+
+
+# Premier pas, ou reprise après un gel ou un déplacement : vitesse du corps et des roues, amortisseurs sans mémoire.
+func repartir(v_monde: Vector3) -> void:
+	linear_velocity = v_monde
+	angular_velocity = Vector3.ZERO
+	var v_av := v_monde.dot(global_transform.basis.z)
+	for w: Roue in roues:
+		w.wv = v_av / w.rayon
+		w.patinage = 0.0
+		w.bloquee = false
+		w.detente_avant = INF
+	_sens = -1 if v_av < -V_ARRET else 1
+	_t_arret_s = 0.0
+
+
+# Vitesse le long de l'avant de la voiture (m/s), négative en marche arrière.
+func vitesse_avant() -> float:
+	return linear_velocity.dot(global_transform.basis.z)
+
+
+# Frein réellement appliqué (pédale, maintien ou frein à main) : les feux de freinage de la Car.
+func freine() -> bool:
+	return brakepedal > 0.05 or handbrakepull > 0.05
+
+
+func rapport() -> String:
+	return "R" if gear < 0 else str(gear)
+
+
+# Temps passé dans le script du châssis au dernier pas physique, en microsecondes.
+func cout_dernier_pas_us() -> int:
+	return _cout
+
+
+func au_sol() -> bool:
+	return _sol > 0
+
+
+# Le frein à main de ce véhicule bloque-t-il ses roues arrière, voiture à l'arrêt et à plat ? (force contre ce que tiennent
+# les pneus arrière ; en roulant, le report de charge vers l'avant les délesterait encore)
+func frein_main_bloque() -> bool:
+	return _frein_main > adherence_ar * _g * (1.0 - part_avant)
+
+
+func _physics_process(delta: float) -> void:
+	var t0 := Time.get_ticks_usec()
+	var etat := PhysicsServer3D.body_get_direct_state(get_rid())
+	if etat == null:
+		return
+	var xf: Transform3D = etat.transform
+	var haut := xf.basis.y.normalized()
+	var avant := xf.basis.z.normalized()
+	var cdg: Vector3 = xf.origin + etat.center_of_mass
+	var v_long: float = etat.linear_velocity.dot(avant)
+	var espace := get_world_3d().direct_space_state
+	_sol = 0
+	for w: Roue in roues:
+		_sonder(w, espace, xf, haut, avant)
+		if w.au_sol:
+			_sol += 1
+	_commandes(delta, v_long)
+	_direction(delta, etat, xf, cdg, v_long)
+	for w: Roue in roues:
+		if w.au_sol:
+			_ressort(w, etat, xf, haut, delta)
+	# Pneus : les forces de toutes les roues sont calculées sur LE MÊME état du corps, puis appliquées ensemble. Appliquées
+	# roue après roue, chaque roue voyait le lacet laissé par les précédentes, toujours dans le même ordre : la voiture
+	# tournait de 2 à 4° en freinant droit, de 10° au frein à main (mesuré au banc).
+	var motrice := _force_motrice(v_long)
+	_frein_main_essieu(etat)
+	for w: Roue in roues:
+		if w.au_sol:
+			_pneu(w, etat, haut, cdg, delta, motrice)
+		else:
+			_roue_en_l_air(w, delta)
+	for i in roues.size():
+		var w: Roue = roues[i]
+		if w.au_sol:
+			etat.apply_impulse(w.dir_lat * (w.fy * delta), w.point_lat - xf.origin)
+			etat.apply_impulse(w.dir_av * (w.fx * delta), w.point_lon - xf.origin)
+		w.detente_avant = w.detente
+		w.compress = -w.detente
+		(_anims[i] as Node3D).position = Vector3(0.0, -w.detente, 0.0)
+	_tenue(etat, delta)
+	_trainee(etat, delta, v_long)
+	_affichage(v_long)
+	_repos()
+	_cout = Time.get_ticks_usec() - t0
+
+
+# --- commandes -------------------------------------------------------------------------------------------------------
+
+# Pédales. Sans conducteur : le stationnement, quoi qu'on presse à côté. Avec : W accélère (et freine en reculant), S
+# freine (et, tenu à l'arrêt, recule), Espace tire le frein à main ; sans pédale, presque arrêtée, la voiture est tenue.
+func _commandes(delta: float, v: float) -> void:
+	var gaz := false
+	var frein := false
+	var main := false
+	_gauche = false
+	_droite = false
+	if Controlled:
+		gaz = Input.is_action_pressed("gas")
+		frein = Input.is_action_pressed("brake")
+		main = Input.is_action_pressed("handbrake")
+		_gauche = Input.is_action_pressed("left")
+		_droite = Input.is_action_pressed("right")
+	var cible_gaz := 0.0
+	var cible_frein := 0.0
+	if not Controlled:
+		cible_frein = 1.0
+		main = true
+		_t_arret_s = 0.0
+	elif gaz and not frein:
+		_t_arret_s = 0.0
+		if _sens < 0 and v < -V_ARRET:
+			cible_frein = 1.0          # W en reculant : freine d'abord
+		else:
+			_sens = 1
+			cible_gaz = 1.0
+	elif frein and not gaz:
+		if _sens > 0:
+			cible_frein = 1.0
+			if v <= V_ARRET:
+				_t_arret_s += delta
+				if _t_arret_s >= DELAI_MARCHE_ARRIERE:
+					_sens = -1
+			else:
+				_t_arret_s = 0.0
+		if _sens < 0:
+			cible_frein = 0.0
+			cible_gaz = 1.0            # S en marche arrière : recule
+	elif gaz and frein:
+		cible_frein = 1.0
+		_t_arret_s = 0.0
+	else:
+		_t_arret_s = 0.0
+	_maintien = false
+	if Controlled and cible_gaz == 0.0 and cible_frein == 0.0 and not main and absf(v) < V_MAINTIEN and _sol > 0:
+		cible_frein = 1.0 if absf(v) < V_TENUE else 0.35
+		_maintien = true
+	gaspedal = move_toward(gaspedal, cible_gaz, PEDALE_GAZ * delta * (2.0 if cible_gaz < gaspedal else 1.0))
+	brakepedal = move_toward(brakepedal, cible_frein, PEDALE_FREIN * delta * (2.0 if cible_frein < brakepedal else 1.0))
+	handbrakepull = move_toward(handbrakepull, 1.0 if main else 0.0, PEDALE_FREIN_MAIN * delta)
+
+
+# Poussée totale du moteur (N, le long de l'avant ; négative en marche arrière) : entière jusqu'à _v1, puis à puissance
+# constante, et le limiteur sur le dernier m/s avant la vitesse de pointe.
+func _force_motrice(v_long: float) -> float:
+	if gaspedal <= 0.0:
+		return 0.0
+	if _sens > 0:
+		var v := maxf(v_long, 0.0)
+		var a := _poussee * minf(1.0, _v1 / maxf(v, 0.01))
+		if v > v_max - 1.0:
+			a *= clampf(v_max - v, 0.0, 1.0)
+		return mass * a * gaspedal
+	var vr := maxf(-v_long, 0.0)
+	var v_lim := minf(V_MARCHE_ARRIERE, 0.3 * v_max)
+	var ar := _poussee * PART_MARCHE_ARRIERE
+	if vr > v_lim - 1.0:
+		ar *= clampf(v_lim - vr, 0.0, 1.0)
+	return -mass * ar * gaspedal
+
+
+# DIRECTION (cf. en tête). Angle « bicyclette » des roues avant (+ : à gauche), puis celui de chaque roue (Ackermann).
+func _direction(delta: float, etat: PhysicsDirectBodyState3D, xf: Transform3D, cdg: Vector3, v_long: float) -> void:
+	var impose := not is_nan(volant_impose)
+	if impose:
+		steer2 = clampf(volant_impose, -1.0, 1.0)
+	else:
+		var cible := (1.0 if _droite else 0.0) - (1.0 if _gauche else 0.0)
+		var vitesse := lerpf(VOLANT_BAS, VOLANT_HAUT, clampf(absf(v_long) / VOLANT_V, 0.0, 1.0))
+		if cible == 0.0 or (steer2 != 0.0 and signf(cible) != signf(steer2)):
+			vitesse = VOLANT_RETOUR
+		steer2 = move_toward(steer2, cible, vitesse * delta)
+	var d := -steer2 * braquage_max
+	# trajectoire de l'essieu avant : angle de sa vitesse avec l'axe de la voiture (+ : vers la gauche)
+	var p_av: Vector3 = xf * Vector3(0.0, _y_roues, _z_av)
+	var v_av: Vector3 = etat.linear_velocity + etat.angular_velocity.cross(p_av - cdg)
+	var local: Vector3 = xf.basis.inverse() * v_av
+	var poids := smoothstep(LIMITE_V0, LIMITE_V1, local.z)
+	# dérive au centre de gravité (+ : la vitesse file à gauche de l'axe, l'arrière est parti à gauche), et celle qu'on aura
+	# dans ASSIST_ANTICIPE s au rythme où elle grandit
+	var v_loc: Vector3 = xf.basis.inverse() * etat.linear_velocity
+	var beta := atan2(v_loc.x, maxf(absf(v_loc.z), 0.1))
+	var vitesse_derive := (beta - _beta_avant) / delta if _beta_valide else 0.0
+	_beta_avant = beta
+	_beta_valide = poids > 0.0
+	_vitesse_derive = lerpf(_vitesse_derive, vitesse_derive, 0.3) if _beta_valide else 0.0
+	var beta_prevue := beta + _vitesse_derive * ASSIST_ANTICIPE
+	if poids > 0.0:
+		var trajectoire := atan2(local.x, local.z)
+		var lim := derive_pic * lerpf(LIMITE_AVANT, LIMITE_AVANT_VITE, clampf((local.z - LIMITE_VITE_V0) / (LIMITE_VITE_V1 - LIMITE_VITE_V0), 0.0, 1.0))
+		if not impose:
+			# volant lâché : les roues suivent la trajectoire
+			d += (1.0 - absf(steer2)) * clampf(trajectoire, -braquage_max, braquage_max) * ALIGNEMENT * poids
+			# ASSISTANCE DE GLISSE : l'arrière part (dérive au centre de gravité, PRÉVUE ASSIST_ANTICIPE s plus tard, au-delà
+			# de ASSIST_DERIVE_0) et les roues avant font encore tourner la voiture dans le sens de la glisse : elles
+			# contre-braquent d'elles-mêmes, à ASSIST_CONTRE du pic de leur pneu (entièrement au-delà de ASSIST_DERIVE_1). La
+			# glisse se tient, au frein à main comme sous les gaz, au lieu de finir en tête-à-queue. Sans elle, D et Espace
+			# tenus 1,2 s faisaient pivoter la voiture de 110 à 160° et elle repartait en arrière ; réglée sur la dérive seule,
+			# sans l'anticiper, elle arrivait trop tard (lacet de 2 rad/s déjà pris à 15° de dérive, mesuré au banc).
+			# Contre-braquer soi-même reste libre.
+			var w_cs := poids * (smoothstep(ASSIST_MAIN_0, ASSIST_MAIN_1, absf(beta_prevue)) if _arriere_bloque
+					else smoothstep(ASSIST_DERIVE_0, ASSIST_DERIVE_1, absf(beta_prevue)))
+			if w_cs > 0.0 and (d - trajectoire) * beta_prevue <= 0.0:
+				var contre := clampf(trajectoire + signf(beta_prevue) * lim * ASSIST_CONTRE, -braquage_max, braquage_max)
+				d = lerpf(d, contre, w_cs)
+		# STABILITÉ : l'essieu arrière approche le pic de sa courbe (freinage, pied levé, gaz sur une propulsion, charge
+		# reportée sur l'avant) : la borne des roues avant se resserre du côté qui ferait tourner la voiture davantage,
+		# jusqu'à les mettre dans l'axe de leur trajectoire si l'arrière le dépasse franchement ; le côté du contre-braquage
+		# reste entier. Sans elle, l'avant tenu au pic de son pneu demandait à l'arrière plus qu'il ne tient dès que la charge
+		# passait un peu vers l'avant : le camion city_truck_01, qui freinait à 107 km/h en braquant à fond, partait à 23° de
+		# dérive (mesuré au banc : 40 kN à l'avant, 48,9 kN demandés à l'arrière pour 47,3 qu'il tient). Pas quand le frein à
+		# main bloque l'arrière : là, on veut déraper (l'assistance de glisse s'en charge).
+		var borne_gauche := lim
+		var borne_droite := lim
+		if not _arriere_bloque:
+			var p_ar: Vector3 = xf * Vector3(0.0, _y_roues, AckermannPoint)
+			var local_ar: Vector3 = xf.basis.inverse() * (etat.linear_velocity + etat.angular_velocity.cross(p_ar - cdg))
+			var alpha_ar := atan2(absf(local_ar.x), maxf(absf(local_ar.z), 0.5)) / derive_pic
+			var reste := 1.0 - smoothstep(STABILITE_0, STABILITE_1, alpha_ar)
+			# l'arrière file à gauche (local_ar.x > 0) : la voiture tourne à droite et c'est braquer à droite (roues avant
+			# à droite de leur trajectoire) qui la ferait tourner davantage
+			if local_ar.x > 0.0:
+				borne_droite *= reste
+			else:
+				borne_gauche *= reste
+		d = lerpf(d, clampf(d, trajectoire - borne_droite, trajectoire + borne_gauche), poids)
+	d = clampf(d, -braquage_max, braquage_max)
+	steer = -d / braquage_max
+	for w: Roue in roues:
+		if w.avant:
+			w.braquage = _ackermann(d, w.gauche)
+			w.rotation.y = w.braquage
+
+
+# Épure d'Ackermann : la roue intérieure braque plus, les deux visent le centre du virage sur l'essieu arrière prolongé.
+func _ackermann(d: float, gauche: bool) -> float:
+	if absf(d) < 0.0001:
+		return d
+	var rayon := empattement / tan(d)
+	var demi := voie * 0.5
+	return atan(empattement / (rayon - demi)) if gauche else atan(empattement / (rayon + demi))
+
+
+# --- roues -----------------------------------------------------------------------------------------------------------
+
+# Le sol sous la roue : trois rayons verticaux (repère du châssis), répartis le long du pneu. Pour chacun, le sol touché
+# impose au centre de la roue une hauteur minimale (celle du cercle du pneu au-dessus de ce point) : on garde la plus
+# haute. Rend la détente (m sous le repos, négative si comprimée), la normale et le point bas du pneu.
+func _sonder(w: Roue, espace: PhysicsDirectSpaceState3D, xf: Transform3D, haut: Vector3, avant: Vector3) -> void:
+	var sommet: Vector3 = xf * (w.repos + Vector3(0.0, DEBATTEMENT_HAUT, 0.0))
+	var course := DEBATTEMENT_HAUT + w.detente_max
+	var meilleur := INF
+	var normale := haut
+	for k: float in RAYONS:
+		var dx := k * w.rayon
+		var r_eff := sqrt(maxf(w.rayon * w.rayon - dx * dx, 0.0))
+		var depart := sommet + avant * dx
+		_requete.from = depart
+		_requete.to = depart - haut * (course + r_eff)
+		var hit := espace.intersect_ray(_requete)
+		if hit.is_empty():
+			continue
+		var s: float = (depart - (hit["position"] as Vector3)).dot(haut) - r_eff
+		if s < meilleur:
+			meilleur = s
+			var n: Vector3 = hit["normal"]
+			normale = n if n.length_squared() > 0.5 else haut
+	if meilleur == INF:
+		w.au_sol = false
+		return
+	w.au_sol = true
+	w.detente = meilleur - DEBATTEMENT_HAUT
+	w.normale = normale
+	w.contact = sommet - haut * (meilleur + w.rayon)
+
+
+# Ressort, amortisseur, butée et barre anti-roulis : l'effort, appliqué le long du haut du châssis, est la charge du pneu.
+func _ressort(w: Roue, etat: PhysicsDirectBodyState3D, xf: Transform3D, haut: Vector3, delta: float) -> void:
+	var f := w.raideur * (w.l0 - w.detente)
+	var butee := -w.detente - DEBATTEMENT_HAUT
+	if butee > 0.0:
+		f += w.raideur * BUTEE * butee
+	# vitesse de compression : celle de la roue par rapport à la caisse, bosses du sol comprises (d'un pas à l'autre)
+	var v_comp := 0.0 if w.detente_avant == INF else (w.detente_avant - w.detente) / delta
+	var c := w.amort_comp if v_comp > 0.0 else w.amort_detente
+	var borne := AMORT_MAX * w.charge_statique
+	f += clampf(c * v_comp, -borne, borne)
+	if w.jumelle != null:
+		var j: Roue = w.jumelle
+		f += w.raideur_barre * ((j.detente if j.au_sol else j.detente_max) - w.detente)
+	f = maxf(f, 0.0)
+	w.charge = f
+	# L'effort passe au sol le long de sa NORMALE, comme la charge d'un vrai pneu, pas le long du haut de la caisse : penchée
+	# ou plongée, la caisse aurait sinon poussé la voiture de côté ou vers l'avant (mesuré sur la berline qui freine, caisse
+	# plongée de 5,8° : 1,3 kN vers l'avant, 1 m/s² de freinage en moins ; en virage, 7° de roulis retiraient autant de
+	# tenue). La compression, elle, se mesure le long de la caisse.
+	var n := w.normale if w.normale.dot(haut) > 0.7 else haut
+	etat.apply_impulse(n * (f * delta), w.contact - xf.origin)
+
+
+# Le pneu : en travers la courbe de traction, le long la poussée et les freins, le cercle d'adhérence entre les deux
+# (cf. en tête). Calcule les forces de ce pas (fx, fy) et leurs points d'application : en travers au centre de roulis, le
+# long au centre de tangage ; _physics_process les applique ensemble. Tout ce qui annule un glissement (à basse vitesse,
+# à l'arrêt) n'en annule que la part de cette roue, les autres, calculées sur le même état, faisant le reste.
+func _pneu(w: Roue, etat: PhysicsDirectBodyState3D, haut: Vector3, cdg: Vector3, delta: float, motrice: float) -> void:
+	var n := w.normale
+	var cap_roue: Vector3 = etat.transform.basis.z.normalized()
+	if w.braquage != 0.0:
+		cap_roue = cap_roue.rotated(haut, w.braquage)
+	var av := (cap_roue - n * cap_roue.dot(n)).normalized()
+	var lat := n.cross(av)
+	var p := w.contact
+	w.dir_av = av
+	w.dir_lat = lat
+	w.point_lat = p + haut * h_roulis
+	w.point_lon = p + haut * h_tangage
+	var v: Vector3 = etat.linear_velocity + etat.angular_velocity.cross(p - cdg)
+	var vx := v.dot(av)
+	var vy := v.dot(lat)
+	var charge := w.charge
+	var cap := w.adherence * charge
+	var part := 1.0 / (float(maxi(_sol, 1)) * delta)
+	# EN TRAVERS : la courbe de traction (fTractionCurveMax au pic, à fTractionCurveLateral ; fTractionCurveMin au-delà) ;
+	# jamais plus que ce qui annule la part de glissement de cette roue (à basse vitesse, la courbe seule ferait rebondir)
+	var alpha := atan2(absf(vy), maxf(absf(vx), 0.5))
+	w.derive_pneu = alpha
+	var x := alpha / derive_pic
+	var courbe := sin(x * PI * 0.5) if x < 1.0 else lerpf(1.0, w.adherence_glisse / w.adherence, smoothstep(1.0, 2.0, x))
+	var fy := -signf(vy) * minf(courbe * cap, absf(vy) * _masse_effective(etat, w.point_lat - cdg, lat) * part)
+	# LE LONG
+	var main := 0.0
+	if w.part_frein_main > 0.0 and _main_total > 0.0:
+		main = _main_total * charge / maxf(_charge_arriere, 1.0)       # réparti selon la charge (cf. _frein_main_essieu)
+	var moteur := 0.0 if main > 0.0 else motrice * w.part_moteur     # le frein à main débraye les roues qu'il tient
+	var frein := brakepedal * _freinage * mass * w.part_frein
+	var fx := 0.0
+	w.bloquee = main > 0.0 and _arriere_bloque
+	if w.bloquee:
+		# roue bloquée : elle glisse, sa force s'oppose à sa vitesse sur le sol
+		var vg := v - n * v.dot(n)
+		var lg := vg.length()
+		fy = 0.0
+		if lg > 0.01:
+			var u := vg / lg
+			var f := minf(w.adherence_glisse * GLISSE_BLOQUEE * charge, lg * _masse_effective(etat, p - cdg, u) * part)
+			fx = -u.dot(av) * f
+			fy = -u.dot(lat) * f
+		w.patinage = 0.0
+		w.wv = 0.0
+	else:
+		var m_lon := _masse_effective(etat, w.point_lon - cdg, av) * part
+		fx = moteur
+		if frein > 0.0:
+			fx -= signf(vx) * minf(frein, absf(vx) * m_lon)      # jamais au point d'inverser le roulement dans ce pas
+		# PATINAGE : la roue motrice pousse plus que son pneu ne tient (moins encore à basse vitesse,
+		# fLowSpeedTractionLossMult)
+		var cap_lon := cap * (1.0 - _perte_basse * maxf(0.0, 1.0 - absf(vx) / FichesVehicules.V_PERTE_BASSE_VITESSE))
+		if moteur != 0.0 and frein == 0.0 and absf(moteur) > cap_lon:
+			var cible := minf(PATINAGE_MAX, 1.5 + 6.0 * (absf(moteur) / maxf(cap_lon, 1.0) - 1.0))
+			w.patinage = move_toward(w.patinage, cible, PATINAGE_MONTEE * delta)
+		else:
+			w.patinage = move_toward(w.patinage, 0.0, PATINAGE_DESCENTE * delta)
+		if w.patinage > 0.3 and moteur != 0.0:
+			# roue qui patine : poussée plafonnée, et en travers ce qui reste du cercle d'adhérence (la propulsion survire)
+			fx = signf(moteur) * cap_lon * PATINAGE_ADHERENCE
+			var reste := sqrt(maxf(cap * cap - fx * fx, 0.0))
+			fy = clampf(fy, -reste, reste)
+		else:
+			# cercle d'adhérence : poussée et frein au pied partagent l'adhérence avec le virage (l'ABS borne la roue freinée,
+			# elle ne bloque pas)
+			var tot := sqrt(fx * fx + fy * fy)
+			if tot > cap and tot > 0.0:
+				fx *= cap / tot
+				fy *= cap / tot
+			# un frein à main qui ne bloque pas freine avec ce que le pneu garde APRÈS le virage : il ralentit un camion sans
+			# le faire déraper
+			if main > 0.0:
+				var reste := sqrt(maxf(cap * cap - fy * fy, 0.0))
+				fx = clampf(fx - signf(vx) * minf(main, absf(vx) * m_lon), -reste, reste)
+		w.wv = (vx + signf(moteur) * w.patinage) / w.rayon
+	w.glisse = w.wv * w.rayon - vx
+	w.fx = fx
+	w.fy = fy
+
+
+# FREIN À MAIN, décidé pour tout l'essieu arrière : il BLOQUE les roues arrière quand sa force dépasse ce que tiennent
+# ENSEMBLE leurs pneus (et, bloquées, elles ne se débloquent qu'en deçà de leur glisse) ; sinon il freine chaque roue selon
+# sa charge. Décidé roue par roue, la roue intérieure d'un virage, délestée (8,6 kN au lieu de 20 sur le camion
+# city_truck_01, mesuré), bloquait seule : l'arrière du camion partait à 31°. Un camion dont le frein de parc ne peut pas
+# bloquer l'essieu ralentit ; il ne dérape pas.
+func _frein_main_essieu(etat: PhysicsDirectBodyState3D) -> void:
+	_main_total = handbrakepull * _frein_main * mass
+	_charge_arriere = 0.0
+	var capacite := 0.0
+	for w: Roue in roues:
+		if w.part_frein_main > 0.0 and w.au_sol:
+			_charge_arriere += w.charge
+			capacite += (w.adherence_glisse * GLISSE_BLOQUEE if _arriere_bloque else w.adherence) * w.charge
+	var v_sol: Vector3 = etat.linear_velocity
+	_arriere_bloque = _main_total > 0.0 and _main_total > capacite and Vector2(v_sol.x, v_sol.z).length() > V_TENUE
+
+
+# Roue en l'air : détendue ; une roue motrice sous les gaz s'emballe, une roue freinée s'arrête.
+func _roue_en_l_air(w: Roue, delta: float) -> void:
+	w.detente = move_toward(w.detente, DEBATTEMENT_BAS, 3.0 * delta)
+	w.charge = 0.0
+	w.bloquee = false
+	w.patinage = 0.0
+	if w.part_frein_main > 0.0 and handbrakepull > 0.5 or brakepedal > 0.5:
+		w.wv = move_toward(w.wv, 0.0, 200.0 * delta)
+	elif w.motrice and gaspedal > 0.05:
+		w.wv = move_toward(w.wv, float(_sens) * v_max / w.rayon, 60.0 * delta)
+	else:
+		w.wv = move_toward(w.wv, 0.0, 3.0 * delta)
+
+
+# Masse effective du corps au point `r` (depuis le centre de gravité), dans la direction `d` : ce qu'une impulsion le long
+# de d y met en mouvement, rotation comprise.
+func _masse_effective(etat: PhysicsDirectBodyState3D, r: Vector3, d: Vector3) -> float:
+	var rxd := r.cross(d)
+	var inv := etat.inverse_mass + rxd.dot(etat.inverse_inertia_tensor * rxd)
+	return 1.0 / maxf(inv, 0.000001)
+
+
+# ADHÉRENCE À L'ARRÊT : freinée (frein, maintien, frein à main, stationnement) et presque arrêtée, la voiture est tenue —
+# sa vitesse le long du sol et la poussée de la pente pendant ce pas sont annulées, dans la limite de ce que tiennent ses
+# pneus. (La gravité est appliquée par le moteur physique après ce pas : on l'annule d'avance.)
+func _tenue(etat: PhysicsDirectBodyState3D, delta: float) -> void:
+	if _sol == 0 or gaspedal > 0.05 or not (brakepedal > 0.3 or handbrakepull > 0.3):
+		return
+	var n := Vector3.ZERO
+	for w: Roue in roues:
+		if w.au_sol:
+			n += w.normale
+	n = n.normalized()
+	var v: Vector3 = etat.linear_velocity
+	var v_sol := v - n * v.dot(n)
+	if v_sol.length() > V_TENUE:
+		return
+	var g := Vector3(0.0, -_g, 0.0)
+	var impulsion := -(v_sol + (g - n * g.dot(n)) * delta) * mass
+	var limite := adherence_av * mass * _g * delta
+	if impulsion.length() > limite:
+		impulsion *= limite / impulsion.length()
+	etat.apply_central_impulse(impulsion)
+
+
+# Traînée (en v², égale à la poussée à la vitesse de pointe), résistance au roulement, frein moteur (en prise, pied levé).
+func _trainee(etat: PhysicsDirectBodyState3D, delta: float, v_long: float) -> void:
+	var v: Vector3 = etat.linear_velocity
+	var s := v.length()
+	if s < 0.05:
+		return
+	var a := _trainee_vmax * (s / v_max) * (s / v_max)
+	if _sol > 0:
+		a += A_ROULEMENT
+		if Controlled and gaspedal < 0.05 and brakepedal < 0.05 and handbrakepull < 0.05 and absf(v_long) > V_MAINTIEN:
+			a += FREIN_MOTEUR
+	etat.apply_central_impulse(-v / s * (minf(a * delta, s) * mass))
+
+
+# Rapport et régime AFFICHÉS (compteur) : des tranches de la vitesse de pointe ; il n'y a pas de boîte.
+func _affichage(v_long: float) -> void:
+	if _sens < 0:
+		gear = -1
+		rpm = 900.0 + 5000.0 * clampf(-v_long / V_MARCHE_ARRIERE, 0.0, 1.0)
+		return
+	var x := maxf(v_long, 0.0) / v_max
+	var r := 1
+	for i in range(RAPPORTS.size() - 1, 0, -1):
+		if x >= float(RAPPORTS[i]):
+			r = i + 1
+			break
+	if r < _rapport and x > float(RAPPORTS[_rapport - 1]) - 0.03:
+		r = _rapport
+	_rapport = r
+	gear = r
+	var bas := float(RAPPORTS[r - 1])
+	var sommet := float(RAPPORTS[r]) if r < RAPPORTS.size() else 1.0
+	rpm = 900.0 + 6100.0 * clampf((x - bas) / maxf(sommet - bas, 0.01), 0.0, 1.0)
+
+
+# --- repos, gel, chocs -------------------------------------------------------------------------------------------------
+
+# Sans conducteur et immobile depuis REPOS_PAS pas : on fige le corps, qui ne coûte alors plus rien.
+func _repos() -> void:
+	if Controlled:
+		_pas_repos = 0
+		return
+	if linear_velocity.length() < REPOS_V and angular_velocity.length() < REPOS_V:
+		_pas_repos += 1
+		if _pas_repos >= REPOS_PAS:
+			figer(false)
+	else:
+		_pas_repos = 0
+
+
+func figer(par_culler: bool) -> void:
+	if fige:
+		return
+	fige = true
+	_gel_culler = par_culler
+	freeze = true
+	set_physics_process(false)
+
+
+func degeler() -> void:
+	if not fige:
+		return
+	fige = false
+	_gel_culler = false
+	_pas_repos = 0
+	freeze = false
+	set_physics_process(true)
+	repartir(Vector3.ZERO)
+
+
+# SimulationCuller (via Car.set_simulation_active) : gel hors champ ; au réveil, on ne dégèle que ce que LUI a gelé.
+func activer_simulation(actif: bool) -> void:
+	if not actif:
+		figer(true)
+	elif _gel_culler:
+		degeler()
+
+
+# Choc reçu (Car.knock) : le corps repart, poussé.
+func pousser(dir: Vector3, force: float) -> void:
+	degeler()
+	var d := Vector3(dir.x, 0.0, dir.z)
+	if d.length() < 0.01:
+		return
+	apply_central_impulse(d.normalized() * force * 0.5 * mass)
+
+
+# Choc donné : la voiture de la circulation qu'on percute est sonnée. Elle reste immobile pour la physique (corps
+# cinématique, masse infinie) : c'est le châssis qui encaisse le choc, d'où le rebond.
+func _contact(body: Node) -> void:
+	if not Controlled or body == get_parent() or not body.is_in_group("vehicle") or not body.has_method("knock"):
+		return
+	var v := linear_velocity.length()
+	if v < 1.0:
+		return
+	var d := (body as Node3D).global_position - global_position
+	d.y = 0.0
+	body.knock(d.normalized() if d.length() > 0.01 else global_transform.basis.z, v * 0.6 + 4.0)

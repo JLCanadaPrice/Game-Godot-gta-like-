@@ -101,7 +101,7 @@ const FOOT_SPRING_LENGTH := 4.0
 const DRIVE_SPRING_LENGTH := 8.0     # caméra reculée en conduite
 const DRIVE_ZOOM_EXTRA := 3.5        # dézoom supplémentaire à vitesse max
 const DRIVE_ZOOM_SPEED := 30.0       # m/s (108 km/h) : la caméra a fini de reculer (24, la vitesse maximale de l'arcade,
-                                     # supprimée le 2026-09-24 ; une voiture réaliste va de 50 à 350 km/h)
+									 # supprimée le 2026-09-24 ; une voiture réaliste va de 50 à 350 km/h)
 
 # --- intérieur (ApartmentInterior -> set_indoor) ---
 const FOOT_PIVOT_HEIGHT := 1.6       # hauteur de la SpringArm dans Player.tscn
@@ -1048,7 +1048,7 @@ func _sortie_libre(space: PhysicsDirectSpaceState3D, car: Node3D, p: Vector3) ->
 	q.shape = cap
 	q.transform = Transform3D(Basis.IDENTITY, p)
 	q.collision_mask = 1 | 4
-	# la voiture et son châssis physique (ChassisGTA, la conduite du joueur), qui occupe la même place
+	# la voiture et, en conduite réaliste, son châssis physique (ChassisReel), qui occupe la même place
 	var exclus: Array[RID] = [get_rid(), car.get_rid()]
 	if car.has_method("rids_exclus"):
 		exclus.append_array(car.call("rids_exclus"))

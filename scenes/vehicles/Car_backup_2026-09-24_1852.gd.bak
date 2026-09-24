@@ -1309,8 +1309,8 @@ func nears_node(node: int, except_edge: int, radius: float) -> bool:
 # --- conduite ---------------------------------------------------
 
 # Rayon de braquage « entre murs », celui des fiches techniques : la roue avant EXTÉRIEURE, braquage à fond (MAX_STEER_RAD,
-# l'angle que montrent les roues avant des voitures de la circulation ; celui du joueur est fSteeringLock de sa fiche,
-# ChassisGTA), à basse vitesse. Le centre du virage est sur l'essieu arrière prolongé, à L / tan(δ) du milieu de la voiture.
+# l'angle que montrent les roues avant et celui du châssis réel, cf. ChassisReel.configurer), à basse vitesse. Le centre du
+# virage est sur l'essieu arrière prolongé, à L / tan(δ) du milieu de la voiture.
 func rayon_entre_murs() -> float:
 	var r := _empattement / tan(MAX_STEER_RAD) + _voie * 0.5
 	return sqrt(r * r + _empattement * _empattement)
@@ -1606,7 +1606,7 @@ func stop_drive() -> void:
 	_drive_speed = 0.0
 	velocity = Vector3.ZERO
 	if _chassis != null:
-		_chassis.Controlled = false   # stationnement : pédales à zéro, frein à main (ChassisGTA._commandes)
+		_chassis.Controlled = false   # stationnement : pédales à zéro, frein à main (ChassisReel.controls)
 	# DISPARITION APRÈS ABANDON (corrigé le 2026-09-24). Le compte à rebours était branché sur queue_free sans condition :
 	# ressorti puis remonté dans les 25 s, le joueur voyait la voiture disparaître sous lui 25 s après sa PREMIÈRE sortie
 	# — et lui avec, puisqu'il est assis sur son siège. Chaque sortie a maintenant son numéro, et seule la dernière, la
@@ -1653,11 +1653,10 @@ func set_simulation_active(active: bool) -> void:
 static func _keep_awake(o: Object) -> void:
 	o.set_meta(SIM_KEEP_AWAKE_META, Engine.get_physics_frames() + SIM_KEEP_AWAKE_FRAMES)
 
-# --- CONDUITE DU JOUEUR : LE CHÂSSIS FAÇON GTA V (2026-09-24, CLAUDE.md §13, §14 et §15) ---------------------------
+# --- CONDUITE DU JOUEUR : LE CHÂSSIS RÉEL (2026-09-24, CLAUDE.md §13 et §14) --------------------------------------
 #
 # La voiture du joueur n'a plus qu'une conduite : quand il prend le volant, la voiture se dote d'un châssis physique réglé
-# sur la fiche de son modèle (ChassisGTA, la conduite façon GTA V, §15 ; FichesVehicules) et le SUIT. Il a remplacé le
-# 2026-09-24 au soir le châssis réel du même jour (le cœur du pack VitaVehicle, §13 et §14), sur demande du joueur. L'arcade
+# sur la fiche de son modèle (ChassisReel, le cœur du pack VitaVehicle ; FichesVehicules, §14) et le SUIT. L'arcade
 # (Car._drive_physics, franchissement de bordure à la main, assiette de la boîte sur les pentes, braquage réduit à
 # vitesse) a été SUPPRIMÉE le 2026-09-24 sur décision du joueur ; la bascule F7 de l'essai avec elle. Les 252 voitures de
 # la circulation gardent leur conduite cinématique sur le graphe : elles ne passent pas par ici.
@@ -1668,7 +1667,7 @@ static func _keep_awake(o: Object) -> void:
 # culler). Son corps cinématique est coupé (couches à zéro) tant que le châssis existe, c'est-à-dire pour toujours une
 # fois qu'on l'a conduite : à la descente, le châssis reste — pédales à zéro, frein à main — et se fige une fois arrêté ;
 # la voiture reste là où elle s'est arrêtée, penchée sur une rampe s'il le faut.
-const ChassisGTA := preload("res://scenes/vehicles/ChassisGTA.gd")
+const ChassisReel := preload("res://scenes/vehicles/ChassisReel.gd")
 static var _mesures_chassis_cache := {}   # model_path -> mesures, dans le repère du châssis
 var _chassis: RigidBody3D = null
 var _roue_chassis := {}      # roue du modèle -> roue du châssis
@@ -1726,7 +1725,7 @@ func _activer_chassis() -> void:
 		var m := _mesures_chassis()
 		if m.is_empty():
 			return
-		var ch = ChassisGTA.new()
+		var ch = ChassisReel.new()
 		ch.configurer(m, MAX_STEER_RAD, fiche_physique())
 		ch.top_level = true
 		ch.transform = global_transform * repere_chassis()
@@ -1872,10 +1871,10 @@ func _mesures_chassis() -> Dictionary:
 		if coque == null:
 			return {}
 		coques = [coque]
-	# surface frontale : la boîte du modèle (largeur x hauteur, rétroviseurs et roues compris) x 0,8, la part qu'en occupe
-	# une vraie silhouette de voiture ; la boîte elle-même donne l'inertie du châssis (ChassisGTA)
+	# surface frontale pour la traînée : la boîte du modèle (largeur x hauteur, rétroviseurs et roues compris) x 0,8, la
+	# part qu'en occupe une vraie silhouette de voiture
 	var m := {"roues": roues, "y_sol": y_sol, "coques": coques, "surface": _boite_caisse.size.x * _boite_caisse.size.y * 0.8,
-			"voie": 2.0 * x_avant, "hauteur": _boite_caisse.size.y - 0.04, "essieux_arriere": essieux.size(), "boite": _boite_caisse.size}
+			"voie": 2.0 * x_avant, "hauteur": _boite_caisse.size.y - 0.04, "essieux_arriere": essieux.size()}
 	_mesures_chassis_cache[model_path] = m
 	return m
 
