@@ -18,11 +18,7 @@ travail imposée, les commandes exactes, les pièges déjà payés et l'état d'
 > FAITE : la circulation roule et accélère selon la fiche de chaque modèle. Étape D FAITE (mesure seulement, rien de
 > construit) : une voiture physique coûte 0,21 ms par pas ; la version hybride tient au rond-point mais bloque un carrefour à
 > feux dense — **le joueur décide** (§14). Étape E FAITE : trois vidéos hors dépôt (`D:/p-recree/videos_conduite/`, 5 à
-> 7), évitement à 110 km/h en berline et à 85 km/h en bus, sportive contre camion. **Puis décisions du joueur** : la vraie
-> physique sur les PNJ, NON — la circulation reste cinématique, et l'idée de ne passer en physique que la voiture percutée
-> va à la feuille de route (§7) ; les 13 modèles bas ne sont pas surélevés. **Frein à main pour déraper, FAIT** (§14) : en
-> voiture, Espace n'est plus que le frein à main ; il bloque les roues arrière quand la fiche le dit plus fort que les pneus
-> arrière (voitures, SUV, fourgons légers), pas sur les camions et les bus ; vidéo 8 hors dépôt. Toujours en attente depuis le
+> 7), évitement à 110 km/h en berline et à 85 km/h en bus, sportive contre camion. Toujours en attente depuis le
 > 2026-09-23 : le coût physique d'environ 2 ms (NON TOUCHÉ, le joueur le teste en jeu) et la pose des trois packs
 > d'accessoires convertis (§7).
 
@@ -235,8 +231,8 @@ attendu. (C'est la voiture du pack telle quelle. Le châssis de la conduite réa
 "$GODOT" --headless --path "$PROJET" --fixed-fps 60 --quit-after 300 res://scenes/tests/VehicleCatalogTest.tscn  # catalogue des véhicules, 20 000 tirages
 "$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/CarDrivingTest.tscn  # accélération, virage, freinage : CAR_DRIVING_RESULT
 "$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/CarDropTest.tscn     # chute de 10 m : CAR_DROP_RESULT
-"$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/ConduiteReelleTest.tscn  # conduite réaliste, berline : 108 km/h, freinage, frein à main (Espace), bordure, volant partiel, rampe 16 %, entrée de parking, sortie, F8, coût, cf. §13 et §14
-"$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/ChassisBancTest.tscn  # châssis par fiche, frein à main et dérapage compris, 6 silhouettes (~25 s) ; -- --tous --lot=i/3 pour les 72 (3 x ~2 min en parallèle ; échec ANTÉRIEUR connu dans le lot 1), cf. §14
+"$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/ConduiteReelleTest.tscn  # conduite réaliste, berline : 108 km/h, freinage, bordure, volant partiel, rampe 16 %, entrée de parking, sortie, F8, coût, cf. §13 et §14
+"$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/ChassisBancTest.tscn  # châssis par fiche, 6 silhouettes (~25 s) ; -- --tous --lot=i/3 pour les 72 (3 x ~2 min en parallèle), cf. §14
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/CarKerbTest.tscn          # bordures : le joueur monte, l'IA non
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/WheelSpinTest.tscn        # roues des 72 modèles : axe, sens, rayon, stroboscope, pivot, braquage, rayon de braquage par modèle
 "$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/ParkingStructureTest.tscn  # parkings à étages : plateaux, escalier, hélice, cf. §11
@@ -683,17 +679,8 @@ débogage sur `V`.
   (F7 / F8), et deux défauts des vidéos corrigés le même jour (rampe d'accès des parkings, direction). Puis décision du
   joueur, le même jour : **full réaliste pour le joueur, arcade supprimée, sur les 72 modèles**, chacun sur sa fiche (§14 ;
   étapes A, les fiches, B, l'arcade retirée, C, la circulation par modèle, D, la physique des PNJ mesurée, et E, les
-  vidéos, FAITES), et le frein à main pour déraper, le même jour (§14). Décisions du joueur, toujours le 2026-09-24 : la
-  vraie physique sur les PNJ, non (la circulation reste cinématique) ; les 13 modèles plus bas que les bordures ne sont pas
-  surélevés. Restent : les chocs contre la circulation (puce suivante), les sons.
-- **chocs réels contre la circulation**, plus tard (idée retenue par le joueur le 2026-09-24, après la mesure de l'étape D
-  du §14) : ne passer en physique QUE la voiture que le joueur percute, au moment du choc. Aujourd'hui une voiture de la
-  circulation est cinématique, de masse infinie pour le châssis du joueur : il rebondit sur elle, et elle n'est que
-  « sonnée » (`Car.knock`). La version hybride mesurée à l'étape D (les 8 voitures les plus proches en physique, pilotées
-  par l'IA) coûte 0,21 ms par voiture et par pas, et bloque un carrefour à feux dense, parce que l'IA ne sait pas piloter une
-  voiture physique dans une circulation serrée. Une voiture percutée n'a pas besoin d'IA : elle encaisse le choc, glisse,
-  s'arrête, puis reprend sa conduite cinématique, ou reste sur place, accidentée. Base possible : le châssis piloté de la
-  sonde de l'étape D (`D:/p-recree/sondes/2026-09-24_hybride/chassis_ia.gd`).
+  vidéos, FAITES). Restent : la décision du joueur sur la physique des PNJ (§14, étape D), les 13 modèles plus bas que
+  les bordures (§14, surélever ou non), les chocs contre la circulation, les sons.
 - **ACCESSOIRES PRÊTS À POSER, pas encore posés** (2026-09-23) : trois packs reçus en FBX, convertis en une scène par
   modèle par `scenes/world/props/tools/ConversionPacks.gd` — `assets/airport_ground_vehicles/` (4 véhicules de piste),
   `assets/farm_buildings_quaternius/` (13 bâtiments et objets de ferme), `assets/low_poly_construction/` (81 éléments et
@@ -2584,9 +2571,8 @@ est plus bas qu'elle. La coque physique ne touche nulle part, et la voiture pass
   normalcar2, de 0,1 à 1,8 cm.
 - **Entrée des parkings** : lowpoly_italia 2,1 cm, city_sports_car_02 0,8 cm.
 
-Seul remède : surélever ces caisses sur leurs roues d'autant (6 cm pour l'italia), ce qui se verrait en permanence.
-**Décision du joueur, le 2026-09-24 : on ne les surélève pas.** La balayeuse (city_sweeper) touche par ses brosses, c'est
-voulu.
+Seul remède : surélever ces caisses sur leurs roues d'autant (6 cm pour l'italia), ce qui se verrait en permanence. Laissé
+au choix du joueur. La balayeuse (city_sweeper) touche par ses brosses, c'est voulu.
 
 ### Étape B : l'arcade retirée pour le joueur (2026-09-24)
 
@@ -2702,9 +2688,6 @@ physique. Le pilote de la sonde ajoute ~0,1 ms par voiture. Pour 8 voitures phys
 
 C'est une refonte des décisions de la circulation, pas un réglage.
 
-**Décision du joueur (2026-09-24) : on garde la circulation actuelle.** L'idée de ne passer en physique que la voiture
-percutée est notée à la feuille de route (§7, « chocs réels contre la circulation »).
-
 ### Étape E : les vidéos (2026-09-24)
 
 Hors dépôt, dans `D:/p-recree/videos_conduite/`, à côté des vidéos 1 à 4 de l'essai.
@@ -2739,99 +2722,3 @@ Pièges payés en le faisant :
   modèles, elle va de 0,443 à 0,454 m ;
 - l'ancien outil `video_conduite.gd` (vidéos 1 à 4) appelait l'arcade retirée : il est réparé, et son clip 4 roule
   maintenant en réaliste.
-
-### Frein à main : le dérapage (2026-09-24)
-
-Demande du joueur : « Quand je suis en voiture, Espace doit être le frein à main, et seulement ça [...] en roulant, braquer +
-Espace doit bloquer les roues arrière et faire partir l'arrière en glisse, comme un vrai frein à main. Quand je relâche, la
-voiture reprend de l'adhérence. » La sportive doit déraper facilement, le camion beaucoup moins, et rien ne doit se coucher,
-même un véhicule haut.
-
-**Ce qui manquait**, relevé au banc avant de rien changer :
-- **La boîte automatique ne débrayait pas.** Sur une propulsion ou une intégrale, le moteur entraînait encore les roues
-  arrière : avec le même frein à main pour tous, 0 % de blocage sur le SUV, le camion et le bus à 50 km/h. La boîte manuelle
-  du pack, elle, débraye au frein à main.
-- **Les roues arrière ne se bloquaient pas assez sur 19 modèles** (moins de 80 % du temps), parmi les 53 dont le frein à main
-  dépasse ce que tiennent les pneus arrière. 15 ne se bloquaient presque jamais : le hot rod, les sportives lowpoly, la jeep,
-  les pick-ups lourds... Mesure : frein à main seul, en ligne droite, depuis 50 km/h. Elles freinaient à la limite du pneu
-  en tournant encore. Le frein du pack ralentit une roue sans jamais l'arrêter quand elle est grande et chargée : il lui
-  manque le terme que reçoit le frein au pied (`distanced -= brakeline`, `wheel.gd`). Or une roue qui roule garde son
-  adhérence en travers : pas de dérapage.
-- Espace ne faisait déjà pas sauter en voiture : `Player._physics_process` sort avant de lire le saut. Restait un cas : un
-  appui mis en mémoire (`JUMP_BUFFER`, 0,12 s) juste avant de monter pouvait faire sauter à la descente.
-
-**Ce qui est fait.**
-- **Une colonne de plus dans les fiches, `frein_main_ms2`** : la décélération que le frein à main peut donner à lui seul,
-  sur les roues arrière. Elle est estimée pour chaque modèle d'après ce qu'il est :
-  - une voiture a un frein à câble sur ses freins arrière : 7 m/s² pour une berline, 9 à 11,5 pour les muscle cars et les
-    sportives, 10,5 pour la voiture de rallye ;
-  - un SUV, un pick-up ou un fourgon, le même : de 4,5 à 7 ;
-  - un camion, un bus, un blindé ont un frein de parc, fait pour tenir le véhicule garé : 2,5 à 4.
-- **Quand il dépasse ce que tiennent les pneus arrière, il les BLOQUE.** Le seuil vaut adhérence × g × part du poids sur
-  l'arrière, à l'arrêt. La roue arrière est tenue arrêtée tant qu'Espace est tiré (`ChassisRoue.bloque_frein_main`, réglé
-  par `ChassisReel`). En dessous, le frein du pack freine sans bloquer : c'est le cas de 19 modèles, camions, bus, blindés
-  lourds et utilitaires lourds.
-- **Au frein à main, la boîte débraye et garde son rapport** (`ChassisReel.transmission`). Sans cela, roues motrices
-  bloquées, elle redescendait en première, et le moteur aurait freiné l'arrière d'un coup au relâcher.
-- **Ni l'ABS ni l'antipatinage ne touchent au frein à main.** L'ABS roue par roue ne desserre que la part du frein au pied
-  (`B_Bias`), jamais `HB_Bias`. L'antipatinage ne coupe que les gaz, et seulement quand une roue motrice tourne plus vite que
-  le sol, jamais quand elle est bloquée.
-- `Player` remet à zéro l'appui de saut mis en mémoire, à la montée et à la descente.
-
-**Mesuré** (`ChassisBancTest`, `ConduiteReelleTest`) :
-- **Frein à main seul, en ligne droite depuis 50 km/h, sur les 72 modèles.**
-  - 53 modèles bloquent leurs roues arrière, 100 % du temps une fois le levier monté. Ils décélèrent autant que tiennent les
-    pneus arrière : 3,8 m/s² pour la berline, 5,7 pour la sportive.
-  - Les 19 autres freinent à la valeur de leur fiche, plus ~0,4, sans bloquer : le camion à 3,4 m/s² pour 3,0.
-  - Avec le frein au pied en même temps, les roues restent bloquées : 8,8 m/s² pour la berline, 10,0 pour la sportive.
-  - Cap au plus 0,4° : la voiture freine droit.
-- **Dérapage** : braquage à fond et frein à main pendant 1,2 s, puis tout relâché. Dérive au plus :
-
-| | 50 km/h | 80 km/h | 110 km/h |
-|---|---|---|---|
-| city_sports_car_02 | 42° (15° en 0,7 s) | 37° | 37° |
-| city_sedan_01 | 38° | 40° | 38° |
-| city_truck_01 | 2° | 14° | 18° |
-| city_bus_01 | 2° | 5° | — |
-
-  - La dérive des voitures plafonne vers 35-45°. L'assistance de direction du pack contre-braque d'elle-même quand l'arrière
-    glisse (son terme de dérive), et c'est ce qui garde la glisse rattrapable.
-  - À 50 km/h, 1,2 s de frein à main fait faire aux voitures un demi-tour : 111 à 146° de cap, jusqu'à l'arrêt.
-  - À 80 et 110 km/h, une fois relâchées, elles reprennent l'adhérence en 0,3 à 1,2 s. Le pire : 2,6 s pour la grande
-    américaine des années 1950, à la suspension molle.
-- **Les 72 modèles, à 50, 80 et 110 km/h : aucun ne se couche.** Roulis au plus 8,0° (city_retro_car_03), aucune roue
-  levée.
-- **Gaz tenus pendant et après le frein à main** (sportive, berline, camion, hypercar, muscle car, bus) : l'arrière reste
-  bloqué 96 % du temps, et la voiture reprend l'adhérence en 0,6 à 1,3 s en réaccélérant.
-- **`ConduiteReelleTest`**, le vrai joueur au volant de la berline à 49 km/h : la vraie touche Espace (qui porte aussi le saut,
-  à pied) avec braquage à fond pendant 1 s.
-  - Frein à main tiré à 1,00, roues arrière bloquées 100 % du temps, 30° de dérive.
-  - Adhérence reprise 1,1 s après le relâcher.
-  - Le joueur reste assis : vitesse verticale 0.
-- Tests OK :
-  - `ChassisBancTest` sur les six silhouettes, avec les nouvelles phases `frein_main` et `derapage_50/80/110`, et la
-    comparaison sportive / camion (au moins deux fois plus de dérive, à chaque vitesse) ;
-  - `ConduiteReelleTest` ;
-  - `ProjectLoadCheck` : 640 fichiers, 0 échec.
-
-**Vidéo** : `D:/p-recree/videos_conduite/8_derapage_frein_a_main_sportive_80_kmh.mp4` (outil `outils/video_etape_e.gd
---clip=8`). La sportive à 80 km/h : frein à main et braquage à droite pendant 0,9 s, contre-braquage et gaz, puis la même chose
-à gauche. La caméra de poursuite est alignée sur la TRAJECTOIRE : celle du jeu, accrochée au cap de la voiture, la montrerait
-toujours droite.
-
-**Pièges payés en le faisant.**
-- **Le premier tête-à-queue de la vidéo était un CHOC contre la clôture de l'aéroport** : de 58 à 11 km/h en 33 ms, et un lacet
-  passé de 0,9 à 4,3 rad/s. La clôture sud court sur le bord de l'enrobé de la piste (z -1372). La voiture partait à 6 m de
-  ce bord, et au second dérapage son nez y arrivait. Une vitesse qui tombe en un pas n'est pas une affaire de pneus.
-- **Un critère de roue bloquée en m/s ment.** « Moins de 1 m/s » ne voit pas un blocage à 1,8 m/s pour 13 m/s au sol : le frein
-  du pack n'arrête jamais tout à fait une roue que le pneu entraîne. Juger en part de la vitesse au sol (15 %).
-- **La dérive d'une voiture presque arrêtée n'a pas de sens** : à 1 m/s, une voiture qui pivote encore peut avoir une vitesse
-  de n'importe quel sens. Ne la compter qu'au-dessus de 3 m/s.
-
-**Échec ANTÉRIEUR relevé en passant, non corrigé.** Dans le banc complet (`--tous --lot=1/3`), la coque de city_truck_02 touche
-la bordure de 17 cm prise à 30°, pendant 1 à 2 pas.
-- Rejoué SEUL, il passe.
-- Rejoué sur HEAD (`b6801b5`, sans le frein à main), le même lot échoue de la même façon (1 pas).
-
-C'est un contact en limite, qui dépend de l'état du moteur physique après les véhicules qui le précèdent dans le lot. Remède
-probable, à décider : monter sa garde de coque de 28 à 30 cm (colonne `garde_cm`).
