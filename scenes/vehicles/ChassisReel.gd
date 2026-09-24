@@ -1,0 +1,430 @@
+extends "res://assets/car_physics/MAIN/car.gd"
+
+# CHÂSSIS RÉEL (essai du 2026-09-24, étape 1 de la conduite réaliste, CLAUDE.md §13).
+#
+# La voiture du joueur reste une Car (Car.gd) : son modèle, ses feux, sa zone de tir, sa zone d'écrasement, ses taches,
+# sa place dans la circulation. Quand le joueur prend le volant d'un modèle retenu pour l'essai (F7), elle se dote de ce
+# châssis — le cœur physique du pack VitaVehicle (un RigidBody3D, quatre roues à rayon, boîte automatique, pneus), réparé
+# le 2026-09-21 (f2fe587) — et le SUIT : la Car prend sa position et son cap, son modèle son roulis et son tangage, ses
+# roues leur rotation, leur braquage et leur débattement. Le châssis est invisible et ne porte que la physique.
+#
+# Construit sur les MESURES du modèle (Car._mesures_chassis), pas sur la voiture du pack : roues posées sur les centres
+# relevés, pneu au rayon relevé, empattement et voie du modèle, coque = silhouette du modèle relevée à GARDE_AU_SOL.
+# Les réglages de suspension, de pneu, de freins et de moteur sont ceux de PlayerCarPhysics.tscn, la seule voiture de ce
+# pack validée par ses deux tests (CarDrivingTest, CarDropTest) : masse du pack (Weight/10 = 90, sa convention, cf.
+# CLAUDE.md §6), mêmes raideurs, même centre de gravité en proportion.
+#
+# Repère du châssis : celui du pack, avant en +Z, gauche en +X (celui de la Car a l'avant en -Z : demi-tour autour de Y).
+#
+# Trois défauts du pack corrigés ici, sans toucher à ses fichiers :
+#  - PÉDALES RESTÉES ENFONCÉES À LA SORTIE. Le pack ne met ses pédales à jour que si `Controlled` ; en sortant le pied
+#    sur W, l'accélérateur restait enfoncé et la voiture vide repartait. Et il lit W et S même sans conducteur, pour
+#    passer une vitesse depuis le point mort : un joueur qui marche à côté (mêmes touches) l'enclenchait. Sans conducteur,
+#    c'est maintenant le stationnement : pédales à zéro, frein de parking, frein à main (controls).
+#  - RECUL APRÈS UN ARRÊT (~5 cm/s, CLAUDE.md §5). Le pack n'a aucune résistance au roulement et passe au point mort
+#    sous 1,5 m/s. Résistance au roulement (CRR) ; et, sans pédale, sous V_MAINTIEN, le frein tient la voiture comme un
+#    maintien automatique — relâché dès qu'on accélère.
+#  - W QUI NE RÉPOND PAS TOUT DE SUITE. Depuis le point mort, la boîte attendait ~0,5 s avant d'enclencher la première ;
+#    ramené à ~3 pas. La marche arrière garde son délai : c'est S TENU à l'arrêt qui recule, pas un appui bref.
+#
+# Et la voiture du pack n'est PAS une berline : mesuré le 2026-09-24 (ConduiteReelleTest --trace), elle plafonnait à
+# 82,7 km/h en DEUXIÈME, à 6 400 tr/min, sans jamais atteindre les 6 500 tr/min où sa boîte passe la troisième — environ
+# 20 kW aux roues, quand une berline en a 80 à 110, et une traînée LINÉAIRE en vitesse (0,025 x v m/s²), 2,5 fois la
+# vraie à 100 km/h. Réglée ici sur une berline : traînée en v², sur la surface frontale MESURÉE du modèle (COEF_TRAINEE,
+# MASSE_REELLE), couple multiplié par COUPLE, choisi pour un 0-100 km/h d'environ 10 s (ConduiteReelleTest).
+# Enfin le pneu du pack est VISQUEUX : sa force naît du glissement, et une voiture freinée en pente doit glisser un peu
+# pour être retenue (mesuré : 3,7 cm en 2 s sur la rampe à 16 %). Freinée et presque arrêtée, elle est maintenant tenue
+# franchement, dans la limite de l'adhérence (_adherence_arret).
+
+const Roue := preload("res://scenes/vehicles/ChassisRoue.gd")
+
+const LONGUEUR_RAYON := 0.81      # rayon de roue de PlayerCarPhysics (m) : course et hauteur de repos en dépendent
+const GARDE_AU_SOL := 0.20        # bas de la coque au-dessus du sol, au repos : une bordure de 0,15 m passe dessous
+const HAUTEUR_CDG := 0.50         # centre de gravité au-dessus du sol (PlayerCarPhysics : 0,49 m)
+const PART_AVANT := 0.595         # part du poids sur l'essieu avant (PlayerCarPhysics : 59,5 %, une traction)
+const RAYON_PNEU_PACK := 0.2832   # rayon de pneu de PlayerCarPhysics (m) : l'étagement de sa boîte y est réglé
+const POIDS := 900.0              # convention du pack : masse du corps = Weight / 10
+const CRR := 0.012                # résistance au roulement d'un pneu de tourisme sur enrobé
+const V_MAINTIEN := 1.5           # m/s : sous cette vitesse, sans pédale, le frein ralentit puis tient la voiture
+const FREIN_RALENTIR := 0.35      # pédale de frein appliquée en roulant sous V_MAINTIEN
+const V_ARRET := 0.3              # m/s : en deçà, maintien franc
+const FREIN_MAINTIEN := 1.0
+const DELAI_MARCHE_AVANT := 4     # compte de la boîte (décrémenté de 2 par pas), 60 dans le pack
+const REPOS_V := 0.05             # m/s et rad/s : immobile
+const REPOS_PAS := 30             # pas physiques immobile, sans conducteur, avant de figer le corps
+const COEF_TRAINEE := 0.30        # Cx d'une berline
+const MASSE_REELLE := 1300.0      # kg d'une berline : la traînée se rapporte à elle, pas à la masse de convention du pack
+const MU_ARRET := 0.8             # adhérence d'un pneu arrêté sur enrobé sec
+const COUPLE := 2.5               # couple du moteur du pack multiplié par (cf. en tête)
+const GLISSE_ANTIPATINAGE := 1.5  # m/s de glissement des roues motrices tolérés à l'arrêt...
+const GLISSE_RELATIF := 0.25      # ... plus cette part de la vitesse : le pneu du pack pousse avec 20-30 % de glissement
+const GAIN_ANTIPATINAGE := 1.0
+
+var cout_roues_us := 0            # versé par les roues (ChassisRoue), remis à zéro à chaque pas
+var roues: Array = []             # les roues du châssis, dans l'ordre des mesures
+var fige := false
+var _gel_culler := false
+var _maintien := false
+var _pas_repos := 0
+var _cout_car_us := 0
+var _cout_dernier_pas := 0
+var _g := 9.8
+var _taille_pneu := 1.0           # rayon du pneu en unités du pack (w_size de wheel.gd, qui ne le calcule qu'au 1er pas)
+var _c_trainee := 0.0             # traînée : décélération = _c_trainee x v² (1/m)
+
+
+# Construit le châssis sur les mesures du modèle (cf. Car._mesures_chassis), AVANT son entrée dans l'arbre : le _ready du
+# pack cherche ses roues motrices par leur nom.
+func configurer(m: Dictionary, braquage_max: float) -> void:
+	name = "ChassisReel"
+	Weight = POIDS
+	mass = POIDS / 10.0
+	LengthScale = 0.3
+	TransmissionType = 1
+	DragCoefficient = 0.0        # la traînée linéaire du pack est remplacée par _trainee()
+	regler_couple(COUPLE)
+	Controlled = false
+	can_sleep = false
+	continuous_cd = true
+	collision_layer = 4          # la couche des véhicules, comme Car.tscn
+	collision_mask = 5           # décor + véhicules, comme Car.tscn
+	contact_monitor = true
+	max_contacts_reported = 4
+	_g = float(ProjectSettings.get_setting("physics/3d/default_gravity", 9.8))
+	var liste: Array = m["roues"]
+	var y_sol: float = m["y_sol"]
+	# pneu : la largeur et la série de la voiture du pack (185/60, dont dépend la raideur de son modèle de pneu), la
+	# jante au plus près du rayon relevé sur le modèle. wheel.gd en tire w_radius = (222 + 25,4 x jante) x 0,00049035 m.
+	var r_moyen := 0.0
+	for r: Dictionary in liste:
+		r_moyen += float(r["rayon"]) / float(liste.size())
+	var jante := maxi(roundi((r_moyen / 0.00049035 - 222.0) / 25.4), 10)
+	var rayon_pneu := (222.0 + 25.4 * jante) * 0.00049035
+	_taille_pneu = (222.0 + 25.4 * jante) * 0.003269 * 0.5
+	# même étagement par km/h que la voiture du pack : le rapport de pont suit le rayon de roue
+	FinalDriveRatio = 4.25 * rayon_pneu / RAYON_PNEU_PACK
+	var z_av := 0.0
+	var z_ar := 0.0
+	var n_av := 0
+	var n_ar := 0
+	for r: Dictionary in liste:
+		if bool(r["avant"]):
+			z_av += (r["centre"] as Vector3).z
+			n_av += 1
+		else:
+			z_ar += (r["centre"] as Vector3).z
+			n_ar += 1
+	z_av /= float(n_av)
+	z_ar /= float(n_ar)
+	var empattement := z_av - z_ar
+	# géométrie de direction du pack : centre du virage sur l'essieu arrière prolongé, à Steer_Radius de l'axe à fond
+	# de braquage — le rayon du modèle bicyclette de Car.gd au même angle (MAX_STEER_RAD), donc le même rayon de braquage
+	AckermannPoint = z_ar
+	Steer_Radius = empattement / tan(braquage_max)
+	var cdg := Vector3(0.0, y_sol + HAUTEUR_CDG, z_ar + PART_AVANT * empattement)
+	center_of_mass_mode = RigidBody3D.CENTER_OF_MASS_MODE_CUSTOM
+	center_of_mass = cdg
+	var trainee := Marker3D.new()
+	trainee.name = "DRAG_CENTRE"
+	trainee.position = cdg
+	add_child(trainee)
+	_c_trainee = 0.5 * 1.225 * COEF_TRAINEE * float(m["surface"]) / MASSE_REELLE
+	var cs := CollisionShape3D.new()
+	cs.name = "Coque"
+	cs.shape = m["coque"]
+	add_child(cs)
+	# roues : montées au-dessus du centre relevé de la course à vide moins l'écrasement statique, pour que la roue se
+	# pose au repos exactement sur le centre de la roue du modèle. Le pack applique la suspension en impulsion par pas :
+	# à l'équilibre, somme des j x raideur = masse x g x pas.
+	var par_pas := mass * _g / float(Engine.physics_ticks_per_second)
+	for r: Dictionary in liste:
+		var avant := bool(r["avant"])
+		var raideur := 55.0 if avant else 47.0
+		var charge := (PART_AVANT if avant else 1.0 - PART_AVANT) * par_pas / float(n_av if avant else n_ar)
+		var j0 := charge / raideur
+		var w = Roue.new()
+		w.name = String(r["nom"])
+		w.target_position = Vector3(0.0, -LONGUEUR_RAYON, 0.0)
+		w.position = (r["centre"] as Vector3) + Vector3(0.0, LONGUEUR_RAYON - j0 - rayon_pneu, 0.0)
+		w.TyreSettings = {"GripInfluence": 1.0, "Width (mm)": 185.0, "Aspect Ratio": 60.0, "Rim Size (in)": float(jante)}
+		w.S_Stiffness = raideur
+		w.S_Damping = 4.0 if avant else 3.5
+		w.S_ReboundDamping = 4.0 if avant else 3.5
+		w.S_MaxCompression = 0.15
+		w.B_Torque = 30.0
+		w.B_Bias = 0.8 if avant else 0.2
+		w.HB_Bias = 0.0 if avant else 1.0
+		w.A_Geometry1 = 0.345
+		w.SwayBarConnection = String(r["jumelle"])
+		if avant:
+			w.Caster = 2.0
+			w.Differed_Wheel = String(r["jumelle"])
+		for chemin in ["geometry", "animation", "animation/camber", "animation/camber/wheel", "velocity", "velocity/step",
+				"velocity2", "velocity2/step"]:
+			var parent: Node = w if not chemin.contains("/") else w.get_node(chemin.get_base_dir())
+			var n := Marker3D.new()
+			n.name = chemin.get_file()
+			parent.add_child(n)
+		# repos : la roue sur le centre relevé
+		var centre_local := Vector3(0.0, -(LONGUEUR_RAYON - j0) + rayon_pneu, 0.0)
+		(w.get_node("geometry") as Node3D).position = centre_local
+		(w.get_node("animation") as Node3D).position = centre_local
+		add_child(w)
+		roues.append(w)
+	var motrices: Array[String] = []
+	for r: Dictionary in liste:
+		if bool(r["avant"]):
+			motrices.append(String(r["nom"]))
+	Powered_Wheels = motrices
+
+
+func _ready():
+	super()
+	body_entered.connect(_contact)
+
+
+# Couple du moteur : celui de la voiture du pack (les valeurs par défaut de car.gd, que PlayerCarPhysics garde) x k.
+func regler_couple(k: float) -> void:
+	BuildUpTorque = 0.0035 * k
+	TorqueRise = 30.0 * k
+	OffsetTorque = 110.0 * k
+	VVT_BuildUpTorque = 0.0
+	VVT_TorqueRise = 60.0 * k
+	VVT_OffsetTorque = 70.0 * k
+	# l'embrayage du pack transmet au plus ClutchGrip : sans lui, le surcroît de couple le fait patiner, le moteur monte au
+	# limiteur pendant que les roues restent sous le régime de passage, et la boîte ne monte plus (mesuré à k = 3)
+	ClutchGrip = 176.125 * k
+
+
+# Premier pas, ou reprise après un gel : vitesse du corps et des roues, relevés de vitesse des roues à jour.
+func repartir(v_monde: Vector3) -> void:
+	linear_velocity = v_monde
+	angular_velocity = Vector3.ZERO
+	var wv0: float = v_monde.dot(global_transform.basis.z) / float(LengthScale) / _taille_pneu
+	for w in roues:
+		w.repartir(v_monde, wv0)
+
+
+# Vitesse le long de l'avant de la voiture (m/s), négative en marche arrière.
+func vitesse_avant() -> float:
+	return linear_velocity.dot(global_transform.basis.z)
+
+
+# Frein réellement appliqué (pédale ou frein à main) : les feux de freinage de la Car.
+func freine() -> bool:
+	return brakepedal > 0.05 or handbrakepull > 0.05
+
+
+func rapport() -> String:
+	if gear < 0:
+		return "R"
+	if gear == 0:
+		return "N"
+	return str(gear)
+
+
+# Temps passé dans les scripts du châssis (corps + quatre roues) au dernier pas physique complet, en microsecondes.
+func cout_dernier_pas_us() -> int:
+	return _cout_dernier_pas
+
+
+func _physics_process(delta):
+	var t0 := Time.get_ticks_usec()
+	# les roues du pas précédent ont tourné après le corps : le pas précédent est complet
+	_cout_dernier_pas = _cout_car_us + cout_roues_us
+	cout_roues_us = 0
+	if Controlled and gear == 0 and gas and sassistdel > DELAI_MARCHE_AVANT:
+		sassistdel = DELAI_MARCHE_AVANT
+	super(delta)
+	_cout_car_us = Time.get_ticks_usec() - t0
+
+
+# Après les impulsions des quatre roues (appelé par la dernière, cf. ChassisRoue) : ce qui manque au pack.
+func apres_roues() -> void:
+	var au_sol := _au_sol()
+	if au_sol:
+		_resistance_roulement()
+	_trainee()
+	if au_sol:
+		_adherence_arret()
+	_repos()
+
+
+# Le pack calcule à chaque image le couple du moteur pour un affichage de debug : rien à afficher ici.
+func _process(_delta):
+	pass
+
+
+# Pédales. Sans conducteur : le stationnement, quoi qu'on presse à côté. Avec : le pack, puis le maintien à l'arrêt.
+func controls():
+	if not Controlled:
+		gas = false
+		brake = false
+		handbrake = false
+		left = false
+		right = false
+		gaspedal = 0.0
+		brakepedal = FREIN_MAINTIEN
+		handbrakepull = MaxHandbrake
+		_maintien = false
+		return
+	super.controls()
+	# BOÎTE BLOQUÉE EN DEUXIÈME (trouvé le 2026-09-24) : le pack borne ses pédales (limits) APRÈS avoir décidé des
+	# passages de rapport (transmission). Pied au plancher, la boîte voyait donc un accélérateur à 1,2 et attendait
+	# 6 500 x 1,1 = 7 150 tr/min (x le rayon du pneu, en pieds) pour monter — au-dessus du limiteur à 7 000 : en deuxième,
+	# le moteur n'y arrive jamais, et la voiture plafonnait à 83-86 km/h. Bornées ici, avant la boîte.
+	gaspedal = clampf(gaspedal, 0.0, MaxThrottle)
+	brakepedal = clampf(brakepedal, 0.0, MaxBrake)
+	handbrakepull = clampf(handbrakepull, 0.0, MaxHandbrake)
+	_antipatinage()
+	if gas and _maintien:
+		# on accélère : le maintien lâche tout de suite, sans attendre que la pédale remonte au rythme du pack
+		brakepedal = 0.0
+		_maintien = false
+	elif not gas and not brake and not handbrake:
+		var v := linear_velocity.length()
+		if v < V_MAINTIEN and _au_sol():
+			brakepedal = maxf(brakepedal, FREIN_MAINTIEN if v < V_ARRET else FREIN_RALENTIR)
+			_maintien = true
+	else:
+		_maintien = false
+
+
+# ANTIPATINAGE. Le pack en déclare un (TTCS) mais ne l'a jamais écrit : `tcsweight`, qui divise la consigne des gaz,
+# restait à zéro. Sans lui, le couple d'une berline (COUPLE) faisait patiner les roues avant de 20 à 45 m/s au départ.
+# On l'alimente ici : au-delà de GLISSE_ANTIPATINAGE entre les roues motrices et le sol, les gaz sont coupés en proportion
+# (le rapport engagé et la boîte n'en sont pas affectés : la pédale, elle, reste où le joueur l'a mise).
+func _antipatinage() -> void:
+	if gear == 0:
+		return
+	var v_sol := absf(vitesse_avant())
+	var glisse := 0.0
+	for w in c_pws:
+		glisse = maxf(glisse, absf(float(w.wv) * _taille_pneu * float(LengthScale)) - v_sol)
+	tcsweight = maxf(0.0, glisse - GLISSE_ANTIPATINAGE - GLISSE_RELATIF * v_sol) * GAIN_ANTIPATINAGE
+
+
+func _au_sol() -> bool:
+	for w in roues:
+		if w.is_colliding():
+			return true
+	return false
+
+
+# Résistance au roulement : une force constante opposée au roulement, tant que les roues touchent le sol.
+func _resistance_roulement() -> void:
+	var avant := global_transform.basis.z
+	var v := linear_velocity.dot(avant)
+	if absf(v) < 0.05:
+		return
+	var impulsion := minf(CRR * mass * _g / float(Engine.physics_ticks_per_second), absf(v) * mass)
+	apply_central_impulse(-signf(v) * avant * impulsion)
+
+
+# Traînée aérodynamique en v², rapportée à une berline de MASSE_REELLE.
+func _trainee() -> void:
+	var v := linear_velocity
+	var s := v.length()
+	if s < 0.5:
+		return
+	apply_central_impulse(-v * (s * _c_trainee * mass / float(Engine.physics_ticks_per_second)))
+
+
+# ADHÉRENCE À L'ARRÊT : freinée (frein, maintien, frein à main, stationnement) et presque arrêtée, la voiture est tenue —
+# sa vitesse le long du sol et la poussée de la pente pendant ce pas sont annulées, dans la limite de MU_ARRET. Pas en
+# marche arrière demandée (S tenu : la pédale d'accélérateur monte, gaspedal > 0).
+# La vitesse est lue dans l'ÉTAT DIRECT du corps, qui compte déjà les impulsions des roues de ce pas : `linear_velocity`
+# n'est relue qu'après le pas physique. Avec elle, la gravité était compensée deux fois — par les pneus freinés et par
+# ce calcul — et la voiture MONTAIT la rampe à 16 % à 2,4 cm/s (mesuré).
+func _adherence_arret() -> void:
+	if Controlled and not ((brakepedal > 0.3 or handbrakepull > 0.3) and gaspedal < 0.05):
+		return
+	var n := Vector3.ZERO
+	for w in roues:
+		if w.is_colliding():
+			n += w.get_collision_normal()
+	if n.length() < 0.01:
+		return
+	n = n.normalized()
+	var etat := PhysicsServer3D.body_get_direct_state(get_rid())
+	var v: Vector3 = etat.linear_velocity if etat != null else linear_velocity
+	var v_sol := v - n * v.dot(n)
+	if v_sol.length() > V_ARRET:
+		return
+	var pas := 1.0 / float(Engine.physics_ticks_per_second)
+	var g := Vector3(0.0, -_g, 0.0)
+	var impulsion := -(v_sol + (g - n * g.dot(n)) * pas) * mass
+	var limite := MU_ARRET * mass * _g * pas
+	if impulsion.length() > limite:
+		impulsion *= limite / impulsion.length()
+	apply_central_impulse(impulsion)
+
+
+# Sans conducteur et immobile depuis REPOS_PAS pas : on fige le corps, qui ne coûte alors plus rien.
+func _repos() -> void:
+	if Controlled:
+		_pas_repos = 0
+		return
+	if linear_velocity.length() < REPOS_V and angular_velocity.length() < REPOS_V:
+		_pas_repos += 1
+		if _pas_repos >= REPOS_PAS:
+			figer(false)
+	else:
+		_pas_repos = 0
+
+
+func figer(par_culler: bool) -> void:
+	if fige:
+		return
+	fige = true
+	_gel_culler = par_culler
+	freeze = true
+	set_physics_process(false)
+	for w in roues:
+		w.set_physics_process(false)
+		w.enabled = false
+
+
+func degeler() -> void:
+	if not fige:
+		return
+	fige = false
+	_gel_culler = false
+	_pas_repos = 0
+	freeze = false
+	set_physics_process(true)
+	for w in roues:
+		w.enabled = true
+		w.set_physics_process(true)
+	repartir(Vector3.ZERO)
+
+
+# SimulationCuller (via Car.set_simulation_active) : gel hors champ ; au réveil, on ne dégèle que ce que LUI a gelé.
+func activer_simulation(actif: bool) -> void:
+	if not actif:
+		figer(true)
+	elif _gel_culler:
+		degeler()
+
+
+# Choc reçu (Car.knock) : le corps repart, poussé.
+func pousser(dir: Vector3, force: float) -> void:
+	degeler()
+	var d := Vector3(dir.x, 0.0, dir.z)
+	if d.length() < 0.01:
+		return
+	apply_central_impulse(d.normalized() * force * 0.5 * mass)
+
+
+# Choc donné : la voiture de la circulation qu'on percute est sonnée, comme avec la voiture arcade
+# (Car._resolve_drive_collisions). Elle reste immobile pour la physique (corps cinématique, masse infinie) : c'est le
+# châssis qui encaisse le choc, d'où le rebond.
+func _contact(body: Node) -> void:
+	if not Controlled or body == get_parent() or not body.is_in_group("vehicle") or not body.has_method("knock"):
+		return
+	var v := linear_velocity.length()
+	if v < 1.0:
+		return
+	var d := (body as Node3D).global_position - global_position
+	d.y = 0.0
+	body.knock(d.normalized() if d.length() > 0.01 else global_transform.basis.z, v * 0.6 + 4.0)

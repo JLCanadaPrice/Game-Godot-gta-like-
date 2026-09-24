@@ -232,7 +232,6 @@ var has_npc_driver := false
 # qui s'applique normalement à une voiture IA laissée à l'arrêt.
 var is_player_owned := false
 var _abandoned := false
-var _abandon_gen := 0                 # numéro de la dernière sortie du joueur (cf. stop_drive)
 var _drive_speed := 0.0
 var _player_braking := false
 var _player_near := false
@@ -288,7 +287,6 @@ func _ready() -> void:
 	$InteractZone.body_entered.connect(_on_zone_entered)
 	$InteractZone.body_exited.connect(_on_zone_exited)
 	$CrushZone.body_entered.connect(_on_crush_zone_entered)
-	set_process(false)   # _process ne sert qu'à la conduite réaliste (cf. CONDUITE RÉALISTE)
 	call_deferred("_print_ride_diag")
 
 # Diagnostic ponctuel : compare la géométrie de collision de la voiture au sol
@@ -591,12 +589,6 @@ func setup(path: CircuitPath, start_node: int, speed: float, lateral: float, edg
 	_snap_to_path()
 
 func _physics_process(delta: float) -> void:
-	if _chassis != null:
-		# conduite réaliste (cf. CONDUITE RÉALISTE) : la physique est celle du châssis, la voiture le suit
-		_suivre_chassis()
-		_drive_speed = _chassis.vitesse_avant()
-		_player_braking = driven_by_player and _chassis.freine()
-		return
 	if driven_by_player:
 		_drive_physics(delta)
 		# les roues avant montrent l'angle de braquage réellement appliqué (réduit à vitesse, cf. angle_braquage)
@@ -1465,9 +1457,6 @@ func _resolve_drive_collisions(fwd: Vector3) -> void:
 		_tilt_roll = clampf(n.dot(global_transform.basis.x), -1.0, 1.0) * 0.08
 
 func knock(dir: Vector3, strength: float) -> void:
-	if _chassis != null:
-		_chassis.pousser(dir, strength)
-		return
 	var d := Vector3(dir.x, 0.0, dir.z)
 	if d.length() < 0.01:
 		return
@@ -1750,27 +1739,14 @@ func start_drive() -> void:
 	_player_near = false
 	_drive_speed = 0.0
 	_prompt.visible = false
-	_abandon_gen += 1   # une disparition programmée à une sortie précédente ne vaut plus (cf. stop_drive)
-	appliquer_mode_conduite()
 
 func stop_drive() -> void:
 	driven_by_player = false
 	_abandoned = true
 	_drive_speed = 0.0
 	velocity = Vector3.ZERO
-	if _chassis != null:
-		_chassis.Controlled = false   # stationnement : pédales à zéro, frein à main (ChassisReel.controls)
-	# DISPARITION APRÈS ABANDON (corrigé le 2026-09-24). Le compte à rebours était branché sur queue_free sans condition :
-	# ressorti puis remonté dans les 25 s, le joueur voyait la voiture disparaître sous lui 25 s après sa PREMIÈRE sortie
-	# — et lui avec, puisqu'il est assis sur son siège. Chaque sortie a maintenant son numéro, et seule la dernière, la
-	# voiture toujours abandonnée, la fait disparaître.
-	_abandon_gen += 1
 	if not is_player_owned:
-		get_tree().create_timer(ABANDON_DESPAWN).timeout.connect(_disparaitre_si_abandonnee.bind(_abandon_gen))
-
-func _disparaitre_si_abandonnee(gen: int) -> void:
-	if gen == _abandon_gen and not driven_by_player:
-		queue_free()
+		get_tree().create_timer(ABANDON_DESPAWN).timeout.connect(queue_free)
 
 # Voiture EN STATIONNEMENT (ParkedVehicles) : aucun trajet, aucune IA, elle se pose au sol et
 # attend qu'on la prenne. `_abandoned` est exactement l'état qui convient — c'est celui d'une voiture
@@ -1798,255 +1774,10 @@ func set_simulation_active(active: bool) -> void:
 	set_physics_process(active)
 	if active:
 		_obstacle_recheck_timer = 0.0
-	if _chassis != null:
-		_chassis.activer_simulation(active)
-		set_process(active)
 
 # Garde éveillée (SimulationCuller) la voiture qui retient celle-ci.
 static func _keep_awake(o: Object) -> void:
 	o.set_meta(SIM_KEEP_AWAKE_META, Engine.get_physics_frames() + SIM_KEEP_AWAKE_FRAMES)
-
-# --- CONDUITE RÉALISTE : ESSAI (2026-09-24, étape 1, CLAUDE.md §13) ---------------------------------------------------
-#
-# F7 (EssaiConduiteReelle, sur le joueur) bascule `conduite_reelle`, coupée au lancement. Quand elle est active et que le
-# joueur conduit un modèle de CONDUITE_REELLE_MODELES, la voiture se dote d'un châssis physique (ChassisReel, le cœur du
-# pack VitaVehicle) et le SUIT au lieu de rouler en arcade. Elle garde son nœud et tout ce qui y est accroché — modèle,
-# feux, gyrophares, zone de tir, zone d'écrasement, taches, place dans la circulation — et prend la position et le cap du
-# châssis ; son modèle prend en plus le roulis et le tangage, ses roues leur rotation, leur braquage et leur débattement.
-# Ce qui lit la voiture continue de marcher : `_drive_speed` (écrasement, caméra), `_player_braking` (feux de freinage),
-# `driven_by_player` (feux, gyrophares, culler). Le corps arcade est coupé (couches à zéro) tant que le châssis existe.
-# À la descente, le châssis reste — pédales à zéro, frein à main — et se fige une fois arrêté : la voiture reste là où
-# elle s'est arrêtée, penchée sur une rampe s'il le faut. Il n'est rendu à l'arcade que si on remonte (ou si on bascule)
-# F7 coupé : un corps arcade ne sait pas s'incliner, une voiture arrêtée en pente sauterait.
-const ChassisReel := preload("res://scenes/vehicles/ChassisReel.gd")
-const CONDUITE_REELLE_MODELES := ["city_sedan_01"]
-static var conduite_reelle := false
-static var _mesures_chassis_cache := {}   # model_path -> mesures, dans le repère du châssis
-var _chassis: RigidBody3D = null
-var _roue_chassis := {}      # roue du modèle -> roue du châssis
-var _centre_repos := {}      # roue du modèle -> centre de sa roue de châssis au repos (repère du châssis)
-var _couches_arcade := Vector2i(-1, -1)
-var _cap_chassis := 0.0
-var _model_repos := Transform3D.IDENTITY
-var cout_visuels_us := 0     # dernière image : suivi du châssis + modèle + roues (mesure du coût, ConduiteReelleTest)
-
-
-# Repère du châssis dans celui de la voiture : le pack a l'avant en +Z et la gauche en +X, la voiture l'avant en -Z.
-static func repere_chassis() -> Transform3D:
-	return Transform3D(Basis(Vector3(-1, 0, 0), Vector3(0, 1, 0), Vector3(0, 0, -1)), Vector3.ZERO)
-
-
-func conduite_reelle_possible() -> bool:
-	var data := VehicleCatalog.find_by_path(model_path)
-	return data != null and data.id in CONDUITE_REELLE_MODELES and _wheels.size() == 4 and _wheels_front.size() == 2
-
-
-# Met la voiture conduite dans le mode choisi (F7) : à la montée, et à la bascule en roulant.
-func appliquer_mode_conduite() -> void:
-	if not driven_by_player:
-		return
-	if conduite_reelle and conduite_reelle_possible():
-		_activer_chassis()
-	elif _chassis != null:
-		_retirer_chassis()
-
-
-func chassis() -> RigidBody3D:
-	return _chassis
-
-
-# Pour le bandeau de l'essai (EssaiConduiteReelle).
-func infos_conduite() -> Dictionary:
-	return {"essai": conduite_reelle_possible(), "reelle": _chassis != null,
-			"rapport": _chassis.rapport() if _chassis != null else "", "kmh": absf(_drive_speed) * 3.6}
-
-
-# Corps à exclure d'une requête de place autour de la voiture (Player._sortie_libre) : elle-même et son châssis.
-func rids_exclus() -> Array[RID]:
-	var r: Array[RID] = [get_rid()]
-	if _chassis != null:
-		r.append(_chassis.get_rid())
-	return r
-
-
-func _activer_chassis() -> void:
-	if _chassis == null:
-		var m := _mesures_chassis()
-		if m.is_empty():
-			return
-		var ch = ChassisReel.new()
-		ch.configurer(m, MAX_STEER_RAD)
-		ch.top_level = true
-		ch.transform = global_transform * repere_chassis()
-		_model_repos = _pose_repos_modele()
-		add_child(ch)
-		_chassis = ch
-		_roue_chassis.clear()
-		_centre_repos.clear()
-		for r: Dictionary in m["roues"]:
-			var w := _model.get_node_or_null(NodePath(String(r["chemin"]))) as Node3D
-			if w != null:
-				_roue_chassis[w] = ch.get_node(String(r["nom"]))
-				_centre_repos[w] = r["centre"]
-		ch.repartir(-global_transform.basis.z * _drive_speed + Vector3(0.0, velocity.y, 0.0))
-		_couches_arcade = Vector2i(collision_layer, collision_mask)
-		collision_layer = 0
-		collision_mask = 0
-		_cap_chassis = rotation.y
-		# le modèle et ses roues sont reposés à l'image (_process) : avant VehicleLights, qui y lit la place des phares et
-		# des feux, sinon ils traîneraient d'une image derrière la voiture (0,5 m à 108 km/h)
-		process_priority = -10
-		set_process(true)
-	else:
-		_chassis.degeler()
-	_chassis.Controlled = true
-
-
-func _retirer_chassis() -> void:
-	var ch := _chassis
-	_suivre_chassis()
-	var v: Vector3 = ch.linear_velocity
-	_chassis = null
-	_roue_chassis.clear()
-	_centre_repos.clear()
-	# hors de l'espace physique TOUT DE SUITE : libéré en différé, il restait un pas à la même place que la voiture arcade
-	# qui reprend, et les deux corps se repoussaient (mesuré : 0,76 m de chute à la bascule F7)
-	remove_child(ch)
-	ch.queue_free()
-	if _couches_arcade.x >= 0:
-		collision_layer = _couches_arcade.x
-		collision_mask = _couches_arcade.y
-	velocity = v
-	_drive_speed = v.dot(-global_transform.basis.z)
-	if _model != null:
-		_model.transform = _model_repos
-	process_priority = 0
-	set_process(false)
-
-
-func _pose_repos_modele() -> Transform3D:
-	return Transform3D(Basis(Vector3.UP, deg_to_rad(model_yaw_deg)).scaled(Vector3.ONE * model_scale), Vector3(0.0, model_y_offset, 0.0))
-
-
-# La voiture prend la position du châssis et son cap, jamais son roulis ni son tangage : caméra, sortie, circulation et
-# zones continuent de voir une voiture droite, comme en arcade.
-func _suivre_chassis() -> void:
-	var k := _chassis.global_transform
-	var avant := k.basis.z
-	if Vector2(avant.x, avant.z).length() > 0.05:
-		_cap_chassis = atan2(-avant.x, -avant.z)
-	global_transform = Transform3D(Basis(Vector3.UP, _cap_chassis), k.origin)
-
-
-# À l'image : relu APRÈS le pas physique, le châssis est à sa place exacte (le suivi du _physics_process a un pas de
-# retard). Rien ne tourne pour les voitures sans châssis (set_process(false)).
-func _process(delta: float) -> void:
-	if _chassis == null:
-		set_process(false)
-		return
-	var t0 := Time.get_ticks_usec()
-	_suivre_chassis()
-	_visuels_chassis(delta)
-	cout_visuels_us = Time.get_ticks_usec() - t0
-
-
-# Le modèle collé au châssis (roulis, tangage, débattement de la caisse), et chaque roue à sa roue de châssis : roulement
-# à SA vitesse (celle du pneu, qui peut patiner ou bloquer), braquage à SON angle (géométrie d'Ackermann du pack),
-# débattement vertical de SA suspension. Mêmes conventions que _update_visuals : axe et centre relevés par _mesurer_roue,
-# braquage conjugué par la base du parent de la roue (cf. BRAQUAGE), plafond anti-stroboscope par image.
-func _visuels_chassis(delta: float) -> void:
-	var k := _chassis.global_transform
-	if _model != null:
-		_model.transform = global_transform.affine_inverse() * k * repere_chassis() * _model_repos
-	var echelle: float = _chassis.LengthScale
-	for w in _wheels:
-		var r = _roue_chassis.get(w)
-		if r == null:
-			continue
-		var rayon: float = _wheel_radius.get(w, WHEEL_RADIUS)
-		var pas_max: float = _wheel_pas_max.get(w, ROUE_PAS_DEFAUT)
-		var v_roue: float = float(r.wv) * float(r.w_size) * echelle
-		var angle: float = fmod(float(_wheel_angle.get(w, 0.0)) + clampf(v_roue / rayon * delta, -pas_max, pas_max), TAU)
-		_wheel_angle[w] = angle
-		var rest: Basis = _wheel_rest[w]
-		var b := rest * Basis(_wheel_axis.get(w, wheel_spin_axis.normalized()), angle)
-		var m: Array = _wheel_parent_base.get(w, [Basis.IDENTITY, Basis.IDENTITY])
-		if w in _wheels_front:
-			b = (m[1] as Basis) * Basis(Vector3.UP, (r as Node3D).rotation.y) * (m[0] as Basis) * b
-		var centre_k: Vector3 = (r as Node3D).transform * ((r as Node3D).get_node("animation") as Node3D).position
-		var decal := (m[1] as Basis) * Vector3(0.0, centre_k.y - (_centre_repos[w] as Vector3).y, 0.0)
-		var c: Vector3 = _wheel_centre.get(w, Vector3.ZERO)
-		var o: Vector3 = _wheel_rest_origin.get(w, w.transform.origin)
-		w.transform = Transform3D(b, o + rest * c - b * c + decal)
-
-
-# Mesures du modèle pour son châssis, une fois par modèle, dans le REPÈRE DU CHÂSSIS, le modèle pris dans sa pose de REPOS
-# (le basculement arcade du moment n'y entre pas) : centre et rayon de chaque roue, sol sous les pneus, coque.
-func _mesures_chassis() -> Dictionary:
-	if _mesures_chassis_cache.has(model_path):
-		return _mesures_chassis_cache[model_path]
-	if _model == null or _wheels.size() != 4 or _wheels_front.size() != 2:
-		return {}
-	var vers_chassis := repere_chassis().affine_inverse() * _pose_repos_modele()
-	var roues: Array = []
-	var y_sol := INF
-	for w in _wheels:
-		var c: Vector3 = vers_chassis * (_xf_dans_modele(w) * (_wheel_centre.get(w, Vector3.ZERO) as Vector3))
-		var r: float = _wheel_radius.get(w, WHEEL_RADIUS)
-		y_sol = minf(y_sol, c.y - r)
-		var avant := w in _wheels_front
-		roues.append({"chemin": String(_model.get_path_to(w)), "centre": c, "rayon": r, "avant": avant,
-				"nom": ("f" if avant else "r") + ("l" if c.x > 0.0 else "r")})
-	var noms := {}
-	for i in roues.size():
-		noms[roues[i]["nom"]] = true
-		for j in roues.size():
-			if j != i and bool(roues[j]["avant"]) == bool(roues[i]["avant"]):
-				roues[i]["jumelle"] = roues[j]["nom"]
-	if noms.size() != 4:
-		return {}
-	var coque := _coque_chassis(vers_chassis, y_sol)
-	if coque == null:
-		return {}
-	# surface frontale pour la traînée : la boîte du modèle (largeur x hauteur, rétroviseurs et roues compris) x 0,8, la
-	# part qu'en occupe une vraie silhouette de voiture
-	var m := {"roues": roues, "y_sol": y_sol, "coque": coque, "surface": _boite_caisse.size.x * _boite_caisse.size.y * 0.8}
-	_mesures_chassis_cache[model_path] = m
-	return m
-
-
-# La coque du châssis : la silhouette du modèle comme l'enveloppe arcade (cf. ENVELOPPE, rétroviseurs ramenés à la
-# largeur de la caisse), mais son bas RELEVÉ à ChassisReel.GARDE_AU_SOL au-dessus du sol au lieu de descendre jusqu'aux
-# pneus : ce sont les roues à rayon qui portent la voiture, la coque ne doit toucher ni la chaussée ni une bordure.
-func _coque_chassis(vers_chassis: Transform3D, y_sol: float) -> ConvexPolygonShape3D:
-	var faces := PackedVector3Array()
-	var liste := _model.find_children("*", "MeshInstance3D", true, false)
-	if _model is MeshInstance3D:
-		liste.append(_model)
-	for n in liste:
-		var mi := n as MeshInstance3D
-		if mi.mesh != null and mi.visible:
-			faces.append_array((vers_chassis * _xf_dans_modele(mi)) * mi.mesh.get_faces())
-	if faces.size() < 12:
-		return null
-	var bas := INF
-	for v in faces:
-		bas = minf(bas, v.y)
-	var h := _boite_caisse.size.y
-	var demi_largeur := 0.0
-	for v in faces:
-		if v.y <= bas + 0.55 * h:
-			demi_largeur = maxf(demi_largeur, absf(v.x))
-	var plancher := y_sol + ChassisReel.GARDE_AU_SOL
-	for i in faces.size():
-		var v := faces[i]
-		faces[i] = Vector3(clampf(v.x, -demi_largeur, demi_largeur), maxf(v.y, plancher), v.z)
-	var am := ArrayMesh.new()
-	var arr := []
-	arr.resize(Mesh.ARRAY_MAX)
-	arr[Mesh.ARRAY_VERTEX] = faces
-	am.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arr)
-	return am.create_convex_shape(true, false)
 
 # --- zone d'interaction + éjection PNJ -------------------------
 

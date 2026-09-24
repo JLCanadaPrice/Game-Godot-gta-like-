@@ -1,0 +1,744 @@
+extends Node3D
+
+# CONDUITE RÉALISTE — ESSAI SUR LA BERLINE (étape 1, 2026-09-24, CLAUDE.md §13).
+#
+# Le VRAI joueur (Player.tscn) monte dans une VRAIE berline city_sedan_01 (Car.tscn) avec la conduite réaliste activée
+# (Car.conduite_reelle, ce que fait F7), et la conduit au clavier virtuel (gas / brake / left / right, les actions que lit
+# le pack). Sol d'essai plat, une bordure de 0,15 m (la hauteur relevée sur la collision cuite des trottoirs de la carte),
+# et la collision CUITE d'un parking à étages du centre-ville, avec sa rampe à 16 %.
+# Ce qui est mesuré, et ce qui fait échouer :
+#  - au repos : pneus sur le sol (écart <= 3 cm), caisse d'aplomb, aucun recul ;
+#  - départ, 0-50, 0-100, 108 km/h atteints ; double changement de voie à 108 km/h sans basculer ni partir en tête-à-queue ;
+#    freinage de 108 km/h à l'arrêt, droit ; puis AUCUN RECUL à l'arrêt (1 cm au plus en 2 s) ;
+#  - braquage à fond à 50 km/h sans se coucher (caisse jamais au-delà de 18°) ; roue libre jusqu'à l'arrêt ;
+#  - rayon de braquage à 3 m/s, comparé à celui de la voiture arcade du même modèle (rapporté, pas jugé) ;
+#  - bordure de 0,15 m de face et en biais (30°) : franchie, montée ET descente, sans que la coque la touche ;
+#  - rampe à 16 % : montée sans que la coque touche, arrêt en pleine pente SANS RECULER (2 cm au plus en 2 s),
+#    redémarrage en côte, arrivée au niveau 1 ;
+#  - SORTIE en gardant W enfoncé, puis W et S pressés à côté : la voiture s'arrête et ne bouge plus (5 cm au plus), le
+#    joueur est dehors ; remontée dans les 25 s : la voiture ne disparaît pas sous lui (défaut corrigé le 2026-09-24) ;
+#  - bascule arcade / réaliste en roulant (F7) : aucun saut de position, la vitesse est gardée ;
+#  - F8 : une berline posée devant le joueur, sur le sol ;
+#  - COÛT PHYSIQUE : temps des scripts du châssis (corps + 4 roues) par pas physique, et temps total d'un pas physique
+#    en réaliste et en arcade, en alternant, sur la même conduite (rapporté).
+#
+# Lancer : Godot --headless --fixed-fps 60 res://scenes/tests/ConduiteReelleTest.tscn
+
+const CAR := preload("res://scenes/vehicles/Car.tscn")
+const CarScript := preload("res://scenes/vehicles/Car.gd")
+const JOUEUR := preload("res://scenes/player/Player.tscn")
+const BERLINE := "res://assets/vehicle_models_extra/city_vehicles_UNVERIFIED_LICENSE/Sedans/Veh_Sedan_01_Blue.glb"
+const PARKING := "res://scenes/world/downtown/generated/buildings/parking_collision.res"
+const PARKING_POS := Vector3(250.0, 0.0, -300.0)   # repère du modèle = repère du monde, décalé
+const PARKING_SOL := 0.36                           # dessus du plateau du rez (ParkingStructureKit.planchers)
+const PARKING_N1 := 4.93
+const RAMPE_Z := -5.55                              # axe de la rampe (ParkingStructureKit.RAMPE_Z)
+const BORDURE_CENTRE := Vector3(-150.0, 0.075, 0.0)
+const BORDURE_TAILLE := Vector3(30.0, 0.15, 12.0)
+const KMH := 1.0 / 3.6
+
+var _voiture: Node3D
+var _joueur: CharacterBody3D
+var _essai: Node
+var _ch: RigidBody3D
+var _bordure: StaticBody3D
+var _parking: StaticBody3D
+var _etapes: Array[String] = ["pose", "montee", "repos", "depart", "vitesse108", "freinage", "virage50", "roue_libre",
+		"rayon", "arret_rayon", "bordure_face", "bordure_biais", "rampe", "sortie", "remontee", "cout", "descente", "f8", "fin"]
+var _i := 0
+var _t := 0.0
+var _e := {}                 # état de l'étape en cours
+var _r := {}                 # résultats
+var _fautes: Array[String] = []
+var _couts_chassis := PackedInt32Array()
+var _couts_visuels := PackedInt32Array()
+var _h_repos := 0.0          # hauteur de l'origine de la voiture au repos, au-dessus du sol (réaliste)
+var _min_up := 1.0
+var _sortie_t := -1.0        # temps écoulé depuis la sortie (disparition programmée à 25 s)
+var _horloge := 0            # début du pas précédent (µs) : en headless, l'écart entre deux pas est le temps d'une image
+var _image_us := 0
+
+
+func _ready() -> void:
+	var sol := _statique(Vector3(0, -0.5, 0), BoxShape3D.new(), "Sol")
+	(sol.get_child(0) as CollisionShape3D).shape.size = Vector3(1400, 1, 1400)
+	var b := BoxShape3D.new()
+	b.size = BORDURE_TAILLE
+	_bordure = _statique(BORDURE_CENTRE, b, "Bordure")
+	_parking = _statique(PARKING_POS, load(PARKING), "Parking")
+	_voiture = CAR.instantiate() as Node3D
+	_voiture.set("forced_model_path", BERLINE)
+	_voiture.name = "Berline"
+	add_child(_voiture)
+	_voiture.set("has_npc_driver", false)
+	_voiture.global_position = Vector3(0, 1.0, 0)
+	_voiture.call("park")
+	_joueur = JOUEUR.instantiate() as CharacterBody3D
+	_joueur.position = Vector3(-3.0, 1.0, 0.0)   # AVANT l'entrée dans l'arbre : posé à l'origine, il portait la voiture
+	add_child(_joueur)
+	_essai = _joueur.get_node("EssaiConduiteReelle")
+	CarScript.conduite_reelle = false
+	print("CONDUITE_REELLE_TEST debut")
+
+
+func _statique(pos: Vector3, forme: Shape3D, nom: String) -> StaticBody3D:
+	var corps := StaticBody3D.new()
+	corps.name = nom
+	var cs := CollisionShape3D.new()
+	cs.shape = forme
+	corps.add_child(cs)
+	corps.position = pos
+	add_child(corps)
+	return corps
+
+
+# --- outils --------------------------------------------------------------------------------------------------------
+
+func _pedales(gaz := false, frein := false, gauche := false, droite := false) -> void:
+	for a in ["gas", "brake", "left", "right", "handbrake", "move_forward", "move_back", "move_left", "move_right"]:
+		Input.action_release(a)
+	if gaz:
+		Input.action_press("gas")
+		Input.action_press("move_forward")
+	if frein:
+		Input.action_press("brake")
+		Input.action_press("move_back")
+	if gauche:
+		Input.action_press("left")
+		Input.action_press("move_left")
+	if droite:
+		Input.action_press("right")
+		Input.action_press("move_right")
+
+
+# Régulateur tout ou rien : accélère sous la consigne, freine au-delà de 1,5 m/s de trop.
+func _regule(cible: float, gauche := false, droite := false) -> void:
+	var v := _v()
+	_pedales(v < cible, v > cible + 1.5, gauche, droite)
+
+
+func _v() -> float:
+	return float(_voiture.get("_drive_speed"))
+
+
+func _pos() -> Vector3:
+	return _voiture.global_position
+
+
+func _cap_deg() -> float:
+	return rad_to_deg(_voiture.rotation.y)
+
+
+# Inclinaison de la caisse (deg) : angle entre le haut du châssis et la verticale.
+func _penche() -> float:
+	if _ch == null:
+		return 0.0
+	return rad_to_deg(acos(clampf(_ch.global_transform.basis.y.dot(Vector3.UP), -1.0, 1.0)))
+
+
+# Déplace la voiture (et son châssis) : origine à `sol + hauteur de repos`, cap `cap` (rad, rotation.y de la voiture).
+func _placer(sol: Vector3, cap: float) -> void:
+	var xf := Transform3D(Basis(Vector3.UP, cap), sol + Vector3.UP * (_h_repos + 0.02))
+	_voiture.global_transform = xf
+	if _ch != null:
+		_ch.global_transform = xf * CarScript.repere_chassis()
+		_ch.repartir(Vector3.ZERO)
+
+
+func _touche(corps: Node) -> bool:
+	return _ch != null and corps in _ch.get_colliding_bodies()
+
+
+func _faute(texte: String) -> void:
+	_fautes.append(texte)
+	print("CONDUITE_REELLE_FAUTE %s" % texte)
+
+
+# Cercle ajusté (moindres carrés algébriques, Kåsa) sur des points (x, z) : rayon. Points recentrés et système résolu en
+# flottants 64 bits (une Basis est en 32 bits : sur des coordonnées de plusieurs centaines de mètres, le résultat était faux).
+static func _rayon_cercle(pts: PackedVector2Array) -> float:
+	var n := float(pts.size())
+	if n < 3.0:
+		return -1.0
+	var mx := 0.0
+	var my := 0.0
+	for p in pts:
+		mx += p.x / n
+		my += p.y / n
+	var suu := 0.0; var svv := 0.0; var suv := 0.0; var suuu := 0.0; var svvv := 0.0; var suvv := 0.0; var svuu := 0.0
+	for p in pts:
+		var u := p.x - mx
+		var w := p.y - my
+		suu += u * u; svv += w * w; suv += u * w
+		suuu += u * u * u; svvv += w * w * w; suvv += u * w * w; svuu += w * u * u
+	# centre (uc, vc) : [suu suv; suv svv] [uc vc] = 0,5 [suuu + suvv ; svvv + svuu]
+	var det := suu * svv - suv * suv
+	if absf(det) < 1e-12:
+		return -1.0
+	var b1 := 0.5 * (suuu + suvv)
+	var b2 := 0.5 * (svvv + svuu)
+	var uc := (b1 * svv - b2 * suv) / det
+	var vc := (suu * b2 - suv * b1) / det
+	return sqrt(uc * uc + vc * vc + (suu + svv) / n)
+
+
+static func _mediane(a: PackedFloat32Array) -> float:
+	if a.is_empty():
+		return 0.0
+	var b := a.duplicate()
+	b.sort()
+	return b[b.size() / 2]
+
+
+static func _centile(a: PackedInt32Array, q: float) -> int:
+	if a.is_empty():
+		return 0
+	var b := a.duplicate()
+	b.sort()
+	return b[mini(int(q * b.size()), b.size() - 1)]
+
+
+# --- boucle ------------------------------------------------------------------------------------------------------
+
+func _physics_process(delta: float) -> void:
+	if _i >= _etapes.size():
+		return
+	_t += delta
+	var maintenant := Time.get_ticks_usec()
+	_image_us = maintenant - _horloge if _horloge > 0 else 0
+	_horloge = maintenant
+	if _sortie_t >= 0.0:
+		_sortie_t += delta
+	if _ch != null and not bool(_ch.get("fige")):
+		_couts_chassis.append(int(_ch.call("cout_dernier_pas_us")))
+		_min_up = minf(_min_up, _ch.global_transform.basis.y.dot(Vector3.UP))
+	if _t > 90.0:
+		_faute("étape « %s » : pas finie en 90 s" % _etapes[_i])
+		_suivante()
+		return
+	if call("_e_" + _etapes[_i], delta):
+		_suivante()
+
+
+func _process(_delta: float) -> void:
+	if _ch != null and is_instance_valid(_voiture) and not bool(_ch.get("fige")):
+		_couts_visuels.append(int(_voiture.get("cout_visuels_us")))
+
+
+func _suivante() -> void:
+	_i += 1
+	_t = 0.0
+	_e = {}
+
+
+# --- étapes (rendent true quand elles sont finies) -----------------------------------------------------------------
+
+func _e_pose(_d: float) -> bool:
+	if _t < 1.5:
+		return false
+	_r["h_arcade"] = _pos().y
+	_r["rayon_arcade"] = float(_voiture.call("rayon_entre_murs"))
+	return true
+
+
+func _e_montee(_d: float) -> bool:
+	CarScript.conduite_reelle = true
+	_joueur.call("_enter_vehicle", _voiture)
+	_ch = _voiture.call("chassis")
+	if _ch == null:
+		_faute("pas de châssis réaliste à la montée dans la berline")
+		_i = _etapes.size() - 2
+		return true
+	if int(_voiture.get("collision_layer")) != 0:
+		_faute("le corps arcade de la voiture n'est pas coupé (couche %d)" % int(_voiture.get("collision_layer")))
+	var roues: Array = _ch.get("roues")
+	var w0 = roues[0]
+	_r["pneu"] = "jante %s, rayon %.3f m (modèle %.3f m)" % [w0.TyreSettings["Rim Size (in)"], (222.0 + 25.4 * float(w0.TyreSettings["Rim Size (in)"])) * 0.00049035,
+			float((_voiture.get("_wheel_radius") as Dictionary).values()[0])]
+	_r["geometrie"] = "empattement %.2f m, Steer_Radius %.2f m, centre de gravité %s, pont %.3f" % [
+			float(_voiture.get("_empattement")), float(_ch.get("Steer_Radius")), str(_ch.center_of_mass.snappedf(0.01)), float(_ch.get("FinalDriveRatio"))]
+	return true
+
+
+func _e_repos(_d: float) -> bool:
+	_pedales()
+	if _t >= 1.5 and not _e.has("p15"):
+		_e["p15"] = _pos()
+	if _t < 3.0:
+		return false
+	_h_repos = _pos().y
+	var ecart_max := 0.0
+	var roues: Array = _voiture.get("_wheels")
+	var rayons: Dictionary = _voiture.get("_wheel_radius")
+	var centres: Dictionary = _voiture.get("_wheel_centre")
+	for w: Node3D in roues:
+		var c: Vector3 = w.global_transform * (centres.get(w, Vector3.ZERO) as Vector3)
+		ecart_max = maxf(ecart_max, absf(c.y - float(rayons.get(w, 0.34))))
+	var derive := (_pos() - (_e["p15"] as Vector3)).length()
+	_r["repos"] = "origine à %.3f m (arcade %.3f), pneus à %.3f m du sol au pire, caisse penchée de %.2f°, dérive %.4f m en 1,5 s" % [
+			_h_repos, float(_r["h_arcade"]), ecart_max, _penche(), derive]
+	if ecart_max > 0.03:
+		_faute("au repos, un pneu est à %.3f m du sol" % ecart_max)
+	if _penche() > 1.5:
+		_faute("au repos, caisse penchée de %.2f°" % _penche())
+	if derive > 0.01:
+		_faute("au repos, la voiture a bougé de %.4f m en 1,5 s" % derive)
+	return true
+
+
+func _e_depart(_d: float) -> bool:
+	if not _e.has("place"):
+		_e["place"] = true
+		_placer(Vector3(0.0, 0.0, 600.0), 0.0)
+		return false
+	_pedales(true)
+	var v := _v()
+	if "--trace" in OS.get_cmdline_user_args() and Engine.get_physics_frames() % 15 == 0:
+		print("TRACE t=%.2f v=%.1f km/h rapport=%s rpm=%.0f gaz=%.2f embrayage=%.2f frein=%.2f wv=%.1f couple=%.1f" % [_t, v * 3.6, _ch.call("rapport"),
+				float(_ch.get("rpm")), float(_ch.get("gaspedal")), float(_ch.get("clutchpedal")), float(_ch.get("brakepedal")),
+				float(_ch.get("roues")[0].wv), float(_ch.get("readout_torque"))])
+	if not _e.has("t_mouv") and v > 0.1:
+		_e["t_mouv"] = _t
+	for seuil: Array in [["t50", 50.0], ["t100", 100.0], ["t108", 108.0]]:
+		if not _e.has(seuil[0]) and v >= float(seuil[1]) * KMH:
+			_e[seuil[0]] = _t
+	_e["vmax"] = maxf(float(_e.get("vmax", 0.0)), v)
+	if _e.has("t108") or _t > 45.0:
+		_r["depart"] = "roule après %.2f s, 0-50 km/h %s, 0-100 %s, 0-108 %s, vitesse max %.1f km/h" % [
+				float(_e.get("t_mouv", -1.0)), _s(_e, "t50"), _s(_e, "t100"), _s(_e, "t108"), float(_e["vmax"]) * 3.6]
+		if float(_e.get("t_mouv", 9.0)) > 0.3:
+			_faute("W ne répond qu'après %.2f s" % float(_e.get("t_mouv", -1.0)))
+		if not _e.has("t108"):
+			_faute("108 km/h pas atteints en 45 s (%.1f km/h au plus)" % (float(_e["vmax"]) * 3.6))
+		return true
+	return false
+
+
+func _s(d: Dictionary, k: String) -> String:
+	return ("%.1f s" % float(d[k])) if d.has(k) else "jamais"
+
+
+func _e_vitesse108(_d: float) -> bool:
+	if not _e.has("cap0"):
+		_e["cap0"] = _cap_deg()
+		_e["up"] = 1.0
+		_e["lacet"] = 0.0
+	var gauche := _t >= 2.0 and _t < 2.4 or _t >= 3.2 and _t < 3.6
+	var droite := _t >= 2.4 and _t < 3.2
+	_regule(108.0 * KMH, gauche, droite)
+	_e["up"] = minf(float(_e["up"]), _ch.global_transform.basis.y.dot(Vector3.UP))
+	_e["lacet"] = maxf(float(_e["lacet"]), absf(rad_to_deg(_ch.angular_velocity.y)))
+	if _t < 6.0:
+		return false
+	var derive_cap := absf(wrapf(_cap_deg() - float(_e["cap0"]), -180.0, 180.0))
+	var penche_max := rad_to_deg(acos(clampf(float(_e["up"]), -1.0, 1.0)))
+	_r["vitesse108"] = "double changement de voie à %.0f km/h : caisse penchée de %.1f° au plus, lacet %.0f°/s au plus, cap final à %.1f° du cap initial" % [
+			_v() * 3.6, penche_max, float(_e["lacet"]), derive_cap]
+	if penche_max > 18.0:
+		_faute("changement de voie à 108 km/h : caisse penchée de %.1f°" % penche_max)
+	if derive_cap > 10.0:
+		_faute("changement de voie à 108 km/h : la voiture ne revient pas dans l'axe (%.1f°)" % derive_cap)
+	return true
+
+
+func _e_freinage(_d: float) -> bool:
+	if not _e.has("p0"):
+		_e["p0"] = _pos()
+		_e["v0"] = _v()
+		_e["cap0"] = _cap_deg()
+		_e["avant"] = -_voiture.global_transform.basis.z
+	if not _e.has("t_arret"):
+		if _v() < 0.3:
+			_e["t_arret"] = _t
+			var dp: Vector3 = _pos() - (_e["p0"] as Vector3)
+			var avant: Vector3 = _e["avant"]
+			_e["dist"] = dp.dot(avant)
+			_e["lat"] = (dp - avant * dp.dot(avant)).length()
+			_e["dcap"] = absf(wrapf(_cap_deg() - float(_e["cap0"]), -180.0, 180.0))
+			_pedales()
+		else:
+			_pedales(false, true)
+			if _t > 8.0:
+				_faute("freinage depuis %.0f km/h : pas arrêtée en 8 s" % (float(_e["v0"]) * 3.6))
+				return true
+		return false
+	_pedales()
+	var apres := _t - float(_e["t_arret"])
+	if apres >= 1.0 and not _e.has("p1"):
+		_e["p1"] = _pos()
+	if apres < 3.0:
+		return false
+	var recul := (_pos() - (_e["p1"] as Vector3)).length()
+	_r["freinage"] = "de %.0f km/h à l'arrêt en %.2f s sur %.1f m, écart latéral %.2f m, cap %.1f° ; à l'arrêt, sans pédale, %.4f m en 2 s (rapport %s)" % [
+			float(_e["v0"]) * 3.6, float(_e["t_arret"]), float(_e["dist"]), float(_e["lat"]), float(_e["dcap"]), recul, _ch.call("rapport")]
+	if float(_e["lat"]) > 1.5 or float(_e["dcap"]) > 5.0:
+		_faute("freinage : la voiture ne freine pas droit (%.2f m, %.1f°)" % [float(_e["lat"]), float(_e["dcap"])])
+	if recul > 0.01:
+		_faute("recul après l'arrêt : %.4f m en 2 s" % recul)
+	return true
+
+
+func _e_virage50(_d: float) -> bool:
+	if not _e.has("lance"):
+		_regule(50.0 * KMH)
+		if _v() >= 49.0 * KMH:
+			_e["lance"] = _t
+			_e["up"] = 1.0
+			_e["alat"] = []
+		return _t > 20.0
+	var dt := _t - float(_e["lance"])
+	_regule(50.0 * KMH, false, true)
+	_e["up"] = minf(float(_e["up"]), _ch.global_transform.basis.y.dot(Vector3.UP))
+	if dt > 2.0:
+		(_e["alat"] as Array).append(absf(_v() * _ch.angular_velocity.y))
+	if dt < 4.0:
+		return false
+	var penche_max := rad_to_deg(acos(clampf(float(_e["up"]), -1.0, 1.0)))
+	_r["virage50"] = "braquage à fond à %.0f km/h : caisse penchée de %.1f° au plus, accélération latérale %.1f m/s² (%.2f g)" % [
+			_v() * 3.6, penche_max, _mediane(PackedFloat32Array(_e["alat"])), _mediane(PackedFloat32Array(_e["alat"])) / 9.8]
+	if penche_max > 18.0:
+		_faute("braquage à fond à 50 km/h : caisse penchée de %.1f°" % penche_max)
+	return true
+
+
+func _e_roue_libre(_d: float) -> bool:
+	if not _e.has("place"):
+		_e["place"] = true
+		_placer(Vector3(40.0, 0.0, 600.0), 0.0)
+		return false
+	if not _e.has("v0"):
+		_regule(50.0 * KMH)
+		if _v() >= 49.0 * KMH:
+			_e["v0"] = _v()
+			_e["p0"] = _pos()
+			_e["t0"] = _t
+		return _t > 30.0
+	_pedales()
+	if _v() < 0.05:
+		_r["roue_libre"] = "pied levé depuis %.0f km/h : arrêtée en %.1f s sur %.1f m" % [float(_e["v0"]) * 3.6, _t - float(_e["t0"]), (_pos() - (_e["p0"] as Vector3)).length()]
+		return true
+	if _t - float(_e["t0"]) > 60.0:
+		_faute("pied levé : toujours %.2f m/s après 60 s" % _v())
+		return true
+	return false
+
+
+func _e_rayon(_d: float) -> bool:
+	if not _e.has("pts"):
+		_e["pts"] = []
+		_e["pts_o"] = []
+	_regule(3.0, true, false)
+	if _t > 3.0:
+		# roue avant extérieure au virage (à droite pour un virage à gauche) : son centre, au sol
+		var roues: Array = _voiture.get("_wheels")
+		var centres: Dictionary = _voiture.get("_wheel_centre")
+		var ext: Node3D = null
+		for w: Node3D in roues:
+			if w in (_voiture.get("_wheels_front") as Array):
+				var c: Vector3 = w.global_transform * (centres.get(w, Vector3.ZERO) as Vector3)
+				var local := _voiture.global_transform.affine_inverse() * c
+				if local.x > 0.0:
+					ext = w
+					(_e["pts"] as Array).append(Vector2(c.x, c.z))
+		(_e["pts_o"] as Array).append(Vector2(_pos().x, _pos().z))
+	if _t < 9.0:
+		return false
+	var r_ext := _rayon_cercle(PackedVector2Array(_e["pts"]))
+	var r_o := _rayon_cercle(PackedVector2Array(_e["pts_o"]))
+	_r["rayon"] = "à 3 m/s, braquage à fond : %.2f m entre murs (roue avant extérieure), %.2f m au centre de la voiture ; arcade du même modèle %.2f m entre murs" % [
+			r_ext, r_o, float(_r["rayon_arcade"])]
+	return true
+
+
+func _e_arret_rayon(_d: float) -> bool:
+	if _v() > 0.3:
+		_pedales(false, true)
+		return _t > 5.0
+	_pedales()
+	return _t > 0.5
+
+
+func _e_bordure_face(_d: float) -> bool:
+	return _bordure_passage(0.0)
+
+
+func _e_bordure_biais(_d: float) -> bool:
+	return _bordure_passage(30.0)
+
+
+# Franchit la bordure à 3 m/s, cap `angle` (degrés) par rapport à sa face : monte, traverse, redescend.
+func _bordure_passage(angle: float) -> bool:
+	var cap := deg_to_rad(angle)
+	var avant := Vector3(-sin(cap), 0.0, -cos(cap))
+	if not _e.has("y0"):
+		var face := Vector3(BORDURE_CENTRE.x, 0.0, BORDURE_CENTRE.z + BORDURE_TAILLE.z * 0.5)
+		_placer(face - avant * 9.0, cap)
+		_e["y0"] = _pos().y + 0.0
+		_e["ymax"] = -INF
+		_e["contact"] = 0
+		_e["parcours"] = 0.0
+		_e["depart"] = _pos()
+		return false
+	if _t < 0.5:
+		_pedales()
+		_e["y0"] = _pos().y
+		return false
+	_regule(3.0)
+	_e["ymax"] = maxf(float(_e["ymax"]), _pos().y)
+	if _touche(_bordure):
+		_e["contact"] = int(_e["contact"]) + 1
+		var etat := PhysicsServer3D.body_get_direct_state(_ch.get_rid())
+		for i in etat.get_contact_count():
+			if etat.get_contact_collider_object(i) == _bordure:
+				var local: Vector3 = _ch.global_transform.affine_inverse() * (_ch.global_position + etat.get_contact_local_position(i))
+				print("CONDUITE_REELLE contact bordure (repère du châssis, avant +z) : %s, normale %s, vitesse %.2f m/s" % [
+						str(local.snappedf(0.01)), str(etat.get_contact_local_normal(i).snappedf(0.01)), _v()])
+	# fini : passée de l'autre côté (au-delà de la face opposée de 5 m le long de la marche)
+	var parcours := (_pos() - (_e["depart"] as Vector3)).dot(avant)
+	var a_franchir := 9.0 + BORDURE_TAILLE.z / cos(cap) + 5.0
+	if parcours < a_franchir and _t < 25.0:
+		return false
+	var monte := float(_e["ymax"]) - float(_e["y0"])
+	var nom := "bordure de face" if angle == 0.0 else "bordure à %.0f°" % angle
+	_r["bordure_%d" % int(angle)] = "%s (0,15 m, 3 m/s) : caisse montée de %.3f m, %s, coque en contact %d pas" % [
+			nom, monte, "passée et redescendue" if parcours >= a_franchir else "PAS passée (%.1f m sur %.1f)" % [parcours, a_franchir], int(_e["contact"])]
+	if monte < 0.12:
+		_faute("%s : la voiture n'est pas montée dessus (%.3f m)" % [nom, monte])
+	if parcours < a_franchir:
+		_faute("%s : pas franchie" % nom)
+	if int(_e["contact"]) > 0:
+		_faute("%s : la coque touche la bordure (%d pas)" % [nom, int(_e["contact"])])
+	_pedales()
+	return true
+
+
+func _e_rampe(_d: float) -> bool:
+	# repère du modèle du parking = repère du monde décalé de PARKING_POS ; la rampe monte vers +x, de x -14,63 (rez)
+	# à 14,63 (niveau 1)
+	if not _e.has("phase"):
+		_placer(PARKING_POS + Vector3(-19.0, PARKING_SOL, RAMPE_Z), atan2(-1.0, 0.0))
+		_e["phase"] = "attente"
+		_e["contact"] = 0
+		_e["penche"] = 0.0
+		return false
+	var x := _pos().x - PARKING_POS.x
+	if _touche(_parking):
+		_e["contact"] = int(_e["contact"]) + 1
+	_e["penche"] = maxf(float(_e["penche"]), _penche())
+	match String(_e["phase"]):
+		"attente":
+			_pedales()
+			if _t > 0.5:
+				_e["phase"] = "montee"
+				_e["t0"] = _t
+		"montee":
+			_regule(4.0)
+			if x > 0.0:
+				_e["phase"] = "arret"
+		"arret":
+			if _v() > 0.3:
+				_pedales(false, true)
+			else:
+				_pedales()
+				_e["phase"] = "tenue"
+				_e["t_tenue"] = _t
+		"tenue":
+			_pedales()
+			var dt := _t - float(_e["t_tenue"])
+			if "--trace" in OS.get_cmdline_user_args() and Engine.get_physics_frames() % 10 == 0:
+				print("TENUE dt=%.2f v=%s frein=%.2f gaz=%.2f main=%.2f maintien=%s rapport=%s sol=%s" % [dt, str(_ch.linear_velocity.snappedf(0.0001)),
+						float(_ch.get("brakepedal")), float(_ch.get("gaspedal")), float(_ch.get("handbrakepull")), str(_ch.get("_maintien")), _ch.call("rapport"), str(_ch.call("_au_sol"))])
+			if dt >= 1.0 and not _e.has("p1"):
+				_e["p1"] = _pos()
+			if dt >= 3.0:
+				_e["recul"] = (_pos() - (_e["p1"] as Vector3)).length()
+				_e["phase"] = "redemarrage"
+				_e["t_redem"] = _t
+				_e["x_redem"] = x
+		"redemarrage":
+			_regule(4.0)
+			if not _e.has("t_repart") and x > float(_e["x_redem"]) + 0.5:
+				_e["t_repart"] = _t - float(_e["t_redem"])
+			if x > 16.5 and _pos().y > PARKING_N1 + 0.2:
+				_e["phase"] = "haut"
+				_e["t_haut"] = _t - float(_e["t0"])
+		"haut":
+			if _v() > 0.3:
+				_pedales(false, true)
+			else:
+				_pedales()
+				_r["rampe"] = "rampe à 16 %% : du rez au niveau 1 en %.1f s (arrêt compris), caisse penchée de %.1f° au plus, coque en contact %d pas ; arrêt en pleine pente, sans pédale : %.4f m en 2 s ; redémarrage en côte : repart en %s" % [
+						float(_e["t_haut"]), float(_e["penche"]), int(_e["contact"]), float(_e["recul"]),
+						("%.2f s" % float(_e["t_repart"])) if _e.has("t_repart") else "JAMAIS"]
+				if int(_e["contact"]) > 0:
+					_faute("rampe : la coque touche le parking (%d pas)" % int(_e["contact"]))
+				if float(_e["recul"]) > 0.02:
+					_faute("rampe : recule à l'arrêt en pente (%.4f m en 2 s)" % float(_e["recul"]))
+				if not _e.has("t_repart"):
+					_faute("rampe : ne redémarre pas en côte")
+				return true
+	if _t > 80.0:
+		_faute("rampe : bloquée en phase « %s » (x = %.1f, y = %.2f)" % [String(_e["phase"]), x, _pos().y])
+		return true
+	return false
+
+
+func _e_sortie(_d: float) -> bool:
+	if not _e.has("phase"):
+		_placer(Vector3(0.0, 0.0, 300.0), 0.0)
+		_e["phase"] = "roule"
+		return false
+	match String(_e["phase"]):
+		"roule":
+			_pedales(_t > 0.3)
+			if _t > 2.0:
+				# on descend EN GARDANT W enfoncé
+				_joueur.call("_exit_vehicle")
+				_sortie_t = 0.0
+				_e["phase"] = "dehors"
+				_e["t0"] = _t
+				_e["v0"] = _v()
+		"dehors":
+			var dt := _t - float(_e["t0"])
+			# à pied, le joueur presse W puis S puis les deux : mêmes touches que l'accélérateur et le frein
+			_pedales(dt < 1.5 or dt >= 3.0, dt >= 1.5)
+			if dt >= 1.5 and not _e.has("p1"):
+				_e["p1"] = _pos()
+			if dt < 4.0:
+				return false
+			_pedales()
+			var bouge := (_pos() - (_e["p1"] as Vector3)).length()
+			var dj := Vector2(_joueur.global_position.x - _pos().x, _joueur.global_position.z - _pos().z).length()
+			_r["sortie"] = "sortie à %.1f km/h en gardant W : pédales %.2f / frein %.2f / frein à main %.2f, puis W et S pressés à côté : %.4f m en 2,5 s, corps figé : %s ; joueur à %.2f m de la voiture" % [
+					float(_e["v0"]) * 3.6, float(_ch.get("gaspedal")), float(_ch.get("brakepedal")), float(_ch.get("handbrakepull")), bouge, str(_ch.get("fige")), dj]
+			if bouge > 0.05:
+				_faute("après la sortie, la voiture bouge encore (%.4f m) : pédales restées enfoncées ?" % bouge)
+			if float(_ch.get("gaspedal")) > 0.0:
+				_faute("après la sortie, accélérateur à %.2f" % float(_ch.get("gaspedal")))
+			if dj < 1.2:
+				_faute("le joueur est sorti à %.2f m du centre de la voiture" % dj)
+			return true
+	return false
+
+
+func _e_remontee(_d: float) -> bool:
+	if _t < 2.0:
+		return false
+	_joueur.call("_enter_vehicle", _voiture)
+	if _voiture.call("chassis") != _ch or bool(_ch.get("fige")) or not bool(_ch.get("Controlled")):
+		_faute("remontée : le châssis n'a pas repris (%s)" % str(_voiture.call("chassis")))
+	return true
+
+
+# Coût : même conduite (ligne droite à 54 km/h), réaliste et arcade en alternance toutes les 5 s (F7 en roulant).
+func _e_cout(_d: float) -> bool:
+	if not _e.has("seg"):
+		_placer(Vector3(0.0, 0.0, 500.0), 0.0)
+		_e["seg"] = 0
+		_e["t_seg"] = 0.0
+		_e["reel"] = []
+		_e["arcade"] = []
+		_e["saut"] = 0.0
+		_e["dv"] = 0.0
+		return false
+	_regule(15.0)
+	var t_seg := _t - float(_e["t_seg"])
+	var mode_reel := _voiture.call("chassis") != null
+	if _e.has("avant_bascule"):
+		var av: Array = _e["avant_bascule"]
+		var attendu: Vector3 = (av[0] as Vector3) + (av[2] as Vector3) * (av[1] as float) / 60.0
+		var ecart: Vector3 = _pos() - attendu
+		print("CONDUITE_REELLE bascule vers %s : écart au pas suivant %s m (vitesse %.2f -> %.2f m/s)" % ["réaliste" if mode_reel else "arcade", str(ecart.snappedf(0.001)), float(av[1]), _v()])
+		_e["saut"] = maxf(float(_e["saut"]), ecart.length())
+		_e["dv"] = maxf(float(_e["dv"]), absf(_v() - float(av[1])))
+		_e.erase("avant_bascule")
+	if t_seg > 1.0 and _e["seg"] > 0 and _image_us > 0:
+		(_e["reel" if mode_reel else "arcade"] as Array).append(_image_us / 1000.0)
+	if t_seg >= 5.0:
+		if int(_e["seg"]) >= 7:
+			_r["cout_pas"] = "image complète sans rendu (scène d'essai : voiture, joueur, sol), médianes : réaliste %.3f ms, arcade %.3f ms, écart %+.3f ms" % [
+					_mediane(PackedFloat32Array(_e["reel"])), _mediane(PackedFloat32Array(_e["arcade"])),
+					_mediane(PackedFloat32Array(_e["reel"])) - _mediane(PackedFloat32Array(_e["arcade"]))]
+			_r["bascule"] = "bascules arcade <-> réaliste en roulant (6) : saut de position %.3f m au plus, écart de vitesse %.2f m/s au plus" % [
+					float(_e["saut"]), float(_e["dv"])]
+			if float(_e["saut"]) > 0.5:
+				_faute("bascule F7 en roulant : la voiture saute de %.2f m" % float(_e["saut"]))
+			if float(_e["dv"]) > 2.0:
+				_faute("bascule F7 en roulant : la vitesse change de %.2f m/s" % float(_e["dv"]))
+			return true
+		_e["avant_bascule"] = [_pos(), _v(), -_voiture.global_transform.basis.z]
+		_essai.call("basculer")
+		_ch = _voiture.call("chassis")
+		if _ch != null:
+			pass
+		_e["seg"] = int(_e["seg"]) + 1
+		_e["t_seg"] = _t
+	return false
+
+
+func _e_descente(_d: float) -> bool:
+	if not _e.has("phase"):
+		if _voiture.call("chassis") == null:
+			_essai.call("basculer")   # finir en réaliste
+		_ch = _voiture.call("chassis")
+		_e["phase"] = "arret"
+	if _v() > 0.3:
+		_pedales(false, true)
+		return _t > 8.0
+	_pedales()
+	if _t < 1.0:
+		return false
+	_joueur.call("_exit_vehicle")
+	if _sortie_t > 25.0 and not _e.has("vu"):
+		pass
+	_r["disparition"] = "voiture toujours là %.1f s après la première sortie (remontée entre-temps) : %s" % [
+			_sortie_t, "oui" if is_instance_valid(_voiture) else "NON"]
+	if _sortie_t < 25.0:
+		_faute("contrôle de la disparition trop tôt (%.1f s après la sortie)" % _sortie_t)
+	if not is_instance_valid(_voiture):
+		_faute("la voiture a disparu alors que le joueur y était remonté")
+	return true
+
+
+func _e_f8(_d: float) -> bool:
+	if not _e.has("voiture"):
+		_pedales()
+		_joueur.rotation.y = 0.0
+		var v = _essai.call("faire_apparaitre")
+		_e["voiture"] = v
+		if v == null:
+			_faute("F8 : aucune berline posée")
+			return true
+		return false
+	if _t < 2.0:
+		return false
+	var v: Node3D = _e["voiture"]
+	var d := Vector2(v.global_position.x - _joueur.global_position.x, v.global_position.z - _joueur.global_position.z).length()
+	_r["f8"] = "F8 : berline posée à %.1f m du joueur, origine à %.3f m du sol (repos arcade %.3f), modèle %s" % [
+			d, v.global_position.y, float(_r["h_arcade"]), String(v.get("model_path")).get_file()]
+	if d < 5.0 or d > 15.0:
+		_faute("F8 : berline posée à %.1f m" % d)
+	if absf(v.global_position.y - float(_r["h_arcade"])) > 0.15:
+		_faute("F8 : berline pas posée sur le sol (%.3f m)" % v.global_position.y)
+	return true
+
+
+func _e_fin(_d: float) -> bool:
+	_pedales()
+	var cs := _couts_chassis
+	var moy := 0.0
+	for c in cs:
+		moy += float(c) / float(maxi(cs.size(), 1))
+	_r["cout_scripts"] = "scripts du châssis (corps + 4 roues) par pas physique, %d pas : médiane %d µs, moyenne %.0f µs, 95 %% %d µs, max %d µs ; suivi + modèle + roues visibles par image : médiane %d µs" % [
+			cs.size(), _centile(cs, 0.5), moy, _centile(cs, 0.95), _centile(cs, 1.0), _centile(_couts_visuels, 0.5)]
+	_r["tenue"] = "caisse penchée de %.1f° au plus sur tout l'essai" % rad_to_deg(acos(clampf(_min_up, -1.0, 1.0)))
+	if _min_up < 0.95:
+		_faute("caisse penchée de plus de 18° pendant l'essai (%.1f°)" % rad_to_deg(acos(clampf(_min_up, -1.0, 1.0))))
+	for k in ["pneu", "geometrie", "repos", "depart", "vitesse108", "freinage", "virage50", "roue_libre", "rayon",
+			"bordure_0", "bordure_30", "rampe", "sortie", "disparition", "bascule", "cout_pas", "cout_scripts", "tenue", "f8"]:
+		if _r.has(k):
+			print("CONDUITE_REELLE %s : %s" % [k, _r[k]])
+	print("CONDUITE_REELLE_RESULT %s" % ("OK" if _fautes.is_empty() else "FAIL : " + " ; ".join(_fautes)))
+	CarScript.conduite_reelle = false
+	get_tree().quit()
+	return true

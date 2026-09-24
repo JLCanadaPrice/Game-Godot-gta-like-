@@ -4,10 +4,10 @@ Fiche écrite pour être lue au début de chaque session : le contexte du projet
 travail imposée, les commandes exactes, les pièges déjà payés et l'état d'avancement.
 
 > **Série du 2026-09-24.** Plafonniers des parkings à étages : un seul modèle, celui du parking, copié là où il en
-> manquait ; les bandeaux plats sont retirés (§11, étape 13). Conduite réaliste (VitaVehicle, `PlayerCarPhysics`) pour
-> la voiture du joueur : plan chiffré remis au joueur, RIEN n'est construit, en attente de sa décision. Toujours en
-> attente depuis le 2026-09-23 : le coût physique d'environ 2 ms (NON TOUCHÉ, le joueur le teste en jeu) et la pose des
-> trois packs d'accessoires convertis (§7).
+> manquait (§11, étape 13). **Conduite réaliste, étape 1 FAITE** (§13) : essai sur la berline city_sedan_01, coupé par
+> défaut, F7 bascule arcade / réaliste, F8 pose une berline ; ARRÊT demandé par le joueur, qui teste le ressenti en jeu
+> avant toute suite. Toujours en attente depuis le 2026-09-23 : le coût physique d'environ 2 ms (NON TOUCHÉ, le joueur le
+> teste en jeu) et la pose des trois packs d'accessoires convertis (§7).
 
 ## 1. Le projet
 
@@ -41,7 +41,8 @@ travail imposée, les commandes exactes, les pièges déjà payés et l'état d'
   d'export des enveloppes de véhicules du 2026-09-23 (`EnveloppesExport.gd`, §12), **627** depuis les rampes invisibles
   des entrées (`RampesEntree.gd`, même jour), **629** depuis le feu d'obstacle de Mk1 (`feu_obstacle.gdshader` et son
   matériau, même jour, §9), **630** depuis l'outil de conversion des packs d'accessoires (`ConversionPacks.gd`, même
-  jour, §7). **`ProjectLoadCheck` ne parcourt pas `res://assets`** (seulement scenes, scripts, resources, shaders) : les
+  jour, §7), **635** depuis l'essai de la conduite réaliste (`ChassisReel.gd`, `ChassisRoue.gd`, `EssaiConduiteReelle.gd`,
+  `ConduiteReelleTest`, 2026-09-24, §13). **`ProjectLoadCheck` ne parcourt pas `res://assets`** (seulement scenes, scripts, resources, shaders) : les
   98 scènes d'accessoires n'entrent pas dans son compte.
 
 ## 2. Méthode de travail (imposée, non négociable)
@@ -194,7 +195,8 @@ y gagne `brake_from`, `stop_time`, `stop_dist`, et `final_speed` passe à 5 déc
 chiffres reste utile : temps et distance d'arrêt, `final_drift` et `settle_time` de la chute.
 Après un arrêt sec, la voiture recule encore de ~5 cm/s en décroissant (le tangage se relâche et le
 modèle du pack n'a AUCUNE résistance au roulement) : `final_speed` sort donc juste sous 0,05, c'est
-attendu.
+attendu. (C'est la voiture du pack telle quelle. Le châssis de la conduite réaliste en jeu, `ChassisReel`, corrige ce recul :
+§13.)
 
 ```bash
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/MapRoadsTest.tscn          # rubans, croisements, pentes
@@ -215,13 +217,14 @@ attendu.
 "$GODOT" --headless --path "$PROJET" --fixed-fps 60 --quit-after 300 res://scenes/tests/VehicleCatalogTest.tscn  # catalogue des véhicules, 20 000 tirages
 "$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/CarDrivingTest.tscn  # accélération, virage, freinage : CAR_DRIVING_RESULT
 "$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/CarDropTest.tscn     # chute de 10 m : CAR_DROP_RESULT
+"$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/ConduiteReelleTest.tscn  # conduite réaliste, berline : 108 km/h, freinage, bordure, rampe 16 %, sortie, F7, F8, coût (~5 s), cf. §13
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/CarKerbTest.tscn          # bordures : le joueur monte, l'IA non
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/WheelSpinTest.tscn        # roues des 72 modèles : axe, sens, rayon, stroboscope, pivot, braquage, rayon de braquage par modèle
 "$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/ParkingStructureTest.tscn  # parkings à étages : plateaux, escalier, hélice, cf. §11
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/DowntownStreetsTest.tscn
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/DowntownBuildingsTest.tscn
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/ShopBuildingsTest.tscn     # échec ANTÉRIEUR connu
-"$GODOT" --headless --path "$PROJET" --script res://scenes/world/map/tools/ProjectLoadCheck.gd   # attendu : 630 fichiers, 0 échec
+"$GODOT" --headless --path "$PROJET" --script res://scenes/world/map/tools/ProjectLoadCheck.gd   # attendu : 635 fichiers, 0 échec
 ```
 
 Outil d'inspection, hors batterie : `res://scenes/tests/VehicleSortTest.tscn` aligne les véhicules du catalogue
@@ -649,6 +652,9 @@ débogage sur `V`.
   en 2,57 s. Rappel : ce `RigidBody3D` n'est placé dans aucune scène de jeu (les 252 voitures de la
   circulation et la voiture prise dans la rue sont des `Car.gd` arcade) ;
 - **chantier « relier tous les bâtiments à la route »** (cf. ci-dessous).
+- **conduite réaliste** (pack VitaVehicle, §13) : étape 1 FAITE le 2026-09-24, essai sur la berline city_sedan_01 (F7 / F8) ;
+  le joueur teste le ressenti avant la suite (réglages, autres modèles, poids lourds, chocs contre la circulation, tests
+  arcade à réécrire, sons).
 - **ACCESSOIRES PRÊTS À POSER, pas encore posés** (2026-09-23) : trois packs reçus en FBX, convertis en une scène par
   modèle par `scenes/world/props/tools/ConversionPacks.gd` — `assets/airport_ground_vehicles/` (4 véhicules de piste),
   `assets/farm_buildings_quaternius/` (13 bâtiments et objets de ferme), `assets/low_poly_construction/` (81 éléments et
@@ -2231,3 +2237,101 @@ pointent maintenant vers ce dossier (corrigé le 2026-09-23). Ajoutées dans la 
 d'enfermement du noclip), `sonde_remplissage_marche` (joueur qui marche, naissances dans le champ jugées par un contrôle
 indépendant), `sonde_rond_point` (voitures gelées et éveillées sur l'îlot). Toujours sous `timeout` : une erreur
 d'analyse laisse Godot bloqué — payé encore une fois dans cette série.
+
+## 13. Conduite réaliste : essai sur la berline (étape 1, 2026-09-24)
+
+Plan chiffré remis au joueur le 2026-09-24 et validé : **étape 1 = essai sur UNE berline, désactivé par défaut, puis ARRÊT**
+— le joueur teste le ressenti en jeu avant toute suite (réglages au ressenti, autres modèles, poids lourds, chocs contre la
+circulation, tests arcade à réécrire, sons).
+
+**L'essayer (F5).**
+- À pied, **F8** pose une berline `city_sedan_01` à 7-13 m devant le joueur (la précédente disparaît si personne n'est
+  dedans) ; **E** pour monter.
+- **F7** bascule arcade / réaliste, à tout moment, même en roulant. Coupé au lancement. Un bandeau en bas de l'écran rappelle
+  le mode, le rapport et la vitesse tant qu'on conduit la berline.
+- Commandes réalistes (mêmes touches physiques que l'arcade) : W accélère ; S freine puis, TENU ~0,5 s à l'arrêt, passe la
+  marche arrière (S accélère alors en arrière, W freine) ; A/D braquent ; Espace est le frein à main.
+- Seul `city_sedan_01` passe en réaliste (`Car.CONDUITE_REELLE_MODELES`) ; tous les autres modèles restent arcade.
+
+**Architecture** (`Car.gd` section CONDUITE RÉALISTE, `ChassisReel.gd`, `ChassisRoue.gd`, `EssaiConduiteReelle.gd` posé par
+`Player._ready`).
+- La voiture reste une `Car`. En montant, F7 actif, elle se dote d'un châssis `ChassisReel` — le cœur du pack VitaVehicle,
+  un RigidBody3D, quatre roues à rayon, boîte automatique, pneus — enfant `top_level` de la Car, et le SUIT : la Car prend sa
+  position et son cap (jamais son roulis ni son tangage : caméra, sortie, circulation et zones voient une voiture droite),
+  le modèle son roulis et son tangage, chaque roue sa rotation, son braquage et son débattement. Le corps arcade est coupé
+  (couches à 0) tant que le châssis existe.
+- Construit sur les MESURES du modèle (`Car._mesures_chassis`) : roues sur les centres relevés, pneu au rayon relevé (jante
+  15 : 0,296 m pour 0,301 m), empattement 2,33 m, `Steer_Radius` = empattement / tan(29,8°) = 4,07 m, soit le rayon de
+  l'arcade ; centre de gravité à 0,50 m du sol, 59,5 % sur l'avant ; coque = silhouette du modèle relevée à 0,20 m, pour que
+  les bordures de 0,15 m passent dessous.
+- À la descente : pédales à zéro, frein de parking et frein à main ; le corps se fige une fois arrêté et ne coûte plus rien ;
+  remonter le dégèle. Il n'est rendu à l'arcade que si on remonte, ou si on bascule, F7 coupé.
+- Ce qui lit la Car marche sans changement : phares (le modèle est reposé à l'image AVANT VehicleLights,
+  `process_priority` -10), feux de freinage (`ChassisReel.freine()` -> `_player_braking`), gyrophares et R, zone de tir,
+  écrasement (`_drive_speed`), culler (gel et dégel du châssis), `knock` (le châssis encaisse), sortie (`rids_exclus`).
+
+**Ce qui manquait au pack, corrigé dans `ChassisReel` — les fichiers du pack ne sont PAS modifiés** (`PlayerCarPhysics`,
+`CarDrivingTest` et `CarDropTest` restent tels quels) :
+1. **Pédales restées enfoncées à la sortie** (le pack ne les met à jour que si `Controlled`), et il lit W et S même sans
+   conducteur pour passer une vitesse depuis le point mort — un joueur qui marche à côté l'enclenchait. Sans conducteur :
+   stationnement forcé.
+2. **Recul après l'arrêt** : résistance au roulement (CRR 0,012), maintien sous 1,5 m/s, et ADHÉRENCE À L'ARRÊT — le pneu du
+   pack est visqueux (sa force naît du glissement), une voiture freinée en pente glissait. Mesuré : 0,2 mm en 2 s à plat,
+   0,1 mm sur la rampe à 16 %.
+3. **Boîte bloquée en deuxième** : la boîte décide des passages AVANT que le pack ne borne ses pédales ; pied au plancher elle
+   voyait 1,2 au lieu de 1 et attendait 7 150 tr/min (x le rayon du pneu en pieds), au-dessus du limiteur à 7 000 : plafond à
+   83-86 km/h. Pédales bornées avant la boîte.
+4. **La voiture du pack n'est pas une berline** : ~20 kW aux roues, traînée LINÉAIRE en vitesse (0,025 x v m/s², 2,5 fois la
+   vraie à 100 km/h). Réglée sur une berline : traînée en v² sur la surface frontale mesurée (Cx 0,30, 1 300 kg), couple x 2,5
+   ET embrayage (`ClutchGrip`) x 2,5 — sans l'embrayage, le surcroît de couple le fait patiner, le moteur monte au limiteur et
+   la boîte ne monte plus (mesuré à x 3).
+5. **Antipatinage déclaré (`TTCS`) mais jamais écrit** : écrit, par `tcsweight` ; seuil 1,5 m/s + 25 % de la vitesse. Un
+   seuil fixe bloquait la boîte en troisième : le pneu du pack pousse avec 20 à 30 % de glissement.
+6. **Première enclenchée en ~3 pas au lieu de ~0,5 s** : W répond en 0,18 s. La marche arrière garde son délai.
+
+Et dans `Car.gd`, un défaut ANTÉRIEUR à l'essai, que l'essai aurait montré tout de suite : **une voiture quittée puis reprise
+dans les 25 s disparaissait sous le joueur**, et lui avec, 25 s après la PREMIÈRE sortie (le compte à rebours d'abandon était
+branché sur `queue_free` sans condition). Chaque sortie a maintenant son numéro (`_abandon_gen`).
+
+**Mesuré** (`ConduiteReelleTest`, vrai joueur, vraie berline, ~5 s en headless) :
+
+| essai | mesure |
+|---|---|
+| repos | origine à 0,443 m du sol (arcade 0,449), pneus à 5 mm du sol au pire, 0 mm de dérive |
+| départ | roule 0,18 s après W ; 0-50 km/h 4,0 s ; 0-100 9,8 s ; 108 km/h en 11,4 s (plafond à 83 km/h sans les corrections 3 et 4) |
+| 108 km/h, double changement de voie | 4,2° de roulis au plus, 29°/s de lacet, revient à 2,1° de l'axe |
+| freinage 108 -> 0 | 43,4 m en 2,90 s, droit (1 cm, 0,0°) ; puis 0,2 mm en 2 s, sans pédale |
+| braquage à fond à 50 km/h | 0,78 g, 4,1° de roulis, pas de tonneau |
+| pied levé depuis 49 km/h | arrêtée en 15,4 s sur 93 m |
+| rayon de braquage à 3 m/s | 5,44 m entre murs (arcade 5,30), 4,37 m au centre |
+| bordure de 0,15 m, de face et à 30° | montée (0,156 et 0,158 m), traversée, redescendue ; coque jamais en contact |
+| rampe à 16 % (collision cuite d'un parking du centre-ville) | montée sans contact, 10,4° de tangage ; arrêt en pleine pente tenu (0,1 mm en 2 s) ; redémarrage en côte en 0,75 s |
+| sortie en gardant W, puis W et S pressés à côté | 0 mm, corps figé ; joueur à 2,8 m |
+| remontée dans les 25 s | la voiture est toujours là 48 s après la première sortie |
+| F7 en roulant (6 bascules) | vitesse gardée (0,16 m/s d'écart) ; un pas de roulage d'écart (0,25 m à 54 km/h), aucun saut |
+| F8 | berline posée à 7 m, au sol (0,449 m) |
+
+**Coût.** Scripts du châssis (corps + 4 roues), par pas physique : **0,20 ms en médiane** dans la scène d'essai (0,24 en
+moyenne, 0,40 au 95e centile, 0,50 au plus), **0,21 ms dans le vrai monde** (`World.tscn`, circulation et PNJ ; sonde hors
+dépôt, `D:/p-recree/sondes/2026-09-24_conduite/`). Image entière (processeur, sans rendu) : +0,15 ms dans la scène d'essai ;
+dans le monde, +0,08 et +0,31 ms en deux passes (4,9 ms en arcade), dans le bruit de ce PC. Ce coût n'existe que pendant
+qu'on conduit la berline en réaliste ; sans conducteur, le corps est figé.
+
+**Pas fait** (suite du plan, sur décision du joueur) : réglage au ressenti ; les autres modèles et les poids lourds ; les
+CHOCS contre la circulation (elle est cinématique, de masse infinie pour le châssis : il rebondit, la voiture percutée est
+seulement « sonnée » par `knock`, comme en arcade) ; la vitesse de pointe, ~145 km/h (bridée ailleurs dans le pack, pas
+étudiée) ; les tests arcade qui conduisent la voiture du joueur (inchangés, le réaliste étant coupé par défaut) ; les sons
+moteur du pack.
+
+**Pièges payés en le faisant.**
+- **`RigidBody3D.linear_velocity` n'est relue qu'APRÈS le pas physique** : les impulsions déjà appliquées pendant le pas ne
+  s'y voient pas. L'adhérence à l'arrêt, qui compensait la gravité, la compensait deux fois (par les pneus freinés et par son
+  calcul), et la voiture MONTAIT la rampe à 2,4 cm/s. Lire `PhysicsServer3D.body_get_direct_state(rid).linear_velocity`.
+- **Un tableau compacté rangé dans un Dictionary** (`(d[k] as PackedFloat32Array).append(x)`) : l'ajout va à une copie. Payé
+  une fois de plus dans le test (rayon, accélération latérale et coût à 0) : `Array` ordinaire.
+- **Une Basis est en flottants 32 bits** : un ajustement de cercle résolu avec elle sur des coordonnées de plusieurs centaines
+  de mètres sortait faux (0 m, 1 370 m). Recentrer les points et résoudre en flottants.
+- **Un corps libéré en différé (`queue_free`) reste un pas dans l'espace physique** : à la bascule vers l'arcade, le châssis
+  et la voiture se repoussaient (0,76 m de chute). Le retirer de l'arbre d'abord.
+- **Le seuil de passage de la boîte automatique du pack est multiplié par le rayon du pneu** (en pieds) : un pneu plus grand,
+  des passages plus hauts.

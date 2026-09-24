@@ -139,10 +139,6 @@ func _ready() -> void:
 	call_deferred("_emit_weapon_state")
 
 	_setup_model()
-	# essai de la conduite réaliste (2026-09-24, CLAUDE.md §13) : F7 bascule arcade / réaliste, F8 pose une berline
-	var essai: Node = preload("res://scenes/vehicles/EssaiConduiteReelle.gd").new()
-	essai.name = "EssaiConduiteReelle"
-	add_child(essai)
 
 func _unhandled_input(event: InputEvent) -> void:
 	# Alt : regard libre. À la relâche, on lance le recentrage du corps.
@@ -1041,11 +1037,7 @@ func _sortie_libre(space: PhysicsDirectSpaceState3D, car: Node3D, p: Vector3) ->
 	q.shape = cap
 	q.transform = Transform3D(Basis.IDENTITY, p)
 	q.collision_mask = 1 | 4
-	# la voiture et, en conduite réaliste, son châssis physique (ChassisReel), qui occupe la même place
-	var exclus: Array[RID] = [get_rid(), car.get_rid()]
-	if car.has_method("rids_exclus"):
-		exclus.append_array(car.call("rids_exclus"))
-	q.exclude = exclus
+	q.exclude = [get_rid(), car.get_rid()]
 	return space.intersect_shape(q, 1).is_empty()
 
 func _update_drive_camera(delta: float) -> void:

@@ -1,0 +1,148 @@
+extends Node
+
+# ESSAI DE LA CONDUITE RÉALISTE (étape 1, 2026-09-24, CLAUDE.md §13). Posé sur le joueur par Player._ready.
+#  - F7 : bascule arcade / réaliste (Car.conduite_reelle), coupée au lancement. S'applique tout de suite à la voiture
+#    qu'on conduit, en roulant, et aux suivantes. Seuls les modèles de Car.CONDUITE_REELLE_MODELES sont concernés : la
+#    berline city_sedan_01.
+#  - F8 : à pied, pose une berline city_sedan_01 devant le joueur (la précédente disparaît si personne n'est dedans).
+#  - un bandeau, pendant qu'on conduit la berline : mode, rapport, vitesse.
+# Outil d'essai : il disparaîtra quand la conduite réaliste sera celle du jeu, ou abandonnée.
+
+const CarScript := preload("res://scenes/vehicles/Car.gd")
+const CAR := preload("res://scenes/vehicles/Car.tscn")
+const MODELE := "res://resources/vehicle_models/city_sedan_01.tres"
+const DISTANCES := [7.0, 9.0, 11.0, 13.0]
+const MESSAGE_DUREE := 3.0
+const PLACE := Vector3(2.6, 1.7, 5.2)       # boîte qui doit être libre pour poser la berline (x, y, z)
+
+var _joueur: Node3D
+var _message: Label
+var _tableau: Label
+var _message_fin := 0.0
+var _berline: Node3D = null
+
+
+func _ready() -> void:
+	_joueur = get_parent() as Node3D
+	var couche := CanvasLayer.new()
+	couche.name = "EssaiConduite"
+	add_child(couche)
+	_message = _etiquette(couche, Control.PRESET_CENTER_TOP, Vector2(-360.0, 40.0), Vector2(360.0, 80.0))
+	_tableau = _etiquette(couche, Control.PRESET_CENTER_BOTTOM, Vector2(-220.0, -70.0), Vector2(220.0, -30.0))
+
+
+func _etiquette(couche: CanvasLayer, ancre: int, haut_gauche: Vector2, bas_droit: Vector2) -> Label:
+	var l := Label.new()
+	l.set_anchors_preset(ancre)
+	l.offset_left = haut_gauche.x
+	l.offset_top = haut_gauche.y
+	l.offset_right = bas_droit.x
+	l.offset_bottom = bas_droit.y
+	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	l.add_theme_color_override(&"font_color", Color(1, 0.95, 0.8))
+	l.add_theme_color_override(&"font_outline_color", Color(0, 0, 0, 0.8))
+	l.add_theme_constant_override(&"outline_size", 4)
+	l.visible = false
+	couche.add_child(l)
+	return l
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if not (event is InputEventKey and event.pressed and not event.echo):
+		return
+	match (event as InputEventKey).keycode:
+		KEY_F7:
+			basculer()
+		KEY_F8:
+			faire_apparaitre()
+
+
+func basculer() -> void:
+	CarScript.conduite_reelle = not CarScript.conduite_reelle
+	var voiture = _joueur.get("_current_car")
+	if voiture != null and is_instance_valid(voiture) and voiture.has_method("appliquer_mode_conduite"):
+		voiture.appliquer_mode_conduite()
+	var texte := "Conduite réaliste %s (essai : berline city_sedan_01, F8 pour en poser une)" \
+			% ("ACTIVÉE" if CarScript.conduite_reelle else "désactivée")
+	afficher(texte)
+	print("ESSAI_CONDUITE %s" % texte)
+
+
+# Pose une berline devant le joueur à pied : au plus près parmi DISTANCES, sur un sol à peu près plat et dans une place
+# libre (décor et véhicules), en travers du regard, portière du conducteur vers le joueur. Rend la voiture, ou null.
+func faire_apparaitre() -> Node3D:
+	if bool(_joueur.get("_driving")):
+		afficher("F8 : à pied seulement")
+		return null
+	var avant := -_joueur.global_transform.basis.z
+	var cam := _joueur.get_viewport().get_camera_3d() if _joueur.is_inside_tree() else null
+	if cam != null:
+		avant = -cam.global_transform.basis.z
+	avant.y = 0.0
+	if avant.length() < 0.01:
+		return null
+	avant = avant.normalized()
+	# en travers : le X de la voiture (son côté passager) vers l'avant du regard, sa portière (-X) vers le joueur
+	var cap := atan2(-avant.z, avant.x)
+	var espace := _joueur.get_world_3d().direct_space_state
+	var joueur_rid: RID = (_joueur as CollisionObject3D).get_rid()
+	for d: float in DISTANCES:
+		var p: Vector3 = _joueur.global_position + avant * d
+		var sol := espace.intersect_ray(PhysicsRayQueryParameters3D.create(p + Vector3.UP * 4.0, p + Vector3.DOWN * 8.0, 1, [joueur_rid]))
+		if sol.is_empty() or (sol["normal"] as Vector3).y < 0.9:
+			continue
+		var boite := BoxShape3D.new()
+		boite.size = PLACE
+		var q := PhysicsShapeQueryParameters3D.new()
+		q.shape = boite
+		q.transform = Transform3D(Basis(Vector3.UP, cap), (sol["position"] as Vector3) + Vector3.UP * (PLACE.y * 0.5 + 0.12))
+		q.collision_mask = 1 | 4
+		q.exclude = [joueur_rid]
+		if not espace.intersect_shape(q, 1).is_empty():
+			continue
+		var voiture := _poser((sol["position"] as Vector3), cap)
+		afficher("Berline posée à %.0f m devant toi — E pour monter, F7 pour la conduite réaliste" % d)
+		return voiture
+	afficher("F8 : pas de place libre devant toi")
+	return null
+
+
+func _poser(sol: Vector3, cap: float) -> Node3D:
+	if is_instance_valid(_berline) and not bool(_berline.get("driven_by_player")):
+		_berline.queue_free()
+	var data = load(MODELE)
+	var chemins: PackedStringArray = data.model_paths
+	var voiture := CAR.instantiate() as Node3D
+	voiture.set("forced_model_path", chemins[randi() % chemins.size()])
+	voiture.name = "BerlineEssai"
+	var scene := _joueur.get_tree().current_scene
+	scene.add_child(voiture)
+	voiture.set("has_npc_driver", false)
+	voiture.global_position = sol + Vector3.UP * (float(voiture.get("_ride_height")) + 0.05)
+	voiture.rotation.y = cap
+	if voiture.has_method("park"):
+		voiture.park()
+	_berline = voiture
+	return voiture
+
+
+func afficher(texte: String) -> void:
+	_message.text = texte
+	_message.visible = true
+	_message_fin = Time.get_ticks_msec() * 0.001 + MESSAGE_DUREE
+
+
+func _process(_delta: float) -> void:
+	if _message.visible and Time.get_ticks_msec() * 0.001 > _message_fin:
+		_message.visible = false
+	var montre := false
+	var voiture = _joueur.get("_current_car")
+	if bool(_joueur.get("_driving")) and voiture != null and is_instance_valid(voiture) and voiture.has_method("infos_conduite"):
+		var i: Dictionary = voiture.infos_conduite()
+		if bool(i.get("essai", false)):
+			if bool(i["reelle"]):
+				_tableau.text = "Réaliste · rapport %s · %d km/h   (F7 : arcade)" % [i["rapport"], roundi(float(i["kmh"]))]
+			else:
+				_tableau.text = "Arcade · %d km/h   (F7 : réaliste)" % roundi(float(i["kmh"]))
+			montre = true
+	_tableau.visible = montre
