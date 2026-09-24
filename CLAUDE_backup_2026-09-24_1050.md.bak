@@ -5,16 +5,9 @@ travail imposée, les commandes exactes, les pièges déjà payés et l'état d'
 
 > **Série du 2026-09-24.** Plafonniers des parkings à étages : un seul modèle, celui du parking, copié là où il en
 > manquait (§11, étape 13). **Conduite réaliste, étape 1 FAITE** (§13) : essai sur la berline city_sedan_01, coupé par
-> défaut, F7 bascule arcade / réaliste, F8 pose une berline. Puis, après les vidéos de l'essai (hors dépôt,
-> `D:/p-recree/videos_conduite/`), deux défauts corrigés :
-> - la rampe d'accès des parkings à étages (27 % -> 9,6 %), avec l'assiette de l'arcade, fausse à chaque raccord (§11,
->   étape 14) ;
-> - l'assistance de direction du pack, qui resserrait le virage en manœuvre ; elle est maintenant dosée par la vitesse
->   (§13, « Direction »).
->
-> ARRÊT : le joueur teste le ressenti ce soir avant l'étape 3 (les autres voitures). Toujours en attente depuis le
-> 2026-09-23 : le coût physique d'environ 2 ms (NON TOUCHÉ, le joueur le teste en jeu) et la pose des trois packs
-> d'accessoires convertis (§7).
+> défaut, F7 bascule arcade / réaliste, F8 pose une berline ; ARRÊT demandé par le joueur, qui teste le ressenti en jeu
+> avant toute suite. Toujours en attente depuis le 2026-09-23 : le coût physique d'environ 2 ms (NON TOUCHÉ, le joueur le
+> teste en jeu) et la pose des trois packs d'accessoires convertis (§7).
 
 ## 1. Le projet
 
@@ -224,7 +217,7 @@ attendu. (C'est la voiture du pack telle quelle. Le châssis de la conduite réa
 "$GODOT" --headless --path "$PROJET" --fixed-fps 60 --quit-after 300 res://scenes/tests/VehicleCatalogTest.tscn  # catalogue des véhicules, 20 000 tirages
 "$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/CarDrivingTest.tscn  # accélération, virage, freinage : CAR_DRIVING_RESULT
 "$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/CarDropTest.tscn     # chute de 10 m : CAR_DROP_RESULT
-"$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/ConduiteReelleTest.tscn  # conduite réaliste, berline : 108 km/h, freinage, bordure, volant partiel, rampe 16 %, entrée de parking (réaliste ET arcade), sortie, F7, F8, coût, cf. §13
+"$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/ConduiteReelleTest.tscn  # conduite réaliste, berline : 108 km/h, freinage, bordure, rampe 16 %, entrée de parking (réaliste ET arcade), sortie, F7, F8, coût, cf. §13
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/CarKerbTest.tscn          # bordures : le joueur monte, l'IA non
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/WheelSpinTest.tscn        # roues des 72 modèles : axe, sens, rayon, stroboscope, pivot, braquage, rayon de braquage par modèle
 "$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/ParkingStructureTest.tscn  # parkings à étages : plateaux, escalier, hélice, cf. §11
@@ -659,9 +652,9 @@ débogage sur `V`.
   en 2,57 s. Rappel : ce `RigidBody3D` n'est placé dans aucune scène de jeu (les 252 voitures de la
   circulation et la voiture prise dans la rue sont des `Car.gd` arcade) ;
 - **chantier « relier tous les bâtiments à la route »** (cf. ci-dessous).
-- **conduite réaliste** (pack VitaVehicle, §13) : étape 1 FAITE le 2026-09-24, essai sur la berline city_sedan_01 (F7 / F8),
-  et deux défauts des vidéos corrigés le même jour (rampe d'accès des parkings, direction) ; le joueur teste le ressenti
-  avant l'étape 3, les autres voitures (puis poids lourds, chocs contre la circulation, tests arcade à réécrire, sons).
+- **conduite réaliste** (pack VitaVehicle, §13) : étape 1 FAITE le 2026-09-24, essai sur la berline city_sedan_01 (F7 / F8) ;
+  le joueur teste le ressenti avant la suite (réglages, autres modèles, poids lourds, chocs contre la circulation, tests
+  arcade à réécrire, sons).
 - **ACCESSOIRES PRÊTS À POSER, pas encore posés** (2026-09-23) : trois packs reçus en FBX, convertis en une scène par
   modèle par `scenes/world/props/tools/ConversionPacks.gd` — `assets/airport_ground_vehicles/` (4 véhicules de piste),
   `assets/farm_buildings_quaternius/` (13 bâtiments et objets de ferme), `assets/low_poly_construction/` (81 éléments et
@@ -2346,21 +2339,6 @@ circulation, tests arcade à réécrire, sons).
 5. **Antipatinage déclaré (`TTCS`) mais jamais écrit** : écrit, par `tcsweight` ; seuil 1,5 m/s + 25 % de la vitesse. Un
    seuil fixe bloquait la boîte en troisième : le pneu du pack pousse avec 20 à 30 % de glissement.
 6. **Première enclenchée en ~3 pas au lieu de ~0,5 s** : W répond en 0,18 s. La marche arrière garde son délai.
-7. **Direction qui se durcissait d'un coup en manœuvre** (corrigé le 2026-09-24, vu dans les vidéos). **Ce n'est PAS le
-   terme de lacet** de l'assistance, le premier suspect : mesuré, il contre-braque. La cause est le terme de DÉRIVE
-   (`SteeringAssistance`), moins le sinus de l'angle entre la vitesse du centre de gravité et l'axe de la voiture. En virage
-   lent, ce point, à 1,39 m devant l'essieu arrière, file vers l'INTÉRIEUR du virage (géométrie, pas glissade). Le pack y
-   voit une dérive et ajoute du braquage ; le virage se resserre, et ainsi de suite jusqu'à la butée. Mesuré (sonde hors
-   dépôt, `D:/p-recree/sondes/2026-09-24_braquage/`), 45 % de volant à 12 km/h :
-   - le braquage effectif valait x 1,82, et le rayon 5,3 m, pour 9,5 m à l'épure ;
-   - sans le terme de lacet, c'est pire (x 2,2) ; sans assistance du tout, 10,2 m.
-
-   À vitesse, c'est l'inverse : l'assistance reprend du braquage (x 0,59 à 43 km/h), et c'est elle qui tient la voiture
-   dans les changements de voie à 108 km/h. `ChassisReel` la **DOSE PAR LA VITESSE** : nulle sous 18 km/h
-   (`ASSISTANCE_V0`), entière au-delà de 36 km/h (`ASSISTANCE_V1`), en courbe douce entre les deux. Avec 45 % de volant, le
-   rayon vaut maintenant 9,9 m à 7,6 km/h, 10,2 m à 12 km/h, 10,3 m à 18 et 23 km/h, pour 9,5 m à l'épure : le glissement
-   des pneus ajoute 5 à 12 %. Au-delà de 36 km/h, rien ne change : même double changement de voie à 108 km/h (4,2°,
-   29°/s, retour à 2,1° de l'axe), même freinage.
 
 Et dans `Car.gd`, un défaut ANTÉRIEUR à l'essai, que l'essai aurait montré tout de suite : **une voiture quittée puis reprise
 dans les 25 s disparaissait sous le joueur**, et lui avec, 25 s après la PREMIÈRE sortie (le compte à rebours d'abandon était
@@ -2376,8 +2354,7 @@ branché sur `queue_free` sans condition). Chaque sortie a maintenant son numér
 | freinage 108 -> 0 | 43,4 m en 2,90 s, droit (1 cm, 0,0°) ; puis 0,2 mm en 2 s, sans pédale |
 | braquage à fond à 50 km/h | 0,78 g, 4,1° de roulis, pas de tonneau |
 | pied levé depuis 49 km/h | arrêtée en 15,4 s sur 93 m |
-| rayon de braquage à 3 m/s | 5,51 m entre murs (arcade 5,30), 4,44 m au centre (5,44 / 4,37 avant le dosage de l'assistance, qui en manœuvre ajoutait du braquage jusqu'à la butée) |
-| volant partiel : 45 % tenu à 12 km/h (étape ajoutée le 2026-09-24) | rayon 10,12 m au centre, épure du pack 9,12 m (x 1,11) ; 5,59 m (x 0,61) avec l'assistance entière |
+| rayon de braquage à 3 m/s | 5,44 m entre murs (arcade 5,30), 4,37 m au centre |
 | bordure de 0,15 m, de face et à 30° | montée (0,156 et 0,158 m), traversée, redescendue ; coque jamais en contact |
 | rampe à 16 % (collision cuite d'un parking du centre-ville) | montée sans contact, 10,4° de tangage ; arrêt en pleine pente tenu (0,1 mm en 2 s) ; redémarrage en côte en 0,75 s |
 | entrée du même parking, rampe d'accès refaite le 2026-09-24 (27 % -> 9,6 %, §11 étape 14), à 4 et 7 m/s | réaliste : coque jamais en contact, dessous du modèle à 0,10 m du sol au plus près ; arcade : 0,14 m, pneus sur le sol à 2 mm près (13 pas de contact et 0,5 m SOUS le sol en arcade avec l'ancienne) |

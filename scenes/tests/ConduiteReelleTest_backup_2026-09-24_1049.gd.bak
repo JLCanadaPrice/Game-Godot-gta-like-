@@ -12,8 +12,6 @@ extends Node3D
 #    freinage de 108 km/h à l'arrêt, droit ; puis AUCUN RECUL à l'arrêt (1 cm au plus en 2 s) ;
 #  - braquage à fond à 50 km/h sans se coucher (caisse jamais au-delà de 18°) ; roue libre jusqu'à l'arrêt ;
 #  - rayon de braquage à 3 m/s, comparé à celui de la voiture arcade du même modèle (rapporté, pas jugé) ;
-#  - VOLANT PARTIEL (2026-09-24) : à 12 km/h, 45 % de volant tenu, le rayon est celui que demande le volant (épure du
-#    pack, à 0,85-1,25 près) — l'assistance de direction du pack le ramenait à 5,3 m au lieu de 9 (cf. ChassisReel) ;
 #  - bordure de 0,15 m de face et en biais (30°) : franchie, montée ET descente, sans que la coque la touche ;
 #  - rampe à 16 % : montée sans que la coque touche, arrêt en pleine pente SANS RECULER (2 cm au plus en 2 s),
 #    redémarrage en côte, arrivée au niveau 1 ;
@@ -42,8 +40,6 @@ const RAMPE_Z := -5.55                              # axe de la rampe (ParkingSt
 const BORDURE_CENTRE := Vector3(-150.0, 0.075, 0.0)
 const BORDURE_TAILLE := Vector3(30.0, 0.15, 12.0)
 const KMH := 1.0 / 3.6
-const VOLANT_V := 12.0 / 3.6                       # volant partiel : vitesse (m/s)...
-const VOLANT_PART := 0.45                          # ... et part du volant, tenue
 # Entrée du parking (repère du modèle) : départ devant la façade (z 11,87) et la barre de hauteur (z 11,95..12,15),
 # arrivée dans le rez, passage franchi (face intérieure de la tour à z 7,48). [réaliste ?, vitesse m/s]
 const ENTREE_PASSAGES := [[true, 4.0], [true, 7.0], [false, 4.0], [false, 7.0]]
@@ -59,7 +55,7 @@ var _ch: RigidBody3D
 var _bordure: StaticBody3D
 var _parking: StaticBody3D
 var _etapes: Array[String] = ["pose", "montee", "repos", "depart", "vitesse108", "freinage", "virage50", "roue_libre",
-		"rayon", "arret_rayon", "volant_partiel", "bordure_face", "bordure_biais", "rampe", "entree", "sortie", "remontee", "cout", "descente", "f8", "fin"]
+		"rayon", "arret_rayon", "bordure_face", "bordure_biais", "rampe", "entree", "sortie", "remontee", "cout", "descente", "f8", "fin"]
 var _i := 0
 var _t := 0.0
 var _e := {}                 # état de l'étape en cours
@@ -472,40 +468,6 @@ func _e_arret_rayon(_d: float) -> bool:
 		return _t > 5.0
 	_pedales()
 	return _t > 0.5
-
-
-# VOLANT PARTIEL (2026-09-24). Le joueur, après les vidéos : « 45 % de volant donne 5,8 m de rayon au lieu de 9 à
-# 12 km/h ». C'était l'assistance de direction du pack (cf. ChassisReel, DIRECTION), dosée depuis par la vitesse. Volant
-# posé directement (steer2, négatif : à gauche), retour au centre coupé le temps de la mesure ; rayon au centre de la
-# voiture, cercle ajusté sur 4 s de virage établi ; comparé à l'épure du pack (centre du virage sur l'essieu arrière, à
-# Steer_Radius / volant). Le glissement des pneus l'élargit d'environ 10 %.
-func _e_volant_partiel(_d: float) -> bool:
-	if not _e.has("pts"):
-		_placer(Vector3(-300.0, 0.0, 300.0), 0.0)
-		_e["pts"] = []
-		_e["retour"] = float(_ch.get("KeyboardReturnSpeed"))
-		_ch.set("KeyboardReturnSpeed", 0.0)
-		return false
-	_regule(VOLANT_V)
-	if _t > 2.0:
-		_ch.set("steer2", -VOLANT_PART)
-	if _t > 7.0:
-		(_e["pts"] as Array).append(Vector2(_pos().x, _pos().z))
-	if _t < 11.0:
-		return false
-	_ch.set("KeyboardReturnSpeed", float(_e["retour"]))
-	_ch.set("steer2", 0.0)
-	_pedales()
-	var r := _rayon_cercle(PackedVector2Array(_e["pts"]))
-	var sr := float(_ch.get("Steer_Radius"))
-	var demi := float(_voiture.get("_empattement")) * 0.5
-	var epure := sqrt(pow(sr / VOLANT_PART, 2.0) + demi * demi)
-	_r["volant_partiel"] = "à %.0f km/h, %.0f %% de volant tenu : rayon %.2f m au centre de la voiture, épure du pack %.2f m (x %.2f)" % [
-			VOLANT_V * 3.6, VOLANT_PART * 100.0, r, epure, r / epure]
-	if r / epure < 0.85 or r / epure > 1.25:
-		_faute("volant partiel à %.0f km/h : rayon %.2f m pour une épure de %.2f m (x %.2f) : le rayon ne suit pas le volant" % [
-				VOLANT_V * 3.6, r, epure, r / epure])
-	return true
 
 
 func _e_bordure_face(_d: float) -> bool:
@@ -939,7 +901,7 @@ func _e_fin(_d: float) -> bool:
 	_r["tenue"] = "caisse penchée de %.1f° au plus sur tout l'essai" % rad_to_deg(acos(clampf(_min_up, -1.0, 1.0)))
 	if _min_up < 0.95:
 		_faute("caisse penchée de plus de 18° pendant l'essai (%.1f°)" % rad_to_deg(acos(clampf(_min_up, -1.0, 1.0))))
-	for k in ["pneu", "geometrie", "repos", "depart", "vitesse108", "freinage", "virage50", "roue_libre", "rayon", "volant_partiel",
+	for k in ["pneu", "geometrie", "repos", "depart", "vitesse108", "freinage", "virage50", "roue_libre", "rayon",
 			"bordure_0", "bordure_30", "rampe", "entree", "sortie", "disparition", "bascule", "cout_pas", "cout_scripts", "tenue", "f8"]:
 		if _r.has(k):
 			print("CONDUITE_REELLE %s : %s" % [k, _r[k]])

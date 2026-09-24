@@ -35,18 +35,6 @@ extends "res://assets/car_physics/MAIN/car.gd"
 # Enfin le pneu du pack est VISQUEUX : sa force naît du glissement, et une voiture freinée en pente doit glisser un peu
 # pour être retenue (mesuré : 3,7 cm en 2 s sur la rampe à 16 %). Freinée et presque arrêtée, elle est maintenant tenue
 # franchement, dans la limite de l'adhérence (_adherence_arret).
-#
-# DIRECTION (2026-09-24, demande du joueur après les vidéos : « 45 % de volant donne 5,8 m de rayon au lieu de 9, à
-# 12 km/h »). L'assistance de direction du pack ajoute au volant deux termes : un contre-braquage proportionnel au lacet
-# (SteeringAssistanceAngular), et un terme de DÉRIVE (SteeringAssistance), moins le sinus de l'angle entre la vitesse du
-# centre de gravité et l'axe de la voiture. En virage lent, ce centre, à 1,39 m devant l'essieu arrière, file vers
-# l'INTÉRIEUR du virage — c'est la géométrie, pas une glissade — : le pack le prend pour une dérive, rajoute du braquage,
-# le virage se resserre, et ainsi de suite jusqu'à la butée. Mesuré (sonde hors dépôt, D:/p-recree/sondes/2026-09-24_braquage/),
-# 45 % de volant à 12 km/h : braquage effectif x 1,82, rayon 5,3 m pour 9,5 m à l'épure ; sans le terme de lacet c'est
-# pire (x 2,2) ; sans assistance, 10,2 m. À vitesse c'est l'inverse : l'assistance reprend du braquage (x 0,59 à 43 km/h),
-# et c'est elle qui tient la voiture dans les changements de voie mesurés à 108 km/h. Elle est donc DOSÉE PAR LA VITESSE :
-# nulle sous ASSISTANCE_V0 (en manœuvre, le rayon suit le volant), entière au-delà de ASSISTANCE_V1 (rien ne change à
-# vitesse), en courbe douce entre les deux.
 
 const Roue := preload("res://scenes/vehicles/ChassisRoue.gd")
 
@@ -71,10 +59,6 @@ const COUPLE := 2.5               # couple du moteur du pack multiplié par (cf.
 const GLISSE_ANTIPATINAGE := 1.5  # m/s de glissement des roues motrices tolérés à l'arrêt...
 const GLISSE_RELATIF := 0.25      # ... plus cette part de la vitesse : le pneu du pack pousse avec 20-30 % de glissement
 const GAIN_ANTIPATINAGE := 1.0
-const ASSISTANCE_DERIVE := 1.0    # SteeringAssistance du pack (car.gd), entière au-delà de ASSISTANCE_V1
-const ASSISTANCE_LACET := 0.12    # SteeringAssistanceAngular du pack, idem
-const ASSISTANCE_V0 := 5.0        # m/s (18 km/h) : en dessous, pas d'assistance de direction (cf. DIRECTION en tête)
-const ASSISTANCE_V1 := 10.0       # m/s (36 km/h) : au-delà, l'assistance du pack entière
 
 var cout_roues_us := 0            # versé par les roues (ChassisRoue), remis à zéro à chaque pas
 var roues: Array = []             # les roues du châssis, dans l'ordre des mesures
@@ -284,10 +268,6 @@ func controls():
 		handbrakepull = MaxHandbrake
 		_maintien = false
 		return
-	# assistance de direction dosée par la vitesse (cf. DIRECTION en tête) : le pack la lit dans controls()
-	var dose := smoothstep(ASSISTANCE_V0, ASSISTANCE_V1, absf(vitesse_avant()))
-	SteeringAssistance = ASSISTANCE_DERIVE * dose
-	SteeringAssistanceAngular = ASSISTANCE_LACET * dose
 	super.controls()
 	# BOÎTE BLOQUÉE EN DEUXIÈME (trouvé le 2026-09-24) : le pack borne ses pédales (limits) APRÈS avoir décidé des
 	# passages de rapport (transmission). Pied au plancher, la boîte voyait donc un accélérateur à 1,2 et attendait
