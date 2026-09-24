@@ -948,10 +948,6 @@ func _enter_vehicle(car: Node3D) -> void:
 
 	# coupe la physique / le visuel piéton
 	velocity = Vector3.ZERO
-	# En voiture, Espace est le frein à main, et seulement ça : _physics_process ne lit plus le saut, et un appui mis en
-	# mémoire juste avant de monter (JUMP_BUFFER) ne doit pas partir à la descente.
-	_jump_buffer = 0.0
-	_coyote = 0.0
 	($CollisionShape3D as CollisionShape3D).set_deferred("disabled", true)
 	collision_layer = 0
 	collision_mask = 0
@@ -993,7 +989,6 @@ func _exit_vehicle() -> void:
 	if model != null:
 		model.visible = true
 	velocity = Vector3.ZERO
-	_jump_buffer = 0.0   # Espace tenu (frein à main) en descendant : pas de saut à la sortie
 	_free_look = false
 	_free_look_returning = false
 	spring_arm.rotation.x = deg_to_rad(-10)

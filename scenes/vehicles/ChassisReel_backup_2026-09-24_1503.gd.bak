@@ -185,12 +185,6 @@ func configurer(m: Dictionary, braquage_max: float, f: Dictionary) -> void:
 	# l'arrière ne porte plus que 17 % du poids à 9,5 m/s²) ; plus, elle freine moins fort qu'elle ne pourrait.
 	var transfert := float(calc["cdg_m"]) / empattement * FichesVehicules.nombre(f, "freinage_ms2") / _g
 	var frein_av := clampf(avant + transfert + MARGE_FREIN_AV, 0.5, 0.9)
-	# Frein à main, sur les roues arrière seulement : la décélération `frein_main_ms2` de la fiche, au même couple par
-	# unité que le frein au pied (B_Torque, ci-dessous) ; le pack plafonne la part d'une roue à 1 (`braked`). S'il est plus
-	# fort que ce que tiennent les pneus arrière (adhérence x g x part du poids sur l'arrière), il les BLOQUE (ChassisRoue).
-	var frein_main_ms2 := FichesVehicules.nombre(f, "frein_main_ms2")
-	var frein_main := clampf(2.0 * frein_main_ms2 / (FichesVehicules.nombre(f, "freinage_ms2") * float(n_ar)), 0.0, 1.0)
-	var bloque := frein_main_ms2 > FichesVehicules.nombre(f, "adherence") * _g * (1.0 - avant)
 	var somme_biais := 0.0
 	var somme_rayons := 0.0
 	var r_motrices := 0.0
@@ -221,8 +215,7 @@ func configurer(m: Dictionary, braquage_max: float, f: Dictionary) -> void:
 		w.B_Bias = biais
 		somme_biais += biais
 		somme_rayons += rayon_pneu
-		w.HB_Bias = 0.0 if av else frein_main
-		w.bloque_frein_main = bloque and not av
+		w.HB_Bias = 0.0 if av else 1.0
 		w.A_Geometry1 = 0.345 * rayon_pneu / 0.2957
 		w.SwayBarConnection = String(r["jumelle"])
 		var phi := clampf(FichesVehicules.nombre(f, "antiroulis_av_pct" if av else "antiroulis_ar_pct") / 100.0, 0.0, 0.85)
@@ -425,21 +418,6 @@ func _antipatinage() -> void:
 	var consigne := PART_ANTIPATINAGE * GLISSE_SATURATION * FichesVehicules.nombre(fiche, "adherence")
 	consigne *= maxf(1.0, v_sol / (float(LengthScale) * 50.0) + 0.5)
 	tcsweight = maxf(0.0, glisse - consigne) * GAIN_ANTIPATINAGE
-
-
-# FREIN À MAIN : il débraye. La boîte automatique du pack (TransmissionType 1) embraye selon le régime, et rien ne la
-# débrayait au frein à main : sur une propulsion ou une intégrale, le moteur entraînait encore les roues arrière, qui ne
-# se bloquaient pas (mesuré : 0 % du temps sur le camion, le bus et le SUV, à 50 km/h). La boîte manuelle du pack, elle,
-# débraye au frein à main (transmission, « clutch = handbrake ») : c'est le geste du pilote.
-func transmission():
-	var rapport_tenu: int = gear
-	super.transmission()
-	if handbrakepull > 0.05:
-		clutchpedal = 0.0
-		# et la boîte garde son rapport : elle décide sur la vitesse des roues motrices, que le frein à main bloque sur une
-		# propulsion ; elle serait redescendue en première, et au relâcher le moteur aurait freiné l'arrière d'un coup
-		if rapport_tenu > 0 and gear > 0:
-			gear = rapport_tenu
 
 
 func _au_sol() -> bool:

@@ -12,9 +12,6 @@ extends Node3D
 #  - départ, 0-50, 0-100, 108 km/h atteints ; double changement de voie à 108 km/h sans basculer ni partir en tête-à-queue ;
 #    freinage de 108 km/h à l'arrêt, droit ; puis AUCUN RECUL à l'arrêt (1 cm au plus en 2 s) ;
 #  - braquage à fond à 50 km/h sans se coucher (caisse jamais au-delà de 18°) ; roue libre jusqu'à l'arrêt ;
-#  - FREIN À MAIN (2026-09-24) : à 50 km/h, braquage à fond et la vraie touche ESPACE (qui porte aussi le saut, à pied)
-#    pendant 1 s. Le joueur reste assis, sans sauter ; les roues arrière se bloquent ; l'arrière part en glisse (plus de
-#    15° de dérive) ; relâchée, la voiture reprend l'adhérence (dérive sous 5° en moins de 2 s) ;
 #  - rayon de braquage à 3 m/s, comparé à la géométrie du modèle (rayon « entre murs », rapporté, pas jugé) ;
 #  - VOLANT PARTIEL (2026-09-24) : à 12 km/h, 45 % de volant tenu, le rayon est celui que demande le volant (épure du
 #    pack, à 0,85-1,25 près) — l'assistance de direction du pack le ramenait à 5,3 m au lieu de 9 (cf. ChassisReel) ;
@@ -62,7 +59,7 @@ var _ch: RigidBody3D
 var _bordure: StaticBody3D
 var _parking: StaticBody3D
 var _etapes: Array[String] = ["pose", "montee", "repos", "depart", "vitesse108", "freinage", "virage50", "roue_libre",
-		"frein_main", "rayon", "arret_rayon", "volant_partiel", "bordure_face", "bordure_biais", "rampe", "entree", "sortie", "remontee", "cout", "descente", "f8", "fin"]
+		"rayon", "arret_rayon", "volant_partiel", "bordure_face", "bordure_biais", "rampe", "entree", "sortie", "remontee", "cout", "descente", "f8", "fin"]
 var _i := 0
 var _t := 0.0
 var _e := {}                 # état de l'étape en cours
@@ -438,85 +435,6 @@ func _e_roue_libre(_d: float) -> bool:
 		_faute("pied levé : toujours %.2f m/s après 60 s" % _v())
 		return true
 	return false
-
-
-# La vraie touche Espace : un événement clavier, qui presse toutes les actions qu'elle porte (le saut et le frein à main).
-func _espace(appuye: bool) -> void:
-	var ev := InputEventKey.new()
-	ev.physical_keycode = KEY_SPACE
-	ev.keycode = KEY_SPACE
-	ev.pressed = appuye
-	Input.parse_input_event(ev)
-
-
-func _e_frein_main(_d: float) -> bool:
-	if not _e.has("place"):
-		_e["place"] = true
-		_placer(Vector3(-500.0, 0.0, 600.0), 0.0)
-		return false
-	if not _e.has("t0"):
-		_regule(50.0 * KMH)
-		if _v() >= 49.0 * KMH:
-			_e["t0"] = _t
-			_e["siege"] = _joueur.get_parent()
-			_e["v0"] = _v()
-			_e["tire_max"] = 0.0
-			_e["derive"] = 0.0
-			_e["pas"] = 0
-			_e["bloquees"] = 0
-			_e["saut"] = 0.0
-			_e["reprise"] = -1.0
-			_pedales()
-			Input.action_press("right")
-			_espace(true)
-		return _t > 30.0
-	var dt := _t - float(_e["t0"])
-	var vh := _ch.linear_velocity
-	vh.y = 0.0
-	var avant := _ch.global_transform.basis.z
-	avant.y = 0.0
-	var roule := vh.length() > 3.0
-	var derive := rad_to_deg(vh.normalized().angle_to(avant.normalized())) if roule else 0.0
-	_e["saut"] = maxf(float(_e["saut"]), _joueur.velocity.y)
-	if _joueur.get_parent() != _e["siege"] or not bool(_joueur.get("_driving")):
-		_faute("frein à main : Espace a sorti le joueur de son siège")
-		_espace(false)
-		return true
-	if dt < 1.0:
-		_e["tire_max"] = maxf(float(_e["tire_max"]), float(_ch.get("handbrakepull")))
-		_e["derive"] = maxf(float(_e["derive"]), derive)
-		if dt > 0.15 and roule:
-			_e["pas"] = int(_e["pas"]) + 1
-			var bloquees := true
-			for w in _ch.get("roues"):
-				if String(w.name).begins_with("r") and absf(float(w.wv) * float(w.w_size) * float(_ch.get("LengthScale"))) > 0.15 * vh.length():
-					bloquees = false
-			if bloquees:
-				_e["bloquees"] = int(_e["bloquees"]) + 1
-		return false
-	if not _e.has("relache"):
-		_e["relache"] = _t
-		_espace(false)
-		_pedales()
-	_pedales()
-	if float(_e["reprise"]) < 0.0 and (derive < 5.0 or not roule):
-		_e["reprise"] = _t - float(_e["relache"])
-	if _t - float(_e["relache"]) < 2.5:
-		return false
-	var part := float(_e["bloquees"]) / float(maxi(int(_e["pas"]), 1))
-	_r["frein_main"] = "Espace à %.0f km/h, braquage à fond, 1 s : frein à main tiré à %.2f, roues arrière bloquées %.0f %% du temps, dérive %.0f° au plus ; relâché, dérive sous 5° en %.2f s ; joueur toujours assis, vitesse verticale %.2f m/s au plus" % [
-			float(_e["v0"]) * 3.6, float(_e["tire_max"]), part * 100.0, float(_e["derive"]), float(_e["reprise"]), float(_e["saut"])]
-	if float(_e["saut"]) > 0.1:
-		_faute("frein à main : Espace a fait sauter le joueur (%.2f m/s)" % float(_e["saut"]))
-	if float(_e["tire_max"]) < 0.9:
-		_faute("frein à main : Espace ne tire pas le frein à main (%.2f)" % float(_e["tire_max"]))
-	if part < 0.8:
-		_faute("frein à main : les roues arrière ne se bloquent pas (%.0f %% du temps)" % (part * 100.0))
-	if float(_e["derive"]) < 15.0:
-		_faute("frein à main : l'arrière ne part pas en glisse (dérive %.0f°)" % float(_e["derive"]))
-	if float(_e["reprise"]) < 0.0 or float(_e["reprise"]) > 2.0:
-		_faute("frein à main : relâchée, la voiture ne reprend pas l'adhérence en 2 s")
-	return true
 
 
 func _e_rayon(_d: float) -> bool:
@@ -977,7 +895,7 @@ func _e_fin(_d: float) -> bool:
 	_r["tenue"] = "caisse penchée de %.1f° au plus sur tout l'essai" % rad_to_deg(acos(clampf(_min_up, -1.0, 1.0)))
 	if _min_up < 0.95:
 		_faute("caisse penchée de plus de 18° pendant l'essai (%.1f°)" % rad_to_deg(acos(clampf(_min_up, -1.0, 1.0))))
-	for k in ["pneu", "geometrie", "repos", "depart", "vitesse108", "freinage", "virage50", "roue_libre", "frein_main", "rayon", "volant_partiel",
+	for k in ["pneu", "geometrie", "repos", "depart", "vitesse108", "freinage", "virage50", "roue_libre", "rayon", "volant_partiel",
 			"bordure_0", "bordure_30", "rampe", "entree", "sortie", "disparition", "cout_pas", "cout_scripts", "tenue", "f8"]:
 		if _r.has(k):
 			print("CONDUITE_REELLE %s : %s" % [k, _r[k]])

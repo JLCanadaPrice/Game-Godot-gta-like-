@@ -10,18 +10,11 @@ extends Node3D
 #  - freinage fort depuis 100 km/h (sa vitesse de pointe si elle est plus basse) : distance, et droit ;
 #  - PAS DE TONNEAU : braquage à fond, vitesse tenue, à 50, 80, 110 km/h et à la vitesse de pointe : roulis, roues levées,
 #    glissade. Il glisse ou il sous-vire ; il ne se couche pas ;
-#  - FREIN À MAIN (2026-09-24) : en ligne droite depuis 50 km/h, seul puis avec le frein au pied ; s'il est plus fort que
-#    les pneus arrière (fiche), les roues arrière se bloquent, et l'ABS ne les desserre pas ; la voiture freine droit ;
-#  - DÉRAPAGE AU FREIN À MAIN à 50, 80 et 110 km/h : braquage à fond et frein à main 1,2 s, puis tout relâché : l'arrière
-#    part en glisse (ou pas, selon la fiche), la voiture reprend l'adhérence, et ne se couche pas ;
 #  - bordures de 0,15 et 0,17 m, de face et à 30°, à 3 m/s : la coque ne touche pas ;
 #  - entrée du parking à étages à 4 et 7 m/s, s'il passe sous la barre de 2,15 m : la coque ne touche pas.
 # Échoue sur : une caisse à plus de 45° de la verticale, deux roues d'un même côté en l'air plus de 0,3 s, un contact de
 # coque sur une bordure ou à l'entrée du parking, une boîte restée en première, 50 km/h (ou sa vitesse de pointe si elle
-# est plus basse) pas atteints en 30 s, un freinage qui dévie de plus de 15°, un véhicule sans châssis ; un frein à main
-# plus fort que les pneus arrière qui ne les bloque pas (80 % du temps au moins), seul ou avec le frein au pied, ou qui fait
-# tourner la voiture en ligne droite (5° au plus) ; un dérapage sans reprise de l'adhérence dans les 3 s ; une sportive qui
-# ne dérape pas au moins deux fois plus que le camion (city_sports_car_02 et city_truck_01, s'ils sont du passage).
+# est plus basse) pas atteints en 30 s, un freinage qui dévie de plus de 15°, un véhicule sans châssis.
 # Rapporté sans être jugé : garde au sol du DESSOUS DU MODÈLE (ce qu'on voit) sur les bordures et à l'entrée du parking —
 # les modèles les plus bas (9 à 15 cm) passent visuellement dans l'arête d'une bordure de 15 cm prise de face.
 # Arguments après « -- » : --modeles=id1,id2 (par défaut les six silhouettes de réglage), --tous, --lot=i/n (i-ème part
@@ -32,22 +25,12 @@ const CAR := preload("res://scenes/vehicles/Car.tscn")
 const CarScript := preload("res://scenes/vehicles/Car.gd")
 const PARKING := "res://scenes/world/downtown/generated/buildings/parking_collision.res"
 const SILHOUETTES := ["city_microcar", "city_sedan_01", "city_sports_car_02", "city_suv_02", "city_truck_01", "city_bus_01"]
-const PHASES := ["repos", "acceleration", "freinage", "frein_main", "virage_50", "virage_80", "virage_110", "virage_vmax",
-		"derapage_50", "derapage_80", "derapage_110", "bordure_15_face", "bordure_15_biais", "bordure_17_face", "bordure_17_biais",
-		"parking"]
-# Frein à main : la sportive doit déraper facilement, le camion beaucoup moins (demande du joueur, 2026-09-24). Quand les
-# deux sont du passage, la dérive de la sportive doit valoir au moins DERAPAGE_RAPPORT fois celle du camion, à chaque vitesse.
-const SPORTIVE := "city_sports_car_02"
-const CAMION := "city_truck_01"
-const DERAPAGE_RAPPORT := 2.0
+const PHASES := ["repos", "acceleration", "freinage", "virage_50", "virage_80", "virage_110", "virage_vmax",
+		"bordure_15_face", "bordure_15_biais", "bordure_17_face", "bordure_17_biais", "parking"]
 const KMH := 1.0 / 3.6
 const DEPART_ACCEL := Vector3(-3000.0, 0.0, 1000.0)
 const DEPART_FREIN := Vector3(-3000.0, 0.0, 0.0)
 const DEPART_VIRAGE := Vector3(-3000.0, 0.0, -1500.0)
-const DEPART_DERAPAGE := Vector3(-3000.0, 0.0, -3000.0)
-const DERAPAGE_LIGNE := 1.5
-const DERAPAGE_TIRE := 1.2       # s : braquage à fond et frein à main, sans gaz
-const DERAPAGE_APRES := 3.0      # s : tout relâché (le volant revient seul, comme au clavier)
 const BORDURES := {"15": [Vector3(1500.0, 0.0, 1500.0), 0.15], "17": [Vector3(1500.0, 0.0, 1700.0), 0.17]}
 const BORDURE_TAILLE := Vector2(30.0, 12.0)
 const PARKING_POS := Vector3(2500.0, 0.0, 2500.0)
@@ -73,7 +56,6 @@ var _trace := false
 var _bordures := {}
 var _parking: StaticBody3D
 var _dessous := PackedVector3Array()
-var _tous := {}                   # id -> résultats, pour les comparaisons entre modèles
 
 
 func _ready() -> void:
@@ -189,8 +171,6 @@ func _physics_process(delta: float) -> void:
 	var fini := false
 	if phase.begins_with("virage_"):
 		fini = _p_virage(phase)
-	elif phase.begins_with("derapage_"):
-		fini = _p_derapage(phase)
 	elif phase.begins_with("bordure_"):
 		fini = _p_bordure(phase)
 	else:
@@ -221,7 +201,7 @@ func _physics_process(delta: float) -> void:
 
 # --- outils ------------------------------------------------------------------------------------------------------
 
-func _pedales(gaz := false, frein := false, droite := false, gauche := false, frein_main := false) -> void:
+func _pedales(gaz := false, frein := false, droite := false, gauche := false) -> void:
 	for a in ["gas", "brake", "left", "right", "handbrake"]:
 		Input.action_release(a)
 	if gaz:
@@ -232,8 +212,6 @@ func _pedales(gaz := false, frein := false, droite := false, gauche := false, fr
 		Input.action_press("right")
 	if gauche:
 		Input.action_press("left")
-	if frein_main:
-		Input.action_press("handbrake")
 
 
 func _v() -> float:
@@ -451,51 +429,6 @@ func _p_freinage(_phase: String) -> bool:
 	return false
 
 
-# FREIN À MAIN, en ligne droite depuis 50 km/h, pendant 1 s : décélération obtenue, roues arrière bloquées, cap. Deux
-# passages : le frein à main seul, puis avec le frein au pied en même temps (S + Espace) — l'ABS roue par roue ne doit
-# desserrer que la part du frein au pied, jamais le frein à main. Ce que dit la fiche : `frein_main_ms2`, ou ce que tiennent
-# les pneus arrière s'il est plus fort (ils se bloquent alors).
-func _p_frein_main(_phase: String) -> bool:
-	var v0 := minf(50.0 * KMH, _vmax() * 0.9)
-	if not _e.has("phase"):
-		_e["phase"] = "lance"
-		_e["passe"] = int(_e.get("passe", 0))
-		_e["pas"] = 0
-		_e["bloquees"] = 0
-		_placer(DEPART_FREIN + Vector3(0.0, 0.0, -300.0 - 40.0 * float(_e["passe"])), _cap_vers_x(), v0)
-		return false
-	match String(_e["phase"]):
-		"lance":
-			_regule(v0)
-			if _t > 1.5:
-				_e["phase"] = "tire"
-				_e["t0"] = _t
-				_e["v0"] = _v()
-				_e["cap0"] = _voiture.rotation.y
-		"tire":
-			var pied := int(_e["passe"]) == 1
-			_pedales(false, pied, false, false, true)
-			var v := _v()
-			if v > 3.0 and _t - float(_e["t0"]) > 0.1:
-				_e["pas"] = int(_e["pas"]) + 1
-				var bloquees := true
-				for w in _ch.get("roues"):
-					if String(w.name).begins_with("r") and absf(float(w.wv) * float(w.w_size) * float(_ch.get("LengthScale"))) > 0.15 * v:
-						bloquees = false
-				if bloquees:
-					_e["bloquees"] = int(_e["bloquees"]) + 1
-			if _t - float(_e["t0"]) >= 1.0 or v < 3.0:
-				var duree := _t - float(_e["t0"])
-				_res["frein_main_pied" if pied else "frein_main"] = {"v0": float(_e["v0"]) * 3.6, "decel": (float(_e["v0"]) - v) / maxf(duree, 0.01),
-						"bloquees": float(_e["bloquees"]) / float(maxi(int(_e["pas"]), 1)),
-						"cap": rad_to_deg(absf(wrapf(_voiture.rotation.y - float(_e["cap0"]), -PI, PI)))}
-				if pied:
-					return true
-				_pedales()
-				_e = {"passe": 1}
-	return false
-
-
 func _p_virage(phase: String) -> bool:
 	var cible := _vmax() if phase == "virage_vmax" else float(phase.substr(7)) * KMH
 	if cible > _vmax() + 0.5:
@@ -554,112 +487,6 @@ func _p_virage(phase: String) -> bool:
 			if _t - float(_e["t0"]) > VIRAGE_APRES:
 				_res[phase] = {"v": float(_e["v_braque"]) * 3.6, "penche": _e["penche"], "up_min": _e["up_min"],
 						"leve": _e["leve_max"], "a_lat": _e["a_lat"], "derive": _e["derive"], "up_fin": up}
-				return true
-	return false
-
-
-# DÉRAPAGE AU FREIN À MAIN : lancé à la vitesse de la phase, braquage à fond à droite et frein à main (Espace), sans
-# gaz, pendant DERAPAGE_TIRE ; puis tout relâché pendant DERAPAGE_APRES. Relevés : roues arrière bloquées (part des pas
-# du frein à main où toutes tournent à moins de 1 m/s pour une voiture qui roule), dérive (angle entre la vitesse et
-# l'axe de la caisse) au plus fort et au bout du frein à main, cap pris pendant le frein à main, reprise de l'adhérence
-# une fois relâché (dérive sous 5°), roulis, roues levées, caisse.
-func _p_derapage(phase: String) -> bool:
-	var cible := float(phase.get_slice("_", phase.get_slice_count("_") - 1)) * KMH
-	var gaz := phase.contains("_gaz_")    # « derapage_gaz_80 » : W tenu du début à la fin (l'embrayage coupé, puis repris)
-	if cible > _vmax() + 0.5:
-		return true
-	if not _e.has("phase"):
-		_e["phase"] = "ligne"
-		_e["penche"] = 0.0
-		_e["up_min"] = 1.0
-		_e["leve"] = 0.0
-		_e["leve_max"] = 0.0
-		_e["a_lat"] = 0.0
-		_e["derive_max"] = 0.0
-		_e["derive_apres"] = 0.0
-		_e["pas_tire"] = 0
-		_e["pas_bloquees"] = 0
-		_e["t15"] = -1.0
-		_e["reprise"] = -1.0
-		_placer(DEPART_DERAPAGE, _cap_vers_x(), cible)
-		return false
-	var up := _ch.global_transform.basis.y.dot(Vector3.UP)
-	_e["up_min"] = minf(float(_e["up_min"]), up)
-	_e["penche"] = maxf(float(_e["penche"]), _penche())
-	var leve := _roues_en_l_air()
-	if leve.x + leve.y > 0:
-		_e["leve"] = float(_e["leve"]) + get_physics_process_delta_time()
-		_e["leve_max"] = maxf(float(_e["leve_max"]), float(_e["leve"]))
-	else:
-		_e["leve"] = 0.0
-	var vh := _ch.linear_velocity
-	vh.y = 0.0
-	var avant := _ch.global_transform.basis.z
-	avant.y = 0.0
-	# dérive comptée au-dessus de 3 m/s : presque arrêtée, une voiture qui pivote encore a une vitesse de n'importe quel sens
-	var derive := 0.0
-	var roule := vh.length() > 3.0
-	if roule and avant.length() > 0.1:
-		derive = rad_to_deg(vh.normalized().angle_to(avant.normalized()))
-	var cap := atan2(avant.x, avant.z)
-	var hist: Array = _e.get("hist", [])
-	hist.append(vh)
-	if hist.size() > 10:
-		hist.pop_front()
-		var dv: Vector3 = (hist.back() as Vector3) - (hist.front() as Vector3)
-		var dir := ((hist.back() as Vector3) + (hist.front() as Vector3)).normalized()
-		if _e["phase"] != "ligne":
-			_e["a_lat"] = maxf(float(_e["a_lat"]), (dv - dir * dv.dot(dir)).length() / (9.0 / 60.0))
-	_e["hist"] = hist
-	match String(_e["phase"]):
-		"ligne":
-			_regule(cible)
-			if _t > DERAPAGE_LIGNE:
-				_e["phase"] = "tire"
-				_e["t0"] = _t
-				_e["v0"] = _v()
-				_e["cap0"] = cap
-		"tire":
-			_pedales(gaz, false, true, false, true)
-			_e["derive_max"] = maxf(float(_e["derive_max"]), derive)
-			if float(_e["t15"]) < 0.0 and derive >= 15.0:
-				_e["t15"] = _t - float(_e["t0"])
-			if roule:
-				_e["pas_tire"] = int(_e["pas_tire"]) + 1
-				# bloquée : la roue tourne à moins de 15 % de la vitesse au sol (le frein du pack n'arrête jamais tout à fait
-				# une roue que le pneu entraîne)
-				var bloquees := true
-				for w in _ch.get("roues"):
-					if String(w.name).begins_with("r") and absf(float(w.wv) * float(w.w_size) * float(_ch.get("LengthScale"))) > 0.15 * vh.length():
-						bloquees = false
-				if bloquees:
-					_e["pas_bloquees"] = int(_e["pas_bloquees"]) + 1
-			if _trace and Engine.get_physics_frames() % 6 == 0:
-				var roues := []
-				for w in _ch.get("roues"):
-					roues.append("%s %.1f" % [w.name, float(w.wv) * float(w.w_size) * float(_ch.get("LengthScale"))])
-				print("BANC_DERAPAGE %s t=%.2f v=%.1f km/h derive=%.1f° lacet=%.2f volant=%.2f frein_main=%.2f roulis=%.1f° roues=%s" % [
-						_id(), _t - float(_e["t0"]), vh.length() * 3.6, derive, _ch.angular_velocity.y, float(_ch.get("steer")),
-						float(_ch.get("handbrakepull")), _penche(), str(roues)])
-			if _t - float(_e["t0"]) > DERAPAGE_TIRE:
-				_e["phase"] = "apres"
-				_e["derive_fin_tire"] = derive
-				_e["cap_tire"] = rad_to_deg(absf(wrapf(cap - float(_e["cap0"]), -PI, PI)))
-				_e["t1"] = _t
-		"apres":
-			_pedales(gaz)
-			_e["derive_apres"] = maxf(float(_e["derive_apres"]), derive)
-			if float(_e["reprise"]) < 0.0 and (derive < 5.0 or not roule):
-				_e["reprise"] = _t - float(_e["t1"])
-			if _trace and Engine.get_physics_frames() % 6 == 0:
-				print("BANC_DERAPAGE %s apres t=%.2f v=%.1f km/h derive=%.1f° lacet=%.2f volant=%.2f roulis=%.1f°" % [
-						_id(), _t - float(_e["t1"]), vh.length() * 3.6, derive, _ch.angular_velocity.y, float(_ch.get("steer")), _penche()])
-			if _t - float(_e["t1"]) > DERAPAGE_APRES:
-				_res[phase] = {"v": float(_e["v0"]) * 3.6, "bloquees": float(_e["pas_bloquees"]) / float(maxi(int(_e["pas_tire"]), 1)),
-						"derive_max": _e["derive_max"], "derive_fin_tire": _e["derive_fin_tire"], "t15": _e["t15"],
-						"cap_tire": _e["cap_tire"], "cap_total": rad_to_deg(absf(wrapf(cap - float(_e["cap0"]), -PI, PI))),
-						"derive_apres": _e["derive_apres"], "reprise": _e["reprise"], "v_fin": vh.length() * 3.6,
-						"penche": _e["penche"], "up_min": _e["up_min"], "leve": _e["leve_max"], "a_lat": _e["a_lat"], "up_fin": up}
 				return true
 	return false
 
@@ -768,34 +595,6 @@ func _resume() -> void:
 			_faute("%s : %s, le véhicule se couche (caisse à %.0f°)" % [id, ph, rad_to_deg(acos(clampf(v["up_min"], -1.0, 1.0)))])
 		if float(v["leve"]) > 0.3:
 			_faute("%s : %s, deux roues d'un même côté en l'air %.2f s" % [id, ph, v["leve"]])
-	var fm: Dictionary = _res.get("frein_main", {})
-	if not fm.is_empty():
-		var limite := FichesVehicules.nombre(f, "adherence") * 9.81 * (1.0 - FichesVehicules.nombre(f, "avant_pct") / 100.0)
-		var bloque := FichesVehicules.nombre(f, "frein_main_ms2") > limite
-		morceaux.append("frein à main seul depuis %.0f km/h : %.1f m/s² (fiche %.1f, pneus arrière %.1f à l'arrêt), roues arrière bloquées %.0f %% du temps, cap %.1f°" % [
-				fm["v0"], fm["decel"], FichesVehicules.nombre(f, "frein_main_ms2"), limite, float(fm["bloquees"]) * 100.0, fm["cap"]])
-		var fp: Dictionary = _res.get("frein_main_pied", {})
-		if not fp.is_empty():
-			morceaux.append("avec le frein au pied : %.1f m/s², roues arrière bloquées %.0f %% du temps, cap %.1f°" % [fp["decel"], float(fp["bloquees"]) * 100.0, fp["cap"]])
-		# plus fort que ses pneus arrière, il les bloque : seul, et avec le frein au pied (l'ABS ne desserre que celui-ci)
-		for essai: Dictionary in [fm, fp]:
-			if bloque and not essai.is_empty() and float(essai["bloquees"]) < 0.8:
-				_faute("%s : frein à main plus fort que les pneus arrière, roues arrière bloquées %.0f %% du temps seulement" % [id, float(essai["bloquees"]) * 100.0])
-			if not essai.is_empty() and float(essai["cap"]) > 5.0:
-				_faute("%s : frein à main en ligne droite, la voiture tourne de %.1f°" % [id, essai["cap"]])
-	for ph in _res.keys():
-		if not String(ph).begins_with("derapage_"):
-			continue
-		var dr: Dictionary = _res[ph]
-		morceaux.append("%s (%.0f km/h) : roues arrière bloquées %.0f %% du temps, dérive %.0f° au plus (15° en %s), cap pris %.0f° ; relâché : dérive sous 5° en %s, %.0f° au plus, cap total %.0f°, %.0f km/h au bout de %.0f s ; roulis %.1f°, roues levées %.2f s, %.1f m/s²" % [
-				ph, dr["v"], float(dr["bloquees"]) * 100.0, dr["derive_max"], _temps(dr["t15"]), dr["cap_tire"], _temps(dr["reprise"]),
-				dr["derive_apres"], dr["cap_total"], dr["v_fin"], DERAPAGE_APRES, dr["penche"], dr["leve"], dr["a_lat"]])
-		if float(dr["up_min"]) < cos(deg_to_rad(45.0)) or float(dr["up_fin"]) < 0.9:
-			_faute("%s : %s, le véhicule se couche (caisse à %.0f°)" % [id, ph, rad_to_deg(acos(clampf(dr["up_min"], -1.0, 1.0)))])
-		if float(dr["leve"]) > 0.3:
-			_faute("%s : %s, deux roues d'un même côté en l'air %.2f s" % [id, ph, dr["leve"]])
-		if float(dr["reprise"]) < 0.0:
-			_faute("%s : %s, relâché, il ne reprend pas l'adhérence en %.0f s" % [id, ph, DERAPAGE_APRES])
 	for ph in ["bordure_15_face", "bordure_15_biais", "bordure_17_face", "bordure_17_biais"]:
 		var b: Dictionary = _res.get(ph, {})
 		if b.is_empty():
@@ -815,20 +614,6 @@ func _resume() -> void:
 	print("CHASSIS_BANC %s (%s kg, %s kW, %s km/h) : %s" % [id, FichesVehicules.nombre(f, "masse_kg"),
 			FichesVehicules.nombre(f, "puissance_kw"), FichesVehicules.nombre(f, "vitesse_max_kmh"), " ; ".join(morceaux)])
 	_tableau.append(JSON.stringify({"id": id, "res": _res}))
-	_tous[id] = _res
-
-
-func _compare_derapages() -> void:
-	if not (_tous.has(SPORTIVE) and _tous.has(CAMION)):
-		return
-	for ph in ["derapage_50", "derapage_80", "derapage_110"]:
-		var s: Dictionary = (_tous[SPORTIVE] as Dictionary).get(ph, {})
-		var c: Dictionary = (_tous[CAMION] as Dictionary).get(ph, {})
-		if s.is_empty() or c.is_empty():
-			continue
-		print("CHASSIS_BANC_COMPARAISON %s : dérive %s %.0f°, %s %.0f°" % [ph, SPORTIVE, s["derive_max"], CAMION, c["derive_max"]])
-		if float(s["derive_max"]) < DERAPAGE_RAPPORT * float(c["derive_max"]):
-			_faute("%s : la sportive (%.0f°) ne dérape pas %.0f fois plus que le camion (%.0f°)" % [ph, s["derive_max"], DERAPAGE_RAPPORT, c["derive_max"]])
 
 
 func _roulis(v: Dictionary) -> float:
@@ -841,7 +626,6 @@ func _temps(t) -> String:
 
 func _fin() -> void:
 	_pedales()
-	_compare_derapages()
 	for l in _tableau:
 		print("CHASSIS_BANC_JSON " + l)
 	print("CHASSIS_BANC_RESULT %s" % ("OK" if _fautes.is_empty() else "FAIL : " + " ; ".join(_fautes)))

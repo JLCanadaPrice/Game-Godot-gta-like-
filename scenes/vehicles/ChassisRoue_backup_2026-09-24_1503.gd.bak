@@ -11,15 +11,6 @@ extends "res://assets/car_physics/MAIN/wheel.gd"
 # agit sur la ligne de frein de TOUTES les roues à la fois, par à-coups (1, 0,5, 0) : à chaque relâchement, plus rien ne
 # freine. Mesuré sur la berline à 100 km/h : 8,2 m/s² de moyenne pour 9,5 demandés, 52 m d'arrêt. Ici, seule la roue qui
 # glisse de plus de ABS_GLISSE (+ ABS_RELATIF de la vitesse) est desserrée, progressivement, puis resserrée.
-# L'ABS ne touche qu'au frein au pied (B_Bias) : le frein à main (HB_Bias) n'est pas sous ABS, comme dans une vraie
-# voiture.
-# Et le BLOCAGE AU FREIN À MAIN (2026-09-24, CLAUDE.md §14) : une roue arrière dont le frein à main est plus fort que ce
-# que tient son pneu (`bloque_frein_main`, réglé par ChassisReel d'après la fiche) est tenue ARRÊTÉE tant qu'on tire
-# (Espace). Le frein du pack ralentit la roue sans jamais l'arrêter quand elle est grande et chargée : relevé sur les 72
-# modèles, frein à main seul depuis 50 km/h, 19 des 53 dont le frein à main dépasse ce que tient le pneu arrière ne se
-# bloquaient pas (moins de 80 % du temps ; 15 presque jamais : le hot rod, les sportives lowpoly, la jeep, les pick-ups
-# lourds...). Une roue qui roule, même à la limite du pneu, garde son adhérence en travers : pas de dérapage. Bloquée, elle
-# glisse, et le pneu du pack ne tient presque plus rien en travers.
 
 const ABS_GLISSE := 2.0          # m/s : le pneu du pack donne toute son adhérence vers 1,5 à 2 m/s de glissement
 const ABS_RELATIF := 0.05
@@ -27,9 +18,7 @@ const ABS_DESSERRE := 0.8        # par pas, tant que la roue glisse trop
 const ABS_RESSERRE := 0.08       # par pas, sinon
 const ABS_MIN := 0.2
 const ABS_V_MIN := 2.0           # m/s : en dessous, pas d'ABS (l'arrêt se finit roues bloquées, comme en vrai)
-const BLOCAGE_TIRE := 0.5        # frein à main tiré au-delà (il monte en 5 pas, OnHandbrakeRate du pack) : roue bloquée
 
-var bloque_frein_main := false
 var _abs := 1.0
 var _biais := -1.0
 
@@ -38,10 +27,6 @@ func _physics_process(_delta):
 	var t0 := Time.get_ticks_usec()
 	_abs_roue()
 	super(_delta)
-	if bloque_frein_main and float(car.handbrakepull) > BLOCAGE_TIRE:
-		# le pneu vient de la relancer pendant ce pas : elle repart arrêtée au suivant, en glissement complet
-		wv = 0.0
-		output_wv = 0.0
 	if self == car.roues.back():
 		car.apres_roues()   # résistance au roulement, traînée, adhérence à l'arrêt : après les impulsions des 4 roues
 	car.cout_roues_us += Time.get_ticks_usec() - t0
