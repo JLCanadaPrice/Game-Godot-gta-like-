@@ -3,13 +3,11 @@
 Fiche écrite pour être lue au début de chaque session : le contexte du projet, la méthode de
 travail imposée, les commandes exactes, les pièges déjà payés et l'état d'avancement.
 
-> **Deux séries du 2026-09-23 terminées.** La première (fin du §12) : régression des bâtiments creux corrigée,
-> anti-apparition du `LoopSpawner` réparée (refus sous 150 m). La seconde, le soir : lac du quai gardé tel que le joueur
-> l'a retouché dans `World.tscn` (§6) ; parkings à étages — escalier sorti de l'entrée, poteaux retirés, places en
-> créneau, lumières fixes toujours allumées, plus de fenêtre allumée (§11, étape 12) ; petite piste de l'aéroport et
-> serres de Greenfield rentrées dans leurs clôtures ; feu d'obstacle clignotant au sommet de Mk1 (§9) ; trois packs
-> d'accessoires convertis, prêts à poser mais PAS posés (§7). Le coût physique d'environ 2 ms reste NON TOUCHÉ : le
-> joueur le teste en jeu.
+> **Série du 2026-09-24.** Plafonniers des parkings à étages : un seul modèle, celui du parking, copié là où il en
+> manquait ; les bandeaux plats sont retirés (§11, étape 13). Conduite réaliste (VitaVehicle, `PlayerCarPhysics`) pour
+> la voiture du joueur : plan chiffré remis au joueur, RIEN n'est construit, en attente de sa décision. Toujours en
+> attente depuis le 2026-09-23 : le coût physique d'environ 2 ms (NON TOUCHÉ, le joueur le teste en jeu) et la pose des
+> trois packs d'accessoires convertis (§7).
 
 ## 1. Le projet
 
@@ -620,8 +618,8 @@ débogage sur `V`.
   par tache, 2,1 ms à la première d'un modèle ;
 - **mode graphique léger**, plus tard, pour les PC à carte graphique Intel : c'est le gel des PC de l'école (§6)
   qui l'a fait inscrire. Réglages déjà en place qu'il pourra piloter : le bassin de vraies lumières
-  (`StreetLights.pool`, 16, §9), les vraies lumières des parkings (`StreetLights.interieur_fixe` : 43 fixes par parking
-  ou bassin de 8, §11 étape 12), les ombres du soleil (`DirectionalLight3D`, portée 240 m), le LOD des bâtiments
+  (`StreetLights.pool`, 16, §9), les vraies lumières des parkings (`StreetLights.interieur_fixe` : 35 fixes par parking
+  ou bassin de 8, §11 étapes 12 et 13), les ombres du soleil (`DirectionalLight3D`, portée 240 m), le LOD des bâtiments
   (`CityRenderOptimizer.building_lod_bias` 0,25 au-delà de `lod_near_radius` 150 m), la distance des silhouettes du
   centre-ville (`DowntownHLOD`, 650 m) ; côté moteur, l'échelle de rendu 3D du viewport (`scaling_3d_scale`, non
   utilisée aujourd'hui). Ni SSAO ni glow ne sont activés, rien à gagner de ce côté. La mesure qui décidera est le
@@ -1643,9 +1641,10 @@ borné lui aussi, toujours actif.
   panneaux, quatre par niveau couvert à x ±(9,42..18,40) et z ±(5,02..5,73), 8,98 x 0,71 m, plus un de 8,58 x 0,31 m
   sous l'auvent. Ce sont eux qu'on rallume, recopiés 12 mm plus bas sur le matériau partagé, comme le verre des
   lampadaires et les optiques des véhicules. Les cônes restent écartés.
-- **Ce qu'on AJOUTE, et pourquoi.** Les deux panneaux z < 0 de chaque niveau tombent dans la bande de la rampe et
-  disparaissent avec le plafond que la rampe a remplacé (60 triangles sur 162, même boîte de découpe que leurs
-  boîtiers). Restent **deux** luminaires par niveau, aux deux bouts : **le milieu du plateau restait NOIR, vu à
+- **Ce qu'on AJOUTE, et pourquoi.** (REMPLACÉ le 2026-09-24 : les bandeaux et panneaux plats décrits ici sont
+  retirés, des copies du plafonnier du modèle les remplacent, cf. étape 13.) Les deux panneaux z < 0 de chaque niveau
+  tombent dans la bande de la rampe et disparaissent avec le plafond que la rampe a remplacé (60 triangles sur 162,
+  même boîte de découpe que leurs boîtiers). Restent **deux** luminaires par niveau, aux deux bouts : **le milieu du plateau restait NOIR, vu à
   l'image**. Un vrai parking aligne ses plafonniers le long de l'allée, c'est ce qu'on fait : **5 bandeaux d'allée
   par niveau** (z 3,85), **3 bandeaux par rampe couverte** à 4,08 m au-dessus de la voie, et **1 panneau par niveau
   dans la cage d'escalier**, qui n'en a aucun dans le modèle et qui est fermée. La rampe du haut n'en a pas : sa
@@ -1766,7 +1765,7 @@ du joueur, un commit).
   le modèle BRUT, avant toute découpe, au test des TROIS sommets, dans une boîte x ±20,5 : 96 triangles, soit 2
   boîtiers de 12 triangles par plafond de bande, relevés un à un (couleurs des boîtiers, x -18,40..18,40, 0,21 m de
   haut). Même boîte pour les vitres. Luminaires : **43 par parking**, 172 en tout (48 et 192 avant : -5 panneaux de
-  la cage, +4 au-dessus du pied du nouvel escalier, -4 têtes flottantes).
+  la cage, +4 au-dessus du pied du nouvel escalier, -4 têtes flottantes). **35 par parking depuis l'étape 13.**
 - Vérifié : ParkingStructureTest OK — l'escalier monté du rez au toit dans les quatre parkings en 24 s (capsules au
   centre-ville, vrai joueur à l'aéroport) ; 88 poussées contre les garde-corps (60 piétons, 28 voitures), dont 16
   contre la paroi de l'escalier au palier de chaque volée et 4 contre le garde-corps du toit, toutes arrêtées ; 280
@@ -1778,6 +1777,50 @@ du joueur, un commit).
 - Captures au sol, de jour et de nuit : `D:/p-recree/ground_shots/parkings_2026-09-23/` (hors dépôt) ; vues
   `parking_aeroport_passage`, `_escalier`, `_escalier_palier`, `_escalier_haut`, `_escalier_toit`, `_creneaux` et leurs
   variantes `_nuit`, `parking_centre_3_escalier`.
+
+**Étape 13 — un seul modèle de plafonnier** (2026-09-24, demande du joueur). Au plafond, le joueur voyait deux sortes de
+lumières : celles du modèle, dont le boîtier sombre fait un cadre (« un rebord ») autour de la vitre, et les bandeaux
+plats ajoutés à l'étape 10 — 5 par niveau le long de l'allée, 3 par rampe couverte, 1 panneau au pied de l'escalier —,
+des rectangles lumineux sans boîtier qui flottaient sous le plafond. Il ne garde que ceux du modèle.
+
+- **Relevé sur les sommets avant de copier** (sondes hors dépôt, `D:/p-recree/sondes/2026-09-24_plafonniers/`) :
+  - boîtier de 8,98 x 0,71 x 0,21 m dans `base_072` : 10 triangles `0a0d10` et un fond `727254` ;
+  - vitre plate de `light_006`, 1,3 cm sous le boîtier à tous les niveaux : 10 triangles, un cadre de 0,20 m autour
+    d'un panneau de 8,59 x 0,31 m ;
+  - boîtier encastré dans la dalle de 5 cm (rez) à 11 cm (niveau 3).
+- **Les bandeaux sont retirés. Ce qui manque est éclairé par des COPIES de ce plafonnier, boîtier et vitre**, alignées
+  sur le pas du modèle lui-même, 13,913 m : l'écart entre les deux plafonniers d'une de ses rangées (x ±13,913) et
+  celui de l'auvent (x 0). Par niveau couvert :
+  - rangée de la façade (z 5,376, celle du modèle) : une copie au milieu (x 0), entre ses deux plafonniers ;
+  - rangée de l'allée (z 0, l'axe du bâtiment, où étaient les poteaux) : trois copies, x -13,913 / 0 / 13,913 ;
+  - escalier : une copie dans la bande arrière, au pied des volées (x 10,90..19,89, entre la trémie et la tour d'angle).
+
+  Par rampe couverte : deux copies inclinées à 16 % sous le tablier de la rampe du dessus, sur la rangée du modèle que
+  la rampe a emportée (z -5,376), centres à ±6,957 (le même pas). La rampe du haut reste à ciel ouvert, sans plafonnier.
+  À chaque niveau, une copie est à la hauteur des plafonniers d'origine de CE niveau (relevée sur leurs vitres, pas
+  une cote théorique) ; sous une rampe, elle est encastrée de 5 cm comme au rez.
+- **Par parking, 35 plafonniers et 35 vraies lumières fixes** (43 avant) : 9 du modèle, dont celui de l'auvent, et
+  26 copies ; 140 pour les quatre parkings. Le boîtier d'une copie va dans le maillage du parking (et dans sa
+  collision, comme celui des originaux) ; sa vitre va dans `ParkingLumieres`, sur le matériau partagé.
+- **Défaut antérieur corrigé en passant : l'auvent avait DEUX vraies lumières au même endroit.** Les lumières des vitres
+  du modèle étaient groupées par signe de x ; la vitre de l'auvent, à cheval sur x = 0, formait deux groupes de même
+  centre. Elles sont maintenant groupées par triangles qui se touchent : un plafonnier, une lumière.
+- **Contrôle à la cuisson** (`_obstacle_plafonnier`, sur le parking tel qu'il est avant les copies) :
+  - rien ne traverse le bas du boîtier d'une copie, rien ne passe dans les 30 cm dessous ;
+  - un plafond la tient partout, sinon elle flotterait ;
+  - le gabarit doit être retrouvé (12 triangles de boîtier, 10 de vitre), ainsi que le plafonnier d'origine de chaque
+    niveau ; sinon, faute.
+
+  Résultat : 0 faute sur les quatre parkings.
+- **Vérifié.**
+  - ParkingStructureTest OK : 140 luminaires, **4,01 m** de dégagement au pire sous un luminaire de la partie roulante
+    (une copie de rampe). Escalier, 88 poussées, 280 places, rampes (79,3 / 78,7 s) et barre inchangés.
+  - DayNightTest OK : 140 vraies lumières fixes pour 140 luminaires, fondu 80 + 20 m.
+  - DowntownBuildingsTest OK.
+  - Appels de dessin des vues de parking identiques avant et après : mêmes maillages, même matériau.
+  - Captures de nuit au sol, avant et après, dans `D:/p-recree/ground_shots/plafonniers_2026-09-24/` (hors dépôt) :
+    vues `parking_aeroport_plateau_nuit`, `_allee_plafonniers_nuit` (nouvelle), `_rampe_nuit`, `_escalier_nuit`,
+    `_escalier_pied_nuit` (nouvelle), `parking_centre_3_plateau_nuit`.
 
 ## 12. Collisions : inventaire mesuré et décisions (2026-09-23)
 

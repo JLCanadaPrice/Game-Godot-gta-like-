@@ -355,8 +355,6 @@ func _parking_etages(top: float) -> void:
 # bassin de vraies lumières de StreetLights. Cf. ParkingStructureKit.eclairage.
 func _lumieres_parking(xf: Transform3D, sols: PackedFloat32Array, rampes: int, escaliers: int) -> void:
 	var e := ParkingKit.eclairage(sols, rampes, escaliers)
-	for f: String in e["fautes"]:
-		push_error("PARKING_ETAGES %s" % f)
 	var chemin := OUT.path_join("%s_parking_lumieres.res" % String(place.get_meta("place_id")))
 	var maillage = e["maillage"]
 	ResourceSaver.save(maillage.vers_mesh(ParkingKit.materiau_lumiere(), "ParkingLumieres"), chemin)

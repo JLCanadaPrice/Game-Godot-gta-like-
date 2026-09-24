@@ -12,9 +12,8 @@ extends RefCounted
 #    et une tour arrière pleine ; au bout est (et ouest), deux montants découpent trois travées (z ±2,46..3,54) ;
 #  - la « cage vitrée » est une tour (x ±5,52, z 7,48..11,87) que chaque plateau traverse : une pièce de 11 x 2,3 m
 #    par niveau, fermée côté parking ; au rez-de-chaussée un passage de 7,7 m la traverse (l'entrée des voitures) ;
-#  - les boîtiers des plafonniers sont dans base_072 ; light_006 porte les cônes de lumière opaques, écartés à la
-#    fusion (BuildingModels.EXCLUS), ET les vitres des plafonniers (CORRIGÉ le 2026-09-22 : on l'avait écrit « ne
-#    contient que les cônes » ; cf. ÉCLAIRAGE INTÉRIEUR) ;
+#  - les boîtiers des plafonniers sont dans base_072 ; light_006 ne contient que les cônes, écartés à la fusion
+#    (BuildingModels.EXCLUS) ;
 #  - enroulement des faces : convention de Godot (faces avant en sens horaire vues du côté de leur normale).
 #
 # Retouches du 2026-09-23, demandées par le joueur : l'escalier a quitté la tour vitrée (il barrait l'entrée des
@@ -454,10 +453,6 @@ static func praticable(mesh: Mesh, materiau: Material, nom: String, escaliers: i
 	var col := Maillage.new()      # collision seule (rampes invisibles)
 	var stats := {"planchers": sols, "dessous": bas, "decoupes": {}}
 	var fautes: Array[String] = []
-	var boitier := _boitier_gabarit(m)     # sur le modèle BRUT, avant toute découpe
-	if boitier.i.size() / 3 != PLAF_TRIANGLES_BOITIER:
-		fautes.append("boîtier du plafonnier gabarit : %d triangles au lieu de %d, la cote relevée ne correspond plus au modèle"
-				% [boitier.i.size() / 3, PLAF_TRIANGLES_BOITIER])
 	# poteaux du milieu, retirés du rez au toit (cf. POTEAUX_X) ; aucun triangle retiré serait une cote fausse
 	for x: float in POTEAUX_X:
 		_compte(stats, fautes, "poteau du milieu", m.retirer_boite(Vector3(x - POTEAU_DEMI.x, sols[0] - 1.0, -POTEAU_DEMI.y),
@@ -493,24 +488,6 @@ static func praticable(mesh: Mesh, materiau: Material, nom: String, escaliers: i
 	if rampes > 0:
 		_barre_hauteur(m, sols[0])
 	var pl := places(sols, m)
-	# Plafonniers : les copies du boîtier d'origine (leurs vitres allumées sont posées par eclairage()). Chacune est
-	# contrôlée contre le parking tel qu'il est avant elles : rien ne doit traverser le bas de son boîtier ni les 30 cm
-	# dessous, et un plafond doit le tenir.
-	var plaf := plafonniers(sols, rampes, escaliers)
-	fautes.append_array(plaf["fautes"])
-	var tm := TriangleMesh.new()
-	var toutes := m.faces()
-	toutes.append_array(col.faces())
-	tm.create_from_faces(toutes)
-	var poses := {}
-	for e: Array in plaf["liste"]:
-		var xf: Transform3D = e[0]
-		var obstacle := _obstacle_plafonnier(tm, xf)
-		if obstacle != "":
-			fautes.append("plafonnier (%s) en %s : %s" % [e[1], str(xf.origin.snappedf(0.01)), obstacle])
-		m.ajouter(boitier.transforme(xf))
-		poses[e[1]] = int(poses.get(e[1], 0)) + 1
-	stats["plafonniers"] = poses
 	var faces := m.faces()
 	faces.append_array(col.faces())
 	# La cage vitrée n'est plus doublée de l'intérieur (elle l'était depuis l'étape 7 pour qu'on ne voie pas au travers
@@ -869,7 +846,7 @@ static func remplissage(niveau: int) -> int:
 	return int(PL_REMPLISSAGE[mini(niveau, PL_REMPLISSAGE.size() - 1)])
 
 
-# --- ÉCLAIRAGE INTÉRIEUR (2026-09-22, plafonniers refaits le 2026-09-24) -----------------------------------------------
+# --- ÉCLAIRAGE INTÉRIEUR (2026-09-22) ---------------------------------------------------------------------------------
 #
 # Un parking à étages est sombre DE JOUR aussi : ses lumières sont allumées en permanence, il n'y a rien à fondre au
 # crépuscule. D'où un matériau non éclairé à couleur fixe, partagé par les quatre parkings, et des maillages toujours
@@ -877,43 +854,31 @@ static func remplissage(niveau: int) -> int:
 #
 # CE QU'ON ALLUME EXISTE DÉJÀ DANS LE MODÈLE. `light_006` ne contient pas que les cônes opaques écartés le
 # 2026-09-21 : relevé triangle par triangle, il porte 162 triangles PLATS (trois sommets à la même hauteur au mm) et
-# 136 non plats. Les plats sont les VITRES des plafonniers — 17, quatre par niveau couvert à x ±(9,42..18,40) et
-# z ±(5,02..5,73), plus un sous l'auvent de l'entrée. C'est cette géométrie-là qu'on rallume, recopiée 12 mm plus bas
-# sur le matériau partagé, comme le verre des lampadaires et les optiques des véhicules. Les cônes restent écartés.
+# 136 non plats. Les plats sont les VITRES des plafonniers — 17 panneaux, quatre par niveau couvert à
+# x ±(9,42..18,40) et z ±(5,02..5,73), 8,98 x 0,71 m chacun, plus un de 8,58 x 0,31 m sous l'auvent de l'entrée.
+# C'est cette géométrie-là qu'on rallume, recopiée 12 mm plus bas sur le matériau partagé, comme le verre des
+# lampadaires et les optiques des véhicules. Les cônes, eux, restent écartés.
 #
-# UN SEUL MODÈLE DE PLAFONNIER (2026-09-24, demande du joueur). Là où le modèle n'avait pas de plafonnier, on posait
-# jusque-là des BANDEAUX PLATS (5 par niveau le long de l'allée, 3 par rampe couverte, un panneau par niveau au pied
-# de l'escalier) : des rectangles lumineux sans boîtier, qui flottaient sous le plafond à côté des plafonniers du
-# modèle, lesquels ont un boîtier sombre autour de leur vitre — le « rebord » que voit le joueur. Les bandeaux sont
-# retirés. Ce qui manque est éclairé par des COPIES du plafonnier d'origine, boîtier ET vitre, relevé sur ses sommets
-# le 2026-09-24 : boîtier de 8,98 x 0,71 x 0,21 m (10 triangles 0a0d10 et un fond 727254) dans base_072, vitre plate
-# 1,3 cm dessous (10 triangles de light_006 : un cadre de 0,20 m autour d'un panneau de 8,59 x 0,31 m), encastré de
-# 5 à 11 cm dans la dalle selon le niveau. Les copies suivent le pas du modèle lui-même, 13,913 m — l'écart entre
-# les deux plafonniers d'une de ses rangées (x ±13,913) et celui de l'auvent (x 0). Par niveau couvert :
-#  - rangée de la façade (z 5,376, la rangée du modèle) : ses deux plafonniers, plus une copie au milieu, x 0 ;
-#  - rangée de l'allée (z 0, l'axe du bâtiment, où étaient les poteaux) : trois copies, x -13,913 / 0 / 13,913 ;
-#  - escalier : une copie dans la bande arrière, au pied des volées, entre la trémie (x 10,66) et la tour d'angle
-#    (x 20,13) ;
-# et, par rampe COUVERTE (la dernière est à ciel ouvert : sa trémie perce la dalle du toit), deux copies inclinées à
-# 16 %, sous le tablier de la rampe du dessus, sur la rangée du modèle que la rampe a emportée (z -5,376), centres à
-# ±6,957 : le même pas. Une vraie lumière fixe par plafonnier, toujours allumée (StreetLights).
+# CE QU'ON AJOUTE, et pourquoi : les deux panneaux z < 0 de chaque niveau tombent dans la bande de la rampe et
+# disparaissent avec le plafond que la rampe a remplacé (même boîte de découpe que leurs boîtiers, §11). Une rampe
+# de vrai parking a ses propres luminaires, qui suivent la pente : on pose donc trois bandeaux par rampe COUVERTE,
+# 12 cm sous le tablier du dessus, donc à 4,08 m au-dessus de la voie. La rampe du haut n'en a pas : sa trémie perce
+# la dalle du toit sur toute la bande, elle est à ciel ouvert. La cage d'escalier n'a aucun luminaire dans le modèle
+# et elle est fermée : elle reçoit un panneau par niveau, à l'est de sa trémie.
 const GLB := "res://assets/building_pack_everythinglibrary/Business/Business_ParkingStructure.glb"
 const LUM_MATERIAU := "res://scenes/world/parking_glow_material.tres"
 const LUM_COULEUR := Color(0.98, 0.93, 0.80)   # blanc chaud, sous 1.0 : le tonemapper ACES délave ce qu'on y pose
 const LUM_DESCENTE := 0.012                    # la copie allumée, sous la vitre d'origine
-# Le plafonnier qui sert de gabarit : celui du plafond du rez, côté façade, à l'est. Son repère a pour origine le
-# centre de sa vitre (13,913 ; 4,391 ; 5,376).
-const PLAF_BOITIER := AABB(Vector3(9.422, 4.404, 5.023), Vector3(8.982, 0.206, 0.706))
-const PLAF_VITRE_Y := 4.391
-const PLAF_TRIANGLES_BOITIER := 12
-const PLAF_TRIANGLES_VITRE := 10
-const PLAF_PAS := 13.913
-const PLAF_RANGEE_FACADE := 5.376
-const PLAF_RANGEE_ALLEE := 0.0
-const PLAF_RAMPE_Z := -5.376
-const PLAF_RAMPE_X := [-6.9565, 6.9565]
-const PLAF_ESCALIER := Vector2(15.395, -8.61)  # milieu de la bande libre : x 10,66..20,13, z -9,75..-7,47
-const PLAF_ENCASTRE := 0.05                    # sous une rampe, encastré comme au plafond du rez
+const LUM_SOUS_PLAFOND := 0.12                 # bandeaux ajoutés : tant sous la face qu'ils éclairent
+const LUM_RAMPE_X := [-9.0, 0.0, 9.0]          # abscisses des bandeaux d'une rampe
+const LUM_RAMPE_L := 2.4                       # longueur d'un bandeau
+const LUM_RAMPE_LARG := 0.5
+const LUM_ALLEE_X := [-16.0, -8.0, 0.0, 8.0, 16.0]   # file de bandeaux le long de l'allée de circulation
+const LUM_ALLEE_Z := 3.85                      # axe de l'allée (le même que celle du retour de la rampe)
+# Escalier (2026-09-23, dans la bande arrière) : un panneau sous chaque dalle desservie, juste à l'est de la trémie
+# (x 10,90..12,70, repère du modèle), au-dessus du pied des volées et de l'arrivée. Plus de panneau au-dessus du toit :
+# l'escalier débouche maintenant à l'air libre, il n'y a plus de tête de tour où le pendre.
+const LUM_ESCALIER := Rect2(10.90, -9.10, 1.80, 0.50)
 
 
 # Le matériau partagé. Créé par la première cuisson qui en a besoin, relu ensuite : les deux cuiseurs l'appellent, et
@@ -973,141 +938,11 @@ static func _dans_modele(n: Node3D, racine: Node3D) -> Transform3D:
 	return xf
 
 
-# Origine du repère du gabarit, dans le repère du modèle : le centre de sa vitre.
-static func _origine_gabarit() -> Vector3:
-	return Vector3(PLAF_BOITIER.get_center().x, PLAF_VITRE_Y, PLAF_BOITIER.get_center().z)
-
-
-# Le boîtier du gabarit (triangles entièrement dans PLAF_BOITIER), ramené dans le repère du gabarit.
-static func _boitier_gabarit(m: Maillage) -> Maillage:
-	var out := Maillage.new()
-	var o := _origine_gabarit()
-	var b := PLAF_BOITIER.grow(0.002)
-	var nv := PackedVector3Array()
-	var nn := PackedVector3Array()
-	var nc := PackedColorArray()
-	var ni := PackedInt32Array()
-	for t in range(0, m.i.size() - 2, 3):
-		if not (b.has_point(m.v[m.i[t]]) and b.has_point(m.v[m.i[t + 1]]) and b.has_point(m.v[m.i[t + 2]])):
-			continue
-		var base := nv.size()
-		for k in 3:
-			nv.append(m.v[m.i[t + k]] - o)
-			nn.append(m.n[m.i[t + k]])
-			nc.append(m.c[m.i[t + k]])
-		ni.append_array(PackedInt32Array([base, base + 1, base + 2]))
-	out.v = nv
-	out.n = nn
-	out.c = nc
-	out.i = ni
-	return out
-
-
-# Les copies du plafonnier d'origine : une transformation par copie, du repère du gabarit à celui du modèle, et son
-# genre. La hauteur à chaque niveau est celle de SES plafonniers d'origine, relevée sur les vitres du modèle, pas une
-# cote théorique : le modèle les encastre de 5 à 11 cm selon la dalle.
-static func plafonniers(sols: PackedFloat32Array, rampes: int, escaliers: int, vitres: Array = []) -> Dictionary:
-	if vitres.is_empty():
-		vitres = _vitres_modele()
-	var fautes: Array[String] = []
-	var liste: Array = []
-	for k in sols.size() - 1:
-		var y := NAN
-		for tri: Array in vitres:
-			var c: Vector3 = (tri[0] + tri[1] + tri[2]) / 3.0
-			if c.y > sols[k] and c.y < sols[k + 1] and c.x > PLAF_BOITIER.position.x and c.x < PLAF_BOITIER.end.x \
-					and c.z > PLAF_BOITIER.position.z and c.z < PLAF_BOITIER.end.z:
-				y = c.y
-		if is_nan(y):
-			fautes.append("plafonnier d'origine du niveau %d introuvable sur les vitres du modèle" % k)
-			continue
-		liste.append([Transform3D(Basis(), Vector3(0.0, y, PLAF_RANGEE_FACADE)), "rangée de la façade"])
-		for x: float in [-PLAF_PAS, 0.0, PLAF_PAS]:
-			liste.append([Transform3D(Basis(), Vector3(x, y, PLAF_RANGEE_ALLEE)), "rangée de l'allée"])
-		if k < escaliers:
-			liste.append([Transform3D(Basis(), Vector3(PLAF_ESCALIER.x, y, PLAF_ESCALIER.y)), "escalier"])
-	# rampes couvertes : la rampe k a pour plafond le tablier de la rampe k + 1, parallèle à elle
-	var pente := Basis(Vector3.BACK, atan(RAMPE_PENTE))
-	var haut := PLAF_BOITIER.end.y - PLAF_VITRE_Y     # dessus du boîtier au-dessus de sa vitre
-	var demi := PLAF_BOITIER.size.x * 0.5
-	for k in maxi(mini(rampes, sols.size() - 1) - 1, 0):
-		var h := sols[k + 2] - sols[k + 1]
-		var bt := rampe_bouts(h)
-		for x: float in PLAF_RAMPE_X:
-			if absf(x) + demi > bt.y - RAMPE_RACCORD:
-				fautes.append("plafonnier de la rampe %d en x %.2f : il déborde de la partie à pente constante" % [k, x])
-			var dessus := Vector3(x, sols[k + 1] + rampe_hauteur(x, bt, h) - RAMPE_DALLE + PLAF_ENCASTRE, PLAF_RAMPE_Z)
-			liste.append([Transform3D(pente, dessus - pente * Vector3(0.0, haut, 0.0)), "rampe"])
-	return {"liste": liste, "fautes": fautes}
-
-
-# Ce qui empêche une copie d'être là, ou "" : un triangle du parking qui traverse le bas de son boîtier (bords et
-# diagonales à 2 et 9 cm au-dessus du fond, sous toute sous-face de dalle puisque le boîtier y est encastré d'au
-# moins 5 cm), qui passe dans les 30 cm sous lui, ou l'absence de plafond au-dessus (il flotterait).
-static func _obstacle_plafonnier(tm: TriangleMesh, xf: Transform3D) -> String:
-	var dx := PLAF_BOITIER.size.x * 0.5 - 0.02
-	var dz := PLAF_BOITIER.size.z * 0.5 - 0.02
-	var fond := PLAF_BOITIER.position.y - PLAF_VITRE_Y
-	var dessus := PLAF_BOITIER.end.y - PLAF_VITRE_Y
-	var coins: Array[Vector2] = [Vector2(-dx, -dz), Vector2(dx, -dz), Vector2(dx, dz), Vector2(-dx, dz)]
-	for y: float in [fond + 0.02, fond + 0.09]:
-		var segments: Array = []
-		for k in 4:
-			segments.append([coins[k], coins[(k + 1) % 4]])
-		segments.append([coins[0], coins[2]])
-		segments.append([coins[1], coins[3]])
-		for sg: Array in segments:
-			var a: Vector2 = sg[0]
-			var b: Vector2 = sg[1]
-			if not tm.intersect_segment(xf * Vector3(a.x, y, a.y), xf * Vector3(b.x, y, b.y)).is_empty():
-				return "un triangle traverse son boîtier à %.2f m au-dessus du fond" % (y - fond)
-	var points: Array[Vector2] = [Vector2.ZERO]
-	points.append_array(coins)
-	for p: Vector2 in points:
-		if not tm.intersect_segment(xf * Vector3(p.x, fond - 0.30, p.y), xf * Vector3(p.x, fond + 0.09, p.y)).is_empty():
-			return "quelque chose passe sous lui, à moins de 30 cm, en (%.2f, %.2f) du gabarit" % [p.x, p.y]
-		if tm.intersect_segment(xf * Vector3(p.x, fond + 0.09, p.y), xf * Vector3(p.x, dessus + 0.02, p.y)).is_empty():
-			return "aucun plafond au-dessus de lui en (%.2f, %.2f) du gabarit : il flotterait" % [p.x, p.y]
-	return ""
-
-
-# Les groupes de triangles qui se touchent (un sommet commun) : un groupe = un plafonnier.
-static func _composantes(tris: Array) -> Array:
-	var parent: Array[int] = []
-	for t in tris.size():
-		parent.append(t)
-	var premier := {}
-	for t in tris.size():
-		for q: Vector3 in tris[t]:
-			var cle := q.snappedf(0.001)
-			if premier.has(cle):
-				parent[_racine(parent, t)] = _racine(parent, int(premier[cle]))
-			else:
-				premier[cle] = t
-	var groupes := {}
-	for t in tris.size():
-		var r := _racine(parent, t)
-		if not groupes.has(r):
-			groupes[r] = []
-		(groupes[r] as Array).append(tris[t])
-	return groupes.values()
-
-
-static func _racine(parent: Array[int], t: int) -> int:
-	while parent[t] != t:
-		parent[t] = parent[parent[t]]
-		t = parent[t]
-	return t
-
-
-# Le maillage des lumières et la liste de leurs centres (une vraie lumière par plafonnier), en repère du modèle.
+# Le maillage des lumières et la liste de leurs centres (pour le bassin de vraies lumières), en repère du modèle.
 static func eclairage(sols: PackedFloat32Array, rampes: int, escaliers: int) -> Dictionary:
 	var m := Maillage.new()
 	var tetes := PackedVector3Array()
-	var fautes: Array[String] = []
-	var compte := {"vitres du modele": 0, "vitres dans la bande": 0, "plafonniers d'origine": 0}
-	var vitres := _vitres_modele()
-	var bas := Vector3(0.0, -LUM_DESCENTE, 0.0)
+	var compte := {"vitres du modele": 0, "vitres dans la bande": 0, "bandeaux de rampe": 0, "panneaux d'escalier": 0}
 	# 1. les vitres du modèle, moins celles que la rampe a emportées avec leur plafond
 	var boites: Array[AABB] = []
 	for k in rampes:
@@ -1116,8 +951,8 @@ static func eclairage(sols: PackedFloat32Array, rampes: int, escaliers: int) -> 
 		# de cette limite.
 		var mn := Vector3(-20.5, sols[k + 1] - 1.2, RAMPE_Z - RAMPE_DEMI - 0.1)
 		boites.append(AABB(mn, Vector3(20.5, sols[k + 1] - 0.15, RAMPE_Z + RAMPE_DEMI + 0.1) - mn))
-	var gardees: Array = []
-	for tri: Array in vitres:
+	var groupes := {}
+	for tri: Array in _vitres_modele():
 		var c: Vector3 = (tri[0] + tri[1] + tri[2]) / 3.0
 		var emportee := false
 		for b in boites:
@@ -1126,39 +961,48 @@ static func eclairage(sols: PackedFloat32Array, rampes: int, escaliers: int) -> 
 				break
 		if emportee:
 			compte["vitres dans la bande"] = int(compte["vitres dans la bande"]) + 1
-		else:
-			gardees.append(tri)
-	compte["vitres du modele"] = gardees.size()
-	# un plafonnier = un groupe de triangles qui se touchent, une lumière au centre de chacun. (Jusqu'au 2026-09-24 on
-	# groupait par signe de x, et la vitre de l'auvent, à cheval sur x = 0, recevait DEUX lumières au même endroit.)
-	for groupe: Array in _composantes(gardees):
-		var mn := Vector3(INF, INF, INF)
-		var mx := -mn
-		for tri: Array in groupe:
-			m.tri(tri[0] + bas, tri[1] + bas, tri[2] + bas, Vector3.DOWN, LUM_COULEUR, LUM_COULEUR, LUM_COULEUR)
-			for q: Vector3 in tri:
-				mn = mn.min(q)
-				mx = mx.max(q)
-		tetes.append((mn + mx) * 0.5 + bas)
-		compte["plafonniers d'origine"] = int(compte["plafonniers d'origine"]) + 1
-	# 2. les copies : la vitre du gabarit, déplacée comme son boîtier (praticable)
-	var o := _origine_gabarit()
-	var vitre: Array = []
-	for tri: Array in vitres:
-		if PLAF_BOITIER.grow(0.05).has_point((tri[0] + tri[1] + tri[2]) / 3.0):
-			vitre.append([tri[0] - o, tri[1] - o, tri[2] - o])
-	if vitre.size() != PLAF_TRIANGLES_VITRE:
-		fautes.append("vitre du plafonnier gabarit : %d triangles au lieu de %d" % [vitre.size(), PLAF_TRIANGLES_VITRE])
-	var plaf := plafonniers(sols, rampes, escaliers, vitres)
-	fautes.append_array(plaf["fautes"])
-	for e: Array in plaf["liste"]:
-		var xf: Transform3D = e[0]
-		var dessous := xf.basis * Vector3.DOWN
-		for tri: Array in vitre:
-			m.tri(xf * (tri[0] + bas), xf * (tri[1] + bas), xf * (tri[2] + bas), dessous, LUM_COULEUR, LUM_COULEUR, LUM_COULEUR)
-		tetes.append(xf * bas)
-		compte[e[1]] = int(compte.get(e[1], 0)) + 1
-	return {"maillage": m, "tetes": tetes, "compte": compte, "fautes": fautes}
+			continue
+		compte["vitres du modele"] = int(compte["vitres du modele"]) + 1
+		var bas := Vector3(0.0, -LUM_DESCENTE, 0.0)
+		m.tri(tri[0] + bas, tri[1] + bas, tri[2] + bas, Vector3.DOWN, LUM_COULEUR, LUM_COULEUR, LUM_COULEUR)
+		var cle := "%.2f|%d|%d" % [c.y, signi(c.x), signi(c.z)]
+		if not groupes.has(cle):
+			groupes[cle] = [Vector3(1e9, 1e9, 1e9), Vector3(-1e9, -1e9, -1e9)]
+		for q: Vector3 in tri:
+			groupes[cle][0] = (groupes[cle][0] as Vector3).min(q)
+			groupes[cle][1] = (groupes[cle][1] as Vector3).max(q)
+	for cle in groupes:
+		tetes.append(((groupes[cle][0] as Vector3) + (groupes[cle][1] as Vector3)) * 0.5 - Vector3(0, LUM_DESCENTE, 0))
+	# 2. bandeaux des rampes COUVERTES (la dernière est à ciel ouvert : sa trémie perce la dalle du toit)
+	for k in maxi(rampes - 1, 0):
+		var h_haut := sols[k + 2] - sols[k + 1]
+		var bt_haut := rampe_bouts(h_haut)
+		for x: float in LUM_RAMPE_X:
+			var y := sols[k + 1] + rampe_hauteur(x, bt_haut, h_haut) - RAMPE_DALLE - LUM_SOUS_PLAFOND
+			_panneau(m, Rect2(x - LUM_RAMPE_L * 0.5, RAMPE_Z - LUM_RAMPE_LARG * 0.5, LUM_RAMPE_L, LUM_RAMPE_LARG), y)
+			tetes.append(Vector3(x, y, RAMPE_Z))
+			compte["bandeaux de rampe"] = int(compte["bandeaux de rampe"]) + 1
+	# 3. file de l'allée. Le modèle n'a que quatre luminaires par niveau, aux deux bouts, et la rampe en a emporté
+	# deux : le milieu du plateau restait NOIR, vu à l'image avant de l'ajouter. Un vrai parking aligne ses
+	# plafonniers le long de l'allée, c'est ce qu'on fait — cinq bandeaux à 4,08 m au-dessus du plancher.
+	for k in rampes:
+		var yp := sols[k + 1] - RAMPE_DALLE - LUM_SOUS_PLAFOND
+		for x: float in LUM_ALLEE_X:
+			_panneau(m, Rect2(x - LUM_RAMPE_L * 0.5, LUM_ALLEE_Z - LUM_RAMPE_LARG * 0.5, LUM_RAMPE_L, LUM_RAMPE_LARG), yp)
+			tetes.append(Vector3(x, yp, LUM_ALLEE_Z))
+			compte["bandeaux d'allee"] = int(compte.get("bandeaux d'allee", 0)) + 1
+	# 4. escalier : un panneau sous chaque dalle desservie
+	for k in escaliers:
+		var y := sols[k + 1] - RAMPE_DALLE - LUM_SOUS_PLAFOND
+		_panneau(m, LUM_ESCALIER, y)
+		tetes.append(Vector3(LUM_ESCALIER.get_center().x, y, LUM_ESCALIER.get_center().y))
+		compte["panneaux d'escalier"] = int(compte.get("panneaux d'escalier", 0)) + 1
+	return {"maillage": m, "tetes": tetes, "compte": compte}
+
+
+static func _panneau(m: Maillage, r: Rect2, y: float) -> void:
+	m.quad(Vector3(r.position.x, y, r.position.y), Vector3(r.end.x, y, r.position.y),
+			Vector3(r.end.x, y, r.end.y), Vector3(r.position.x, y, r.end.y), Vector3.DOWN, LUM_COULEUR)
 
 
 # --- rampe extérieure en hélice : SUPPRIMÉE le 2026-09-22 ---------------------------------------------------------

@@ -635,9 +635,8 @@ func _lumieres() -> void:
 			_fautes.append("eclairage : %s absent, cuisson a relancer" % chemin)
 			continue
 		tetes.append_array((load(chemin) as MapLampHeads).heads)
-	# autant de luminaires cuits que le kit en pose par parking : 35 depuis le 2026-09-24, un par plafonnier (les 9 du
-	# modèle, auvent compris, et 26 copies du même plafonnier ; plus aucun bandeau plat). C'était 43 avec les bandeaux,
-	# dont DEUX lumières au même endroit sous l'auvent.
+	# autant de luminaires cuits que le kit en pose par parking (47 depuis le 2026-09-23 : les 5 panneaux de la cage
+	# d'escalier sont devenus 4 panneaux au-dessus du pied du nouvel escalier, le toit n'en a plus)
 	var par_parking: int = (Kit.eclairage(_parkings[0][2], 4, 4)["tetes"] as PackedVector3Array).size()
 	if tetes.size() != _parkings.size() * par_parking:
 		_fautes.append("eclairage : %d luminaire(s) au lieu de %d" % [tetes.size(), _parkings.size() * par_parking])

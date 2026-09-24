@@ -121,11 +121,6 @@ const VIEWS := [
 	["parking_aeroport_places_jour", Vector3(421.0, 11.91, -1168.2), Vector3(411.0, 10.88, -1174.2), "", 12.0],
 	["parking_aeroport_places_nuit", Vector3(421.0, 11.91, -1168.2), Vector3(411.0, 10.88, -1174.2), "", 1.0],
 	["parking_aeroport_toit_places", Vector3(421.0, 25.59, -1168.2), Vector3(411.0, 24.5, -1174.2), "", 12.0],
-	# Plafonniers (2026-09-24) : un seul modele, celui du parking, copie la ou il en manquait. L'allee du niveau 1
-	# vue dans sa longueur depuis le bout ouest du modele (rangees z 0 et 5,376 au plafond), et le pied de l'escalier
-	# depuis le bout est de la bande arriere (la copie de l'escalier au-dessus, x 10,90..19,89 du modele).
-	["parking_aeroport_allee_plafonniers_nuit", Vector3(424.0, 11.91, -1169.1), Vector3(390.0, 12.81, -1169.1), "", 1.0],
-	["parking_aeroport_escalier_pied_nuit", Vector3(385.5, 7.34, -1158.9), Vector3(397.0, 8.48, -1158.6), "", 1.0],
 	# Piste secondaire raccourcie (2026-09-23) : son bout ouest passait 20 m au-dela de la cloture (x = 640), cote
 	# parking. Vue depuis l'exterieur de la cloture, au sol, de jour et de nuit (seuils vert et rouge a x 651 et 654).
 	["aeroport_piste_b_bout_ouest", Vector3(612.0, 7.0, -1027.0), Vector3(700.0, 5.6, -1018.0), "", 12.0],

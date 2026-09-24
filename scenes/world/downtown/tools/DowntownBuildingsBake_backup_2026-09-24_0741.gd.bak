@@ -868,8 +868,6 @@ func _parking_praticable(mdl: Dictionary) -> void:
 	_stats["parking_fautes"] = p["fautes"].size()
 	# lumières intérieures : un maillage partagé par les trois exemplaires, comme la collision
 	var e := Parking.eclairage(p["planchers"], PARKING_RAMPES, PARKING_ESCALIERS)
-	for f: String in e["fautes"]:
-		push_error("DOWNTOWN_PARKING %s" % f)
 	var chemin_lum := MODELS.path_join("parking_lumieres.res")
 	var maillage = e["maillage"]
 	ResourceSaver.save(maillage.vers_mesh(Parking.materiau_lumiere(), "ParkingLumieres"), chemin_lum)
