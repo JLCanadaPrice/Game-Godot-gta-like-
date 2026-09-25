@@ -9,13 +9,11 @@ extends Node3D
 # parking à étages du centre-ville, avec sa rampe à 16 %.
 # Ce qui est mesuré, et ce qui fait échouer :
 #  - au repos : pneus sur le sol (écart <= 3 cm), caisse d'aplomb, aucun recul ;
-#  - départ, 0-50, 0-100, 108 km/h atteints ; double changement de voie à 108 km/h (au stick, le volant en sinus : 2° aux
-#    roues au plus fort, sur 2 s — 5 % du volant jusqu'au 2026-09-24, 21 % depuis que le braquage est réduit avec la vitesse
-#    comme dans GTA V) sans basculer ni partir en tête-à-queue, et la voiture revient dans son axe d'elle-même (aucune aide
-#    de direction : c'est sa physique) ; freinage de 108 km/h à l'arrêt, droit ; puis AUCUN RECUL à l'arrêt (1 cm au plus
-#    en 2 s) ;
-#  - braquage à fond à 50 km/h sans se coucher (caisse jamais au-delà de 18°), roues avant à l'angle de la courbe de GTA V
-#    (fSteeringLock x 0,644 à 50 km/h, ChassisGTA.reduction_gta) ; roue libre jusqu'à l'arrêt ;
+#  - départ, 0-50, 0-100, 108 km/h atteints ; double changement de voie à 108 km/h (au stick, le volant en sinus : 5 %
+#    de sa course, soit 2° aux roues, sur 2 s) sans basculer ni partir en tête-à-queue, et la voiture revient dans son axe
+#    d'elle-même (aucune aide de direction : c'est sa physique) ; freinage de 108 km/h à l'arrêt, droit ; puis AUCUN RECUL
+#    à l'arrêt (1 cm au plus en 2 s) ;
+#  - braquage à fond à 50 km/h sans se coucher (caisse jamais au-delà de 18°) ; roue libre jusqu'à l'arrêt ;
 #  - FREIN À MAIN (2026-09-24) : à 50 km/h, braquage à fond et la vraie touche ESPACE (qui porte aussi le saut, à pied),
 #    jusqu'à 15° de dérive (1 s au plus). Le joueur reste assis, sans sauter ; les roues arrière se bloquent ; l'arrière part
 #    en glisse (plus de 15° de dérive) ; puis LE JOUEUR lâche Espace, CONTRE-BRAQUE au clavier et remet les gaz
@@ -58,8 +56,8 @@ const BORDURE_TAILLE := Vector3(30.0, 0.15, 12.0)
 const KMH := 1.0 / 3.6
 const VOLANT_V := 12.0 / 3.6                       # volant partiel : vitesse (m/s)...
 const VOLANT_PART := 0.45                          # ... et part du volant, tenue
-const VOIE_ROUES := 2.0                            # double changement de voie à 108 km/h : angle des roues (°) au plus fort...
-const VOIE_PERIODE := 2.0                          # ... et durée (s) du sinus du stick
+const VOIE_STICK := 0.05                           # double changement de voie à 108 km/h : amplitude du stick...
+const VOIE_PERIODE := 2.0                          # ... et durée (s) de son sinus
 # Entrée du parking (repère du modèle) : départ devant la façade (z 11,87) et la barre de hauteur (z 11,95..12,15),
 # arrivée dans le rez, passage franchi (face intérieure de la tour à z 7,48). [réaliste ?, vitesse m/s]
 const ENTREE_PASSAGES := [4.0, 7.0]                 # vitesses (m/s)
@@ -352,10 +350,9 @@ func _s(d: Dictionary, k: String) -> String:
 
 
 # DOUBLE CHANGEMENT DE VOIE À 108 km/h, au stick (comme une manette : l'action « right » ou « left » à une part de sa
-# course) : le volant suit un sinus sur VOIE_PERIODE s, d'amplitude ce qui met VOIE_ROUES aux roues à cette vitesse (le
-# braquage y est réduit à 0,24 de la butée, comme dans GTA V : 21 % du volant) — un vrai changement de voie —, puis le
-# stick au centre. Aucune aide ne ramène la voiture : elle doit revenir dans son axe par sa seule physique, sans pencher
-# au-delà de 18° ni glisser.
+# course) : le volant suit un sinus de VOIE_STICK sur VOIE_PERIODE s — 2° aux roues, un vrai changement de voie à cette
+# vitesse, où la direction n'est plus réduite —, puis le stick au centre. Aucune aide ne ramène la voiture : elle doit
+# revenir dans son axe par sa seule physique, sans pencher au-delà de 18° ni glisser.
 func _e_vitesse108(_d: float) -> bool:
 	if not _e.has("cap0"):
 		_e["cap0"] = _cap_deg()
@@ -365,12 +362,11 @@ func _e_vitesse108(_d: float) -> bool:
 		_e["decal"] = 0.0
 		_e["p0"] = _pos()
 		_e["axe"] = -_voiture.global_transform.basis.z
-		_e["stick"] = clampf(deg_to_rad(VOIE_ROUES) / float(_ch.call("braquage_effectif")), 0.0, 1.0)
 	var v := _v()
 	_pedales(v < 108.0 * KMH, v > 108.0 * KMH + 1.5)
 	var dt := _t - 1.0
 	if dt >= 0.0 and dt < VOIE_PERIODE:
-		var stick := float(_e["stick"]) * sin(TAU * dt / VOIE_PERIODE)
+		var stick := VOIE_STICK * sin(TAU * dt / VOIE_PERIODE)
 		Input.action_press("left" if stick > 0.0 else "right", absf(stick))
 	_e["up"] = minf(float(_e["up"]), _ch.global_transform.basis.y.dot(Vector3.UP))
 	_e["lacet"] = maxf(float(_e["lacet"]), absf(rad_to_deg(_ch.angular_velocity.y)))
@@ -382,8 +378,8 @@ func _e_vitesse108(_d: float) -> bool:
 		return false
 	var derive_cap := absf(wrapf(_cap_deg() - float(_e["cap0"]), -180.0, 180.0))
 	var penche_max := rad_to_deg(acos(clampf(float(_e["up"]), -1.0, 1.0)))
-	_r["vitesse108"] = "double changement de voie à %.0f km/h, au stick (%.0f %%, %.0f° aux roues, %.0f s) : %.1f m de côté au plus fort, caisse penchée de %.1f° au plus, lacet %.0f°/s au plus, dérive %.1f° au plus ; cap final à %.1f° du cap initial" % [
-			_v() * 3.6, float(_e["stick"]) * 100.0, VOIE_ROUES, VOIE_PERIODE, float(_e["decal"]), penche_max, float(_e["lacet"]), float(_e["derive"]), derive_cap]
+	_r["vitesse108"] = "double changement de voie à %.0f km/h, au stick (%.0f %%, %.0f s) : %.1f m de côté au plus fort, caisse penchée de %.1f° au plus, lacet %.0f°/s au plus, dérive %.1f° au plus ; cap final à %.1f° du cap initial" % [
+			_v() * 3.6, VOIE_STICK * 100.0, VOIE_PERIODE, float(_e["decal"]), penche_max, float(_e["lacet"]), float(_e["derive"]), derive_cap]
 	if penche_max > 18.0:
 		_faute("changement de voie à 108 km/h : caisse penchée de %.1f°" % penche_max)
 	if float(_e["derive"]) > 10.0:
@@ -437,52 +433,20 @@ func _e_virage50(_d: float) -> bool:
 			_e["lance"] = _t
 			_e["up"] = 1.0
 			_e["alat"] = []
-			_e["ecarts"] = []
 		return _t > 20.0
 	var dt := _t - float(_e["lance"])
 	_regule(50.0 * KMH, false, true)
 	_e["up"] = minf(float(_e["up"]), _ch.global_transform.basis.y.dot(Vector3.UP))
 	if dt > 2.0:
 		(_e["alat"] as Array).append(absf(_v() * _ch.angular_velocity.y))
-		# roues avant : l'angle de la courbe de GTA V à la vitesse du moment (écart médian)
-		_e["roues"] = _angle_bicyclette()
-		_e["attendu"] = rad_to_deg(float(_ch.get("braquage_max"))) * _courbe_gta(_v())
-		(_e["ecarts"] as Array).append(absf(float(_e["roues"]) - float(_e["attendu"])))
 	if dt < 4.0:
 		return false
 	var penche_max := rad_to_deg(acos(clampf(float(_e["up"]), -1.0, 1.0)))
-	var ecart := _mediane(PackedFloat32Array(_e["ecarts"]))
-	_r["virage50"] = "braquage à fond à %.0f km/h : caisse penchée de %.1f° au plus, accélération latérale %.1f m/s² (%.2f g) ; roues avant à %.2f° pour %.2f° selon la courbe de GTA V (écart médian %.2f°)" % [
-			_v() * 3.6, penche_max, _mediane(PackedFloat32Array(_e["alat"])), _mediane(PackedFloat32Array(_e["alat"])) / 9.8,
-			float(_e["roues"]), float(_e["attendu"]), ecart]
+	_r["virage50"] = "braquage à fond à %.0f km/h : caisse penchée de %.1f° au plus, accélération latérale %.1f m/s² (%.2f g)" % [
+			_v() * 3.6, penche_max, _mediane(PackedFloat32Array(_e["alat"])), _mediane(PackedFloat32Array(_e["alat"])) / 9.8]
 	if penche_max > 18.0:
 		_faute("braquage à fond à 50 km/h : caisse penchée de %.1f°" % penche_max)
-	if ecart > 0.3:
-		_faute("braquage à fond à 50 km/h : les roues avant ne suivent pas la courbe de GTA V (%.2f° pour %.2f°)" % [float(_e["roues"]), float(_e["attendu"])])
 	return true
-
-
-# LA COURBE DE GTA V, écrite ici indépendamment de ChassisGTA (cf. ChassisBancTest._courbe_gta) : part de fSteeringLock
-# donnée par le volant à fond à `v` m/s le long de l'avant.
-func _courbe_gta(v: float) -> float:
-	var mult := 1.0
-	if v > 3.0:
-		mult = minf(floorf((0.15 + pow(0.9, v - 7.2)) * 1000.0) / 1000.0, 1.0)
-	return clampf(1.0 + (mult - 1.0) * FichesVehicules.reglage("reduction_braquage"), 0.0, 1.0)
-
-
-# Angle « bicyclette » des roues avant (deg, positif), tiré des angles des deux roues (épure d'Ackermann).
-func _angle_bicyclette() -> float:
-	var cot := 0.0
-	var n := 0
-	for w in _ch.get("roues"):
-		if bool(w.avant):
-			var a := absf(float(w.braquage))
-			if a < 0.0001:
-				return 0.0
-			cot += 1.0 / tan(a)
-			n += 1
-	return rad_to_deg(atan(float(n) / cot)) if n > 0 else 0.0
 
 
 func _e_roue_libre(_d: float) -> bool:

@@ -10,25 +10,17 @@ extends Node3D
 #    motrices plus vite que le sol) et ÉCRASEMENT de la caisse (cabrage, rapporté) ;
 #  - freinage fort depuis 100 km/h (sa vitesse de pointe si elle est plus basse) : distance, droit, et PLONGÉE de la caisse
 #    (rapportée) ;
-#  - FREINAGE FORT EN TOURNANT (2026-09-24) : à 100 km/h, le stick tenu à droite de quoi mettre 4° aux roues avant (c'est
-#    déjà un virage à la limite des pneus avant à cette vitesse ; 10 % du volant jusqu'au 2026-09-24, 38 % depuis que le
-#    braquage est réduit avec la vitesse), puis S à fond jusqu'à l'arrêt, le stick toujours tenu. Sans aide de
+#  - FREINAGE FORT EN TOURNANT (2026-09-24) : à 100 km/h, le volant tenu à 10 % à droite (au stick : c'est déjà un virage à
+#    la limite des pneus avant à cette vitesse), puis S à fond jusqu'à l'arrêt, le volant toujours tenu. Sans aide de
 #    direction, c'est la physique qui doit garder la voiture dans l'axe de sa trajectoire : l'arrière garde la moitié de sa
 #    charge (centre de tangage du freinage) et le répartiteur de freinage lui laisse de quoi tenir en travers ;
-#  - FREINER ET TOURNER (2026-09-24 au soir) : lancé à 50, 80 puis 120 km/h (120 depuis le 2026-09-25) en ligne droite, S à
-#    fond ET braquage à fond à droite en même temps, jusqu'à l'arrêt. La voiture doit TOURNER, pas aller tout droit : l'ABS
-#    ne bloque jamais les roues avant et leur laisse de quoi diriger (« freiner en virage peut élargir un peu la
-#    trajectoire, mais la voiture doit toujours tourner »). Relevés : trajectoire tournée (cap de la VITESSE) avant l'arrêt,
-#    rayon moyen (distance / trajectoire tournée), décalage latéral, dérive au plus fort, distance d'arrêt, et le RAYON à
-#    chaque palier de vitesse franchi en ralentissant (tous les 10 km/h) : il doit se resserrer ;
-#  - BRAQUÉ À FOND EN ROUE LIBRE ET SOUS LES GAZ (2026-09-25) : lancé à 50, 80 et 120 km/h, D tenu, sans pédale ou W tenu.
-#    Relevés entre 0,4 et 0,9 s (le volant est à fond, la vitesse encore proche du départ) : rayon, accélération latérale
-#    vraie, glissement des pneus avant rapporté au pic de leur courbe (fTractionCurveLateral / 2), patinage des roues
-#    motrices ; en roue libre, le rayon à chaque palier de vitesse franchi : il doit se resserrer quand la voiture ralentit ;
+#  - FREINER ET TOURNER (2026-09-24 au soir) : lancé à 50 puis 80 km/h en ligne droite, S à fond ET braquage à fond à droite
+#    en même temps, jusqu'à l'arrêt. La voiture doit TOURNER, pas aller tout droit : l'ABS ne bloque jamais les roues avant
+#    et leur laisse de quoi diriger (« freiner en virage peut élargir un peu la trajectoire, mais la voiture doit toujours
+#    tourner »). Relevés : trajectoire tournée (cap de la VITESSE) avant l'arrêt, rayon moyen (distance / trajectoire
+#    tournée), décalage latéral, dérive au plus fort, distance d'arrêt ;
 #  - PAS DE TONNEAU : braquage à fond, vitesse tenue, à 50, 80, 110 km/h et à la vitesse de pointe : roulis, roues levées,
-#    glissade. Il glisse ou il sous-vire ; il ne se couche pas. Et (2026-09-25) les roues avant y suivent la RÉDUCTION DU
-#    BRAQUAGE DE GTA V : volant à fond, leur angle « bicyclette » (tiré des angles des deux roues, Ackermann compris) vaut
-#    fSteeringLock x (0,15 + 0,9^(v - 7,2)), v en m/s, bornée à 1 (ChassisGTA.reduction_gta) ;
+#    glissade. Il glisse ou il sous-vire ; il ne se couche pas ;
 #  - FREIN À MAIN (2026-09-24) : en ligne droite depuis 50 km/h, seul puis avec le frein au pied ; s'il est plus fort que
 #    les pneus arrière (fiche), les roues arrière se bloquent, et l'ABS ne les desserre pas ; la voiture freine droit ;
 #  - DÉRAPAGE AU FREIN À MAIN à 50, 80 et 110 km/h : braquage à fond et frein à main jusqu'à 15° de dérive (1 s au plus) :
@@ -46,11 +38,7 @@ extends Node3D
 # FREIN_VIRAGE_DERIVE) ; freiner et braquer à fond qui laisse la voiture aller presque tout droit (décalage latéral sous
 # FREIN_BRAQUE_ECART fois l'avance : la trajectoire tournée seule ne suffit pas, le pivot final au ralenti la gonfle) ou la fait partir en tête-à-queue (dérive au-delà de FREIN_BRAQUE_DERIVE) ; un dérapage que le joueur ne rattrape pas en DERAPAGE_APRES s (dérive
 # sous 5° et lacet sous 0,15 rad/s, tenus 0,3 s), ou qui finit arrêté en travers ; une sportive qui ne dérape pas au moins
-# deux fois plus que le camion (city_sports_car_02 et city_truck_01, s'ils sont du passage). Depuis le 2026-09-25 : des roues
-# avant qui ne suivent pas la courbe de GTA V, vitesse tenue (écart médian au-delà de COURBE_TOLERANCE, lissage compris) ;
-# braqué à fond, en freinant ou en roue libre, un virage qui S'OUVRE en ralentissant (le rayon d'un palier plus de 10 %
-# au-dessus de celui du palier plus rapide) ; une traction (fDriveBiasFront au-dessus de 0,5) à qui les gaz font perdre plus
-# de 15 % de son accélération latérale braquée à fond (GAZ_TENUE).
+# deux fois plus que le camion (city_sports_car_02 et city_truck_01, s'ils sont du passage).
 # Rapporté sans être jugé : garde au sol du DESSOUS DU MODÈLE (ce qu'on voit) sur les bordures et à l'entrée du parking —
 # les modèles les plus bas (9 à 15 cm) passent visuellement dans l'arête d'une bordure de 15 cm prise de face.
 # Arguments après « -- » : --modeles=id1,id2 (par défaut les six silhouettes de réglage), --tous, --lot=i/n (i-ème part
@@ -62,9 +50,7 @@ const CarScript := preload("res://scenes/vehicles/Car.gd")
 const PiloteClavier := preload("res://scenes/tests/PiloteClavier.gd")
 const PARKING := "res://scenes/world/downtown/generated/buildings/parking_collision.res"
 const SILHOUETTES := ["city_microcar", "city_sedan_01", "city_sports_car_02", "city_suv_02", "city_truck_01", "city_bus_01"]
-const PHASES := ["repos", "acceleration", "freinage", "frein_virage", "frein_braque_50", "frein_braque_80", "frein_braque_120",
-		"braque_libre_50", "braque_libre_80", "braque_libre_120", "braque_gaz_50", "braque_gaz_80", "braque_gaz_120", "frein_main",
-		"virage_50", "virage_80", "virage_110", "virage_vmax",
+const PHASES := ["repos", "acceleration", "freinage", "frein_virage", "frein_braque_50", "frein_braque_80", "frein_main", "virage_50", "virage_80", "virage_110", "virage_vmax",
 		"derapage_50", "derapage_80", "derapage_110", "bordure_15_face", "bordure_15_biais", "bordure_17_face", "bordure_17_biais",
 		"parking"]
 # Frein à main : la sportive doit déraper facilement, le camion beaucoup moins (demande du joueur, 2026-09-24). Quand les
@@ -78,17 +64,7 @@ const DEPART_FREIN := Vector3(-3000.0, 0.0, 0.0)
 const DEPART_VIRAGE := Vector3(-3000.0, 0.0, -1500.0)
 const DEPART_DERAPAGE := Vector3(-3000.0, 0.0, -3000.0)
 const DEPART_FREIN_VIRAGE := Vector3(-1500.0, 0.0, 3000.0)
-# volant tenu (au stick), à droite : ce qui donne FREIN_VIRAGE_ROUES aux roues avant au coup de frein. Jusqu'au 2026-09-24 :
-# 10 % du volant, soit 4° à 100 km/h avec la butée de 40° à toute vitesse ; depuis que le braquage est réduit avec la
-# vitesse comme dans GTA V (2026-09-25 ; 0,264 à 100 km/h), il faut 38 % du volant pour les mêmes 4° — le même virage.
-const FREIN_VIRAGE_ROUES := 4.0    # °
-const DEPART_BRAQUE := Vector3(0.0, 0.0, -3000.0)
-const BRAQUE_DUREE := 6.0          # s au plus, braqué à fond en roue libre (jusqu'à 20 km/h) ou sous les gaz (3 s)
-const BRAQUE_FENETRE := 12         # pas : rayon de la trajectoire (chemin / cap de la vitesse tourné) sur cette fenêtre
-const PALIERS := [110.0, 100.0, 90.0, 80.0, 70.0, 60.0, 50.0, 40.0, 30.0]   # km/h : rayon relevé à chaque palier franchi
-const PALIER_TOLERANCE := 1.1      # d'un palier au suivant (plus lent), le rayon ne doit pas s'ouvrir de plus de 10 %
-const COURBE_TOLERANCE := 0.3      # ° : écart toléré entre l'angle des roues et la courbe de GTA V, vitesse tenue
-const GAZ_TENUE := 0.85            # traction braquée à fond : accélération latérale sous les gaz / en roue libre, au moins
+const FREIN_VIRAGE_VOLANT := 0.1   # volant tenu (au stick), à droite
 const FREIN_VIRAGE_DERIVE := 20.0  # ° : au-delà, la voiture part
 const DEPART_FREIN_BRAQUE := Vector3(1500.0, 0.0, -1500.0)
 const FREIN_BRAQUE_ECART := 0.12   # décalage latéral / avance au moins, entre le coup de frein et l'arrêt (tout droit : 0)
@@ -242,8 +218,6 @@ func _physics_process(delta: float) -> void:
 		fini = _p_virage(phase)
 	elif phase.begins_with("frein_braque_"):
 		fini = _p_frein_braque(phase)
-	elif phase.begins_with("braque_"):
-		fini = _p_braque(phase)
 	elif phase.begins_with("derapage_"):
 		fini = _p_derapage(phase)
 	elif phase.begins_with("bordure_"):
@@ -319,113 +293,6 @@ func _patinage() -> float:
 		if bool(w.motrice) and w.is_colliding():
 			p = maxf(p, absf(float(w.wv) * float(w.w_size)) - absf(_v()))
 	return p
-
-
-# LA COURBE DE GTA V, écrite ici indépendamment de ChassisGTA (le banc vérifie que le châssis la suit) : part de
-# fSteeringLock donnée par le volant à fond à `v` m/s le long de l'avant (code d'ikt32, CustomSteering.cpp,
-# calculateReduction), mêlée au réglage global `reduction_braquage` (1 : la courbe telle quelle).
-func _courbe_gta(v: float) -> float:
-	var mult := 1.0
-	if v > 3.0:
-		mult = minf(floorf((0.15 + pow(0.9, v - 7.2)) * 1000.0) / 1000.0, 1.0)
-	return clampf(1.0 + (mult - 1.0) * FichesVehicules.reglage("reduction_braquage"), 0.0, 1.0)
-
-
-# Angle « bicyclette » des roues avant (deg, positif), tiré des angles des deux roues (épure d'Ackermann : les cotangentes
-# des deux roues encadrent celle de l'angle bicyclette à égale distance).
-func _angle_bicyclette() -> float:
-	var cot := 0.0
-	var n := 0
-	for w in _ch.get("roues"):
-		if bool(w.avant):
-			var a := absf(float(w.braquage))
-			if a < 0.0001:
-				return 0.0
-			cot += 1.0 / tan(a)
-			n += 1
-	return rad_to_deg(atan(float(n) / cot)) if n > 0 else 0.0
-
-
-# Glissement des pneus avant (deg, moyenne des roues avant) et leur pic (fTractionCurveLateral / 2).
-func _glissement_avant() -> float:
-	var s := 0.0
-	var n := 0
-	for w in _ch.get("roues"):
-		if bool(w.avant):
-			s += rad_to_deg(float(w.derive_pneu))
-			n += 1
-	return s / float(maxi(n, 1))
-
-
-func _pic_avant() -> float:
-	return rad_to_deg(float(_ch.get("derive_pic")))
-
-
-# Trajectoire (cap de la VITESSE) : à appeler à chaque pas d'une phase braquée. Tient dans `_e` (clés « tr_ ») le chemin
-# parcouru, le cap tourné, et sur BRAQUE_FENETRE pas le rayon (chemin / cap tourné) et l'accélération latérale vraie ; rend
-# [rayon, a_lat].
-func _trajectoire() -> Array:
-	var vh := _ch.linear_velocity
-	vh.y = 0.0
-	var pos := _ch.global_position
-	var pas := pos - (_e.get("tr_prec", pos) as Vector3)
-	pas.y = 0.0
-	_e["tr_prec"] = pos
-	var da := 0.0
-	if vh.length() > 0.5:
-		var cap_v := atan2(vh.x, vh.z)
-		if _e.has("tr_cap_v"):
-			da = wrapf(cap_v - float(_e["tr_cap_v"]), -PI, PI)
-			_e["tr_tourne"] = float(_e.get("tr_tourne", 0.0)) + da
-		_e["tr_cap_v"] = cap_v
-	_e["tr_chemin"] = float(_e.get("tr_chemin", 0.0)) + pas.length()
-	var fen: Array = _e.get("tr_fen", [])
-	fen.append([pas.length(), absf(da), vh])
-	if fen.size() > BRAQUE_FENETRE:
-		fen.pop_front()
-	_e["tr_fen"] = fen
-	if fen.size() < BRAQUE_FENETRE:
-		return [INF, 0.0]
-	var ds := 0.0
-	var dc := 0.0
-	for f in fen:
-		ds += float(f[0])
-		dc += float(f[1])
-	var dv: Vector3 = (fen.back()[2] as Vector3) - (fen.front()[2] as Vector3)
-	var dir := ((fen.back()[2] as Vector3) + (fen.front()[2] as Vector3)).normalized()
-	var a_lat := (dv - dir * dv.dot(dir)).length() / (float(BRAQUE_FENETRE - 1) * get_physics_process_delta_time())
-	return [ds / maxf(dc, 0.00001), a_lat]
-
-
-# Rayon à chaque palier de vitesse franchi en ralentissant (`_e["paliers"]`, km/h -> m).
-func _paliers(v_kmh: float, rayon: float) -> void:
-	var p: Dictionary = _e.get("paliers", {})
-	for palier: float in PALIERS:
-		if not p.has(palier) and v_kmh <= palier and float(_e.get("v_depart", 0.0)) * 3.6 > palier + 2.0 and rayon < INF:
-			p[palier] = rayon
-	_e["paliers"] = p
-
-
-# Le rayon se resserre-t-il quand la voiture ralentit ? Rend le premier palier où il s'ouvre (plus de PALIER_TOLERANCE fois
-# celui du palier plus rapide), ou -1.
-func _palier_qui_s_ouvre(p: Dictionary) -> float:
-	var cles := p.keys()
-	cles.sort()
-	cles.reverse()
-	for i in range(1, cles.size()):
-		if float(p[cles[i]]) > PALIER_TOLERANCE * float(p[cles[i - 1]]):
-			return float(cles[i])
-	return -1.0
-
-
-func _texte_paliers(p: Dictionary) -> String:
-	var cles := p.keys()
-	cles.sort()
-	cles.reverse()
-	var t := []
-	for c in cles:
-		t.append("%.0f km/h %.1f m" % [c, p[c]])
-	return ", ".join(t)
 
 
 func _placer(sol: Vector3, cap: float, v := 0.0) -> void:
@@ -639,75 +506,12 @@ func _p_freinage(_phase: String) -> bool:
 	return false
 
 
-# BRAQUÉ À FOND EN ROUE LIBRE OU SOUS LES GAZ (2026-09-25) : cf. en tête. Lancé à la vitesse de la phase (sa vitesse de
-# pointe x 0,95 si elle est plus basse), D tenu, et rien d'autre (libre) ou W tenu (gaz). Roue libre : jusqu'à 20 km/h
-# (BRAQUE_DUREE au plus), le rayon relevé à chaque palier ; gaz : 3 s.
-func _p_braque(phase: String) -> bool:
-	var mode := phase.get_slice("_", 1)
-	var v0 := minf(float(phase.get_slice("_", 2)) * KMH, _vmax() * 0.95)
-	if not _e.has("phase"):
-		_e["phase"] = "lance"
-		_placer(DEPART_BRAQUE, _cap_vers_x(), v0)
-		return false
-	match String(_e["phase"]):
-		"lance":
-			_regule(v0)
-			if _t > 1.0:
-				_e["phase"] = "braque"
-				_e["t0"] = _t
-				_e["v_depart"] = _v()
-				_e["r"] = []
-				_e["a"] = []
-				_e["gl"] = []
-				_e["patin"] = 0.0
-				_e["penche"] = 0.0
-				_e["up_min"] = 1.0
-		"braque":
-			_pedales(mode == "gaz", false, true)
-			var tr := _trajectoire()
-			var dt := _t - float(_e["t0"])
-			var vh := _ch.linear_velocity
-			vh.y = 0.0
-			if dt >= 0.4 and dt <= 0.9:
-				(_e["r"] as Array).append(tr[0])
-				(_e["a"] as Array).append(tr[1])
-				(_e["gl"] as Array).append(_glissement_avant())
-				_e["v_fen"] = vh.length() * 3.6
-			if dt <= 0.9:
-				_e["patin"] = maxf(float(_e["patin"]), _patinage())
-			if mode == "libre":
-				_paliers(vh.length() * 3.6, float(tr[0]))
-			_e["penche"] = maxf(float(_e["penche"]), _penche())
-			_e["up_min"] = minf(float(_e["up_min"]), _ch.global_transform.basis.y.dot(Vector3.UP))
-			var fini := dt > (3.0 if mode == "gaz" else BRAQUE_DUREE) or (mode == "libre" and vh.length() * 3.6 < 20.0)
-			if fini:
-				_res[phase] = {"v": float(_e["v_depart"]) * 3.6, "v_fen": _e.get("v_fen", 0.0), "rayon": _moyenne(_e["r"]),
-						"a_lat": _moyenne(_e["a"]), "glissement": _moyenne(_e["gl"]), "pic": _pic_avant(), "patin": _e["patin"],
-						"adherence": float(_ch.get("adherence_av")) * 9.81, "paliers": _e.get("paliers", {}),
-						"tourne": rad_to_deg(absf(float(_e.get("tr_tourne", 0.0)))), "temps": dt, "v_fin": vh.length() * 3.6,
-						"penche": _e["penche"], "up_min": _e["up_min"]}
-				return true
-	return false
-
-
-func _moyenne(a) -> float:
-	var arr: Array = a
-	var s := 0.0
-	var n := 0
-	for x in arr:
-		if float(x) < INF:
-			s += float(x)
-			n += 1
-	return s / float(n) if n > 0 else NAN
-
-
 # FREINER ET TOURNER : cf. en tête. S à fond et D (braquage à fond) pressés ensemble, jusqu'à l'arrêt.
 func _p_frein_braque(phase: String) -> bool:
 	var v0 := minf(float(phase.get_slice("_", 2)) * KMH, _vmax() * 0.95)
 	if not _e.has("phase"):
 		_e["phase"] = "lance"
-		var decale := {"50": 0.0, "80": -200.0, "120": -400.0}
-		_placer(DEPART_FREIN_BRAQUE + Vector3(0.0, 0.0, float(decale.get(phase.get_slice("_", 2), 0.0))), _cap_vers_x(), v0)
+		_placer(DEPART_FREIN_BRAQUE + Vector3(0.0, 0.0, -200.0 if phase.ends_with("80") else 0.0), _cap_vers_x(), v0)
 		return false
 	var vh := _ch.linear_velocity
 	vh.y = 0.0
@@ -731,15 +535,6 @@ func _p_frein_braque(phase: String) -> bool:
 				_e["prec"] = _ch.global_position
 		"freine":
 			_pedales(false, true, true)
-			# rayon à chaque palier de vitesse franchi : il doit se resserrer quand la voiture ralentit (2026-09-25)
-			var tr := _trajectoire()
-			_e["v_depart"] = _e["v1"]
-			_paliers(vh.length() * 3.6, float(tr[0]))
-			var dtf := _t - float(_e["t0"])
-			if dtf >= 0.4 and dtf <= 0.9:
-				var gl: Array = _e.get("gl", [])
-				gl.append(_glissement_avant())
-				_e["gl"] = gl
 			var pos := _ch.global_position
 			var pas := pos - (_e["prec"] as Vector3)
 			pas.y = 0.0
@@ -761,8 +556,7 @@ func _p_frein_braque(phase: String) -> bool:
 				_res[phase] = {"v": float(_e["v1"]) * 3.6, "tourne": rad_to_deg(tourne),
 						"rayon": float(_e["chemin"]) / maxf(tourne, 0.001), "chemin": _e["chemin"],
 						"lateral": (d - dir0 * d.dot(dir0)).length(), "avance": d.dot(dir0), "derive": _e["derive"],
-						"temps": _t - float(_e["t0"]), "penche": _e["penche"], "up_min": _e["up_min"],
-						"paliers": _e.get("paliers", {}), "glissement": _moyenne(_e.get("gl", [])), "pic": _pic_avant()}
+						"temps": _t - float(_e["t0"]), "penche": _e["penche"], "up_min": _e["up_min"]}
 				return true
 	return false
 
@@ -775,13 +569,11 @@ func _p_frein_virage(_phase: String) -> bool:
 		_e["derive"] = 0.0
 		_e["penche"] = 0.0
 		_e["up_min"] = 1.0
-		# le stick qui donne FREIN_VIRAGE_ROUES aux roues à la vitesse du coup de frein (braquage réduit comme dans GTA V)
-		_e["stick"] = clampf(FREIN_VIRAGE_ROUES / (rad_to_deg(float(_ch.get("braquage_max"))) * _courbe_gta(v0)), 0.0, 1.0)
 		_placer(DEPART_FREIN_VIRAGE, _cap_vers_x(), v0)
 		return false
 	for a in ["gas", "brake", "left", "right", "handbrake"]:
 		Input.action_release(a)
-	Input.action_press("right", float(_e["stick"]))
+	Input.action_press("right", FREIN_VIRAGE_VOLANT)
 	var vh := _ch.linear_velocity
 	vh.y = 0.0
 	var avant := _ch.global_transform.basis.z
@@ -806,7 +598,7 @@ func _p_frein_virage(_phase: String) -> bool:
 				d.y = 0.0
 				_res["frein_virage"] = {"v": float(_e["v1"]) * 3.6, "derive": _e["derive"], "distance": d.length(),
 						"cap": rad_to_deg(absf(wrapf(atan2(avant.x, avant.z) - float(_e["cap0"]), -PI, PI))), "penche": _e["penche"],
-						"up_min": _e["up_min"], "stick": _e["stick"]}
+						"up_min": _e["up_min"]}
 				return true
 	return false
 
@@ -870,15 +662,8 @@ func _p_virage(phase: String) -> bool:
 		_e["a_lat"] = 0.0
 		_e["derive"] = 0.0
 		_e["v_braque"] = 0.0
-		_e["red"] = _courbe_gta(cible)     # la réduction du châssis, posée à vitesse (ChassisGTA.repartir)
 		_placer(DEPART_VIRAGE, _cap_vers_x(), cible)
 		return false
-	# RÉPLIQUE DU LISSAGE de la réduction (celui du code d'ikt32 : lerp(précédente, courbe(v), 1 - 0,01^dt) à chaque pas),
-	# nourrie de la même vitesse que le châssis lit au même pas ; l'angle des roues relu à ce pas est celui du pas précédent,
-	# d'où la valeur d'avant la mise à jour. Une vitesse qui baisse dans la partie raide de la courbe (la balayeuse, qui ne
-	# tient pas 50 km/h braquée à fond) met sinon 0,8° d'écart entre la courbe instantanée et les roues.
-	var red_prec := float(_e["red"])
-	_e["red"] = lerpf(red_prec, _courbe_gta(_v()), 1.0 - pow(0.01, get_physics_process_delta_time()))
 	var up := _ch.global_transform.basis.y.dot(Vector3.UP)
 	_e["up_min"] = minf(float(_e["up_min"]), up)
 	_e["penche"] = maxf(float(_e["penche"]), _penche())
@@ -914,29 +699,14 @@ func _p_virage(phase: String) -> bool:
 			avant.y = 0.0
 			if vh.length() > 2.0 and avant.length() > 0.1:
 				_e["derive"] = maxf(float(_e["derive"]), rad_to_deg(vh.normalized().angle_to(avant.normalized())))
-			# volant à fond depuis 1 s, vitesse tenue : l'angle des roues avant suit-il la courbe de GTA V ? (écart médian)
-			if _t - float(_e["t0"]) > 1.0:
-				var attendu := rad_to_deg(float(_ch.get("braquage_max"))) * red_prec
-				var ecarts: Array = _e.get("ecarts", [])
-				ecarts.append(absf(_angle_bicyclette() - attendu))
-				_e["ecarts"] = ecarts
-				_e["roues"] = _angle_bicyclette()
-				_e["attendu"] = attendu
-				var gl: Array = _e.get("gl", [])
-				gl.append(_glissement_avant())
-				_e["gl"] = gl
 			if _t - float(_e["t0"]) > VIRAGE_BRAQUE:
 				_e["phase"] = "apres"
 				_e["t0"] = _t
 		"apres":
 			_pedales()
 			if _t - float(_e["t0"]) > VIRAGE_APRES:
-				var ecarts: Array = _e.get("ecarts", [0.0])
-				ecarts.sort()
 				_res[phase] = {"v": float(_e["v_braque"]) * 3.6, "penche": _e["penche"], "up_min": _e["up_min"],
-						"leve": _e["leve_max"], "a_lat": _e["a_lat"], "derive": _e["derive"], "up_fin": up,
-						"roues": _e.get("roues", 0.0), "attendu": _e.get("attendu", 0.0), "ecart_courbe": ecarts[ecarts.size() / 2],
-						"glissement": _moyenne(_e.get("gl", [])), "pic": _pic_avant()}
+						"leve": _e["leve_max"], "a_lat": _e["a_lat"], "derive": _e["derive"], "up_fin": up}
 				return true
 	return false
 
@@ -1147,65 +917,34 @@ func _resume() -> void:
 			_faute("%s : freinage instable (cap %.1f°, distance %.1f m)" % [id, fr["cap"], fr["distance"]])
 	var fv: Dictionary = _res.get("frein_virage", {})
 	if not fv.is_empty():
-		morceaux.append("freinage fort en tournant (volant à %.0f %%, %.0f° aux roues) depuis %.0f km/h : dérive %.1f° au plus, cap pris %.0f°, %.1f m, roulis %.1f°" % [
-				float(fv["stick"]) * 100.0, FREIN_VIRAGE_ROUES, fv["v"], fv["derive"], fv["cap"], fv["distance"], fv["penche"]])
+		morceaux.append("freinage fort en tournant (volant à %.0f %%) depuis %.0f km/h : dérive %.1f° au plus, cap pris %.0f°, %.1f m, roulis %.1f°" % [
+				FREIN_VIRAGE_VOLANT * 100.0, fv["v"], fv["derive"], fv["cap"], fv["distance"], fv["penche"]])
 		if float(fv["derive"]) > FREIN_VIRAGE_DERIVE:
 			_faute("%s : freinage fort en tournant, la voiture part (dérive %.0f°)" % [id, fv["derive"]])
 		if float(fv["up_min"]) < cos(deg_to_rad(45.0)):
 			_faute("%s : freinage fort en tournant, le véhicule se couche" % id)
-	for ph in ["frein_braque_50", "frein_braque_80", "frein_braque_120"]:
+	for ph in ["frein_braque_50", "frein_braque_80"]:
 		var fb: Dictionary = _res.get(ph, {})
 		if fb.is_empty():
 			continue
-		morceaux.append("%s (S et braquage à fond à %.0f km/h) : trajectoire tournée de %.0f° avant l'arrêt, rayon moyen %.1f m, %.1f m de côté pour %.1f m en avant (%.1f m parcourus, %.2f s), dérive %.0f° au plus, roulis %.1f°, glissement avant %.1f° (pic %.1f°) ; rayon en ralentissant : %s" % [
-				ph, fb["v"], fb["tourne"], fb["rayon"], fb["lateral"], fb["avance"], fb["chemin"], fb["temps"], fb["derive"], fb["penche"],
-				fb["glissement"], fb["pic"], _texte_paliers(fb["paliers"])])
+		morceaux.append("%s (S et braquage à fond à %.0f km/h) : trajectoire tournée de %.0f° avant l'arrêt, rayon moyen %.1f m, %.1f m de côté pour %.1f m en avant (%.1f m parcourus, %.2f s), dérive %.0f° au plus, roulis %.1f°" % [
+				ph, fb["v"], fb["tourne"], fb["rayon"], fb["lateral"], fb["avance"], fb["chemin"], fb["temps"], fb["derive"], fb["penche"]])
 		if float(fb["lateral"]) < FREIN_BRAQUE_ECART * maxf(float(fb["avance"]), 0.1):
 			_faute("%s : %s, la voiture va presque tout droit (%.1f m de côté pour %.1f m en avant)" % [id, ph, fb["lateral"], fb["avance"]])
 		if float(fb["derive"]) > FREIN_BRAQUE_DERIVE:
 			_faute("%s : %s, tête-à-queue (dérive %.0f°)" % [id, ph, fb["derive"]])
 		if float(fb["up_min"]) < cos(deg_to_rad(45.0)):
 			_faute("%s : %s, le véhicule se couche" % [id, ph])
-		var s_ouvre := _palier_qui_s_ouvre(fb["paliers"])
-		if s_ouvre >= 0.0:
-			_faute("%s : %s, le virage s'ouvre en ralentissant (à %.0f km/h : %s)" % [id, ph, s_ouvre, _texte_paliers(fb["paliers"])])
-	for ph in ["braque_libre_50", "braque_libre_80", "braque_libre_120", "braque_gaz_50", "braque_gaz_80", "braque_gaz_120"]:
-		var bq: Dictionary = _res.get(ph, {})
-		if bq.is_empty():
-			continue
-		morceaux.append("%s (lancé à %.0f km/h, %.0f km/h entre 0,4 et 0,9 s) : rayon %.1f m, %.1f m/s² (%.0f %% de l'adhérence avant), glissement avant %.1f° (pic %.1f°), patinage %.1f m/s ; %.0f° tournés en %.1f s, %.0f km/h au bout ; roulis %.1f°%s" % [
-				ph, bq["v"], bq["v_fen"], bq["rayon"], bq["a_lat"], 100.0 * float(bq["a_lat"]) / maxf(float(bq["adherence"]), 0.1),
-				bq["glissement"], bq["pic"], bq["patin"], bq["tourne"], bq["temps"], bq["v_fin"], bq["penche"],
-				"" if (bq["paliers"] as Dictionary).is_empty() else " ; rayon en ralentissant : " + _texte_paliers(bq["paliers"])])
-		if float(bq["up_min"]) < cos(deg_to_rad(45.0)):
-			_faute("%s : %s, le véhicule se couche" % [id, ph])
-		var ouvre := _palier_qui_s_ouvre(bq["paliers"])
-		if ouvre >= 0.0:
-			_faute("%s : %s, le virage s'ouvre en ralentissant (à %.0f km/h : %s)" % [id, ph, ouvre, _texte_paliers(bq["paliers"])])
-	# REMETTRE LES GAZ EN TOURNANT NE FAIT PAS TOUT DROIT (2026-09-25) : quand les roues avant poussent le plus
-	# (fDriveBiasFront au-dessus de 0,5), elles peuvent patiner et perdre de leur tenue en travers ; les gaz doivent garder au
-	# moins GAZ_TENUE de l'accélération latérale de la roue libre, lancée à la même vitesse.
-	if FichesVehicules.nombre(f, "fDriveBiasFront") > 0.5:
-		for v in ["50", "80", "120"]:
-			var gz: Dictionary = _res.get("braque_gaz_" + v, {})
-			var lb: Dictionary = _res.get("braque_libre_" + v, {})
-			if gz.is_empty() or lb.is_empty():
-				continue
-			if float(gz["a_lat"]) < GAZ_TENUE * float(lb["a_lat"]):
-				_faute("%s : braqué à fond à %s km/h, les gaz font aller tout droit (%.1f m/s² sous les gaz pour %.1f en roue libre)" % [id, v, gz["a_lat"], lb["a_lat"]])
 	for ph in ["virage_50", "virage_80", "virage_110", "virage_vmax"]:
 		var v: Dictionary = _res.get(ph, {})
 		if v.is_empty():
 			continue
-		morceaux.append("%s (%.0f km/h) : %.1f° de roulis, %.1f m/s², dérive %.0f°, roues levées %.2f s, caisse %.0f° au pire ; roues avant à %.2f° pour %.2f° selon la courbe de GTA V (écart médian %.2f°), glissement avant %.1f° (pic %.1f°)" % [
-				ph, v["v"], _roulis(v), v["a_lat"], v["derive"], v["leve"], rad_to_deg(acos(clampf(v["up_min"], -1.0, 1.0))),
-				v["roues"], v["attendu"], v["ecart_courbe"], v["glissement"], v["pic"]])
+		morceaux.append("%s (%.0f km/h) : %.1f° de roulis, %.1f m/s², dérive %.0f°, roues levées %.2f s, caisse %.0f° au pire" % [
+				ph, v["v"], _roulis(v), v["a_lat"], v["derive"], v["leve"], rad_to_deg(acos(clampf(v["up_min"], -1.0, 1.0)))])
 		if float(v["up_min"]) < cos(deg_to_rad(45.0)) or float(v["up_fin"]) < 0.9:
 			_faute("%s : %s, le véhicule se couche (caisse à %.0f°)" % [id, ph, rad_to_deg(acos(clampf(v["up_min"], -1.0, 1.0)))])
 		if float(v["leve"]) > 0.3:
 			_faute("%s : %s, deux roues d'un même côté en l'air %.2f s" % [id, ph, v["leve"]])
-		if float(v["ecart_courbe"]) > COURBE_TOLERANCE:
-			_faute("%s : %s, les roues avant ne suivent pas la courbe de GTA V (%.2f° pour %.2f°)" % [id, ph, v["roues"], v["attendu"]])
 	var fm: Dictionary = _res.get("frein_main", {})
 	if not fm.is_empty():
 		# plus fort que ses pneus arrière (le châssis le dit, sur les valeurs EFFECTIVES : la fiche x les multiplicateurs

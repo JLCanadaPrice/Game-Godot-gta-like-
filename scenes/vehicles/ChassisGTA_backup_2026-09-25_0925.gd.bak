@@ -45,35 +45,23 @@ extends RigidBody3D
 # pas sur le nez, et l'arrière garde de quoi tenir en travers quand on freine en tournant ; à l'accélération la plus forte,
 # le report est deux fois plus fort (MARGE_POUSSEE) : la caisse s'écrase franchement.
 #
-# DIRECTION (_direction) : SEUL LE JOUEUR TOURNE LES ROUES, et, comme dans GTA V, le braquage que donne le volant à fond
-# BAISSE AVEC LA VITESSE. Au clavier, le volant va du centre à la butée en 0,14 s à l'arrêt (0,22 s à 108 km/h), et revient
-# au centre en 0,11 s quand on lâche la touche ; à la manette, il suit le stick. L'angle des roues est le volant x
-# fSteeringLock x la RÉDUCTION DE GTA V (reduction_gta) : 1 jusqu'à 31 km/h, 0,644 à 50 km/h, 0,355 à 80, 0,213 à 120.
-# Rien ne braque les roues à la place du joueur : pas de contre-braquage automatique.
-# Historique, parce que la direction a changé trois fois :
-#  - première version (2026-09-24 au soir) : trois aides, dont une borne À NOUS qui réduisait l'angle des roues avec la
-#    vitesse (au pic du pneu avant, par rapport à sa trajectoire) et un contre-braquage automatique ; RETIRÉES le même soir à
-#    la demande du joueur (« c'est MOI qui contre-braque » ; « je veux pouvoir braquer franchement à haute vitesse ») ;
-#  - deuxième version (même soir) : la butée à toute vitesse. Mesuré le 2026-09-25 (sonde hors dépôt,
-#    D:/p-recree/sondes/2026-09-25_braquage_vitesse/) : braqués à fond, les pneus avant glissaient à 30-47° pour un pic à
-#    9-11°, à 50 comme à 120 km/h. Ils raclaient au lieu de tourner : sous-virage en accélérant comme en freinant (berline à
-#    80 km/h, S et braquage à fond : 71° de trajectoire tournée jusqu'à l'arrêt, 4,3 m de côté pour 21 m en avant) ;
-#  - troisième version (2026-09-25), demande du joueur : « REMETS la réduction du braquage avec la vitesse, mais EXACTEMENT
-#    comme GTA V la fait [...] Le CONTRE-BRAQUAGE AUTOMATIQUE reste coupé ». La courbe est celle du code public d'ikt32
-#    (mod Manual Transmission, Gears/CustomSteering.cpp, calculateReduction), reprise du mod Custom Steering d'InfamousSabre,
-#    dont la description la donne pour « une copie presque exacte » de celle de Rockstar : 0,15 + 0,9^(v - 7,2), v la vitesse
-#    le long de l'avant en m/s, bornée à 1, au-dessus de 3 m/s seulement (en deçà et en marche arrière, aucune réduction),
-#    arrondie au millième par défaut, et lissée comme dans ce code (REDUCTION_LISSAGE). Le réglage global
-#    `reduction_braquage` (reglages_conduite.tres) est le « Steering reduction » du même code : 1 = la courbe telle quelle.
-#    Dans GTA V, un contre-braquage automatique de 15° au plus s'y ajoute (ikt32 : « Game default is 15 degrees ») ; il
-#    reste coupé ici : rattraper une glisse, c'est au joueur de contre-braquer.
+# DIRECTION (_direction) : SEUL LE JOUEUR TOURNE LES ROUES. Au clavier, le volant va du centre à la butée (fSteeringLock)
+# en 0,14 s à l'arrêt (0,22 s à 108 km/h), et revient au centre en 0,11 s quand on lâche la touche ; à la manette, il suit
+# le stick. La butée est la même à toute vitesse, et rien ne braque les roues à la place du joueur.
+# La première version (2026-09-24 au soir) avait trois aides, RETIRÉES le même soir à la demande du joueur : « Quand je
+# dérape et que je tourne, les roues contre-braquent toutes seules. Je ne veux pas ça : c'est MOI qui contre-braque » ;
+# « Plus je vais vite, moins les roues tournent [...] je veux pouvoir braquer franchement à haute vitesse ». C'étaient une
+# borne qui réduisait l'angle des roues avec la vitesse (au pic du pneu avant), un contre-braquage automatique dans les
+# glisses, et des roues qui suivaient la trajectoire volant lâché. GTA V a les deux premières (réduction du braquage avec la
+# vitesse et contre-braquage automatique ; des mods de GTA V les coupent) ; ce jeu ne les a plus. Braquer à fond à haute
+# vitesse fait glisser les pneus avant au-delà de leur pic : la voiture tourne sur leur adhérence de glisse et perd de la
+# vitesse ; rattraper une glisse, c'est au joueur de contre-braquer.
 #
 # STABILITÉ : PAR LA PHYSIQUE SEULEMENT, jamais par un braquage automatique. L'arrière tient un peu plus que l'avant
 # (fTractionBiasFront) : à la limite, la voiture sous-vire ; l'inertie en lacet est celle d'une boîte pleine aux dimensions
 # du modèle, multipliée comme dans GTA V (vecInertiaMultiplier) : la voiture pivote moins vite, une glisse se rattrape ; la
 # courbe du pneu redescend doucement après son pic (fTractionCurveMin proche de fTractionCurveMax) ; le freinage au pied est
-# réparti selon la charge (fBrakeBiasFront), l'arrière garde de quoi tenir en travers (répartiteur), et en virage son frein
-# cède à ce que demande le virage (2026-09-25, cf. _pneu) : ce sont des pièces des freins, pas de la direction.
+# réparti selon la charge (fBrakeBiasFront), l'arrière garde de quoi tenir en travers.
 #
 # Repère du châssis : l'avant en +Z, la gauche en +X (celui du pack, gardé : Car.repere_chassis, Car._mesures_chassis).
 
@@ -108,12 +96,6 @@ const VOLANT_BAS := 7.0             # /s : vitesse du volant au clavier à l'arr
 const VOLANT_HAUT := 4.5            # ... et à VOLANT_V
 const VOLANT_V := 30.0              # m/s
 const VOLANT_RETOUR := 9.0          # /s : retour vers le centre (touche lâchée), et changement de côté
-# RÉDUCTION DU BRAQUAGE AVEC LA VITESSE, la courbe de GTA V (cf. en tête et reduction_gta) : 0,15 + 0,9^(v - 7,2)
-const REDUCTION_V_MIN := 3.0        # m/s le long de l'avant : en deçà (et en marche arrière), aucune réduction
-const REDUCTION_PLANCHER := 0.15    # part du braquage gardée à très grande vitesse
-const REDUCTION_RAISON := 0.9       # la part au-dessus du plancher est multipliée par ceci à chaque m/s de plus...
-const REDUCTION_DECALAGE := 7.2     # ... au-delà de cette vitesse (m/s) ; bornée à 1, la courbe ne réduit rien jusqu'à 31 km/h
-const REDUCTION_LISSAGE := 0.01     # la réduction rejoint sa valeur de 1 - 0,01^dt à chaque pas (constante de temps 0,22 s)
 const MARGE_FREINAGE := 0.5        # au freinage le plus fort, le report de charge vaut au plus (1 - ceci) de la charge statique
 const MARGE_POUSSEE := 0.25         # de l'essieu le plus léger ; de même à l'accélération la plus forte (cf. configurer)
 const RAPPORTS := [0.0, 0.18, 0.33, 0.49, 0.66, 0.83]   # rapports AFFICHÉS : début de chacun, en part de la vitesse de pointe
@@ -139,9 +121,7 @@ var fiche := {}
 var v_max := 50.0                   # m/s
 var volant_impose := NAN            # outils et tests : volant tenu à cette valeur (-1..1), sans retour au centre
 var part_avant := 0.6               # part du poids sur l'essieu avant
-var braquage_max := 0.6             # rad (fSteeringLock) : volant à fond, à l'arrêt
-var reduction := 1.0                # part de braquage_max que donne le volant à fond à la vitesse du moment (reduction_gta, lissée)
-var _part_reduction := 1.0          # réglage global `reduction_braquage` (1 : la courbe de GTA V telle quelle)
+var braquage_max := 0.6             # rad (fSteeringLock)
 var derive_pic := 0.17              # rad : angle de glissement du pic de la courbe du pneu (fTractionCurveLateral / 2)
 var empattement := 2.5
 var voie := 1.5
@@ -193,7 +173,6 @@ func configurer(m: Dictionary, _braquage_pack: float, f: Dictionary) -> void:
 	_frein_main = FichesVehicules.frein_main_ms2(f)
 	_perte_basse = clampf(FichesVehicules.nombre(f, "fLowSpeedTractionLossMult") * FichesVehicules.PERTE_BASSE_VITESSE, 0.0, 0.8)
 	braquage_max = deg_to_rad(clampf(FichesVehicules.nombre(f, "fSteeringLock"), 5.0, 60.0))
-	_part_reduction = clampf(FichesVehicules.reglage("reduction_braquage"), 0.0, 2.0)
 	# pic de la courbe du pneu à fTractionCurveLateral / 2 (la définition de GTA V)
 	derive_pic = deg_to_rad(clampf(FichesVehicules.nombre(f, "fTractionCurveLateral"), 4.0, 70.0) * 0.5)
 	# l'adhérence se partage entre les essieux selon fTractionBiasFront : l'avant en a 2 x le biais, l'arrière 2 x le reste
@@ -346,7 +325,6 @@ func repartir(v_monde: Vector3) -> void:
 		w.detente_avant = INF
 	_sens = -1 if v_av < -V_ARRET else 1
 	_t_arret_s = 0.0
-	reduction = reduction_gta(v_av, _part_reduction)   # posée à vitesse (outils, tests), pas de lissage à rattraper
 
 
 # Vitesse le long de l'avant de la voiture (m/s), négative en marche arrière.
@@ -497,8 +475,7 @@ func _force_motrice(v_long: float) -> float:
 
 
 # DIRECTION (cf. en tête) : le volant suit les touches (ou le stick), et l'angle « bicyclette » des roues avant est le volant
-# x fSteeringLock x la réduction de GTA V à la vitesse du moment (+ : à gauche) ; puis celui de chaque roue (Ackermann).
-# Rien d'autre ne les tourne.
+# x fSteeringLock, à toute vitesse (+ : à gauche) ; puis celui de chaque roue (Ackermann). Rien d'autre ne les tourne.
 func _direction(delta: float, v_long: float) -> void:
 	if not is_nan(volant_impose):
 		steer2 = clampf(volant_impose, -1.0, 1.0)
@@ -508,37 +485,12 @@ func _direction(delta: float, v_long: float) -> void:
 		var retour := absf(_cible_volant) < absf(steer2) or _cible_volant * steer2 < 0.0
 		var vitesse := VOLANT_RETOUR if retour else lerpf(VOLANT_BAS, VOLANT_HAUT, clampf(absf(v_long) / VOLANT_V, 0.0, 1.0))
 		steer2 = move_toward(steer2, _cible_volant, vitesse * delta)
-	# la réduction suit sa valeur comme dans le code d'ikt32 : lerp(précédente, cible, 1 - REDUCTION_LISSAGE^dt)
-	reduction = lerpf(reduction, reduction_gta(v_long, _part_reduction), 1.0 - pow(REDUCTION_LISSAGE, delta))
-	var d := -steer2 * braquage_max * reduction
+	var d := -steer2 * braquage_max
 	steer = steer2
 	for w: Roue in roues:
 		if w.avant:
 			w.braquage = _ackermann(d, w.gauche)
 			w.rotation.y = w.braquage
-
-
-# LA COURBE DE GTA V (cf. en tête) : la part de fSteeringLock que donne le volant à fond à `v_avant` (m/s, le long de l'avant
-# de la voiture ; négative en marche arrière). Écrite comme calculateReduction dans Gears/CustomSteering.cpp du mod Manual
-# Transmission d'ikt32 : au-dessus de 3 m/s, 0,15 + 0,9^(v - 7,2), arrondie au millième par défaut et bornée à 1 ; puis
-# mêlée au réglage `part` (le « Steering reduction » de ce code, `reduction_braquage` ici : 0 = aucune réduction, 1 = la
-# courbe telle quelle). Le résultat est borné à [0 ; 1] : au-dessus de 1,18, le mélange du code d'ikt32 passe sous zéro à très
-# grande vitesse, et la direction s'inverserait. Statique : les tests et les outils la lisent aussi.
-static func reduction_gta(v_avant: float, part := 1.0) -> float:
-	var mult := 1.0
-	if v_avant > REDUCTION_V_MIN:
-		mult = REDUCTION_PLANCHER + pow(REDUCTION_RAISON, absf(v_avant) - REDUCTION_DECALAGE)
-		if mult != 0.0:
-			mult = floorf(mult * 1000.0) / 1000.0
-		mult = minf(mult, 1.0)
-	return clampf(1.0 + (mult - 1.0) * part, 0.0, 1.0)
-
-
-# Angle « bicyclette » des roues avant, volant à fond, à la vitesse du moment (rad) : fSteeringLock x la réduction. C'est ce
-# que peut obtenir le joueur (ConduiteReelleTest y règle son stick pour un angle de roues donné ; le joueur scripté des
-# dérapages, PiloteClavier, garde son volant rapporté à la butée à l'arrêt, cf. CLAUDE.md §15).
-func braquage_effectif() -> float:
-	return braquage_max * reduction
 
 
 # Épure d'Ackermann : la roue intérieure braque plus, les deux visent le centre du virage sur l'essieu arrière prolongé.
@@ -646,16 +598,8 @@ func _pneu(w: Roue, etat: PhysicsDirectBodyState3D, haut: Vector3, cdg: Vector3,
 	# lui garde de quoi tenir en travers. Sans lui, freiner fort en tournant usait toute l'adhérence de l'arrière des
 	# camions et des blindés, qui partaient en tête-à-queue (mesuré le 2026-09-24 : city_truck_03_flat, 34 % du freinage sur
 	# l'arrière, 6,9 kN par roue pour 5,2 kN tenus). C'est une pièce des freins : il ne touche pas à la direction.
-	# EN VIRAGE, LE FREIN ARRIÈRE CÈDE AU VIRAGE (2026-09-25, comme le « Cornering Brake Control » des ABS depuis les années
-	# 1990) : il n'use que ce que la demande en travers de son pneu laisse du cercle d'adhérence. Depuis que le braquage est
-	# réduit avec la vitesse comme dans GTA V, les roues avant freinées tournent près du pic de leur pneu, au lieu de racler
-	# braquées à 40° ; freiner fort et braquer à fond depuis 120 km/h faisait alors partir en tête-à-queue les véhicules qui
-	# freinent à la limite de leurs pneus avec un centre de gravité neutre (city_truck_02, 64° de dérive ; _flat 58°,
-	# city_utility_truck 49°, city_hotrod 53° ; 16 à 17° avec ceci) : l'arrière, délesté, gardait à peine 66 % de son
-	# adhérence en travers (répartiteur à 75 %). En ligne droite, la demande en travers est nulle : rien ne change.
 	if not w.avant:
 		frein = minf(frein, REPARTITEUR * cap)
-		frein = minf(frein, sqrt(maxf(cap * cap - fy * fy, 0.0)))
 	# le long, au centre de tangage de l'accélération quand la roue pousse, à celui du freinage sinon
 	w.point_lon = p + haut * (h_poussee if moteur != 0.0 and frein == 0.0 and main == 0.0 else h_tangage)
 	var fx := 0.0

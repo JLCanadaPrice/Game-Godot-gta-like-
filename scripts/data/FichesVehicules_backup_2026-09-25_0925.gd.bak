@@ -46,10 +46,10 @@ const DEFAUTS := {"fMass": 1300.0, "fInitialDriveForce": 0.25, "fInitialDriveMax
 		"trafic_accel_ms2": 3.0}
 const TEXTES := ["id", "nature", "vecCentreOfMassOffset", "vecInertiaMultiplier"]
 
-# Réglages globaux (multiplicateurs du freinage et de l'adhérence, réduction du braquage avec la vitesse) : un fichier à
-# part, pour les changer sans toucher aux 72 lignes (ReglagesConduite.gd).
+# Réglages globaux (multiplicateurs du freinage et de l'adhérence) : un fichier à part, pour les changer sans toucher aux
+# 72 lignes (ReglagesConduite.gd).
 const REGLAGES := "res://resources/vehicle_physics/reglages_conduite.tres"
-const CLES_REGLAGES := ["multiplicateur_freinage", "multiplicateur_adherence", "reduction_braquage"]
+const CLES_REGLAGES := ["multiplicateur_freinage", "multiplicateur_adherence"]
 
 static var _lu := false
 static var _fiches := {}
@@ -99,8 +99,7 @@ static func recharger() -> void:
 	_charger()
 
 
-# Un réglage global (reglages_conduite.tres) : `multiplicateur_freinage`, `multiplicateur_adherence`, `reduction_braquage`.
-# Fichier absent : 1.
+# Un réglage global (reglages_conduite.tres) : `multiplicateur_freinage`, `multiplicateur_adherence`. Fichier absent : 1.
 static func reglage(cle: String) -> float:
 	if _reglages.is_empty():
 		var r := load(REGLAGES) if ResourceLoader.exists(REGLAGES) else null
