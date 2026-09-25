@@ -54,13 +54,8 @@ travail imposée, les commandes exactes, les pièges déjà payés et l'état d'
 > les pistes de position des pieds), les animations étaient jouées 4 fois trop lentement et toujours vers l'avant :
 > corrigé, mesuré (pieds posés au plancher de la mesure). Pieds sur le sol réel (pentes, bordures) par une IK des
 > jambes. Arme sortie : bras tendu en position de tir (Idle_Gun_Pointing du pack Suit ; celles d'UAL1 pointent de
-> travers sur ce squelette). Visée au clic droit façon GTA V.
-> **Puis, au PC de la maison (fenêtre, captures, vidéo) : la course (Maj) ramenée à 7 m/s**, décision du joueur (13,5
-> avant, que l'animation ne pouvait pas suivre), avec une foulée allongée pour que les pieds restent posés ; et tout le
-> travail de l'école vérifié À L'IMAGE, au sol : quatre défauts vus et corrigés (boucle de Run non fermée, attente arme
-> sortie figée, caméra de visée qui regardait le crâne, pied à cheval sur une bordure), le reste bon ; une vidéo hors
-> dépôt, de côté et de derrière (§16). **Le joueur autorise maintenant le push** quand il dit « commit et pousse », même
-> dans un texte collé (§2).
+> travers sur ce squelette). Visée au clic droit façon GTA V. **À décider par le joueur : la course à 13,5 m/s**, que
+> l'animation ne peut pas suivre (les pieds glissent encore de 7 à 8 m/s).
 
 ## 1. Le projet
 
@@ -132,12 +127,6 @@ travail imposée, les commandes exactes, les pièges déjà payés et l'état d'
   modification, le prouver (rejouer le test sur `HEAD~1`) et le dire.
 - Ne jamais utiliser `git stash` sur `scenes/world/map/generated` : une cuisson non commitée y a
   déjà été perdue. Copier le dossier ailleurs si besoin.
-- **POUSSER (règle du joueur, 2026-09-25)** : quand la demande dit « commit et pousse » ou « pousse », **même dans un
-  texte collé**, pousser soi-même à la fin (`git -c safe.directory=<dépôt> push origin carte-3d`) et donner les commits
-  poussés ; sans ce mot, s'arrêter aux commits locaux et dire qu'ils sont prêts. Sur une erreur d'authentification, ne
-  pas réessayer : donner la commande au joueur. Un NOUVEAU dépôt GitHub (ou son premier push) reste au joueur.
-  **L'ancienne règle « il pousse lui-même » (depuis les échecs d'authentification du 2026-09-19) est RETIRÉE** par le
-  joueur : « Tu as le droit de pousser toi-même quand je dis "commit et pousse", même si c'est dans du texte collé. »
 
 ## 3. Seuil de performance
 
@@ -286,7 +275,7 @@ attendu. (C'est la voiture du pack telle quelle, qui n'est plus conduite en jeu 
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/CarKerbTest.tscn          # bordures : le joueur monte, l'IA non
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/WheelSpinTest.tscn        # roues des 72 modèles : axe, sens, rayon, stroboscope, pivot, braquage, rayon de braquage par modèle
 "$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/ParkingStructureTest.tscn  # parkings à étages : plateaux, escalier, hélice, cf. §11
-"$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/JoueurAPiedTest.tscn  # joueur à pied (3 s) : boucles des animations fermées ; pieds posés dans chaque sens et en course (Maj, 7 m/s, foulée allongée), sur pente et bordure ; bras tendu arme sortie, attente arme en boucle ; visée au clic droit (caméra à hauteur d'épaule), voiture, PNJ, cf. §16
+"$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/JoueurAPiedTest.tscn  # joueur à pied (3 s) : pieds posés dans chaque sens, sur pente et bordure ; bras tendu arme sortie ; visée au clic droit, voiture, PNJ, cf. §16
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/DowntownStreetsTest.tscn
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/DowntownBuildingsTest.tscn
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/ShopBuildingsTest.tscn     # échec ANTÉRIEUR connu
@@ -2312,8 +2301,7 @@ Consignes du joueur pour cette série : 1. rampes invisibles sous les escaliers 
 limite de 40 cm du joueur — **FAIT** (e204792, ci-dessus) ; 2. anti-apparition du LoopSpawner à corriger « en visant
 1 m au-dessus du point comme le culler », vérifier à la sonde que le nombre de refus devient réaliste et que la
 circulation se remplit toujours normalement ; 3. le coût physique d'environ 2 ms : **NE RIEN TOUCHER**, le joueur le
-teste en jeu. Un commit par point, tests concernés seulement. (Il poussait lui-même à l'époque ; règle retirée le
-2026-09-25, cf. §2 « Pousser ».)
+teste en jeu. Un commit par point, tests concernés seulement. Il pousse lui-même.
 
 **A. RÉGRESSION CORRIGÉE** (`Player.gd` seul), causée par la collision exacte de tous les bâtiments (2534f55,
 d68f46c, f7bf8b7) et passée inaperçue parce que NoclipTest n'était pas dans les tests lancés à ces étapes. Une coque
@@ -3601,9 +3589,6 @@ MESURANT, sans image, puis corriger ; 2. arme sortie, bras tendu en position de 
 projet (dire si aucune ne convient) ; 3. viser au clic droit comme dans GTA V. Quatre commits : `8f4ad33` (pieds),
 `2dc0636` (arme), `6f53547` (visée), `9d486ff` (pieds sur le sol réel). Test : `JoueurAPiedTest` (quatre parties, 3 s).
 Sondes hors dépôt : `D:/p-recree/sondes/2026-09-25_joueur/` (LISEZMOI).
-**Suite le même jour, au PC de la maison** (fenêtre, captures et vidéo) : la course ramenée à 7 m/s, décision du joueur,
-et tout vérifié À L'IMAGE au sol ; un commit, `a3147ec` (sous-sections « La course à 7 m/s », « Vérifié à l'image » et
-« Vidéo »).
 
 ### Les pieds : ce qui a été mesuré
 
@@ -3632,8 +3617,7 @@ sommets des chaussures `Suit_Feet`, par peau linéaire comme le moteur), vitesse
 
 - L'animation du SENS du déplacement (en diagonale, la plus proche et le modèle tourné du reste, 45° au plus), jouée à
   vitesse / vitesse propre, bornée à 2 fois la cadence d'origine ; changement d'animation à la même PHASE du pas (pied
-  gauche posé à 0,000 du cycle de Walk, 0,360 de Run, 0,121 de Run_Back, 0,880 de Run_Left, 0,360 de Run_Right ;
-  0,375 / 0,917 / 0,375 avant la boucle fermée, cf. « Vérifié à l'image »).
+  gauche posé à 0,000 du cycle de Walk, 0,375 de Run, 0,121 de Run_Back, 0,917 de Run_Left, 0,375 de Run_Right).
   Walk seulement sous 2 m/s : à 5 m/s une marche est physiquement impossible, c'est une course (Run x 1,66, pas de
   1,02 m, glisse au plancher).
 - `PiedsSolModifier` (après `JumpPoseModifier`) : le joueur mesure le sol sous chaque cheville et sous le bout de chaque
@@ -3644,30 +3628,10 @@ sommets des chaussures `Suit_Feet`, par peau linéaire comme le moteur), vitesse
   aussitôt et DESCEND à 4 m/s au plus.
 - Après : sol plat inchangé ; 10° : -1,6 à +3,8 cm ; 20° : -2,7 à +5,0 cm ; immobile sur 20° : 0,0 et +0,4 cm ; bordure :
   -0,8 à +8,2 cm (le talon levé pendant que la pointe monte sur la bordure).
-- **La course (Maj) à 13,5 m/s, laissée ici au joueur, est TRANCHÉE : 7 m/s** (sous-section suivante). Run à la
-  cadence maximale (x 2, 5 pas par seconde) posait les pieds jusqu'à 6 m/s ; au-delà ils glissaient (7 à 8 m/s à 13,5) :
-  une jambe de 0,9 m ne peut pas faire des foulées de 13,5 m/s avec cette animation, même avec une IK.
-  `SPRINT_SPEED` datait du tout premier commit.
-
-### La course à 7 m/s (2026-09-25, décision du joueur)
-
-- `SPRINT_SPEED` 13,5 -> **7 m/s**, l'ordre de grandeur de la course de GTA V. À 7 m/s, Run à sa foulée d'origine
-  demanderait 2,3 fois sa cadence (7 pas par seconde : les jambes moulinent) ; bornée à 2, les pieds glissaient.
-- **Foulée allongée** (`PiedsSolModifier.foulee`, `Player._foulee_voulue`) : 1 jusqu'à la course normale (5 m/s),
-  **1,25 à 7 m/s** (`FOULEE_SPRINT`), et au moins ce qu'il faut pour que la cadence ne dépasse pas 2 (course arrière,
-  vitesse propre 2,74 m/s). Run est alors joué à 7 / (3,02 x 1,25) = **1,85 fois** sa cadence. Le modificateur écarte
-  chaque pied de sa hanche le long du sens de la course, en entier pied posé et de moins en moins en le levant (le
-  talon relevé derrière soi ne s'allonge pas) ; le bassin descend de ce qu'il faut pour que la jambe posée atteigne son
-  pied (12 cm au plus ; l'animation tend déjà la jambe à 97 % en fin d'appui, mesuré), et la cible est bornée à 99,5 %
-  de la jambe (au-delà, le pied quitterait le tibia). La foulée suit la vitesse en douceur et revient à 1 à l'arrêt et
-  en l'air.
-- Mesuré (`JoueurAPiedTest`, 240 images) : pas de **1,14 m** (1,04 en course normale : 1,10 fois) ; glisse **1,16 m/s**
-  au pied gauche (0,17 x v, le plancher de la mesure) et **1,58** au droit (0,23 x v : Run a des clés irrégulières au
-  début de l'appui du pied droit, 2 à 4 cm par appui) ; semelle -0,3 / +3,2 cm. À 13,5 m/s : 7 à 8 m/s de glisse.
-  Un verrouillage du pied posé effacerait les 2 à 4 cm du pied droit : pas fait.
-- `MapGateTest` comparait les DISTANCES (1,5 s de course contre 2 s de marche), soit une course 1,33 fois plus rapide
-  que la marche : à 7 m/s il ne passait plus qu'à 5 % près (10,5 m contre 10,0). Il compare maintenant les vitesses
-  (course au moins 1,1 fois la marche) : 7,02 contre 5,00 m/s.
+- **RESTE, à décider par le joueur : la course (Maj) à 13,5 m/s.** Run à la cadence maximale (x 2, 5 pas par seconde)
+  pose les pieds jusqu'à 6 m/s ; au-delà ils glissent (7 à 8 m/s à 13,5). Une jambe de 0,9 m ne peut pas faire des
+  foulées de 13,5 m/s avec cette animation, même avec une IK : c'est la vitesse qu'il faudrait baisser (6 à 7 m/s, la
+  course de GTA V), ou accepter des jambes qui moulinent (cadence x 4,5). `SPRINT_SPEED` date du tout premier commit.
 
 ### Arme sortie et visée
 
@@ -3680,61 +3644,11 @@ sommets des chaussures `Suit_Feet`, par peau linéaire comme le moteur), vitesse
   la locomotion, puis pivote à l'épaule pour que le CANON pointe sur le point sous le réticule (80° au plus) ; le tir
   relève le canon de 8° au lieu de jouer l'animation de tir en corps entier (qui figeait les jambes : pieds qui
   glissaient). Mesuré : canon à 0,00° du point visé, 0,09° en courant.
-- Immobile arme sortie, le personnage joue Idle_Gun_Pointing EN BOUCLE (elle se figeait au bout de 1,67 s jusqu'au
-  2026-09-25, cf. « Vérifié à l'image »).
-- Visée : action `aim` (clic droit) dans `project.godot`. Arme sortie d'office ; caméra à 2 m derrière l'épaule droite
-  (0,7 m, par le pivot : le rayon de tir part toujours du centre de l'écran), À HAUTEUR D'ÉPAULE (pivot 0,72 m au-dessus
-  du centre du corps, 1,62 m du sol, dedans comme dehors ; 1,6 m, 0,55 m et 2,45 m du sol jusqu'au 2026-09-25, cf.
-  « Vérifié à l'image »), champ de 55° au lieu de 75, prise en un peu plus de 0,2 s, rendue en douceur (1,2 s) ; le
-  regard libre s'arrête et le corps fait face à la visée ; on avance à 3 m/s (Run et ses variantes à leur cadence
-  d'origine), sans sprint ; réticule du HUD plein en visée, pâli arme sortie. Coupée en voiture (caméra de conduite
-  remise sans zoom ni épaule), en noclip et dans l'eau.
-
-### Vérifié à l'image, au sol (2026-09-25, PC de la maison)
-
-Outil hors dépôt : `D:/p-recree/sondes/2026-09-25_joueur_images/regard.gd` (et sa scène). Le VRAI joueur, piloté par ses
-actions, sur un sol d'essai quadrillé (carreaux de 0,5 m : une glisse se voit d'une image à l'autre), une pente de 20° et
-un trottoir de 15 cm, soleil rasant et ombres (le contact des pieds se lit à l'ombre). Une PLANCHE par cas (N images
-recadrées autour du joueur) : `captures/<cas>_<tag>.png`, `avant` pour le code de l'école, `apres` pour le code final.
-Cas : course de côté et de derrière ; course (Maj) de côté, en arrière et de côté ; arrêt ; pente montée, descendue et
-immobile ; bordure montée et descendue ; arme de face, de côté, de derrière, en courant et en attente ; visée dans la
-caméra du jeu (droit devant, en haut, en bas, en marchant), de côté et de face.
-
-Vu et corrigé :
-1. **La boucle de Run n'était pas fermée.** Run, Run_Left et Run_Right finissent sur une clé à 0,8 s, différente de la
-   première, et le clip dure 0,8 s : il manque l'image qui revient à la pose de départ. À chaque tour, les pieds
-   sautaient de 8 à 16 cm (trouvé en cherchant pourquoi le pied droit glissait à 7 m/s). `Player._fermer_boucle` allonge
-   ces clips d'un pas de clé (0,8333 s) : la boucle interpole vers la première clé. Phases de pose recalées. Walk et
-   Run_Back étaient fermés. Contrôle : `JOUEUR_A_PIED_BOUCLES`, 0,001 m au raccord.
-2. **Arme sortie, immobile, le personnage se figeait au bout de 1,67 s** (planche `arme_attente`) : Idle_Gun_Pointing
-   était jouée une seule fois, parce que son nom contient « pointing » (mot réservé aux animations jouées une fois). Elle
-   boucle ; `JOUEUR_A_PIED_ATTENTE_ARME` le vérifie à 2,5 s.
-3. **La caméra de visée plongeait sur le crâne** (planches `visee_camera*`) : pivot à 1,55 m au-dessus du centre du
-   corps, soit 2,45 m du sol ; on ne voyait que le haut de la tête et la main au pistolet en bas de l'image, le corps
-   hors du cadre. Pivot 0,72 m (hauteur d'épaule), bras 2 m, épaule 0,7 m : le personnage dans le tiers gauche, le
-   bras et le pistolet vers le réticule. `JOUEUR_A_PIED_VISEE` vérifie le pivot (1,5 à 1,75 m des pieds ; 1,62) et la
-   caméra (2,2 m des pieds au plus ; 1,97).
-4. **Un pied à cheval sur le bord d'une bordure entrait dedans de 12 cm** : le sol était relevé sous la cheville, restée
-   en bas, alors que l'avant de la chaussure était déjà au-dessus de la bordure (`JoueurAPiedTest` après la boucle
-   fermée : semelle -12,1 cm). `Player._update_pieds_sol` compare le sol sous la pointe à celui de la cheville prolongé
-   par la pente (normale relevée sous la cheville) : 4 cm de plus (`PIED_MARCHE`), c'est une marche, et tout le pied se
-   pose dessus. Semelle -0,4 / +2,1 cm.
-
-Bon à l'image, sans retouche : pieds posés en course de côté, de derrière, en arrière et en pas de côté, et à 7 m/s ;
-pente de 20° montée, descendue, et immobile (les deux pieds posés) ; bordure montée et descendue ; bras tendu de face, de
-côté et en courant, canon vers le réticule ; visée droit devant, en haut, en bas et en marchant. **Ce que l'œil a vu et
-que les mesures ne disaient pas** : l'attente figée (aucun contrôle ne regardait au-delà d'une seconde) et la caméra de
-visée (le test vérifiait le bras, l'épaule et le champ, pas la hauteur).
-
-### Vidéo (2026-09-25)
-
-`D:/p-recree/videos_joueur/1_joueur_marche_course_arme_visee.mp4` (hors dépôt ; 30 s, 1280 x 720, 60 images/s). Le vrai
-joueur dans le vrai monde, sur Founders Plaza à 13 h (à 11 h la rue était dans l'ombre des tours), circulation et piétons
-retirés en mémoire : il marche (Z, 5 m/s), court (Maj, 7 m/s) en traversant la rue et ses deux bordures de 15 cm,
-s'arrête, sort l'arme (1), vise (clic droit) et avance en visant (3 m/s). Filmé de côté, puis de derrière avec la caméra
-du jeu (HUD et réticule) ; touches pressées et vitesse en bas à droite. Outil : `D:/p-recree/videos_joueur/outils/`
-(`video_joueur.gd` : film, `--apercu=`, `--balayage` des heures ; `convertir_mp4.py --fps=60` ; `sonde_trajet.gd`, les
-trajets droits et dégagés autour du départ du joueur, avec leurs marches).
+- Visée : action `aim` (clic droit) dans `project.godot`. Arme sortie d'office ; caméra à 1,6 m derrière l'épaule droite
+  (0,55 m, par le pivot : le rayon de tir part toujours du centre de l'écran), champ de 55° au lieu de 75, prise en un
+  peu plus de 0,2 s, rendue en douceur (1,2 s) ; le regard libre s'arrête et le corps fait face à la visée ; on avance à
+  3 m/s (Run et ses variantes à leur cadence d'origine), sans sprint ; réticule du HUD plein en visée, pâli arme
+  sortie. Coupée en voiture (caméra de conduite remise sans zoom ni épaule), en noclip et dans l'eau.
 
 ### Pièges payés
 
@@ -3747,26 +3661,14 @@ trajets droits et dégagés autour du départ du joueur, avec leurs marches).
   pointant sur le côté. Le bout de la chaussure est relevé sur le maillage.
 - **En headless, `Input.mouse_mode` reste VISIBLE** : le tir par l'action `shoot` (qui exige la souris capturée) ne part
   pas dans un test ; le test appelle `_shoot()`.
-- **Un clip de locomotion peut manquer son image de fermeture** (Run, Run_Left, Run_Right du pack Suit) : comparer la
-  pose des pieds juste avant la fin du clip et au début ; `JoueurAPiedTest` le fait pour les cinq.
-- **Étirement `canvas_items` : `Camera3D.unproject_position` rend des coordonnées de l'espace 2D de BASE (1152 x 648),
-  pas des pixels du rendu.** Un recadrage autour du joueur calculé ainsi tombait à côté en 800 x 450 : multiplier par
-  largeur de l'image / `get_viewport().get_visible_rect().size.x`.
-- **Un film piloté par script doit verrouiller la souris.** Au premier film, le joueur est parti à 67° de son cap
-  pendant la vue de côté, sans cause relevée ; la plus probable : un clic sur la fenêtre, qui recapture la souris
-  (`Player._unhandled_input`), la souris tournant alors le joueur. L'outil absorbe les événements de souris, remet la
-  souris libre à chaque image et tient le cap ; refilmé, aucun écart.
 
 ### À regarder en jeu (le soir)
 
 1. Marcher (Z), reculer (S), pas de côté (Q, D) et en diagonale : les pieds se posent et ne patinent plus, la bonne
-   animation dans chaque sens. En Maj (7 m/s) : foulée plus longue, pieds posés (le pied droit peut encore glisser de 2 à
-   4 cm par pas).
+   animation dans chaque sens. En Maj : les pieds glissent encore (vitesse de course, à décider).
 2. Monter et descendre une rue en pente, une rampe de parking, un trottoir : les pieds sur le sol, pas dedans ni
    au-dessus ; immobile sur une pente, les deux pieds posés.
 3. Touche 1 : le bras droit se tend, pistolet vers le centre de l'écran ; bouger la caméra en haut et en bas : le bras
-   suit ; courir arme sortie : le bras reste tendu ; tirer : petit recul, les jambes continuent ; immobile plus de
-   2 s : l'attente arme sortie tourne en boucle, plus de personnage figé.
-4. Clic droit tenu : la caméra se rapproche derrière l'épaule droite, à hauteur d'épaule, et zoome, personnage dans le
-   tiers gauche, réticule au centre ; marcher en visant ; relâcher : la caméra revient en douceur. Viser puis monter en
-   voiture (E) : caméra de conduite normale.
+   suit ; courir arme sortie : le bras reste tendu ; tirer : petit recul, les jambes continuent.
+4. Clic droit tenu : la caméra se rapproche derrière l'épaule droite et zoome, réticule au centre ; marcher en visant ;
+   relâcher : la caméra revient en douceur. Viser puis monter en voiture (E) : caméra de conduite normale.
