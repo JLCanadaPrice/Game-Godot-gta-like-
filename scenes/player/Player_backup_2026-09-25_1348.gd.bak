@@ -22,7 +22,6 @@ const PoseTirMod := preload("res://scenes/player/PoseTirModifier.gd")
 
 signal ammo_changed(current_ammo: int, reserve_ammo: int)
 signal weapon_equipped_changed(equipped: bool)
-signal aim_changed(aiming: bool)
 
 # Debug temporaire : imprime l'état d'animation chaque frame physique.
 @export var debug_anim := false
@@ -108,7 +107,7 @@ const FOOT_SPRING_LENGTH := 4.0
 const DRIVE_SPRING_LENGTH := 8.0     # caméra reculée en conduite
 const DRIVE_ZOOM_EXTRA := 3.5        # dézoom supplémentaire à vitesse max
 const DRIVE_ZOOM_SPEED := 30.0       # m/s (108 km/h) : la caméra a fini de reculer (24, la vitesse maximale de l'arcade,
-                                     # supprimée le 2026-09-24 ; une voiture réaliste va de 50 à 350 km/h)
+									 # supprimée le 2026-09-24 ; une voiture réaliste va de 50 à 350 km/h)
 
 # --- intérieur (ApartmentInterior -> set_indoor) ---
 const FOOT_PIVOT_HEIGHT := 1.6       # hauteur de la SpringArm dans Player.tscn
@@ -147,7 +146,6 @@ func _ready() -> void:
 	call_deferred("_emit_ammo")
 	call_deferred("_emit_weapon_state")
 
-	_fov_normal = camera.fov
 	_setup_model()
 	# outils de conduite (CLAUDE.md §13, §14) : B pose une berline (plus F8, qui arrête le jeu lancé depuis l'éditeur),
 	# et un compteur tant qu'on conduit
@@ -157,7 +155,7 @@ func _ready() -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	# Alt : regard libre. À la relâche, on lance le recentrage du corps.
-	if event.is_action_pressed("free_look") and not _driving and not _aiming:
+	if event.is_action_pressed("free_look") and not _driving:
 		_free_look = true
 		_free_look_returning = false
 	elif event.is_action_released("free_look"):
@@ -258,68 +256,14 @@ func is_indoor() -> bool:
 # À pied : en intérieur, bras court, pivot plus bas et léger décalage d'épaule. C'est le pivot qui se
 # décale (pas un h_offset) : le rayon de tir part toujours du centre de l'écran. Fondu dans les deux
 # sens. La SpringArm garde sa collision : les murs rapprochent encore la caméra dans les coins.
-# En visée (clic droit) : caméra rapprochée derrière l'épaule droite et léger zoom, prise vite (AIM_BLEND_SPEED),
-# rendue en douceur (CAMERA_BLEND_SPEED, comme en sortant d'un intérieur).
 func _update_foot_camera(delta: float) -> void:
 	var inside := is_indoor()
-	var k := clampf(delta * (AIM_BLEND_SPEED if _aiming else CAMERA_BLEND_SPEED), 0.0, 1.0)
-	var longueur := FOOT_SPRING_LENGTH
-	var epaule := 0.0
-	var pivot := FOOT_PIVOT_HEIGHT
-	if _aiming:
-		longueur = INDOOR_AIM_SPRING_LENGTH if inside else AIM_SPRING_LENGTH
-		epaule = AIM_SHOULDER_OFFSET
-		pivot = INDOOR_PIVOT_HEIGHT if inside else AIM_PIVOT_HEIGHT
-	elif inside:
-		longueur = INDOOR_SPRING_LENGTH
-		epaule = INDOOR_SHOULDER_OFFSET
-		pivot = INDOOR_PIVOT_HEIGHT
-	spring_arm.spring_length = lerpf(spring_arm.spring_length, longueur, k)
-	_shoulder = lerpf(_shoulder, epaule, k)
-	var pivot_y := lerpf(spring_arm.position.y, pivot, k)
+	var k := clampf(delta * CAMERA_BLEND_SPEED, 0.0, 1.0)
+	spring_arm.spring_length = lerpf(spring_arm.spring_length, INDOOR_SPRING_LENGTH if inside else FOOT_SPRING_LENGTH, k)
+	_shoulder = lerpf(_shoulder, INDOOR_SHOULDER_OFFSET if inside else 0.0, k)
+	var pivot_y := lerpf(spring_arm.position.y, INDOOR_PIVOT_HEIGHT if inside else FOOT_PIVOT_HEIGHT, k)
 	spring_arm.position = Vector3(0.0, pivot_y, 0.0) + spring_arm.basis.x * _shoulder
 	spring_arm.margin = INDOOR_ARM_MARGIN if inside else FOOT_ARM_MARGIN
-	camera.fov = lerpf(camera.fov, AIM_FOV if _aiming else _fov_normal, k)
-
-# --- Visée (clic droit maintenu, 2026-09-25) ---------------------------------
-# Comme dans GTA V : l'arme sort si elle était rangée ; la caméra se rapproche derrière l'épaule droite et zoome un peu
-# (_update_foot_camera) ; le corps fait face à la visée (le regard libre s'arrête : le corps pivote vers où regarde
-# la caméra) ; le bras tient la position de tir et le canon suit le réticule (PoseTirModifier). On avance en visant, à
-# AIM_SPEED, sans sprint. Au relâchement, la caméra revient en douceur. Pas de visée quand un panneau de l'interface a
-# la souris ; en voiture, en noclip et dans l'eau, la visée s'arrête (ces modes ne passent pas par _update_aim).
-const AIM_SPRING_LENGTH := 1.6       # m : caméra rapprochée (4 sinon)
-const INDOOR_AIM_SPRING_LENGTH := 1.2
-const AIM_SHOULDER_OFFSET := 0.55    # m : pivot décalé vers l'épaule droite
-const AIM_PIVOT_HEIGHT := 1.55
-const AIM_FOV := 55.0                # degrés : léger zoom (champ de la caméra à 75 sinon)
-const AIM_BLEND_SPEED := 12.0        # 1/s : la caméra prend la visée en un peu plus de 0,2 s
-const AIM_SPEED := 3.0               # m/s en visant : la course à sa cadence d'origine (vitesse propre 3,02 m/s)
-var _aiming := false
-var _fov_normal := 75.0
-
-func is_aiming() -> bool:
-	return _aiming
-
-func _update_aim() -> void:
-	var veut := Input.is_action_pressed("aim") and not _ui_owns_mouse()
-	if veut == _aiming:
-		return
-	_aiming = veut
-	if _aiming:
-		if not weapon_equipped:
-			weapon_equipped = true
-			_update_weapon_visibility()
-			weapon_equipped_changed.emit(true)
-		if _free_look:
-			_free_look = false
-			_free_look_returning = absf(spring_arm.rotation.y) > 0.001
-	aim_changed.emit(_aiming)
-
-# En voiture, en noclip, dans l'eau : plus de visée (la caméra de ces modes reprend la main).
-func _arreter_visee() -> void:
-	if _aiming:
-		_aiming = false
-		aim_changed.emit(false)
 
 func _physics_process(delta: float) -> void:
 	if _driving:
@@ -335,7 +279,6 @@ func _physics_process(delta: float) -> void:
 		return
 
 	_update_free_look_return(delta)
-	_update_aim()
 	_update_foot_camera(delta)
 	_handle_weapon(delta)
 	_update_pose_tir(delta)
@@ -362,9 +305,9 @@ func _physics_process(delta: float) -> void:
 	var input_dir := Input.get_vector("move_left", "move_right", "move_forward", "move_back")
 	var direction := (transform.basis * Vector3(input_dir.x, 0, input_dir.y)).normalized()
 
-	# course seulement si l'action est maintenue ET qu'on se déplace réellement ; en visée, ni sprint ni plus de AIM_SPEED
-	var sprinting := Input.is_action_pressed("sprint") and direction != Vector3.ZERO and not _aiming
-	var speed := AIM_SPEED if _aiming else (SPRINT_SPEED if sprinting else SPEED)
+	# course seulement si l'action est maintenue ET qu'on se déplace réellement
+	var sprinting := Input.is_action_pressed("sprint") and direction != Vector3.ZERO
+	var speed := SPRINT_SPEED if sprinting else SPEED
 
 	if direction:
 		velocity.x = direction.x * speed
@@ -910,7 +853,6 @@ func _emit_ammo() -> void:
 # l'entrée/sortie, même principe que notify_car_in_range côté véhicules.
 
 func notify_water_entered(zone: Node3D) -> void:
-	_arreter_visee()
 	if not _water_zones.has(zone):
 		_water_zones.append(zone)
 	_swimming = true
@@ -930,7 +872,6 @@ func notify_water_exited(zone: Node3D) -> void:
 # (SWIM_SPEED), sur le plan de l'eau seulement -- pas de plongée/saut ici,
 # hors du périmètre demandé.
 func _physics_process_swim(delta: float) -> void:
-	_update_foot_camera(delta)   # la caméra quitte la visée en douceur
 	_update_pose_tir(delta)   # le bras retombe dans l'eau
 	var y_diff := _water_surface_y - global_position.y
 	velocity.y = clampf(y_diff * SWIM_SURFACE_CORRECT_SPEED, -SWIM_SPEED, SWIM_SPEED)
@@ -962,7 +903,6 @@ func set_noclip(enabled: bool) -> void:
 	_noclip = enabled
 	velocity = Vector3.ZERO
 	_redresser_modele()
-	_arreter_visee()
 	var shape := $CollisionShape3D as CollisionShape3D
 	if enabled:
 		_noclip_saved = {"layer": collision_layer, "mask": collision_mask, "arm": spring_arm.collision_mask}
@@ -1151,11 +1091,6 @@ func _enter_vehicle(car: Node3D) -> void:
 	spring_arm.rotation.x = deg_to_rad(-18)
 	spring_arm.rotation.y = 0.0
 	spring_arm.spring_length = DRIVE_SPRING_LENGTH
-	# monté en visant (clic droit tenu) : la caméra de conduite repart de la caméra normale, sans zoom ni épaule
-	_arreter_visee()
-	_shoulder = 0.0
-	spring_arm.position = Vector3(0.0, FOOT_PIVOT_HEIGHT, 0.0)
-	camera.fov = _fov_normal
 
 	car.start_drive()
 

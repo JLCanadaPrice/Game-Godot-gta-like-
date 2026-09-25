@@ -26,23 +26,9 @@ extends Node
 #     (1,5° au plus) et pieds toujours posés ; un tir en courant ne fige plus les jambes (Run continue) et relève le
 #     canon de 5 à 10°, revenu sous 1° en 0,3 s ; rangée, le bras retombe.
 #
-#  3. VISÉE (clic droit maintenu, l'action aim), arme rangée au départ, en regard libre (Alt) caméra tournée de 60° :
-#     l'arme sort, le regard libre s'arrête et le CORPS pivote vers où regarde la caméra ; en 0,5 s la caméra est
-#     rapprochée (bras de 1,6 m au lieu de 4), décalée vers l'épaule droite (0,55 m) et zoomée (champ de 55° au lieu de
-#     75) ; le réticule du HUD est visible et plein ; le canon est sur le point visé. En avançant, en pas chassé à
-#     gauche, et Maj tenue : 3 m/s, Run / Run_Left à leur cadence d'origine (0,99), pieds posés, bras tendu, canon sur
-#     le point visé. Relâché : la caméra revient EN DOUCEUR (après une image, encore loin de sa place ; revenue en
-#     1,2 s, champ de 75°, plus d'épaule), le réticule reste (arme sortie) mais pâli. En VOITURE : monter en visant coupe
-#     la visée (caméra de conduite sans zoom ni épaule) et viser en voiture ne fait rien ; on redescend sans viser.
-#     Un PNJ debout à 8 m, pris sous le réticule et touché, perd des points de vie.
-#
 # Lancer : Godot --headless --path <projet> --fixed-fps 60 res://scenes/tests/JoueurAPiedTest.tscn
 
 const JOUEUR := preload("res://scenes/player/Player.tscn")
-const CAR := preload("res://scenes/vehicles/Car.tscn")
-const PNJ := preload("res://scenes/npc/NPC.tscn")
-const HUD := preload("res://scenes/ui/HUD.tscn")
-const BERLINE := "res://assets/vehicle_models_extra/city_vehicles_UNVERIFIED_LICENSE/Sedans/Veh_Sedan_01_Blue.glb"
 const PLANCHER := {"Run": [0.17, 0.17], "Run_Back": [0.14, 0.44], "Run_Left": [0.17, 0.17], "Run_Right": [0.17, 0.17]}
 const PIEDS := ["LeftFoot", "RightFoot"]
 
@@ -86,9 +72,6 @@ func _ready() -> void:
 	await _check_course()
 	await _check_arret()
 	await _check_arme()
-	await _check_visee()
-	await _check_visee_voiture()
-	await _check_visee_pnj()
 	print("JOUEUR_A_PIED_RESULT %s %s" % ["OK" if _errors.is_empty() else "FAIL", " | ".join(_errors)])
 	get_tree().quit(0 if _errors.is_empty() else 1)
 
@@ -204,140 +187,6 @@ func _check_arme() -> void:
 	print("JOUEUR_A_PIED_ARME_RANGEE poids %.2f, main %+.0f° sous l'épaule | %s" % [pt.get("poids"), baissee[1], _ok(ok)])
 	if not ok:
 		_errors.append("arme rangée")
-
-
-func _check_visee() -> void:
-	var hud := HUD.instantiate() as Control
-	hud.get_node("Minimap").free()   # la minicarte veut la carte du monde : hors sujet ici
-	add_child(hud)
-	var reticule := hud.get_node("Crosshair") as Control
-	var arm := _player.get_node("SpringArm3D") as SpringArm3D
-	var cam := _player.get_node("SpringArm3D/Camera3D") as Camera3D
-	var fov0 := cam.fov
-	var long0 := arm.spring_length
-	var arme0: bool = _player.get("weapon_equipped")
-	# regard libre (Alt), caméra tournée de 60° : le corps ne suit pas
-	_action("free_look", true)
-	await _frames(2)
-	arm.rotation.y = deg_to_rad(60.0)
-	var cap_camera := arm.global_rotation.y
-	await _frames(2)
-	Input.action_press("aim")
-	await _frames(30)
-	var ok_corps: bool = not bool(_player.get("_free_look")) and absf(arm.rotation.y) < deg_to_rad(2.0) \
-			and absf(wrapf(_player.global_rotation.y - cap_camera, -PI, PI)) < deg_to_rad(2.0)
-	_action("free_look", false)
-	await _frames(2)
-	var epaule: float = _player.get("_shoulder")
-	var ecart := _ecart_canon()
-	var ok: bool = not arme0 and bool(_player.get("weapon_equipped")) and bool(_player.call("is_aiming")) and ok_corps \
-			and absf(arm.spring_length - 1.6) < 0.05 and absf(epaule - 0.55) < 0.02 and absf(cam.fov - 55.0) < 0.5 \
-			and reticule.visible and reticule.modulate.a > 0.99 and ecart < 1.0
-	print("JOUEUR_A_PIED_VISEE clic droit (arme rangée, regard libre à 60°) : arme sortie %s, corps tourné vers la caméra %s | caméra : bras %.2f m (était %.2f), épaule %.2f m, champ %.1f° (était %.1f) | réticule visible %s, opacité %.1f | canon à %.2f° du point visé | %s" % [
-			_player.get("weapon_equipped"), ok_corps, arm.spring_length, long0, epaule, cam.fov, fov0, reticule.visible, reticule.modulate.a, ecart, _ok(ok)])
-	if not ok:
-		_errors.append("visée")
-	# se déplacer en visant
-	for cas: Array in [["avance", ["move_forward"], "Run"], ["gauche", ["move_left"], "Run_Left"], ["Maj", ["move_forward", "sprint"], "Run"]]:
-		var r := await _mesure(cas[1])
-		var plafond := (0.17 + 0.1) * 3.0
-		ok = r["anim"] == cas[2] and absf(float(r["corps"]) - 3.0) < 0.05 and absf(float(r["cadence"]) - 3.0 / 3.02) < 0.02 \
-				and float(r["LeftFoot"]["glisse"]) <= plafond and float(r["RightFoot"]["glisse"]) <= plafond \
-				and float(r["bras_min"]) >= 95.0 and float(r["ecart_max"]) <= 1.5
-		print("JOUEUR_A_PIED_VISEE_%s en visant : corps %.2f m/s, anim %s x %.2f, pieds : glisse %.2f / %.2f m/s (au plus %.2f), bras tendu à %.0f %% au moins, canon à %.2f° au plus | %s" % [
-				String(cas[0]).to_upper(), r["corps"], r["anim"], r["cadence"], r["LeftFoot"]["glisse"], r["RightFoot"]["glisse"],
-				plafond, r["bras_min"], r["ecart_max"], _ok(ok)])
-		if not ok:
-			_errors.append("visée en se déplaçant (%s)" % cas[0])
-	# relâcher : retour en douceur
-	await _frames(20)
-	Input.action_release("aim")
-	await _frames(1)
-	var long1 := arm.spring_length
-	var fov1 := cam.fov
-	await _frames(72)
-	ok = long1 > 1.65 and long1 < 2.5 and fov1 < 60.0 and absf(arm.spring_length - long0) < 0.05 and absf(cam.fov - fov0) < 0.5 \
-			and absf(float(_player.get("_shoulder"))) < 0.02 and not bool(_player.call("is_aiming")) and reticule.visible \
-			and reticule.modulate.a < 0.7
-	print("JOUEUR_A_PIED_VISEE_RELACHEE après une image : bras %.2f m, champ %.1f° (en route) ; après 1,2 s : bras %.2f m, champ %.1f°, épaule %.2f m | réticule visible %s, opacité %.1f | %s" % [
-			long1, fov1, arm.spring_length, cam.fov, _player.get("_shoulder"), reticule.visible, reticule.modulate.a, _ok(ok)])
-	if not ok:
-		_errors.append("visée relâchée")
-	hud.queue_free()
-
-
-func _check_visee_voiture() -> void:
-	var arm := _player.get_node("SpringArm3D") as SpringArm3D
-	var cam := _player.get_node("SpringArm3D/Camera3D") as Camera3D
-	var fov0: float = _player.get("_fov_normal")
-	var voiture := CAR.instantiate() as Node3D
-	voiture.set("forced_model_path", BERLINE)
-	add_child(voiture)
-	voiture.set("has_npc_driver", false)
-	voiture.global_position = _player.global_position + _player.global_transform.basis.x * 4.0 + Vector3.UP * 0.2
-	voiture.call("park")
-	await _frames(20)
-	Input.action_press("aim")
-	await _frames(20)
-	var visait: bool = _player.call("is_aiming")
-	_player.call("_enter_vehicle", voiture)
-	await _frames(10)
-	var coupe: bool = not bool(_player.call("is_aiming")) and absf(cam.fov - fov0) < 0.01 and absf(float(_player.get("_shoulder"))) < 0.001 \
-			and arm.position.is_equal_approx(Vector3(0.0, 1.6, 0.0))
-	Input.action_release("aim")
-	await _frames(2)
-	Input.action_press("aim")
-	await _frames(20)
-	var bras_voiture := arm.spring_length
-	var rien: bool = not bool(_player.call("is_aiming")) and absf(cam.fov - fov0) < 0.01 and bras_voiture > 7.0
-	Input.action_release("aim")
-	await _frames(2)
-	_player.call("_exit_vehicle")
-	await _frames(30)
-	var dehors: bool = not bool(_player.get("_driving")) and not bool(_player.call("is_aiming")) and _player.is_on_floor()
-	var ok := visait and coupe and rien and dehors
-	print("JOUEUR_A_PIED_VISEE_VOITURE visait en montant %s, visée coupée en voiture (champ %.1f°, épaule 0, pivot %s) %s, viser en voiture ne fait rien %s (bras de la caméra de conduite %.1f m), redescendu à pied sans viser %s | %s" % [
-			visait, cam.fov, arm.position, coupe, rien, bras_voiture, dehors, _ok(ok)])
-	if not ok:
-		_errors.append("visée et voiture")
-	voiture.queue_free()
-	await _frames(5)
-
-
-func _check_visee_pnj() -> void:
-	var pnj := PNJ.instantiate() as Node3D
-	add_child(pnj)
-	var devant := -_player.global_transform.basis.z
-	pnj.global_position = _player.global_position + devant * 8.0 + Vector3.UP * 0.05
-	await _frames(10)
-	var pv0: int = pnj.get("_hp")
-	Input.action_press("aim")
-	await _frames(30)
-	# le réticule sur le PNJ : le corps (donc la caméra) tourné vers lui, caméra baissée vers sa poitrine
-	var arm := _player.get_node("SpringArm3D") as SpringArm3D
-	var cam := _player.get_node("SpringArm3D/Camera3D") as Camera3D
-	for passe in 3:
-		var vers := pnj.global_position + Vector3.UP * 0.3 - cam.global_position
-		_player.rotation.y = atan2(-vers.x, -vers.z)
-		arm.rotation.x = atan2(vers.y, Vector2(vers.x, vers.z).length())
-		await _frames(6)
-	_player.call("_shoot")
-	await _frames(5)
-	var pv1: int = pnj.get("_hp")
-	Input.action_release("aim")
-	var ok := pv1 < pv0
-	print("JOUEUR_A_PIED_VISEE_PNJ PNJ à 8 m sous le réticule, un tir : points de vie %d -> %d | %s" % [pv0, pv1, _ok(ok)])
-	if not ok:
-		_errors.append("PNJ touché en visant")
-	await _frames(40)
-	pnj.queue_free()
-
-
-func _action(nom: String, appui: bool) -> void:
-	var ev := InputEventAction.new()
-	ev.action = nom
-	ev.pressed = appui
-	Input.parse_input_event(ev)
 
 
 func _basculer_arme() -> void:
