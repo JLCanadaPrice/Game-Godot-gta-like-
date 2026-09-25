@@ -50,12 +50,6 @@ travail imposée, les commandes exactes, les pièges déjà payés et l'état d'
 > vitesse (le contre-braquage était réduit aussi). **Puis, choix du joueur sur mesure : la réduction est LEVÉE pendant une
 > glisse au frein à main**, dès qu'il tient Espace et jusqu'à ce que la voiture soit redevenue droite : les dérapages se
 > rattrapent aussi vite qu'avant la réduction (1,07 s à 80 km/h, 1,32 à 110, en médiane sur les 72).
-> **Puis, le même jour : le joueur à pied** (§16). Les pieds ne bougeaient pas (l'import reciblé de `Suit.gltf` perdait
-> les pistes de position des pieds), les animations étaient jouées 4 fois trop lentement et toujours vers l'avant :
-> corrigé, mesuré (pieds posés au plancher de la mesure). Pieds sur le sol réel (pentes, bordures) par une IK des
-> jambes. Arme sortie : bras tendu en position de tir (Idle_Gun_Pointing du pack Suit ; celles d'UAL1 pointent de
-> travers sur ce squelette). Visée au clic droit façon GTA V. **À décider par le joueur : la course à 13,5 m/s**, que
-> l'animation ne peut pas suivre (les pieds glissent encore de 7 à 8 m/s).
 
 ## 1. Le projet
 
@@ -95,8 +89,7 @@ travail imposée, les commandes exactes, les pièges déjà payés et l'état d'
   (`ReglagesConduite.gd`, `reglages_conduite.tres`, même jour, §14), et de nouveau **640** depuis la conduite façon GTA V
   (même jour au soir, §15 : `ChassisGTA.gd` et `RoueGTA.gd` ajoutés ; `ChassisReel.gd`, `ChassisRoue.gd` et l'outil
   `FichesVehiculesOutil` — son script et sa scène — retirés), puis **641** avec le joueur au clavier des tests
-(`scenes/tests/PiloteClavier.gd`, même soir, §15), puis **645** avec le joueur à pied du 2026-09-25 (`PoseTirModifier.gd`,
-`PiedsSolModifier.gd`, `JoueurAPiedTest` et sa scène, §16). **`ProjectLoadCheck` ne parcourt pas `res://assets`** (seulement scenes, scripts, resources, shaders) : les
+(`scenes/tests/PiloteClavier.gd`, même soir, §15). **`ProjectLoadCheck` ne parcourt pas `res://assets`** (seulement scenes, scripts, resources, shaders) : les
   98 scènes d'accessoires n'entrent pas dans son compte.
 
 ## 2. Méthode de travail (imposée, non négociable)
@@ -275,11 +268,10 @@ attendu. (C'est la voiture du pack telle quelle, qui n'est plus conduite en jeu 
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/CarKerbTest.tscn          # bordures : le joueur monte, l'IA non
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/WheelSpinTest.tscn        # roues des 72 modèles : axe, sens, rayon, stroboscope, pivot, braquage, rayon de braquage par modèle
 "$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/ParkingStructureTest.tscn  # parkings à étages : plateaux, escalier, hélice, cf. §11
-"$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/JoueurAPiedTest.tscn  # joueur à pied (3 s) : pieds posés dans chaque sens, sur pente et bordure ; bras tendu arme sortie ; visée au clic droit, voiture, PNJ, cf. §16
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/DowntownStreetsTest.tscn
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/DowntownBuildingsTest.tscn
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/ShopBuildingsTest.tscn     # échec ANTÉRIEUR connu
-"$GODOT" --headless --path "$PROJET" --script res://scenes/world/map/tools/ProjectLoadCheck.gd   # attendu : 645 fichiers, 0 échec
+"$GODOT" --headless --path "$PROJET" --script res://scenes/world/map/tools/ProjectLoadCheck.gd   # attendu : 641 fichiers, 0 échec
 ```
 
 Outil d'inspection, hors batterie : `res://scenes/tests/VehicleSortTest.tscn` aligne les véhicules du catalogue
@@ -3581,94 +3573,3 @@ maison) ; le réglage au ressenti.
 
 Le réglage au ressenti, par le joueur, en jeu (le tableau, les deux multiplicateurs et la réduction du braquage sont faits
 pour ça) ; les chocs contre la circulation (§7) ; les sons.
-
-## 16. Joueur à pied : pieds, arme sortie, visée (2026-09-25)
-
-Demande du joueur (PC de l'école, headless seulement) : 1. les pieds sont bizarres en marchant, trouver la cause EN
-MESURANT, sans image, puis corriger ; 2. arme sortie, bras tendu en position de tir, avec les animations des packs du
-projet (dire si aucune ne convient) ; 3. viser au clic droit comme dans GTA V. Quatre commits : `8f4ad33` (pieds),
-`2dc0636` (arme), `6f53547` (visée), `9d486ff` (pieds sur le sol réel). Test : `JoueurAPiedTest` (quatre parties, 3 s).
-Sondes hors dépôt : `D:/p-recree/sondes/2026-09-25_joueur/` (LISEZMOI).
-
-### Les pieds : ce qui a été mesuré
-
-La sonde relève, image par image, sur le VRAI joueur piloté par ses actions : os des pieds, SEMELLE (le plus bas des
-sommets des chaussures `Suit_Feet`, par peau linéaire comme le moteur), vitesse de l'os du pied pendant l'appui
-(« glisse »), hauteur de la semelle au-dessus du sol sous elle.
-- **Cause 1 : les pieds ne bougeaient pas.** Amplitude 0,00 m en marche comme en course : la pointe tournait sur place
-  et s'enfonçait de 18 à 20 cm dans le sol, le pied était traîné à la vitesse du corps. L'import de `Suit.gltf` est
-  reciblé sur le profil humanoïde (BoneMap), et le reciblage de Godot SUPPRIME par défaut les pistes de position des os
-  autres que la racine et les hanches (`retarget/remove_tracks/unimportant_positions`). Or dans ce squelette
-  Quaternius les pieds sont enfants de `Root`, pas des tibias (commandes de pied, comme une IK) : sans position, ils
-  restaient à leur place de repos. Les PNJ (`npc_models`, non reciblés) avaient leurs pistes. Corrigé dans
-  `Suit.gltf.import` (`unimportant_positions = false`), réimporté.
-- **Cause 2 : la vitesse.** Vitesse PROPRE des animations (celle où le pied d'appui reste posé, mesurée sur la pose) :
-  Walk 1,15 m/s, Run 3,02, Run_Back 2,74, Run_Left et Run_Right 3,02. Le joueur allait à 5 et 13,5 m/s en les jouant
-  à vitesse 1 : glisse de 4 à 4,7 m/s en marche, 10 à 11 en course.
-- **Cause 3 : la mauvaise animation.** Reculer ou aller de côté jouait la marche AVANT (le corps regarde toujours où
-  vise la caméra). Le pack a Run_Back, Run_Left, Run_Right.
-- **Cause 4 : les pentes.** Animations faites pour un sol plat : semelle de -2,9 à +10,3 cm sur 10°, de -5,8 à +19,7 cm
-  sur 20°, un pied à +5,5 et l'autre à -6 cm immobile sur 20°, pied flottant jusqu'à +14,8 cm sur une bordure de 15 cm.
-- **Le plancher de la mesure** : même une animation jouée EXACTEMENT à sa vitesse propre donne une « glisse » de 0,16 à
-  0,17 fois la vitesse (0,44 pour le pied droit de Run_Back) : c'est le déroulé du pied, talon puis pointe. Le test juge
-  « posé » par rapport à ce plancher.
-
-### Les pieds : ce qui a été fait
-
-- L'animation du SENS du déplacement (en diagonale, la plus proche et le modèle tourné du reste, 45° au plus), jouée à
-  vitesse / vitesse propre, bornée à 2 fois la cadence d'origine ; changement d'animation à la même PHASE du pas (pied
-  gauche posé à 0,000 du cycle de Walk, 0,375 de Run, 0,121 de Run_Back, 0,917 de Run_Left, 0,375 de Run_Right).
-  Walk seulement sous 2 m/s : à 5 m/s une marche est physiquement impossible, c'est une course (Run x 1,66, pas de
-  1,02 m, glisse au plancher).
-- `PiedsSolModifier` (après `JumpPoseModifier`) : le joueur mesure le sol sous chaque cheville et sous le bout de chaque
-  chaussure (un rayon chacun par image physique) ; le modificateur descend le bassin du plus grand creux, déplace chaque
-  pied de son écart (incliné sur la pente s'il est posé), replie la jambe sur lui (IK analytique à deux os : cuisse
-  0,433 m, tibia 0,51 m, genou gardé dans le plan de l'animation ; la cheville reste au bout du tibia à 1,6 cm près dans
-  toutes les animations, mesuré) et relève le pied pour que la pointe ne traverse pas le sol sous elle. L'écart MONTE
-  aussitôt et DESCEND à 4 m/s au plus.
-- Après : sol plat inchangé ; 10° : -1,6 à +3,8 cm ; 20° : -2,7 à +5,0 cm ; immobile sur 20° : 0,0 et +0,4 cm ; bordure :
-  -0,8 à +8,2 cm (le talon levé pendant que la pointe monte sur la bordure).
-- **RESTE, à décider par le joueur : la course (Maj) à 13,5 m/s.** Run à la cadence maximale (x 2, 5 pas par seconde)
-  pose les pieds jusqu'à 6 m/s ; au-delà ils glissent (7 à 8 m/s à 13,5). Une jambe de 0,9 m ne peut pas faire des
-  foulées de 13,5 m/s avec cette animation, même avec une IK : c'est la vitesse qu'il faudrait baisser (6 à 7 m/s, la
-  course de GTA V), ou accepter des jambes qui moulinent (cadence x 4,5). `SPRINT_SPEED` date du tout premier commit.
-
-### Arme sortie et visée
-
-- **Animations des packs** (main droite vue de l'épaule, sur le squelette du joueur) : Suit : Idle_Gun = bras pendant
-  (-81°) ; Idle_Gun_Pointing = bras tendu à 98 %, -8°, droit devant (LA position de tir) ; Idle_Gun_Shoot, Gun_Shoot et
-  Run_Shoot la reprennent avec un recul. UAL1, reciblé sur le même profil : Pistol_Aim_Neutral pointe à gauche et vers le
-  bas (+78°, -52°), Pistol_Aim_Up à gauche, Pistol_Aim_Down vers l'arrière (+132°) : INUTILISABLES (le décalage de pose
-  de repos que craignait le commentaire de `use_ual_pistol`). UAL2 : rien. Aucune animation de fusil.
-- `PoseTirModifier` (après `PiedsSolModifier`) : arme sortie, le bras droit prend la pose de Idle_Gun_Pointing par-dessus
-  la locomotion, puis pivote à l'épaule pour que le CANON pointe sur le point sous le réticule (80° au plus) ; le tir
-  relève le canon de 8° au lieu de jouer l'animation de tir en corps entier (qui figeait les jambes : pieds qui
-  glissaient). Mesuré : canon à 0,00° du point visé, 0,09° en courant.
-- Visée : action `aim` (clic droit) dans `project.godot`. Arme sortie d'office ; caméra à 1,6 m derrière l'épaule droite
-  (0,55 m, par le pivot : le rayon de tir part toujours du centre de l'écran), champ de 55° au lieu de 75, prise en un
-  peu plus de 0,2 s, rendue en douceur (1,2 s) ; le regard libre s'arrête et le corps fait face à la visée ; on avance à
-  3 m/s (Run et ses variantes à leur cadence d'origine), sans sprint ; réticule du HUD plein en visée, pâli arme
-  sortie. Coupée en voiture (caméra de conduite remise sans zoom ni épaule), en noclip et dans l'eau.
-
-### Pièges payés
-
-- **Un import reciblé perd les pistes de position.** Après tout changement d'import d'un modèle Quaternius avec BoneMap,
-  vérifier les pistes des pieds (`JoueurAPiedTest`, partie 1, le fait pour `Suit.gltf`).
-- **Hors du signal `skeleton_updated`, `Skeleton3D.get_bone_global_pose()` rend la pose de l'ANIMATION**, modificateurs
-  retirés. Une mesure de la pose affichée (bras de tir, pieds adaptés) se fait dans ce signal ; une première mesure du
-  bras, faite hors du signal, voyait le bras de la course et pas le bras tendu.
-- **Ne rien déduire de la pose de repos de `Suit.gltf`** : c'est une pose de marche, pieds décalés, le pied gauche
-  pointant sur le côté. Le bout de la chaussure est relevé sur le maillage.
-- **En headless, `Input.mouse_mode` reste VISIBLE** : le tir par l'action `shoot` (qui exige la souris capturée) ne part
-  pas dans un test ; le test appelle `_shoot()`.
-
-### À regarder en jeu (le soir)
-
-1. Marcher (Z), reculer (S), pas de côté (Q, D) et en diagonale : les pieds se posent et ne patinent plus, la bonne
-   animation dans chaque sens. En Maj : les pieds glissent encore (vitesse de course, à décider).
-2. Monter et descendre une rue en pente, une rampe de parking, un trottoir : les pieds sur le sol, pas dedans ni
-   au-dessus ; immobile sur une pente, les deux pieds posés.
-3. Touche 1 : le bras droit se tend, pistolet vers le centre de l'écran ; bouger la caméra en haut et en bas : le bras
-   suit ; courir arme sortie : le bras reste tendu ; tirer : petit recul, les jambes continuent.
-4. Clic droit tenu : la caméra se rapproche derrière l'épaule droite et zoome, réticule au centre ; marcher en visant ;
-   relâcher : la caméra revient en douceur. Viser puis monter en voiture (E) : caméra de conduite normale.
