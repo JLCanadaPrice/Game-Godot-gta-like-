@@ -48,9 +48,8 @@ extends RigidBody3D
 # DIRECTION (_direction) : SEUL LE JOUEUR TOURNE LES ROUES, et, comme dans GTA V, le braquage que donne le volant à fond
 # BAISSE AVEC LA VITESSE. Au clavier, le volant va du centre à la butée en 0,14 s à l'arrêt (0,22 s à 108 km/h), et revient
 # au centre en 0,11 s quand on lâche la touche ; à la manette, il suit le stick. L'angle des roues est le volant x
-# fSteeringLock x la RÉDUCTION DE GTA V (reduction_gta) : 1 jusqu'à 31 km/h, 0,644 à 50 km/h, 0,355 à 80, 0,213 à 120 ;
-# pendant une glisse au frein à main, elle est levée (la butée entière, cf. plus bas). Rien ne braque les roues à la place
-# du joueur : pas de contre-braquage automatique.
+# fSteeringLock x la RÉDUCTION DE GTA V (reduction_gta) : 1 jusqu'à 31 km/h, 0,644 à 50 km/h, 0,355 à 80, 0,213 à 120.
+# Rien ne braque les roues à la place du joueur : pas de contre-braquage automatique.
 # Historique, parce que la direction a changé trois fois :
 #  - première version (2026-09-24 au soir) : trois aides, dont une borne À NOUS qui réduisait l'angle des roues avec la
 #    vitesse (au pic du pneu avant, par rapport à sa trajectoire) et un contre-braquage automatique ; RETIRÉES le même soir à
@@ -67,14 +66,7 @@ extends RigidBody3D
 #    arrondie au millième par défaut, et lissée comme dans ce code (REDUCTION_LISSAGE). Le réglage global
 #    `reduction_braquage` (reglages_conduite.tres) est le « Steering reduction » du même code : 1 = la courbe telle quelle.
 #    Dans GTA V, un contre-braquage automatique de 15° au plus s'y ajoute (ikt32 : « Game default is 15 degrees ») ; il
-#    reste coupé ici : rattraper une glisse, c'est au joueur de contre-braquer ;
-#  - le même jour, LA RÉDUCTION EST LEVÉE PENDANT UNE GLISSE AU FREIN À MAIN, pour que le joueur ait toute sa butée pour
-#    contre-braquer : dès qu'il tient Espace, et, Espace lâché, tant que la voiture est en travers (dérive au-dessus de
-#    DERIVE_FIN_GLISSE), levée et remise au lissage de la réduction. Demandé « tant que je tiens le frein à main, comme
-#    l'option du mod d'ikt32 » (« No reduction on handbrake ») ; mesuré, cela ne suffisait pas : on lâche Espace avant de
-#    contre-braquer, et la réduction revenait (72 modèles, dérapages rattrapés en 1,22 s à 80 km/h et 1,90 s à 110 en
-#    médiane, un modèle jamais, contre 1,08 et 1,32 s sans réduction). Gardée jusqu'à la voiture droite, choix du joueur :
-#    1,07 et 1,30 s. Hors d'une glisse au frein à main, la courbe de GTA V telle quelle.
+#    reste coupé ici : rattraper une glisse, c'est au joueur de contre-braquer.
 #
 # STABILITÉ : PAR LA PHYSIQUE SEULEMENT, jamais par un braquage automatique. L'arrière tient un peu plus que l'avant
 # (fTractionBiasFront) : à la limite, la voiture sous-vire ; l'inertie en lacet est celle d'une boîte pleine aux dimensions
@@ -122,7 +114,6 @@ const REDUCTION_PLANCHER := 0.15    # part du braquage gardée à très grande v
 const REDUCTION_RAISON := 0.9       # la part au-dessus du plancher est multipliée par ceci à chaque m/s de plus...
 const REDUCTION_DECALAGE := 7.2     # ... au-delà de cette vitesse (m/s) ; bornée à 1, la courbe ne réduit rien jusqu'à 31 km/h
 const REDUCTION_LISSAGE := 0.01     # la réduction rejoint sa valeur de 1 - 0,01^dt à chaque pas (constante de temps 0,22 s)
-const DERIVE_FIN_GLISSE := 5.0      # ° : Espace lâché, la glisse au frein à main (et la levée de la réduction) finit sous cette dérive
 const MARGE_FREINAGE := 0.5        # au freinage le plus fort, le report de charge vaut au plus (1 - ceci) de la charge statique
 const MARGE_POUSSEE := 0.25         # de l'essieu le plus léger ; de même à l'accélération la plus forte (cf. configurer)
 const RAPPORTS := [0.0, 0.18, 0.33, 0.49, 0.66, 0.83]   # rapports AFFICHÉS : début de chacun, en part de la vitesse de pointe
@@ -180,7 +171,6 @@ var _cout := 0
 var _sol := 0                       # roues au sol au dernier pas
 var _g := 9.8
 var _arriere_bloque := false        # le frein à main bloque les roues arrière
-var _glisse_frein_main := false     # glisse au frein à main en cours (cf. _commandes) : réduction du braquage levée
 var _main_total := 0.0              # N : force du frein à main
 var _charge_arriere := 0.0          # N : charge des roues arrière au sol
 
@@ -356,7 +346,6 @@ func repartir(v_monde: Vector3) -> void:
 		w.detente_avant = INF
 	_sens = -1 if v_av < -V_ARRET else 1
 	_t_arret_s = 0.0
-	_glisse_frein_main = false
 	reduction = reduction_gta(v_av, _part_reduction)   # posée à vitesse (outils, tests), pas de lissage à rattraper
 
 
@@ -449,12 +438,6 @@ func _commandes(delta: float, v: float) -> void:
 		frein = Input.is_action_pressed("brake")
 		main = Input.is_action_pressed("handbrake")
 		_cible_volant = clampf(Input.get_action_strength("right") - Input.get_action_strength("left"), -1.0, 1.0)
-	# GLISSE AU FREIN À MAIN : elle commence quand le joueur tient Espace et dure, Espace lâché, tant que la voiture est en
-	# travers (dérive au-dessus de DERIVE_FIN_GLISSE) ; pendant tout ce temps, la réduction du braquage est levée (_direction)
-	if Controlled and main:
-		_glisse_frein_main = true
-	elif _glisse_frein_main and (not Controlled or _derive_deg() < DERIVE_FIN_GLISSE):
-		_glisse_frein_main = false
 	var cible_gaz := 0.0
 	var cible_frein := 0.0
 	if not Controlled:
@@ -525,10 +508,8 @@ func _direction(delta: float, v_long: float) -> void:
 		var retour := absf(_cible_volant) < absf(steer2) or _cible_volant * steer2 < 0.0
 		var vitesse := VOLANT_RETOUR if retour else lerpf(VOLANT_BAS, VOLANT_HAUT, clampf(absf(v_long) / VOLANT_V, 0.0, 1.0))
 		steer2 = move_toward(steer2, _cible_volant, vitesse * delta)
-	# la réduction suit sa valeur comme dans le code d'ikt32 : lerp(précédente, cible, 1 - REDUCTION_LISSAGE^dt) ; pendant une
-	# glisse au frein à main, elle est LEVÉE (cible 1 : la butée entière), levée et remise au même lissage (cf. en tête)
-	var cible := 1.0 if _glisse_frein_main else reduction_gta(v_long, _part_reduction)
-	reduction = lerpf(reduction, cible, 1.0 - pow(REDUCTION_LISSAGE, delta))
+	# la réduction suit sa valeur comme dans le code d'ikt32 : lerp(précédente, cible, 1 - REDUCTION_LISSAGE^dt)
+	reduction = lerpf(reduction, reduction_gta(v_long, _part_reduction), 1.0 - pow(REDUCTION_LISSAGE, delta))
 	var d := -steer2 * braquage_max * reduction
 	steer = steer2
 	for w: Roue in roues:
@@ -551,17 +532,6 @@ static func reduction_gta(v_avant: float, part := 1.0) -> float:
 			mult = floorf(mult * 1000.0) / 1000.0
 		mult = minf(mult, 1.0)
 	return clampf(1.0 + (mult - 1.0) * part, 0.0, 1.0)
-
-
-# Dérive de la voiture (deg, 0 à 90) : l'angle entre sa vitesse sur le sol et son axe ; 0 sous 3 m/s (presque arrêtée, une
-# voiture qui pivote a une vitesse de n'importe quel sens).
-func _derive_deg() -> float:
-	var b := global_transform.basis
-	var vl := linear_velocity.dot(b.z)
-	var vt := linear_velocity.dot(b.x)
-	if Vector2(vl, vt).length() < 3.0:
-		return 0.0
-	return rad_to_deg(atan2(absf(vt), absf(vl)))
 
 
 # Angle « bicyclette » des roues avant, volant à fond, à la vitesse du moment (rad) : fSteeringLock x la réduction. C'est ce

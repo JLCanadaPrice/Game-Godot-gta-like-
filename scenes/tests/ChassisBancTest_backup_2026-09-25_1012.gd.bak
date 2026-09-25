@@ -35,8 +35,7 @@ extends Node3D
 #    l'arrière part en glisse (ou pas, selon la fiche) ; puis LE JOUEUR lâche le frein à main, CONTRE-BRAQUE et remet les
 #    gaz (PiloteClavier : ses seules touches, avec un temps de réaction) jusqu'à ce que la voiture soit droite. Le châssis ne
 #    braque jamais les roues à sa place (2026-09-24, « c'est MOI qui contre-braque ») : c'est ce qui prouve qu'une glisse se
-#    rattrape au clavier. La voiture ne se couche pas. Depuis le 2026-09-25, la réduction du braquage avec la vitesse est
-#    levée pendant une glisse au frein à main : au frein à main, les roues avant montent à la butée entière ;
+#    rattrape au clavier. La voiture ne se couche pas ;
 #  - bordures de 0,15 et 0,17 m, de face et à 30°, à 3 m/s : la coque ne touche pas ;
 #  - entrée du parking à étages à 4 et 7 m/s, s'il passe sous la barre de 2,15 m : la coque ne touche pas.
 # Échoue sur : une caisse à plus de 45° de la verticale, deux roues d'un même côté en l'air plus de 0,3 s, un contact de
@@ -51,8 +50,7 @@ extends Node3D
 # avant qui ne suivent pas la courbe de GTA V, vitesse tenue (écart médian au-delà de COURBE_TOLERANCE, lissage compris) ;
 # braqué à fond, en freinant ou en roue libre, un virage qui S'OUVRE en ralentissant (le rayon d'un palier plus de 10 %
 # au-dessus de celui du palier plus rapide) ; une traction (fDriveBiasFront au-dessus de 0,5) à qui les gaz font perdre plus
-# de 15 % de son accélération latérale braquée à fond (GAZ_TENUE) ; au frein à main, braqué à fond, des roues avant qui
-# n'atteignent pas LEVEE_ROUES de la butée (la réduction du braquage n'est pas levée).
+# de 15 % de son accélération latérale braquée à fond (GAZ_TENUE).
 # Rapporté sans être jugé : garde au sol du DESSOUS DU MODÈLE (ce qu'on voit) sur les bordures et à l'entrée du parking —
 # les modèles les plus bas (9 à 15 cm) passent visuellement dans l'arête d'une bordure de 15 cm prise de face.
 # Arguments après « -- » : --modeles=id1,id2 (par défaut les six silhouettes de réglage), --tous, --lot=i/n (i-ème part
@@ -91,10 +89,6 @@ const PALIERS := [110.0, 100.0, 90.0, 80.0, 70.0, 60.0, 50.0, 40.0, 30.0]   # km
 const PALIER_TOLERANCE := 1.1      # d'un palier au suivant (plus lent), le rayon ne doit pas s'ouvrir de plus de 10 %
 const COURBE_TOLERANCE := 0.3      # ° : écart toléré entre l'angle des roues et la courbe de GTA V, vitesse tenue
 const GAZ_TENUE := 0.85            # traction braquée à fond : accélération latérale sous les gaz / en roue libre, au moins
-# frein à main tenu, braquage à fond : angle des roues avant / fSteeringLock, au moins. La réduction levée remonte vers la
-# butée à son lissage (0,22 s) pendant les 0,4 à 1 s du coup de frein à main : 85 à 100 % mesurés ; sans levée, la courbe
-# de GTA V en laisse 64 % au plus (à 50 km/h), 36 % à 80 km/h.
-const LEVEE_ROUES := 0.75
 const FREIN_VIRAGE_DERIVE := 20.0  # ° : au-delà, la voiture part
 const DEPART_FREIN_BRAQUE := Vector3(1500.0, 0.0, -1500.0)
 const FREIN_BRAQUE_ECART := 0.12   # décalage latéral / avance au moins, entre le coup de frein et l'arrêt (tout droit : 0)
@@ -1013,8 +1007,6 @@ func _p_derapage(phase: String) -> bool:
 		"tire":
 			_pedales(false, false, true, false, true)
 			_e["derive_max"] = maxf(float(_e["derive_max"]), derive)
-			# frein à main tenu : la réduction du braquage est levée, les roues vont vers la butée entière (2026-09-25)
-			_e["roues_tire"] = maxf(float(_e.get("roues_tire", 0.0)), _angle_bicyclette() / rad_to_deg(float(_ch.get("braquage_max"))))
 			if float(_e["t15"]) < 0.0 and derive >= 15.0:
 				_e["t15"] = _t - float(_e["t0"])
 			if roule:
@@ -1056,8 +1048,7 @@ func _p_derapage(phase: String) -> bool:
 						"derive_max": _e["derive_max"], "t15": _e["t15"], "cap_tire": _e["cap_tire"],
 						"cap_total": rad_to_deg(absf(wrapf(cap - float(_e["cap0"]), -PI, PI))), "reprise": _e["reprise"],
 						"arretee": not roule and float(_e["reprise"]) < 0.0, "appuis": _e["appuis"], "v_fin": vh.length() * 3.6,
-						"penche": _e["penche"], "up_min": _e["up_min"], "leve": _e["leve_max"], "a_lat": _e["a_lat"], "up_fin": up,
-						"roues_tire": _e.get("roues_tire", 0.0)}
+						"penche": _e["penche"], "up_min": _e["up_min"], "leve": _e["leve_max"], "a_lat": _e["a_lat"], "up_fin": up}
 				return true
 	return false
 
@@ -1236,11 +1227,9 @@ func _resume() -> void:
 		if not String(ph).begins_with("derapage_"):
 			continue
 		var dr: Dictionary = _res[ph]
-		morceaux.append("%s (%.0f km/h) : roues arrière bloquées %.0f %% du temps, roues avant à %.0f %% de la butée au frein à main, dérive %.0f° au plus (15° en %s), cap pris %.0f° au frein à main ; le joueur contre-braque (%d appuis) : droite en %s, cap total %.0f°, %.0f km/h au bout ; roulis %.1f°, roues levées %.2f s, %.1f m/s²" % [
-				ph, dr["v"], float(dr["bloquees"]) * 100.0, float(dr["roues_tire"]) * 100.0, dr["derive_max"], _temps(dr["t15"]), dr["cap_tire"], dr["appuis"],
+		morceaux.append("%s (%.0f km/h) : roues arrière bloquées %.0f %% du temps, dérive %.0f° au plus (15° en %s), cap pris %.0f° au frein à main ; le joueur contre-braque (%d appuis) : droite en %s, cap total %.0f°, %.0f km/h au bout ; roulis %.1f°, roues levées %.2f s, %.1f m/s²" % [
+				ph, dr["v"], float(dr["bloquees"]) * 100.0, dr["derive_max"], _temps(dr["t15"]), dr["cap_tire"], dr["appuis"],
 				_temps(dr["reprise"]), dr["cap_total"], dr["v_fin"], dr["penche"], dr["leve"], dr["a_lat"]])
-		if float(dr["roues_tire"]) < LEVEE_ROUES:
-			_faute("%s : %s, la réduction du braquage n'est pas levée au frein à main (roues à %.0f %% de la butée)" % [id, ph, float(dr["roues_tire"]) * 100.0])
 		if float(dr["up_min"]) < cos(deg_to_rad(45.0)) or float(dr["up_fin"]) < 0.9:
 			_faute("%s : %s, le véhicule se couche (caisse à %.0f°)" % [id, ph, rad_to_deg(acos(clampf(dr["up_min"], -1.0, 1.0)))])
 		if float(dr["leve"]) > 0.3:
