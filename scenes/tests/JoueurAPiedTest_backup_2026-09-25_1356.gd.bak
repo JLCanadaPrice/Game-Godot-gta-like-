@@ -36,13 +36,6 @@ extends Node
 #     la visée (caméra de conduite sans zoom ni épaule) et viser en voiture ne fait rien ; on redescend sans viser.
 #     Un PNJ debout à 8 m, pris sous le réticule et touché, perd des points de vie.
 #
-#  4. PIEDS SUR LE SOL RÉEL (PiedsSolModifier) : semelle au-dessus du sol SOUS ELLE, pendant l'appui (repéré sur la
-#     pose de l'animation), 5e et 95e centiles. Sur une dalle inclinée de 20° : immobile, entre -1,5 et +1,5 cm (sans
-#     l'adaptation : +5,5 et -6 cm) ; en montant, entre -5 et +7 cm (sans : -6 et +17 cm). Sur un trottoir de 15 cm,
-#     monté puis redescendu : entre -3 et +10 cm (sans : +15 cm ; la pointe n'entre plus dans la bordure). La jambe
-#     tient : cheville au bout du tibia (0,49 à 0,53 m), genou devant la ligne hanche-cheville. Sur sol plat (parties 1
-#     et 3), l'adaptation ne change rien.
-#
 # Lancer : Godot --headless --path <projet> --fixed-fps 60 res://scenes/tests/JoueurAPiedTest.tscn
 
 const JOUEUR := preload("res://scenes/player/Player.tscn")
@@ -63,12 +56,11 @@ var _enregistre := false
 var _prec := {}
 var _epaule := Vector3.ZERO      # pose AFFICHÉE (skeleton_updated) : épaule et main droites, dans le monde
 var _main := Vector3.ZERO
-var _anim_loc := {}              # semelle de la pose de l'ANIMATION, dans le repère du joueur (appui)
 
 
 func _ready() -> void:
 	print("JOUEUR_A_PIED_TEST_BEGIN")
-	process_priority = 1000   # _process après l'AnimationPlayer
+	process_priority = 1000   # relevés après l'animation de l'image
 	var sol := StaticBody3D.new()
 	var forme := CollisionShape3D.new()
 	var boite := BoxShape3D.new()
@@ -97,8 +89,6 @@ func _ready() -> void:
 	await _check_visee()
 	await _check_visee_voiture()
 	await _check_visee_pnj()
-	await _check_pente()
-	await _check_bordure()
 	print("JOUEUR_A_PIED_RESULT %s %s" % ["OK" if _errors.is_empty() else "FAIL", " | ".join(_errors)])
 	get_tree().quit(0 if _errors.is_empty() else 1)
 
@@ -343,76 +333,6 @@ func _check_visee_pnj() -> void:
 	pnj.queue_free()
 
 
-func _check_pente() -> void:
-	# dalle inclinée de 20°, à l'écart (x = 150), qui monte vers -Z : sa face du dessus passe par (150, 0, 0)
-	var dalle := StaticBody3D.new()
-	var forme := CollisionShape3D.new()
-	var boite := BoxShape3D.new()
-	boite.size = Vector3(20.0, 1.0, 60.0)
-	forme.shape = boite
-	dalle.add_child(forme)
-	add_child(dalle)
-	dalle.transform = Transform3D(Basis(Vector3.RIGHT, deg_to_rad(20.0)), Vector3(150.0, 0.0, 0.0)) \
-			* Transform3D(Basis.IDENTITY, Vector3(0.0, -0.5, -25.0))
-	_poser(Vector3(150.0, 5.0 * tan(deg_to_rad(20.0)) + 0.95, -5.0))
-	await _frames(40)
-	var arret := await _mesure([])
-	var montee := await _mesure(["move_forward"])
-	var ok := true
-	var txt := "JOUEUR_A_PIED_PENTE 20° :"
-	for os: String in PIEDS:
-		var a: Dictionary = arret[os]
-		var m: Dictionary = montee[os]
-		var ok_pied: bool = float(a["bas"]) >= -0.015 and float(a["haut"]) <= 0.015 and float(m["bas"]) >= -0.05 \
-				and float(m["haut"]) <= 0.07 and _jambe_ok(m)
-		ok = ok and ok_pied
-		txt += " %s : immobile, semelle %+.3f / %+.3f m ; en montant, %+.3f / %+.3f m, genou-cheville %.3f-%.3f m, genou devant %+.3f m |" % [
-				os.trim_suffix("Foot"), a["bas"], a["haut"], m["bas"], m["haut"], m["genou_cheville"][0], m["genou_cheville"][1], m["genou_devant"]]
-	print(txt + " " + _ok(ok))
-	if not ok:
-		_errors.append("pente")
-	dalle.queue_free()
-
-
-func _check_bordure() -> void:
-	# trottoir de 15 cm, à l'écart (x = -150), de z = -4 à z = -9 devant le joueur : on le monte et on le redescend
-	var bordure := StaticBody3D.new()
-	var forme := CollisionShape3D.new()
-	var boite := BoxShape3D.new()
-	boite.size = Vector3(20.0, 0.15, 5.0)
-	forme.shape = boite
-	bordure.add_child(forme)
-	add_child(bordure)
-	bordure.position = Vector3(-150.0, 0.075, -6.5)
-	_poser(Vector3(-150.0, 0.95, 0.0))
-	await _frames(30)
-	var r := await _mesure(["move_forward"])
-	var ok := true
-	var txt := "JOUEUR_A_PIED_BORDURE 15 cm, montée puis descente :"
-	for os: String in PIEDS:
-		var m: Dictionary = r[os]
-		var ok_pied: bool = float(m["bas"]) >= -0.03 and float(m["haut"]) <= 0.10 and _jambe_ok(m)
-		ok = ok and ok_pied
-		txt += " %s : semelle %+.3f / %+.3f m, genou-cheville %.3f-%.3f m, genou devant %+.3f m |" % [os.trim_suffix("Foot"),
-				m["bas"], m["haut"], m["genou_cheville"][0], m["genou_cheville"][1], m["genou_devant"]]
-	print(txt + " " + _ok(ok))
-	if not ok:
-		_errors.append("bordure")
-	bordure.queue_free()
-
-
-# La jambe tient : la cheville reste au bout du tibia (0,51 m, à 2 cm près comme dans l'animation) et le genou devant.
-func _jambe_ok(m: Dictionary) -> bool:
-	return float(m["genou_cheville"][0]) >= 0.49 and float(m["genou_cheville"][1]) <= 0.53 and float(m["genou_devant"]) >= -0.01
-
-
-func _poser(p: Vector3) -> void:
-	_player.velocity = Vector3.ZERO
-	_player.global_position = p
-	_player.rotation = Vector3.ZERO
-	(_player.get_node("SpringArm3D") as Node3D).rotation = Vector3(deg_to_rad(-10.0), 0.0, 0.0)
-
-
 func _action(nom: String, appui: bool) -> void:
 	var ev := InputEventAction.new()
 	ev.action = nom
@@ -434,13 +354,9 @@ func _tangage(deg: float) -> void:
 	await _frames(12)
 
 
-# Pose AFFICHÉE, relevée quand le squelette a fini son image (modificateurs appliqués : bras de tir, pieds sur le sol) ;
-# c'est là aussi qu'on enregistre les relevés des pieds.
 func _pose_affichee() -> void:
 	_epaule = _skel.global_transform * _skel.get_bone_global_pose(_skel.find_bone("RightUpperArm")).origin
 	_main = _skel.global_transform * _skel.get_bone_global_pose(_skel.find_bone("RightHand")).origin
-	if _enregistre:
-		_enregistrer(get_process_delta_time())
 
 
 # [part du bras tendu (%), élévation de la main vue de l'épaule (°)], sur la pose affichée
@@ -515,37 +431,12 @@ func _mesure(actions: Array) -> Dictionary:
 			if float(e[os]["semelle_loc"]) <= lmin + 0.025 and e[os].has("v"):
 				glisse.append(float(e[os]["v"]))
 				haut.append(float(e[os]["semelle"]))
-		var kf_min := INF
-		var kf_max := -INF
-		var genou := INF
-		for e: Dictionary in _releves:
-			kf_min = minf(kf_min, float(e[os]["genou_cheville"]))
-			kf_max = maxf(kf_max, float(e[os]["genou_cheville"]))
-			genou = minf(genou, float(e[os]["genou_devant"]))
 		r[os] = {"ampl": zmax - zmin, "glisse": _q(glisse, 0.5), "bas": _q(haut, 0.05), "haut": _q(haut, 0.95)}
-		r[os]["genou_cheville"] = [kf_min, kf_max]
-		r[os]["genou_devant"] = genou
 	return r
 
 
-# Pose de l'ANIMATION de l'image (hors du signal skeleton_updated, le squelette rend celle-là ; process_priority :
-# après l'AnimationPlayer) : hauteur de chaque semelle dans le repère du joueur, pour dire quand un pied est en appui.
-func _process(_delta: float) -> void:
-	if not _enregistre:
-		return
-	var xf := _player.global_transform
-	for os: String in PIEDS:
-		_anim_loc[os] = (xf.affine_inverse() * _semelle(os)).y + 0.9
-
-
-func _sol_sous(p: Vector3) -> float:
-	var q := PhysicsRayQueryParameters3D.create(p + Vector3.UP, p + Vector3.DOWN, 1, [_player.get_rid()])
-	var h := _player.get_world_3d().direct_space_state.intersect_ray(q)
-	return p.y if h.is_empty() else (h["position"] as Vector3).y
-
-
-func _enregistrer(delta: float) -> void:
-	if delta <= 0.0:
+func _process(delta: float) -> void:
+	if not _enregistre or delta <= 0.0:
 		return
 	var xf := _player.global_transform
 	var e := {"v": Vector2(_player.velocity.x, _player.velocity.z).length(), "anim": String(_anim.current_animation),
@@ -553,16 +444,7 @@ func _enregistrer(delta: float) -> void:
 	for os: String in PIEDS:
 		var g := _skel.global_transform * _skel.get_bone_global_pose(_skel.find_bone(os))
 		var s := _semelle(os)
-		# semelle AU-DESSUS DU SOL sous elle ; appui repéré sur la pose de l'ANIMATION (_process), pas sur la pose
-		# affichée : sur une pente, le pied le plus bas dans le repère du joueur est celui qui décolle
-		var d := {"local": xf.affine_inverse() * g.origin, "semelle": s.y - _sol_sous(s), "semelle_loc": float(_anim_loc.get(os, 0.0))}
-		var cote := os.trim_suffix("Foot")
-		var hh := _skel.get_bone_global_pose(_skel.find_bone(cote + "UpperLeg")).origin
-		var kk := _skel.get_bone_global_pose(_skel.find_bone(cote + "LowerLeg")).origin
-		var ff := _skel.get_bone_global_pose(_skel.find_bone(os)).origin
-		var tt := clampf((kk - hh).dot(ff - hh) / maxf((ff - hh).length_squared(), 1e-6), 0.0, 1.0)
-		d["genou_cheville"] = kk.distance_to(ff)
-		d["genou_devant"] = (kk - (hh + (ff - hh) * tt)).z   # le modèle regarde vers +Z dans son squelette
+		var d := {"local": xf.affine_inverse() * g.origin, "semelle": s.y, "semelle_loc": (xf.affine_inverse() * s).y + 0.9}
 		if _prec.has(os):
 			var dv: Vector3 = (g.origin - (_prec[os] as Vector3)) / delta
 			d["v"] = Vector2(dv.x, dv.z).length()

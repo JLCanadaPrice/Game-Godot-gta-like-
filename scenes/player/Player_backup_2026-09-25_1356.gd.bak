@@ -19,7 +19,6 @@ const BULLET := preload("res://scenes/weapons/Bullet.tscn")
 const WeaponRes := preload("res://scripts/data/WeaponData.gd")
 const JumpPoseMod := preload("res://scenes/player/JumpPoseModifier.gd")
 const PoseTirMod := preload("res://scenes/player/PoseTirModifier.gd")
-const PiedsSolMod := preload("res://scenes/player/PiedsSolModifier.gd")
 
 signal ammo_changed(current_ammo: int, reserve_ammo: int)
 signal weapon_equipped_changed(equipped: bool)
@@ -103,7 +102,6 @@ var _current_anim := ""
 var _jump_mod                        # JumpPoseModifier (pose de saut additive), non typé -> accès dynamique
 var _air_blend := 0.0                 # 0 au sol, 1 en l'air (fondu)
 var _pose_tir: PoseTirMod             # bras droit tendu, arme sortie (cf. PoseTirModifier)
-var _pieds_sol: PiedsSolMod           # pieds et jambes posés sur le sol réel (cf. PiedsSolModifier)
 
 # --- conduite ---
 const FOOT_SPRING_LENGTH := 4.0
@@ -383,7 +381,6 @@ func _physics_process(delta: float) -> void:
 	var planar_speed := Vector2(velocity.x, velocity.z).length()
 	_update_animation(planar_speed, delta)
 	_update_jump_pose(delta)
-	_update_pieds_sol(delta)
 
 	if debug_freeze:
 		print("[frz] pf=%d dt=%.4f floor=%s vy=%+.2f airblend=%.2f dir=(%.2f,%.2f) planar=%.2f sprint=%s equip=%s anim='%s' jmpblend=%.2f jmpphase=%+.2f" % [
@@ -472,11 +469,6 @@ func _setup_model() -> void:
 		_jump_mod.name = "JumpPose"
 		_jump_mod.debug_calls = debug_freeze   # 1 seul flag pilote les 2 traces
 		_skel.add_child(_jump_mod)   # doit être enfant direct du Skeleton3D
-		_pieds_sol = PiedsSolMod.new()
-		_pieds_sol.name = "PiedsSol"
-		_skel.add_child(_pieds_sol)   # après JumpPose (en l'air) ; au sol, bassin, jambes et pieds sur le terrain
-		for n in model.find_children("*Feet*", "MeshInstance3D", true, false):
-			_pieds_sol.preparer_pointes(n as MeshInstance3D)
 		if _anim != null and _weapon_node != null and _anim.has_animation("Idle_Gun_Pointing"):
 			_pose_tir = PoseTirMod.new()
 			_pose_tir.name = "PoseTir"
@@ -749,44 +741,6 @@ func _clip_de_marche(alpha: float, vitesse: float) -> String:
 		return "Run_Back"
 	return "Run_Right" if alpha > 0.0 else "Run_Left"
 
-# PIEDS SUR LE SOL RÉEL (2026-09-25) : un rayon vertical sous la cheville de chaque pied de l'animation (là où
-# PiedsSolModifier l'a vue à la dernière image), du haut d'une marche franchissable (PIED_SONDE) au même creux ; l'écart
-# entre le sol trouvé et le sol sous le corps (bas de la capsule, origine du modèle) va au modificateur. Un mur (normale
-# à plus de 60° de la verticale) ne compte pas. En l'air, dans l'eau, en noclip, en voiture : l'animation seule.
-# L'écart MONTE aussitôt (un pied qui arrive sur une bordure ne doit pas y entrer) et DESCEND à PIED_DESCENTE au plus.
-# Un second rayon sous la pointe de la chaussure donne le sol qu'elle ne doit pas traverser (bordure juste devant le pied).
-# Essayé et écarté (mesuré) : le plus haut du sol sous la cheville et sous la pointe — sur une pente, la pointe est
-# toujours plus haute (15 cm x tan θ) et le pied flottait en permanence de 2,7 cm à 10°, 5,5 cm à 20°.
-const PIED_SONDE := 0.5          # m au-dessus et au-dessous du sol du corps (StepClimb monte 0,40 au plus)
-const PIED_ECART_MAX := 0.45
-const PIED_DESCENTE := 4.0       # m/s : pas un lissage proportionnel. Sur une pente de 20° à 5 m/s, l'écart d'un pied posé
-                                 # change de 1,8 m/s ; un lissage à 15/s le laissait 12 cm en retard (mesuré : pied
-                                 # flottant de 10 cm en montée)
-
-func _update_pieds_sol(delta: float) -> void:
-	if _pieds_sol == null:
-		return
-	_pieds_sol.poids = move_toward(_pieds_sol.poids, 1.0 if is_on_floor() else 0.0, delta * 8.0)
-	var sol_corps := global_position.y - 0.9
-	var space := get_world_3d().direct_space_state
-	for i in 2:
-		var p: Vector3 = _pieds_sol.pieds_monde[i]
-		var q := PhysicsRayQueryParameters3D.create(Vector3(p.x, sol_corps + PIED_SONDE, p.z), Vector3(p.x, sol_corps - PIED_SONDE, p.z), 1, [get_rid()])
-		var hit := space.intersect_ray(q)
-		var ecart := 0.0
-		var n := Vector3.UP
-		if not hit.is_empty() and (hit["normal"] as Vector3).y > 0.5:
-			ecart = clampf((hit["position"] as Vector3).y - sol_corps, -PIED_ECART_MAX, PIED_ECART_MAX)
-			n = hit["normal"]
-		var avant := float(_pieds_sol.ecarts[i])
-		_pieds_sol.ecarts[i] = ecart if ecart > avant else move_toward(avant, ecart, PIED_DESCENTE * delta)
-		_pieds_sol.normales[i] = n
-		# sous la pointe de la chaussure : le sol qu'elle ne doit pas traverser (cf. PiedsSolModifier._sortir_la_pointe)
-		var t: Vector3 = _pieds_sol.pointes_monde[i]
-		q = PhysicsRayQueryParameters3D.create(Vector3(t.x, sol_corps + PIED_SONDE, t.z), Vector3(t.x, sol_corps - PIED_SONDE, t.z), 1, [get_rid()])
-		hit = space.intersect_ray(q)
-		_pieds_sol.sols_pointe[i] = (hit["position"] as Vector3).y if not hit.is_empty() and (hit["normal"] as Vector3).y > 0.5 else -INF
-
 # Pilote la pose de saut procédurale : fondu d'influence selon is_on_floor() et
 # phase selon la vitesse verticale. C'est ICI que le saut est "branché" sur
 # l'état en l'air, indépendamment de la locomotion horizontale.
@@ -977,8 +931,6 @@ func notify_water_exited(zone: Node3D) -> void:
 # hors du périmètre demandé.
 func _physics_process_swim(delta: float) -> void:
 	_update_foot_camera(delta)   # la caméra quitte la visée en douceur
-	if _pieds_sol != null:
-		_pieds_sol.poids = 0.0
 	_update_pose_tir(delta)   # le bras retombe dans l'eau
 	var y_diff := _water_surface_y - global_position.y
 	velocity.y = clampf(y_diff * SWIM_SURFACE_CORRECT_SPEED, -SWIM_SPEED, SWIM_SPEED)
@@ -1037,8 +989,6 @@ func _physics_process_noclip(delta: float) -> void:
 	_update_free_look_return(delta)
 	_update_foot_camera(delta)
 	_update_pose_tir(delta)
-	if _pieds_sol != null:
-		_pieds_sol.poids = 0.0
 	var input_dir := Input.get_vector("move_left", "move_right", "move_forward", "move_back")
 	var view := camera.global_transform.basis
 	var direction := view.x * input_dir.x + view.z * input_dir.y + Vector3.UP * Input.get_axis("noclip_down", "noclip_up")
