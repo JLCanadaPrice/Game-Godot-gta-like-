@@ -18,7 +18,6 @@ const NOCLIP_PROBE_HEIGHT := 3000.0        # m : portée verticale des rayons qu
 const BULLET := preload("res://scenes/weapons/Bullet.tscn")
 const WeaponRes := preload("res://scripts/data/WeaponData.gd")
 const JumpPoseMod := preload("res://scenes/player/JumpPoseModifier.gd")
-const PoseTirMod := preload("res://scenes/player/PoseTirModifier.gd")
 
 signal ammo_changed(current_ammo: int, reserve_ammo: int)
 signal weapon_equipped_changed(equipped: bool)
@@ -67,10 +66,6 @@ signal weapon_equipped_changed(equipped: bool)
 # la pose de visée UAL soit maintenant déformée sur ce nouveau repos. On valide
 # d'abord ville + arme + saut + marche, PUIS on rebranche UAL et on regarde la
 # visée à part (il faudra sans doute aligner le Rest Fixer entre Suit et UAL).
-# MESURÉ le 2026-09-25 (main droite par rapport à l'épaule, sur ce squelette) : Pistol_Aim_Neutral pointe à GAUCHE et
-# vers le bas (azimut +78°, élévation -52°, bras tendu à 68 %), Pistol_Aim_Up à gauche (+28°), Pistol_Aim_Down vers
-# l'ARRIÈRE (+132°) : inutilisables. La position de tir vient de Idle_Gun_Pointing du pack Suit (bras tendu à 98 %,
-# -8°, droit devant), posée par PoseTirModifier.
 @export var use_ual_pistol := false
 
 @onready var spring_arm: SpringArm3D = $SpringArm3D
@@ -100,7 +95,6 @@ var _skel: Skeleton3D
 var _current_anim := ""
 var _jump_mod                        # JumpPoseModifier (pose de saut additive), non typé -> accès dynamique
 var _air_blend := 0.0                 # 0 au sol, 1 en l'air (fondu)
-var _pose_tir: PoseTirMod             # bras droit tendu, arme sortie (cf. PoseTirModifier)
 
 # --- conduite ---
 const FOOT_SPRING_LENGTH := 4.0
@@ -281,7 +275,6 @@ func _physics_process(delta: float) -> void:
 	_update_free_look_return(delta)
 	_update_foot_camera(delta)
 	_handle_weapon(delta)
-	_update_pose_tir(delta)
 	_shoot_lock = maxf(_shoot_lock - delta, 0.0)
 
 	if is_on_floor():
@@ -412,11 +405,6 @@ func _setup_model() -> void:
 		_jump_mod.name = "JumpPose"
 		_jump_mod.debug_calls = debug_freeze   # 1 seul flag pilote les 2 traces
 		_skel.add_child(_jump_mod)   # doit être enfant direct du Skeleton3D
-		if _anim != null and _weapon_node != null and _anim.has_animation("Idle_Gun_Pointing"):
-			_pose_tir = PoseTirMod.new()
-			_pose_tir.name = "PoseTir"
-			_skel.add_child(_pose_tir)   # après JumpPose : le bras droit de la pose de tir l'emporte sur celui du saut
-			_pose_tir.preparer(_anim, "Idle_Gun_Pointing", _weapon_node.transform, muzzle_point.position)
 	else:
 		push_warning("Aucun Skeleton3D trouvé dans le modèle")
 
@@ -628,7 +616,7 @@ func _update_animation(planar_speed: float, delta: float) -> void:
 	if airborne:
 		# base neutre : la pose de saut est ajoutée en additif par
 		# JumpPoseModifier (_update_jump_pose), pas besoin d'un clip dédié
-		anim = _anim_immobile()
+		anim = _pick_anim("Idle_Gun" if weapon_equipped else "Idle", "Idle")
 		sscale = 1.0
 	elif planar_speed > 0.5:
 		# EN MOUVEMENT : toujours les anims de jambes d'origine Suit.gltf
@@ -645,7 +633,7 @@ func _update_animation(planar_speed: float, delta: float) -> void:
 		# IMMOBILE + arme dégainée : pose de visée haut du corps (UAL retargeté).
 		anim = "ual/Pistol_Aim_Neutral"
 	else:
-		anim = _anim_immobile()
+		anim = _pick_anim("Idle_Gun" if weapon_equipped else "Idle", "Idle")
 
 	if debug_anim:
 		print("[anim] sol=%s vy=%.1f planar=%.1f equip=%s -> cible='%s' existe=%s | joue='%s' playing=%s" % [
@@ -699,11 +687,6 @@ func _update_jump_pose(delta: float) -> void:
 
 func _play_shoot_anim() -> void:
 	if _anim == null:
-		return
-	if _pose_tir != null:
-		# bras tendu (PoseTirModifier) : le tir n'est qu'un recul du canon, les jambes gardent leur locomotion. L'anim de
-		# tir en corps entier ci-dessous figeait les jambes pendant sa durée (_shoot_lock) : pieds qui glissent.
-		_pose_tir.recul = RECUL_TIR
 		return
 	var fast := Vector2(velocity.x, velocity.z).length() > SPEED + 1.0
 	var anim := ""
@@ -784,8 +767,17 @@ func _shoot() -> void:
 	_emit_ammo()
 	_play_shoot_anim()
 
-	var hit := _rayon_de_tir()
-	var impact: Vector3 = camera.global_position - camera.global_transform.basis.z * weapon.shot_range
+	var from: Vector3 = camera.global_position
+	var to: Vector3 = from - camera.global_transform.basis.z * weapon.shot_range
+
+	var params := PhysicsRayQueryParameters3D.create(from, to)
+	# bit 1 = murs/monde, bit 2 = PNJ, bit 4 = zone de tir exacte des véhicules (Car.COUCHE_TIRS, 2026-09-23) : sans elle
+	# les balles traversaient les voitures, et leur enveloppe de déplacement (bit 3) déborde encore de la tôle
+	params.collision_mask = 0b1011
+	params.exclude = [get_rid()]
+	var hit := get_world_3d().direct_space_state.intersect_ray(params)
+
+	var impact: Vector3 = to
 	if hit:
 		impact = hit["position"]
 		var col = hit["collider"]
@@ -795,54 +787,6 @@ func _shoot() -> void:
 	var b: Node3D = BULLET.instantiate()
 	get_parent().add_child(b)
 	b.setup(muzzle_point.global_position, impact)
-
-# Le rayon de tir part de la CAMÉRA, dans son axe : le centre de l'écran, là où est le réticule.
-func _rayon_de_tir() -> Dictionary:
-	var from: Vector3 = camera.global_position
-	var to: Vector3 = from - camera.global_transform.basis.z * weapon.shot_range
-	var params := PhysicsRayQueryParameters3D.create(from, to)
-	# bit 1 = murs/monde, bit 2 = PNJ, bit 4 = zone de tir exacte des véhicules (Car.COUCHE_TIRS, 2026-09-23) : sans elle
-	# les balles traversaient les voitures, et leur enveloppe de déplacement (bit 3) déborde encore de la tôle
-	params.collision_mask = 0b1011
-	params.exclude = [get_rid()]
-	return get_world_3d().direct_space_state.intersect_ray(params)
-
-# --- Bras tendu, arme sortie (2026-09-25) ---------------------------------------
-# Arme sortie, le bras droit se tend en position de tir (PoseTirModifier, pose Idle_Gun_Pointing du pack) et le canon
-# vise le point sous le réticule ; il retombe pendant un rechargement et arme rangée. Le bras ne vise plus pendant le
-# regard libre (Alt) : on regarde autour sans tirer, il reste tendu droit devant.
-const LEVER_ARME := 0.15        # s : le bras se tend (ou retombe) en 0,15 s
-const RECUL_TIR := 0.14         # rad (8°) : canon relevé par un tir
-const RECUL_RETOUR := 1.2       # rad/s : revenu en 0,12 s, avant le tir suivant (fire_rate)
-
-func _update_pose_tir(delta: float) -> void:
-	if _pose_tir == null:
-		return
-	var tendu := weapon_equipped and not _reloading and not _swimming and not _driving
-	_pose_tir.poids = move_toward(_pose_tir.poids, 1.0 if tendu else 0.0, delta / LEVER_ARME)
-	_pose_tir.recul = move_toward(_pose_tir.recul, 0.0, RECUL_RETOUR * delta)
-	_pose_tir.viser = not _free_look
-	if _pose_tir.poids > 0.0 and _pose_tir.viser:
-		_pose_tir.cible = _point_vise()
-
-# Point sous le réticule : ce que touche le rayon de tir, sinon son bout. Un obstacle entre la caméra et le joueur (un
-# poteau derrière lui) n'est pas une cible : le bras vise alors dans l'axe, au loin.
-func _point_vise() -> Vector3:
-	var dir := -camera.global_transform.basis.z
-	var loin: Vector3 = camera.global_position + dir * weapon.shot_range
-	var hit := _rayon_de_tir()
-	if hit.is_empty():
-		return loin
-	var p: Vector3 = hit["position"]
-	return p if (p - global_position).dot(dir) > 1.5 else loin
-
-# Animation du joueur immobile (et de base en l'air) : arme sortie, la pose de tir (Idle_Gun_Pointing : tout le corps
-# dans la posture, le bras gauche le long du corps) ; en rechargeant, l'arme basse (Idle_Gun).
-func _anim_immobile() -> String:
-	if not weapon_equipped:
-		return "Idle"
-	var a := _pick_anim("Idle_Gun" if _reloading else "Idle_Gun_Pointing", "Idle_Gun")
-	return a if a != "" else "Idle"
 
 func _emit_ammo() -> void:
 	ammo_changed.emit(weapon.current_ammo, weapon.reserve_ammo)
@@ -872,7 +816,6 @@ func notify_water_exited(zone: Node3D) -> void:
 # (SWIM_SPEED), sur le plan de l'eau seulement -- pas de plongée/saut ici,
 # hors du périmètre demandé.
 func _physics_process_swim(delta: float) -> void:
-	_update_pose_tir(delta)   # le bras retombe dans l'eau
 	var y_diff := _water_surface_y - global_position.y
 	velocity.y = clampf(y_diff * SWIM_SURFACE_CORRECT_SPEED, -SWIM_SPEED, SWIM_SPEED)
 
@@ -928,7 +871,6 @@ func set_noclip(enabled: bool) -> void:
 func _physics_process_noclip(delta: float) -> void:
 	_update_free_look_return(delta)
 	_update_foot_camera(delta)
-	_update_pose_tir(delta)
 	var input_dir := Input.get_vector("move_left", "move_right", "move_forward", "move_back")
 	var view := camera.global_transform.basis
 	var direction := view.x * input_dir.x + view.z * input_dir.y + Vector3.UP * Input.get_axis("noclip_down", "noclip_up")
@@ -938,7 +880,7 @@ func _physics_process_noclip(delta: float) -> void:
 	global_position += velocity * delta
 	# pose neutre pendant le vol : ni marche ni pose de saut
 	if _anim != null and _shoot_lock <= 0.0:
-		var idle := _anim_immobile()
+		var idle := _pick_anim("Idle_Gun" if weapon_equipped else "Idle", "Idle")
 		if idle != "" and idle != _current_anim:
 			_current_anim = idle
 			_anim.speed_scale = 1.0

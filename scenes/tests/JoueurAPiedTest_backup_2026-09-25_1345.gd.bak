@@ -18,14 +18,6 @@ extends Node
 #     qui dépasse ce que l'animation peut suivre, pas un défaut du test) ;
 #   - arrêt : Idle, pieds immobiles.
 #
-#  2. ARME SORTIE (touche 1, l'action toggle_weapon) : le bras droit se tend en position de tir (PoseTirModifier).
-#     Mesuré sur la pose AFFICHÉE (relevée au signal skeleton_updated : hors de lui, le squelette rend la pose de
-#     l'animation, modificateurs retirés) : arme rangée, bras pendant (main à plus de 45° sous l'épaule) ; sortie, en
-#     0,4 s au plus, bras tendu à 95 % au moins et canon à moins de 1° du point visé (le point sous le réticule),
-#     caméra droite, baissée de 20° ou levée de 15° ; en courant, bras toujours tendu, canon toujours sur le point visé
-#     (1,5° au plus) et pieds toujours posés ; un tir en courant ne fige plus les jambes (Run continue) et relève le
-#     canon de 5 à 10°, revenu sous 1° en 0,3 s ; rangée, le bras retombe.
-#
 # Lancer : Godot --headless --path <projet> --fixed-fps 60 res://scenes/tests/JoueurAPiedTest.tscn
 
 const JOUEUR := preload("res://scenes/player/Player.tscn")
@@ -40,8 +32,6 @@ var _infl := {"LeftFoot": [], "RightFoot": []}   # sommets des chaussures : [[os
 var _releves: Array = []
 var _enregistre := false
 var _prec := {}
-var _epaule := Vector3.ZERO      # pose AFFICHÉE (skeleton_updated) : épaule et main droites, dans le monde
-var _main := Vector3.ZERO
 
 
 func _ready() -> void:
@@ -60,7 +50,6 @@ func _ready() -> void:
 	_player.global_position = Vector3(0.0, 1.0, 0.0)
 	await _frames(40)
 	_skel = _player.find_children("*", "Skeleton3D", true, false)[0] as Skeleton3D
-	_skel.skeleton_updated.connect(_pose_affichee)
 	_anim = _player.get("_anim") as AnimationPlayer
 	_peau()
 	_check_pistes()
@@ -71,7 +60,6 @@ func _ready() -> void:
 	await _check_marche("diagonale", ["move_forward", "move_right"], "Run", 5.0)
 	await _check_course()
 	await _check_arret()
-	await _check_arme()
 	print("JOUEUR_A_PIED_RESULT %s %s" % ["OK" if _errors.is_empty() else "FAIL", " | ".join(_errors)])
 	get_tree().quit(0 if _errors.is_empty() else 1)
 
@@ -127,110 +115,6 @@ func _check_arret() -> void:
 		_errors.append("arrêt")
 
 
-func _check_arme() -> void:
-	var pt: Object = _player.get("_pose_tir")
-	if pt == null:
-		print("JOUEUR_A_PIED_ARME pas de PoseTirModifier sur le squelette | ÉCHEC")
-		_errors.append("arme : pas de pose de tir")
-		return
-	await _frames(20)
-	var rangee := _bras()
-	await _basculer_arme()
-	await _frames(24)
-	var sortie := _bras()
-	var ecart := _ecart_canon()
-	await _tangage(-20.0)
-	var ecart_bas := _ecart_canon()
-	var bras_bas := _bras()
-	await _tangage(15.0)
-	var ecart_haut := _ecart_canon()
-	var bras_haut := _bras()
-	await _tangage(-10.0)
-	var ok: bool = float(rangee[1]) < -45.0 and absf(float(pt.get("poids")) - 1.0) < 0.001 and float(sortie[0]) >= 95.0 \
-			and ecart < 1.0 and ecart_bas < 1.0 and ecart_haut < 1.0
-	print("JOUEUR_A_PIED_ARME rangée : main %+.0f° sous l'épaule | sortie (0,4 s) : bras tendu à %.0f %%, main %+.0f°, canon à %.2f° du point visé ; caméra -20° : main %+.0f°, canon à %.2f° ; caméra +15° : main %+.0f°, canon à %.2f° | %s" % [
-			rangee[1], sortie[0], sortie[1], ecart, bras_bas[1], ecart_bas, bras_haut[1], ecart_haut, _ok(ok)])
-	if not ok:
-		_errors.append("arme sortie")
-	# en courant, arme sortie
-	var r := await _mesure(["move_forward"])
-	var plafond := (0.17 + 0.1) * 5.0
-	ok = r["anim"] == "Run" and float(r["bras_min"]) >= 95.0 and float(r["ecart_max"]) <= 1.5 \
-			and float(r["LeftFoot"]["glisse"]) <= plafond and float(r["RightFoot"]["glisse"]) <= plafond
-	print("JOUEUR_A_PIED_ARME_COURSE anim %s x %.2f, bras tendu à %.0f %% au moins, canon à %.2f° du point visé au plus, pieds : glisse %.2f / %.2f m/s (au plus %.2f) | %s" % [
-			r["anim"], r["cadence"], r["bras_min"], r["ecart_max"], r["LeftFoot"]["glisse"], r["RightFoot"]["glisse"], plafond, _ok(ok)])
-	if not ok:
-		_errors.append("arme en courant")
-	# tir en courant : les jambes continuent, le canon se relève puis revient
-	Input.action_press("move_forward")
-	await _frames(30)
-	var avant := _elevation_canon()
-	var balles: int = (_player.get("weapon") as Object).get("current_ammo")
-	_player.call("_shoot")
-	await _frames(2)
-	var coup := _elevation_canon() - avant
-	var anim_tir := String(_anim.current_animation)
-	await _frames(18)
-	var apres := _ecart_canon()
-	Input.action_release("move_forward")
-	var tire: bool = int((_player.get("weapon") as Object).get("current_ammo")) == balles - 1
-	ok = tire and anim_tir == "Run" and coup >= 5.0 and coup <= 10.0 and apres < 1.0
-	print("JOUEUR_A_PIED_TIR en courant : balle partie %s, anim pendant le tir %s, canon relevé de %.1f°, revenu à %.2f° du point visé en 0,3 s | %s" % [
-			tire, anim_tir, coup, apres, _ok(ok)])
-	if not ok:
-		_errors.append("tir en courant")
-	await _frames(30)
-	await _basculer_arme()
-	await _frames(24)
-	var baissee := _bras()
-	ok = float(pt.get("poids")) < 0.001 and float(baissee[1]) < -45.0
-	print("JOUEUR_A_PIED_ARME_RANGEE poids %.2f, main %+.0f° sous l'épaule | %s" % [pt.get("poids"), baissee[1], _ok(ok)])
-	if not ok:
-		_errors.append("arme rangée")
-
-
-func _basculer_arme() -> void:
-	for appui: bool in [true, false]:
-		var ev := InputEventAction.new()
-		ev.action = "toggle_weapon"
-		ev.pressed = appui
-		Input.parse_input_event(ev)
-		await _frames(2)
-
-
-func _tangage(deg: float) -> void:
-	(_player.get_node("SpringArm3D") as Node3D).rotation.x = deg_to_rad(deg)
-	await _frames(12)
-
-
-func _pose_affichee() -> void:
-	_epaule = _skel.global_transform * _skel.get_bone_global_pose(_skel.find_bone("RightUpperArm")).origin
-	_main = _skel.global_transform * _skel.get_bone_global_pose(_skel.find_bone("RightHand")).origin
-
-
-# [part du bras tendu (%), élévation de la main vue de l'épaule (°)], sur la pose affichée
-func _bras() -> Array:
-	var longueur := _skel.get_bone_global_rest(_skel.find_bone("RightUpperArm")).origin.distance_to(
-			_skel.get_bone_global_rest(_skel.find_bone("RightLowerArm")).origin) \
-			+ _skel.get_bone_global_rest(_skel.find_bone("RightLowerArm")).origin.distance_to(
-			_skel.get_bone_global_rest(_skel.find_bone("RightHand")).origin)
-	var v := _main - _epaule
-	return [100.0 * v.length() / longueur, rad_to_deg(atan2(v.y, Vector2(v.x, v.z).length()))]
-
-
-# Angle entre l'axe du canon (+X de l'arme, cf. Weapon.gd) et la direction bouche -> point visé, en degrés.
-func _ecart_canon() -> float:
-	var arme := _player.get("_weapon_node") as Node3D
-	var bouche := (_player.get("muzzle_point") as Node3D).global_position
-	var cible: Vector3 = _player.call("_point_vise")
-	return rad_to_deg((arme.global_transform.basis * Vector3.RIGHT).normalized().angle_to((cible - bouche).normalized()))
-
-
-func _elevation_canon() -> float:
-	var arme := _player.get("_weapon_node") as Node3D
-	return rad_to_deg(asin(clampf((arme.global_transform.basis * Vector3.RIGHT).normalized().y, -1.0, 1.0)))
-
-
 func _mesure(actions: Array) -> Dictionary:
 	for a: String in actions:
 		Input.action_press(a)
@@ -252,14 +136,6 @@ func _mesure(actions: Array) -> Dictionary:
 		if anim == "" or int(anims[a]) > int(anims[anim]):
 			anim = a
 	var r := {"corps": _q(corps, 0.5), "anim": anim, "cadence": float(_releves[-1]["cadence"])}
-	var bras_min := INF
-	var ecart_max := 0.0
-	for e: Dictionary in _releves:
-		if e.has("bras"):
-			bras_min = minf(bras_min, float(e["bras"]))
-			ecart_max = maxf(ecart_max, float(e["ecart"]))
-	r["bras_min"] = bras_min
-	r["ecart_max"] = ecart_max
 	# amplitude du pas dans le SENS du déplacement (repère du joueur) : d'avant en arrière en avançant, de côté en pas chassés
 	var sens := Vector3.ZERO
 	for a: String in actions:
@@ -299,10 +175,6 @@ func _process(delta: float) -> void:
 			d["v"] = Vector2(dv.x, dv.z).length()
 		_prec[os] = g.origin
 		e[os] = d
-	var pt: Object = _player.get("_pose_tir")
-	if pt != null and float(pt.get("poids")) > 0.999:
-		e["bras"] = _bras()[0]
-		e["ecart"] = _ecart_canon()
 	_releves.append(e)
 
 
