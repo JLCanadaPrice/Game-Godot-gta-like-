@@ -101,7 +101,7 @@ const FOOT_SPRING_LENGTH := 4.0
 const DRIVE_SPRING_LENGTH := 8.0     # caméra reculée en conduite
 const DRIVE_ZOOM_EXTRA := 3.5        # dézoom supplémentaire à vitesse max
 const DRIVE_ZOOM_SPEED := 30.0       # m/s (108 km/h) : la caméra a fini de reculer (24, la vitesse maximale de l'arcade,
-                                     # supprimée le 2026-09-24 ; une voiture réaliste va de 50 à 350 km/h)
+									 # supprimée le 2026-09-24 ; une voiture réaliste va de 50 à 350 km/h)
 
 # --- intérieur (ApartmentInterior -> set_indoor) ---
 const FOOT_PIVOT_HEIGHT := 1.6       # hauteur de la SpringArm dans Player.tscn
@@ -315,7 +315,7 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 
 	var planar_speed := Vector2(velocity.x, velocity.z).length()
-	_update_animation(planar_speed, delta)
+	_update_animation(planar_speed, sprinting)
 	_update_jump_pose(delta)
 
 	if debug_freeze:
@@ -326,10 +326,9 @@ func _physics_process(delta: float) -> void:
 			(_jump_mod.blend if _jump_mod != null else -1.0),
 			(_jump_mod.phase if _jump_mod != null else 0.0)])
 
-	if model != null:
-		# cap du modèle : son orientation d'origine, moins l'écart des diagonales (cf. _update_animation)
-		model.rotation.y = deg_to_rad(model_yaw_deg) - _lacet_modele
 	if tune_weapon_live:
+		if model != null:
+			model.rotation_degrees.y = model_yaw_deg
 		_apply_weapon_pose()
 
 # --- Modèle / animation ---------------------------------------------
@@ -568,39 +567,7 @@ func _apply_weapon_pose() -> void:
 		weapon_hand_offset)
 	_weapon_node.transform = corr * grip_xf.affine_inverse()
 
-# --- Locomotion : des pieds posés (2026-09-25) --------------------------------
-# MESURÉ AVANT (sonde hors dépôt : os des pieds et SEMELLE, le plus bas des sommets des chaussures par peau linéaire,
-# image par image, vrai joueur sur sol plat) :
-#  - les pieds NE BOUGEAIENT PAS : amplitude 0,00 m en marche comme en course. L'import de Suit.gltf, reciblé sur le
-#    profil humanoïde, supprimait les pistes de POSITION des os (option « unimportant_positions », vraie par défaut) ;
-#    or dans ce squelette Quaternius les pieds sont enfants de Root, pas des tibias (commande de pied, comme une IK) :
-#    sans position, ils restaient à leur place de repos et ne faisaient que TOURNER — pointe enfoncée de 18 à 20 cm
-#    dans le sol, pied traîné à la vitesse du corps. Corrigé dans Suit.gltf.import (les PNJ, non reciblés, avaient
-#    leurs pistes) ;
-#  - la marche (Walk) avance d'elle-même à 1,15 m/s et la course (Run) à 3,02 m/s — vitesse PROPRE, celle où le pied
-#    d'appui reste posé, mesurée sur la pose —, mais le joueur allait à 5 et 13,5 m/s en les jouant à vitesse 1 : les
-#    pieds glissaient de 4 et 10 m/s ;
-#  - reculer ou aller de côté jouait la marche AVANT (le corps regarde toujours où vise la caméra).
-# Donc : l'animation du SENS du déplacement (le pack a Run_Back, Run_Left, Run_Right ; en diagonale, la plus proche et
-# le modèle tourné du reste, 45° au plus), jouée à vitesse / vitesse propre, bornée à CADENCE_MAX — au-delà, 2 fois
-# la cadence d'origine, les jambes moulineraient : la course à 13,5 m/s glisse encore (13,5 - 2 x 3,02 = 7,5 m/s).
-# On change d'animation à la même PHASE du pas (instant où le pied gauche se pose, mesuré) : les pieds ne sautent pas.
-# [vitesse propre m/s, sens du déplacement (0 devant, + vers la droite), phase où le pied gauche se pose]
-const LOCO := {
-	"Walk": [1.15, 0.0, 0.000],
-	"Run": [3.02, 0.0, 0.375],
-	"Run_Back": [2.74, PI, 0.121],
-	"Run_Left": [3.02, -PI / 2.0, 0.917],
-	"Run_Right": [3.02, PI / 2.0, 0.375],
-}
-const MARCHE_MAX := 2.0          # m/s : en dessous, la marche (vers l'avant ; le pack n'a pas de marche de côté)
-const CADENCE_MAX := 2.0         # au plus 2 fois la cadence d'origine (5 pas par seconde en course)
-const CADENCE_MIN := 0.5
-const DIAGONALE := 0.87          # rad (50°) : jusque-là de l'avant (ou de l'arrière), l'animation avant (ou arrière)
-const LACET_VITESSE := 10.0      # 1/s : le modèle rejoint le cap de sa diagonale
-var _lacet_modele := 0.0         # rad : écart du modèle au cap du corps (diagonales), + vers la droite
-
-func _update_animation(planar_speed: float, delta: float) -> void:
+func _update_animation(planar_speed: float, sprinting: bool) -> void:
 	if _anim == null or _shoot_lock > 0.0:
 		return
 
@@ -611,7 +578,6 @@ func _update_animation(planar_speed: float, delta: float) -> void:
 	var airborne := not is_on_floor()
 	var anim := ""
 	var sscale := 1.0
-	var lacet := 0.0
 
 	if airborne:
 		# base neutre : la pose de saut est ajoutée en additif par
@@ -621,12 +587,7 @@ func _update_animation(planar_speed: float, delta: float) -> void:
 	elif planar_speed > 0.5:
 		# EN MOUVEMENT : toujours les anims de jambes d'origine Suit.gltf
 		# (les anims UAL retargetées étirent les pieds sur ce squelette).
-		var plan := Vector3(velocity.x, 0.0, velocity.z)
-		var alpha := atan2(plan.dot(transform.basis.x), plan.dot(-transform.basis.z))
-		anim = _clip_de_marche(alpha, planar_speed)
-		var info: Array = LOCO[anim]
-		lacet = wrapf(alpha - float(info[1]), -PI, PI)
-		sscale = clampf(planar_speed / float(info[0]), CADENCE_MIN, CADENCE_MAX)
+		anim = _pick_anim("Run" if sprinting else "Walk", "Walk")
 	elif weapon_equipped and _reloading and _anim.has_animation("ual/Pistol_Reload"):
 		anim = "ual/Pistol_Reload"
 	elif weapon_equipped and _anim.has_animation("ual/Pistol_Aim_Neutral"):
@@ -641,36 +602,12 @@ func _update_animation(planar_speed: float, delta: float) -> void:
 			anim, (anim != "" and _anim.has_animation(anim)),
 			_anim.current_animation, _anim.is_playing()])
 
-	_lacet_modele = lerp_angle(_lacet_modele, lacet, clampf(delta * LACET_VITESSE, 0.0, 1.0))
 	if anim == "":
 		return
 	_anim.speed_scale = sscale
 	if anim != _current_anim:
-		# d'une locomotion à l'autre, à la même phase du pas
-		var phase := -1.0
-		if LOCO.has(_current_anim) and LOCO.has(anim) and _anim.current_animation == _current_anim \
-				and _anim.current_animation_length > 0.0:
-			phase = fposmod(_anim.current_animation_position / _anim.current_animation_length - float(LOCO[_current_anim][2]), 1.0)
 		_current_anim = anim
 		_anim.play(anim, 0.12)
-		if phase >= 0.0:
-			_anim.seek(fposmod(phase + float(LOCO[anim][2]), 1.0) * _anim.current_animation_length)
-
-# Modèle remis dans l'axe du corps (plus d'écart de diagonale) : en noclip et en voiture, où la locomotion ne tourne pas.
-func _redresser_modele() -> void:
-	_lacet_modele = 0.0
-	if model != null:
-		model.rotation.y = deg_to_rad(model_yaw_deg)
-
-# Animation de locomotion selon le sens du déplacement `alpha` (repère du corps : 0 devant, + vers la droite) : de
-# l'avant et des diagonales avant, la marche ou la course ; de l'arrière et des diagonales arrière, la course arrière ;
-# sinon la course de côté.
-func _clip_de_marche(alpha: float, vitesse: float) -> String:
-	if absf(alpha) <= DIAGONALE:
-		return "Walk" if vitesse < MARCHE_MAX else "Run"
-	if absf(alpha) >= PI - DIAGONALE:
-		return "Run_Back"
-	return "Run_Right" if alpha > 0.0 else "Run_Left"
 
 # Pilote la pose de saut procédurale : fondu d'influence selon is_on_floor() et
 # phase selon la vitesse verticale. C'est ICI que le saut est "branché" sur
@@ -845,7 +782,6 @@ func set_noclip(enabled: bool) -> void:
 		return
 	_noclip = enabled
 	velocity = Vector3.ZERO
-	_redresser_modele()
 	var shape := $CollisionShape3D as CollisionShape3D
 	if enabled:
 		_noclip_saved = {"layer": collision_layer, "mask": collision_mask, "arm": spring_arm.collision_mask}
@@ -1020,7 +956,6 @@ func _enter_vehicle(car: Node3D) -> void:
 	($CollisionShape3D as CollisionShape3D).set_deferred("disabled", true)
 	collision_layer = 0
 	collision_mask = 0
-	_redresser_modele()
 	if model != null:
 		model.visible = false
 
