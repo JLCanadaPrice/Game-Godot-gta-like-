@@ -1,8 +1,7 @@
 extends CharacterBody3D
 
 const SPEED := 5.0              # marche normale
-const SPRINT_SPEED := 7.0       # course (Maj maintenue), celle de GTA V ; 13,5 jusqu'au 2026-09-25 : aucune animation ne
-                                # pouvait suivre (pieds qui glissaient de 7 m/s), cf. _update_animation
+const SPRINT_SPEED := 13.5      # course (Shift maintenu) = SPEED * 2.7
 const JUMP_VELOCITY := 6.0      # ~+33 % vs 4.5 -> saut nettement plus haut
 const MOUSE_SENSITIVITY := 0.003
 const COYOTE_TIME := 0.12      # on peut encore sauter juste après avoir quitté le sol
@@ -272,7 +271,7 @@ func _update_foot_camera(delta: float) -> void:
 	if _aiming:
 		longueur = INDOOR_AIM_SPRING_LENGTH if inside else AIM_SPRING_LENGTH
 		epaule = AIM_SHOULDER_OFFSET
-		pivot = AIM_PIVOT_HEIGHT      # à hauteur d'épaule, dedans comme dehors
+		pivot = INDOOR_PIVOT_HEIGHT if inside else AIM_PIVOT_HEIGHT
 	elif inside:
 		longueur = INDOOR_SPRING_LENGTH
 		epaule = INDOOR_SHOULDER_OFFSET
@@ -290,13 +289,10 @@ func _update_foot_camera(delta: float) -> void:
 # la caméra) ; le bras tient la position de tir et le canon suit le réticule (PoseTirModifier). On avance en visant, à
 # AIM_SPEED, sans sprint. Au relâchement, la caméra revient en douceur. Pas de visée quand un panneau de l'interface a
 # la souris ; en voiture, en noclip et dans l'eau, la visée s'arrête (ces modes ne passent pas par _update_aim).
-const AIM_SPRING_LENGTH := 2.0       # m : caméra rapprochée (4 sinon)
+const AIM_SPRING_LENGTH := 1.6       # m : caméra rapprochée (4 sinon)
 const INDOOR_AIM_SPRING_LENGTH := 1.2
-const AIM_SHOULDER_OFFSET := 0.7     # m : pivot décalé vers l'épaule droite
-# Pivot de la visée à hauteur d'épaule : 0,72 m au-dessus du centre du corps (0,9 m au-dessus des pieds), soit 1,62 m du
-# sol, dedans comme dehors. C'était 1,55 (2,45 m du sol) jusqu'au 2026-09-25 : la caméra de visée regardait le crâne du
-# personnage de haut, tête et main seules en bas de l'écran (vu à l'image).
-const AIM_PIVOT_HEIGHT := 0.72
+const AIM_SHOULDER_OFFSET := 0.55    # m : pivot décalé vers l'épaule droite
+const AIM_PIVOT_HEIGHT := 1.55
 const AIM_FOV := 55.0                # degrés : léger zoom (champ de la caméra à 75 sinon)
 const AIM_BLEND_SPEED := 12.0        # 1/s : la caméra prend la visée en un peu plus de 0,2 s
 const AIM_SPEED := 3.0               # m/s en visant : la course à sa cadence d'origine (vitesse propre 3,02 m/s)
@@ -447,17 +443,15 @@ func _setup_model() -> void:
 		# force la boucle sur la locomotion (pas sur les anims "one-shot")
 		for a in _anim.get_animation_list():
 			var low: String = String(a).to_lower()
-			# Idle_Gun_Pointing aussi : c'est l'attente arme sortie depuis le 2026-09-25 ; jouée une fois, elle s'arrêtait
-			# au bout de 1,67 s et le personnage restait figé (vu à l'image)
 			var loco := low.contains("idle") or low.contains("run") or low.contains("walk")
 			var oneshot := low.contains("shoot") or low.contains("hit") or low.contains("death") \
 				or low.contains("punch") or low.contains("kick") or low.contains("roll") \
-				or low.contains("interact") or low.contains("wave") or low.contains("slash")
+				or low.contains("interact") or low.contains("wave") or low.contains("slash") \
+				or low.contains("pointing")
 			if loco and not oneshot:
 				var res := _anim.get_animation(a)
 				if res != null:
 					res.loop_mode = Animation.LOOP_LINEAR
-					_fermer_boucle(res)
 		print("[Player] Animations du modèle : ", _anim.get_animation_list())
 		_load_upper_body_anims()
 		if _anim.has_animation("Idle"):
@@ -490,25 +484,6 @@ func _setup_model() -> void:
 			_pose_tir.preparer(_anim, "Idle_Gun_Pointing", _weapon_node.transform, muzzle_point.position)
 	else:
 		push_warning("Aucun Skeleton3D trouvé dans le modèle")
-
-# BOUCLE FERMÉE (2026-09-25) : dans Suit.gltf, Run, Run_Left et Run_Right n'ont pas leur dernière image. Leur dernière
-# clé, à la fin du clip (0,8 s), n'est pas égale à la première, alors que Run_Back et Walk finissent bien sur une copie
-# de la clé 0 (relevé clé par clé). Jouée en boucle, l'animation sautait d'un coup d'une image à la suivante au raccord :
-# le pied droit, qui se pose justement là, glissait de 10 à 16 cm à chaque pas (vu à la trace, image par image). Le
-# clip est prolongé d'un pas de clé : le moteur interpole alors de la dernière clé à la première, qui est exactement
-# l'image manquante.
-func _fermer_boucle(res: Animation) -> void:
-	for os: String in ["LeftFoot", "RightFoot"]:
-		var t := res.find_track(NodePath("%GeneralSkeleton:" + os), Animation.TYPE_POSITION_3D)
-		if t < 0:
-			continue
-		var n := res.track_get_key_count(t)
-		if n < 3 or absf(res.track_get_key_time(t, n - 1) - res.length) > 0.001:
-			return
-		var ecart := (res.track_get_key_value(t, n - 1) as Vector3).distance_to(res.track_get_key_value(t, 0) as Vector3)
-		if ecart > 0.01:
-			res.length += res.track_get_key_time(t, n - 1) - res.track_get_key_time(t, n - 2)
-			return
 
 # Anims HAUT DU CORPS depuis UAL1_Standard.glb (retargetées sur le même profil
 # SkeletonProfileHumanoid que Suit.gltf). On NE prend PAS les anims de jambes
@@ -684,25 +659,19 @@ func _apply_weapon_pose() -> void:
 #    pieds glissaient de 4 et 10 m/s ;
 #  - reculer ou aller de côté jouait la marche AVANT (le corps regarde toujours où vise la caméra).
 # Donc : l'animation du SENS du déplacement (le pack a Run_Back, Run_Left, Run_Right ; en diagonale, la plus proche et
-# le modèle tourné du reste, 45° au plus), jouée à vitesse / (vitesse propre x foulée), bornée à CADENCE_MAX.
-# FOULÉE ALLONGÉE (2026-09-25) : la course (Maj) va à 7 m/s, 2,3 fois la vitesse propre de Run ; jouée à 2,3 fois sa
-# cadence, les jambes moulinaient (7 pas par seconde). Au-delà de la course normale (SPEED), la foulée s'allonge
-# (PiedsSolModifier : pieds plus loin devant et derrière la hanche, bassin un peu plus bas) jusqu'à FOULEE_SPRINT, et la
-# cadence ne prend que le reste : pieds posés, à une cadence de course.
+# le modèle tourné du reste, 45° au plus), jouée à vitesse / vitesse propre, bornée à CADENCE_MAX — au-delà, 2 fois
+# la cadence d'origine, les jambes moulineraient : la course à 13,5 m/s glisse encore (13,5 - 2 x 3,02 = 7,5 m/s).
 # On change d'animation à la même PHASE du pas (instant où le pied gauche se pose, mesuré) : les pieds ne sautent pas.
-# [vitesse propre m/s, sens du déplacement (0 devant, + vers la droite), phase où le pied gauche se pose] ; phases de
-# Run, Run_Left et Run_Right sur leur boucle fermée (0,8333 s au lieu de 0,8, cf. _fermer_boucle)
+# [vitesse propre m/s, sens du déplacement (0 devant, + vers la droite), phase où le pied gauche se pose]
 const LOCO := {
 	"Walk": [1.15, 0.0, 0.000],
-	"Run": [3.02, 0.0, 0.360],
+	"Run": [3.02, 0.0, 0.375],
 	"Run_Back": [2.74, PI, 0.121],
-	"Run_Left": [3.02, -PI / 2.0, 0.880],
-	"Run_Right": [3.02, PI / 2.0, 0.360],
+	"Run_Left": [3.02, -PI / 2.0, 0.917],
+	"Run_Right": [3.02, PI / 2.0, 0.375],
 }
 const MARCHE_MAX := 2.0          # m/s : en dessous, la marche (vers l'avant ; le pack n'a pas de marche de côté)
-const CADENCE_MAX := 2.0         # au plus 2 fois la cadence d'origine (5 pas par seconde en course) ; au-delà, la foulée
-const FOULEE_SPRINT := 1.25      # foulée allongée de 25 % à SPRINT_SPEED (1 jusqu'à SPEED)
-const FOULEE_VITESSE := 2.0      # 1/s : la foulée change en douceur (Maj enfoncée ou lâchée d'un coup)
+const CADENCE_MAX := 2.0         # au plus 2 fois la cadence d'origine (5 pas par seconde en course)
 const CADENCE_MIN := 0.5
 const DIAGONALE := 0.87          # rad (50°) : jusque-là de l'avant (ou de l'arrière), l'animation avant (ou arrière)
 const LACET_VITESSE := 10.0      # 1/s : le modèle rejoint le cap de sa diagonale
@@ -734,12 +703,7 @@ func _update_animation(planar_speed: float, delta: float) -> void:
 		anim = _clip_de_marche(alpha, planar_speed)
 		var info: Array = LOCO[anim]
 		lacet = wrapf(alpha - float(info[1]), -PI, PI)
-		var foulee := _foulee_voulue(planar_speed, float(info[0]))
-		if _pieds_sol != null:
-			_pieds_sol.foulee = move_toward(_pieds_sol.foulee, foulee, FOULEE_VITESSE * delta)
-			_pieds_sol.axe_foulee = Vector3.RIGHT if anim == "Run_Left" or anim == "Run_Right" else Vector3.BACK
-			foulee = _pieds_sol.foulee
-		sscale = clampf(planar_speed / (float(info[0]) * foulee), CADENCE_MIN, CADENCE_MAX)
+		sscale = clampf(planar_speed / float(info[0]), CADENCE_MIN, CADENCE_MAX)
 	elif weapon_equipped and _reloading and _anim.has_animation("ual/Pistol_Reload"):
 		anim = "ual/Pistol_Reload"
 	elif weapon_equipped and _anim.has_animation("ual/Pistol_Aim_Neutral"):
@@ -754,8 +718,6 @@ func _update_animation(planar_speed: float, delta: float) -> void:
 			anim, (anim != "" and _anim.has_animation(anim)),
 			_anim.current_animation, _anim.is_playing()])
 
-	if _pieds_sol != null and (airborne or planar_speed <= 0.5):
-		_pieds_sol.foulee = move_toward(_pieds_sol.foulee, 1.0, FOULEE_VITESSE * delta)
 	_lacet_modele = lerp_angle(_lacet_modele, lacet, clampf(delta * LACET_VITESSE, 0.0, 1.0))
 	if anim == "":
 		return
@@ -770,12 +732,6 @@ func _update_animation(planar_speed: float, delta: float) -> void:
 		_anim.play(anim, 0.12)
 		if phase >= 0.0:
 			_anim.seek(fposmod(phase + float(LOCO[anim][2]), 1.0) * _anim.current_animation_length)
-
-# Foulée voulue à la vitesse `v` pour une animation de vitesse propre `propre` : 1 jusqu'à SPEED, FOULEE_SPRINT à
-# SPRINT_SPEED, et au moins ce qu'il faut pour que la cadence ne dépasse pas CADENCE_MAX (course arrière : 2,74 m/s).
-func _foulee_voulue(v: float, propre: float) -> float:
-	var f := 1.0 + (FOULEE_SPRINT - 1.0) * clampf((v - SPEED) / (SPRINT_SPEED - SPEED), 0.0, 1.0)
-	return maxf(f, v / (propre * CADENCE_MAX))
 
 # Modèle remis dans l'axe du corps (plus d'écart de diagonale) : en noclip et en voiture, où la locomotion ne tourne pas.
 func _redresser_modele() -> void:
@@ -803,7 +759,6 @@ func _clip_de_marche(alpha: float, vitesse: float) -> String:
 # toujours plus haute (15 cm x tan θ) et le pied flottait en permanence de 2,7 cm à 10°, 5,5 cm à 20°.
 const PIED_SONDE := 0.5          # m au-dessus et au-dessous du sol du corps (StepClimb monte 0,40 au plus)
 const PIED_ECART_MAX := 0.45
-const PIED_MARCHE := 0.04        # m : sol sous la pointe plus haut que la pente ne l'explique -> une marche sous le pied
 const PIED_DESCENTE := 4.0       # m/s : pas un lissage proportionnel. Sur une pente de 20° à 5 m/s, l'écart d'un pied posé
                                  # change de 1,8 m/s ; un lissage à 15/s le laissait 12 cm en retard (mesuré : pied
                                  # flottant de 10 cm en montée)
@@ -820,29 +775,17 @@ func _update_pieds_sol(delta: float) -> void:
 		var hit := space.intersect_ray(q)
 		var ecart := 0.0
 		var n := Vector3.UP
-		var sol_cheville := -INF
 		if not hit.is_empty() and (hit["normal"] as Vector3).y > 0.5:
-			sol_cheville = (hit["position"] as Vector3).y
-			ecart = clampf(sol_cheville - sol_corps, -PIED_ECART_MAX, PIED_ECART_MAX)
+			ecart = clampf((hit["position"] as Vector3).y - sol_corps, -PIED_ECART_MAX, PIED_ECART_MAX)
 			n = hit["normal"]
+		var avant := float(_pieds_sol.ecarts[i])
+		_pieds_sol.ecarts[i] = ecart if ecart > avant else move_toward(avant, ecart, PIED_DESCENTE * delta)
+		_pieds_sol.normales[i] = n
 		# sous la pointe de la chaussure : le sol qu'elle ne doit pas traverser (cf. PiedsSolModifier._sortir_la_pointe)
 		var t: Vector3 = _pieds_sol.pointes_monde[i]
 		q = PhysicsRayQueryParameters3D.create(Vector3(t.x, sol_corps + PIED_SONDE, t.z), Vector3(t.x, sol_corps - PIED_SONDE, t.z), 1, [get_rid()])
 		hit = space.intersect_ray(q)
-		var sol_pointe: float = (hit["position"] as Vector3).y if not hit.is_empty() and (hit["normal"] as Vector3).y > 0.5 else -INF
-		_pieds_sol.sols_pointe[i] = sol_pointe
-		# UNE MARCHE SOUS LE PIED : la pointe au-dessus d'une bordure, la cheville encore devant. Relever la pointe (40° au
-		# plus) ne suffit pas quand l'arête passe près de la cheville : l'avant de la chaussure entrait de 12 cm dans la
-		# bordure (vu à l'image, 2026-09-25). Si le sol sous la pointe dépasse de plus de PIED_MARCHE ce qu'y met la pente
-		# sous la cheville, tout le pied se pose sur la marche, le talon au-dessus du vide comme un vrai pied sur une arête.
-		# Sur une pente, la hausse vient du plan sous la cheville et rien ne change.
-		if sol_cheville != -INF and sol_pointe != -INF:
-			var hausse_pente := -(n.x * (t.x - p.x) + n.z * (t.z - p.z)) / n.y
-			if sol_pointe - sol_cheville - hausse_pente > PIED_MARCHE:
-				ecart = clampf(sol_pointe - sol_corps, -PIED_ECART_MAX, PIED_ECART_MAX)
-		var avant := float(_pieds_sol.ecarts[i])
-		_pieds_sol.ecarts[i] = ecart if ecart > avant else move_toward(avant, ecart, PIED_DESCENTE * delta)
-		_pieds_sol.normales[i] = n
+		_pieds_sol.sols_pointe[i] = (hit["position"] as Vector3).y if not hit.is_empty() and (hit["normal"] as Vector3).y > 0.5 else -INF
 
 # Pilote la pose de saut procédurale : fondu d'influence selon is_on_floor() et
 # phase selon la vitesse verticale. C'est ICI que le saut est "branché" sur

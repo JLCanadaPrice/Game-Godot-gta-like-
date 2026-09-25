@@ -3,7 +3,7 @@ extends Node
 # Garde-fou des étapes de la carte 3D, lancé après chaque étape avant son commit :
 #  1. World.tscn chargée dans l'arbre : joueur, caméra active, graphes de circulation et culler présents ;
 #  2. au point de départ réglé dans World.tscn, dans son orientation : debout au sol (pas en altitude), marche avant 2 s
-#     puis sprint 1,5 s, déplacement mesuré (la course au moins 1,1 fois plus rapide que la marche), pas de chute ;
+#     puis sprint 1,5 s, déplacement mesuré, pas de chute ;
 #  3. points de contrôle : deux trottoirs du centre-ville, puis MapSpec.GATE_SPOTS dès que la carte existe (routes,
 #     ponts, quartiers) : joueur posé au-dessus du sol, il doit y atterrir puis marcher.
 # Spawners coupés : aucune voiture ni PNJ ne gêne la marche.
@@ -77,14 +77,9 @@ func _spawn_walk() -> void:
 	var mid := _player.global_position
 	await _hold(["move_forward", "sprint"], SPRINT_SECONDS)
 	var sprinted := _flat(_player.global_position - mid)
-	# Maj fait aller plus vite : VITESSES comparées. Jusqu'au 2026-09-25 on comparait les distances (1,5 s de course
-	# contre 2 s de marche), ce qui demandait une course 1,33 fois plus rapide que la marche ; la course à 7 m/s ne
-	# passait plus qu'à 5 % près (10,5 m contre 10,0), et une course à 6,5 m/s aurait échoué sans rien de cassé.
-	var v_marche := walked / WALK_SECONDS
-	var v_course := sprinted / SPRINT_SECONDS
-	var ok := standing and walked >= MIN_WALK and v_course > v_marche * 1.1 and _player.global_position.y > start.y - 3.0
-	print("MAP_GATE_SPAWN départ %s, cap %.0f° | debout au sol %s | marche %.1f m en %.1f s (%.2f m/s) | sprint %.1f m en %.1f s (%.2f m/s) | y %.2f -> %.2f | %s"
-			% [start.snapped(Vector3.ONE * 0.1), rad_to_deg(_player.rotation.y), standing, walked, WALK_SECONDS, v_marche, sprinted, SPRINT_SECONDS, v_course, start.y, _player.global_position.y, "OK" if ok else "ÉCHEC"])
+	var ok := standing and walked >= MIN_WALK and sprinted > walked and _player.global_position.y > start.y - 3.0
+	print("MAP_GATE_SPAWN départ %s, cap %.0f° | debout au sol %s | marche %.1f m en %.1f s | sprint %.1f m en %.1f s | y %.2f -> %.2f | %s"
+			% [start.snapped(Vector3.ONE * 0.1), rad_to_deg(_player.rotation.y), standing, walked, WALK_SECONDS, sprinted, SPRINT_SECONDS, start.y, _player.global_position.y, "OK" if ok else "ÉCHEC"])
 	if not ok:
 		_errors.append("déplacement au point de départ")
 

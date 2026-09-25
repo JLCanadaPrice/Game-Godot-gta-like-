@@ -14,17 +14,11 @@ extends Node
 #     linéaire comme le moteur) reste au sol : 5e et 95e centiles pendant l'appui entre -3 et +3 cm ;
 #   - reculer, aller à gauche, à droite : Run_Back, Run_Left, Run_Right, pieds posés ; en diagonale avant droite : Run,
 #     modèle tourné de 45° vers la droite, pieds posés ;
-#   - BOUCLE FERMÉE (2026-09-25) : Run, Run_Left et Run_Right n'avaient pas leur dernière image (dernière clé à la fin
-#     du clip, différente de la première) ; au raccord, les pieds sautaient de 8 à 16 cm. La pose des pieds juste avant
-#     la fin du clip et au début doit se suivre (2 cm au plus), dans chaque animation de locomotion ;
-#   - Maj : la COURSE, à 7 m/s depuis le 2026-09-25 (13,5 avant, que l'animation ne pouvait pas suivre) : Run, foulée
-#     allongée de 25 % (PiedsSolModifier) et cadence réduite d'autant (7 / (3,02 x 1,25) = 1,85), pieds posés comme
-#     en course normale (même plafond, mesuré sur 240 images), pas plus long qu'en course normale (1,07 fois au moins) ;
+#   - Maj (13,5 m/s) : Run à la cadence maximale (2) ; le glissement qui reste est imprimé (c'est la vitesse de course
+#     qui dépasse ce que l'animation peut suivre, pas un défaut du test) ;
 #   - arrêt : Idle, pieds immobiles.
 #
 #  2. ARME SORTIE (touche 1, l'action toggle_weapon) : le bras droit se tend en position de tir (PoseTirModifier).
-#     Immobile, l'animation d'attente arme sortie (Idle_Gun_Pointing) tourne encore au bout de 2,5 s (jouée une fois,
-#     elle s'arrêtait à 1,67 s et le personnage restait figé : vu à l'image, 2026-09-25).
 #     Mesuré sur la pose AFFICHÉE (relevée au signal skeleton_updated : hors de lui, le squelette rend la pose de
 #     l'animation, modificateurs retirés) : arme rangée, bras pendant (main à plus de 45° sous l'épaule) ; sortie, en
 #     0,4 s au plus, bras tendu à 95 % au moins et canon à moins de 1° du point visé (le point sous le réticule),
@@ -34,8 +28,7 @@ extends Node
 #
 #  3. VISÉE (clic droit maintenu, l'action aim), arme rangée au départ, en regard libre (Alt) caméra tournée de 60° :
 #     l'arme sort, le regard libre s'arrête et le CORPS pivote vers où regarde la caméra ; en 0,5 s la caméra est
-#     rapprochée (bras de 2 m au lieu de 4), décalée vers l'épaule droite (0,7 m), À HAUTEUR D'ÉPAULE (pivot entre 1,5
-#     et 1,75 m au-dessus des pieds : il était à 2,45 m jusqu'au 2026-09-25, la caméra regardait le crâne) et zoomée (champ de 55° au lieu de
+#     rapprochée (bras de 1,6 m au lieu de 4), décalée vers l'épaule droite (0,55 m) et zoomée (champ de 55° au lieu de
 #     75) ; le réticule du HUD est visible et plein ; le canon est sur le point visé. En avançant, en pas chassé à
 #     gauche, et Maj tenue : 3 m/s, Run / Run_Left à leur cadence d'origine (0,99), pieds posés, bras tendu, canon sur
 #     le point visé. Relâché : la caméra revient EN DOUCEUR (après une image, encore loin de sa place ; revenue en
@@ -100,7 +93,6 @@ func _ready() -> void:
 	await _check_marche("diagonale", ["move_forward", "move_right"], "Run", 5.0)
 	await _check_course()
 	await _check_arret()
-	await _check_attente_arme()
 	await _check_arme()
 	await _check_visee()
 	await _check_visee_voiture()
@@ -122,22 +114,6 @@ func _check_pistes() -> void:
 	print("JOUEUR_A_PIED_PISTES position des pieds dans Walk et Run : %s | %s" % ["présentes" if ok else "MANQUE " + ", ".join(manque), _ok(ok)])
 	if not ok:
 		_errors.append("pistes de position des pieds")
-	# boucle fermée : la pose des pieds à la fin du clip rejoint celle du début
-	var sauts: PackedStringArray = []
-	var pire := 0.0
-	for clip: String in ["Walk", "Run", "Run_Back", "Run_Left", "Run_Right"]:
-		var a := _anim.get_animation(clip)
-		for os: String in PIEDS:
-			var t := a.find_track(NodePath("%GeneralSkeleton:" + os), Animation.TYPE_POSITION_3D)
-			var saut := a.position_track_interpolate(t, a.length - 0.0005).distance_to(a.position_track_interpolate(t, 0.0))
-			pire = maxf(pire, saut)
-			if saut > 0.02:
-				sauts.append("%s/%s %.3f m" % [clip, os, saut])
-	ok = sauts.is_empty()
-	print("JOUEUR_A_PIED_BOUCLES pieds au raccord de la boucle (Walk, Run, Run_Back, Run_Left, Run_Right) : %.3f m au plus%s | %s" % [
-			pire, "" if ok else " — SAUTS " + ", ".join(sauts), _ok(ok)])
-	if not ok:
-		_errors.append("boucles des animations")
 
 
 # Avance avec `actions` : 0,6 s de mise en train, puis 1,5 s de relevés.
@@ -162,22 +138,10 @@ func _check_marche(nom: String, actions: Array, clip_attendu: String, vitesse: f
 
 
 func _check_course() -> void:
-	var normale := await _mesure(["move_forward"], 240)
-	var r := await _mesure(["move_forward", "sprint"], 240)
-	var foulee: float = (_player.get("_pieds_sol") as Object).get("foulee")
-	var vitesse: float = r["corps"]
-	var ok: bool = r["anim"] == "Run" and absf(vitesse - 7.0) < 0.05 and absf(foulee - 1.25) < 0.01 \
-			and absf(float(r["cadence"]) - 7.0 / (3.02 * 1.25)) < 0.02
-	var txt := "JOUEUR_A_PIED_COURSE Maj : corps %.2f m/s, anim %s x %.3f, foulée x %.2f |" % [vitesse, r["anim"], r["cadence"], foulee]
-	for k in PIEDS.size():
-		var p: Dictionary = r[PIEDS[k]]
-		var plafond: float = (float(PLANCHER["Run"][k]) + 0.1) * vitesse
-		var pas_ratio: float = float(p["ampl"]) / maxf(float(normale[PIEDS[k]]["ampl"]), 0.01)
-		var ok_pied: bool = float(p["glisse"]) <= plafond and pas_ratio >= 1.07 and float(p["bas"]) >= -0.03 and float(p["haut"]) <= 0.05
-		ok = ok and ok_pied
-		txt += " %s : pas %.2f m (%.2f fois la course normale), glisse %.2f m/s (au plus %.2f), semelle %+.3f / %+.3f m |" % [
-				PIEDS[k].trim_suffix("Foot"), p["ampl"], pas_ratio, p["glisse"], plafond, p["bas"], p["haut"]]
-	print(txt + " " + _ok(ok))
+	var r := await _mesure(["move_forward", "sprint"])
+	var ok: bool = r["anim"] == "Run" and absf(float(r["cadence"]) - 2.0) < 0.01
+	print("JOUEUR_A_PIED_COURSE Maj : corps %.2f m/s, anim %s x %.2f (cadence maximale) ; les pieds glissent encore de %.2f / %.2f m/s | %s" % [
+			r["corps"], r["anim"], r["cadence"], r["LeftFoot"]["glisse"], r["RightFoot"]["glisse"], _ok(ok)])
 	if not ok:
 		_errors.append("course")
 
@@ -188,20 +152,6 @@ func _check_arret() -> void:
 	print("JOUEUR_A_PIED_ARRET anim %s, pieds %.2f / %.2f m/s | %s" % [r["anim"], r["LeftFoot"]["glisse"], r["RightFoot"]["glisse"], _ok(ok)])
 	if not ok:
 		_errors.append("arrêt")
-
-
-# Arme sortie, immobile 2,5 s : l'attente arme sortie (Idle_Gun_Pointing) tourne toujours, le bras reste tendu.
-func _check_attente_arme() -> void:
-	await _basculer_arme()
-	await _frames(150)
-	var pt: Object = _player.get("_pose_tir")
-	var ok: bool = String(_anim.current_animation) == "Idle_Gun_Pointing" and _anim.is_playing() and float(pt.get("poids")) > 0.999
-	print("JOUEUR_A_PIED_ATTENTE_ARME arme sortie, immobile 2,5 s : anim %s, en cours %s, à %.2f / %.2f s | %s" % [
-			_anim.current_animation, _anim.is_playing(), _anim.current_animation_position, _anim.current_animation_length, _ok(ok)])
-	if not ok:
-		_errors.append("attente arme sortie")
-	await _basculer_arme()
-	await _frames(24)
 
 
 func _check_arme() -> void:
@@ -290,15 +240,11 @@ func _check_visee() -> void:
 	await _frames(2)
 	var epaule: float = _player.get("_shoulder")
 	var ecart := _ecart_canon()
-	var pieds := _player.global_position.y - 0.9
-	var pivot := arm.global_position.y - pieds
-	var oeil := cam.global_position.y - pieds
 	var ok: bool = not arme0 and bool(_player.get("weapon_equipped")) and bool(_player.call("is_aiming")) and ok_corps \
-			and absf(arm.spring_length - 2.0) < 0.05 and absf(epaule - 0.7) < 0.02 and absf(cam.fov - 55.0) < 0.5 \
-			and pivot >= 1.5 and pivot <= 1.75 and oeil <= 2.2 \
+			and absf(arm.spring_length - 1.6) < 0.05 and absf(epaule - 0.55) < 0.02 and absf(cam.fov - 55.0) < 0.5 \
 			and reticule.visible and reticule.modulate.a > 0.99 and ecart < 1.0
-	print("JOUEUR_A_PIED_VISEE clic droit (arme rangée, regard libre à 60°) : arme sortie %s, corps tourné vers la caméra %s | caméra : bras %.2f m (était %.2f), épaule %.2f m, pivot à %.2f m et caméra à %.2f m au-dessus des pieds, champ %.1f° (était %.1f) | réticule visible %s, opacité %.1f | canon à %.2f° du point visé | %s" % [
-			_player.get("weapon_equipped"), ok_corps, arm.spring_length, long0, epaule, pivot, oeil, cam.fov, fov0, reticule.visible, reticule.modulate.a, ecart, _ok(ok)])
+	print("JOUEUR_A_PIED_VISEE clic droit (arme rangée, regard libre à 60°) : arme sortie %s, corps tourné vers la caméra %s | caméra : bras %.2f m (était %.2f), épaule %.2f m, champ %.1f° (était %.1f) | réticule visible %s, opacité %.1f | canon à %.2f° du point visé | %s" % [
+			_player.get("weapon_equipped"), ok_corps, arm.spring_length, long0, epaule, cam.fov, fov0, reticule.visible, reticule.modulate.a, ecart, _ok(ok)])
 	if not ok:
 		_errors.append("visée")
 	# se déplacer en visant
@@ -320,7 +266,7 @@ func _check_visee() -> void:
 	var long1 := arm.spring_length
 	var fov1 := cam.fov
 	await _frames(72)
-	ok = long1 > 2.05 and long1 < 2.9 and fov1 < 60.0 and absf(arm.spring_length - long0) < 0.05 and absf(cam.fov - fov0) < 0.5 \
+	ok = long1 > 1.65 and long1 < 2.5 and fov1 < 60.0 and absf(arm.spring_length - long0) < 0.05 and absf(cam.fov - fov0) < 0.5 \
 			and absf(float(_player.get("_shoulder"))) < 0.02 and not bool(_player.call("is_aiming")) and reticule.visible \
 			and reticule.modulate.a < 0.7
 	print("JOUEUR_A_PIED_VISEE_RELACHEE après une image : bras %.2f m, champ %.1f° (en route) ; après 1,2 s : bras %.2f m, champ %.1f°, épaule %.2f m | réticule visible %s, opacité %.1f | %s" % [
@@ -520,14 +466,14 @@ func _elevation_canon() -> float:
 	return rad_to_deg(asin(clampf((arme.global_transform.basis * Vector3.RIGHT).normalized().y, -1.0, 1.0)))
 
 
-func _mesure(actions: Array, images := 90) -> Dictionary:
+func _mesure(actions: Array) -> Dictionary:
 	for a: String in actions:
 		Input.action_press(a)
 	await _frames(36)
 	_releves.clear()
 	_prec.clear()
 	_enregistre = true
-	await _frames(images)
+	await _frames(90)
 	_enregistre = false
 	for a: String in actions:
 		Input.action_release(a)

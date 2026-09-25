@@ -13,11 +13,6 @@ class_name PiedsSolModifier
 #     l'animation, donc vers l'avant). Dans ce squelette Quaternius, le pied est enfant de Root, pas du tibia : sans ce
 #     troisième temps, la chaussure se détacherait du tibia.
 # Sur sol plat les écarts sont nuls et la pose de l'animation ressort telle quelle.
-# FOULÉE ALLONGÉE (2026-09-25, course à 7 m/s) : `foulee` > 1 écarte chaque pied de sa hanche le long de `axe_foulee`
-# (le sens de la course dans le squelette), en entier pied posé et de moins en moins en le levant (le talon relevé
-# derrière soi ne s'allonge pas) ; le bassin descend de ce qu'il faut pour que la jambe posée atteigne son pied (course
-# de l'animation : jambe déjà tendue à 97 % en fin d'appui, mesuré). Le joueur joue alors l'animation à une cadence
-# réduite d'autant : pieds posés sans jambes qui moulinent.
 # Même garde qu'ailleurs contre les passages multiples dans une image (cf. JumpPoseModifier, PoseTirModifier) : on
 # repart de la pose de l'animation relevée au premier passage.
 
@@ -27,15 +22,10 @@ var normales := [Vector3.UP, Vector3.UP]        # normale du sol sous chaque pie
 var sols_pointe := [-INF, -INF]                # m, dans le monde : hauteur du sol sous la pointe de chaque chaussure (-INF : rien)
 var pieds_monde := [Vector3.ZERO, Vector3.ZERO] # sortie : pieds de l'ANIMATION dans le monde, où le joueur mesure le sol
 var pointes_monde := [Vector3.ZERO, Vector3.ZERO] # sortie : pointes des chaussures de l'ANIMATION, dans le monde
-var foulee := 1.0                               # allongement de la foulée (1 : celle de l'animation), cf. Player
-var axe_foulee := Vector3(0.0, 0.0, 1.0)        # sens de la foulée, repère du squelette (le modèle regarde vers +Z)
 
 const LEVEE_POSE := 0.05      # m : jusque-là au-dessus du sol d'animation, le pied est posé (incliné sur la pente)
 const LEVEE_LIBRE := 0.20     # m : au-delà, il est en l'air (plus incliné)
 const POINTE_ANGLE_MAX := 0.7 # rad (40°) : pied relevé au plus de ça pour sortir la pointe d'une marche
-const FOULEE_LEVEE := 0.35    # m : levée d'animation à partir de laquelle un pied n'est plus allongé
-const PORTEE := 0.995         # part de la longueur de la jambe qu'on tend au plus (au-delà, le pied quitterait le tibia)
-const BASSIN_PORTEE_MAX := 0.12   # m : le bassin descend au plus de ça pour la portée
 
 var _bassin := -1
 var _cuisses := PackedInt32Array()
@@ -100,77 +90,28 @@ func _process_modification() -> void:
 	_repartir_de_l_animation(sk)
 	var vers_sk := sk.global_transform.affine_inverse()
 	var haut := (vers_sk.basis * Vector3.UP)          # un mètre vertical du monde, dans le repère du squelette
-	var places := []                                  # pied de l'animation, foulée allongée, repère du squelette
 	for i in 2:
 		var pied_anim := sk.get_bone_global_pose(_pieds[i])
-		var p := pied_anim.origin + _allongement(sk, i, pied_anim.origin, haut)
-		places.append(p)
-		pieds_monde[i] = sk.global_transform * p
-		pointes_monde[i] = sk.global_transform * (p + pied_anim.basis * (_pointe_locale[i] as Vector3))
+		pieds_monde[i] = sk.global_transform * pied_anim.origin
+		pointes_monde[i] = sk.global_transform * (pied_anim * (_pointe_locale[i] as Vector3))
 	if poids <= 0.001:
 		return
-	# 1. le bassin descend du plus grand creux, et de ce qui manque à une jambe posée pour atteindre son pied
+	# 1. le bassin descend du plus grand creux
 	var creux := minf(minf(float(ecarts[0]), float(ecarts[1])), 0.0) * poids
 	var cheville := []                                  # cheville (origine du pied) vue du tibia, dans l'animation
 	var cible := []                                     # où va chaque pied, repère du squelette
 	for i in 2:
 		var pied := sk.get_bone_global_pose(_pieds[i])
 		cheville.append(sk.get_bone_global_pose(_tibias[i]).affine_inverse() * pied.origin)
-		cible.append((places[i] as Vector3) + haut * float(ecarts[i]) * poids)
-	creux -= _manque_de_portee(sk, cheville, cible, haut, creux)
+		cible.append(pied.origin + haut * float(ecarts[i]) * poids)
 	if creux < 0.0:
 		var parent := sk.get_bone_global_pose(sk.get_bone_parent(_bassin))
 		sk.set_bone_pose_position(_bassin, sk.get_bone_pose_position(_bassin) + parent.basis.inverse() * (haut * creux))
 	for i in 2:
-		cible[i] = _a_portee(sk, i, cheville[i], cible[i])
 		_plier(sk, i, cheville[i], cible[i])
 		_poser_pied(sk, i, cible[i], vers_sk.basis * (normales[i] as Vector3), haut)
 		_sortir_la_pointe(sk, i, vers_sk, haut)
 	_memoriser(sk)
-
-
-# Foulée allongée : le pied `i` (en `p`, pose de l'animation) écarté de sa hanche le long de `axe_foulee`, de
-# (foulee - 1) fois son écart, en entier tant qu'il est posé, plus du tout levé de FOULEE_LEVEE.
-func _allongement(sk: Skeleton3D, i: int, p: Vector3, haut: Vector3) -> Vector3:
-	if foulee <= 1.0001 or poids <= 0.001:
-		return Vector3.ZERO
-	var h := haut.normalized()
-	var axe := axe_foulee - h * axe_foulee.dot(h)
-	if axe.length() < 0.001:
-		return Vector3.ZERO
-	axe = axe.normalized()
-	var hanche := sk.get_bone_global_pose(_cuisses[i]).origin
-	var w := clampf(1.0 - (_levee(sk, i, haut) - LEVEE_POSE) / (FOULEE_LEVEE - LEVEE_POSE), 0.0, 1.0)
-	return axe * ((p - hanche).dot(axe) * (foulee - 1.0) * w * poids)
-
-
-# De combien (m, >= 0) le bassin doit encore descendre, sous le `creux` déjà décidé, pour qu'une jambe POSÉE atteigne sa
-# cible (tendue à PORTEE au plus). Nul pour la foulée de l'animation (jambe tendue à 97 % au plus).
-func _manque_de_portee(sk: Skeleton3D, cheville: Array, cible: Array, haut: Vector3, creux: float) -> float:
-	var h := haut.normalized()
-	var manque := 0.0
-	for i in 2:
-		var pose := clampf(1.0 - (_levee(sk, i, haut) - LEVEE_POSE) / (LEVEE_LIBRE - LEVEE_POSE), 0.0, 1.0)
-		if pose <= 0.0:
-			continue
-		var cuisse := sk.get_bone_global_pose(_cuisses[i]).origin
-		var tibia := sk.get_bone_global_pose(_tibias[i])
-		var longueur := (cuisse.distance_to(tibia.origin) + tibia.origin.distance_to(tibia * (cheville[i] as Vector3))) * PORTEE
-		var v := cuisse + haut * creux - (cible[i] as Vector3)     # hanche, bassin déjà descendu du creux, vers la cible
-		var vert := v.dot(h)
-		var horiz := (v - h * vert).length()
-		var descente := vert - sqrt(longueur * longueur - horiz * horiz) if horiz < longueur else vert
-		manque = maxf(manque, descente * pose)
-	return minf(manque / haut.length(), BASSIN_PORTEE_MAX)
-
-
-# La cible ramenée à portée de la jambe (tendue à PORTEE au plus) : hors de portée, le pied se détacherait du tibia.
-func _a_portee(sk: Skeleton3D, i: int, cheville: Vector3, t: Vector3) -> Vector3:
-	var hanche := sk.get_bone_global_pose(_cuisses[i]).origin
-	var tibia := sk.get_bone_global_pose(_tibias[i])
-	var longueur := (hanche.distance_to(tibia.origin) + tibia.origin.distance_to(tibia * cheville)) * PORTEE
-	var v := t - hanche
-	return t if v.length() <= longueur else hanche + v.normalized() * longueur
 
 
 # 3. Jambe `i` repliée pour que le bout du tibia (la cheville) atteigne `t`, genou dans le plan de l'animation.
