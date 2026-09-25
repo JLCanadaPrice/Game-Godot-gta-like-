@@ -40,14 +40,6 @@ travail imposée, les commandes exactes, les pièges déjà payés et l'état d'
 > Godot pour ARRÊTER le jeu qu'il a lancé, et le jeu se coupait. Aucune touche du jeu sur F1 à F12 (§6).
 > Toujours en attente depuis le 2026-09-23 : le coût physique d'environ 2 ms (NON TOUCHÉ, le joueur le teste en jeu) et la
 > pose des trois packs d'accessoires convertis (§7).
->
-> **Série du 2026-09-25 (PC de l'école : Godot en headless seulement, aucune capture ni vidéo).** **Troisième version de la
-> direction** (§15, « Troisième version ») : le braquage est de nouveau RÉDUIT AVEC LA VITESSE, cette fois par la courbe de
-> GTA V elle-même (code public d'ikt32, `ChassisGTA.reduction_gta` : 0,15 + 0,9^(v - 7,2), v en m/s), pas par une borne à
-> nous ; le contre-braquage automatique reste coupé. Mesuré avant : braqués à fond, les pneus avant glissaient à 30-47° pour
-> un pic à 9-11°. En virage, le frein arrière cède maintenant au virage (quatre modèles partaient en tête-à-queue en freinant
-> braqués depuis 120 km/h). Le prix, dit au joueur : les dérapages au frein à main se rattrapent plus lentement à haute
-> vitesse (le contre-braquage est réduit aussi) — **le joueur décide**.
 
 ## 1. Le projet
 
@@ -261,8 +253,8 @@ attendu. (C'est la voiture du pack telle quelle, qui n'est plus conduite en jeu 
 "$GODOT" --headless --path "$PROJET" --fixed-fps 60 --quit-after 300 res://scenes/tests/VehicleCatalogTest.tscn  # catalogue des véhicules, 20 000 tirages
 "$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/CarDrivingTest.tscn  # accélération, virage, freinage : CAR_DRIVING_RESULT
 "$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/CarDropTest.tscn     # chute de 10 m : CAR_DROP_RESULT
-"$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/ConduiteReelleTest.tscn  # conduite du joueur (façon GTA V), berline : 108 km/h et changement de voie au stick (2° aux roues), freinage, braquage à fond à 50 km/h (roues sur la courbe de GTA V), frein à main (Espace) rattrapé par le joueur au clavier, bordure, volant partiel, rampe 16 %, entrée de parking, sortie, touche B (berline posée ; F8 ne pose plus rien), coût, cf. §15
-"$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/ChassisBancTest.tscn  # châssis par fiche (façon GTA V) : accélération et patinage, freinage et plongée, freinage fort en tournant, S et braquage à fond à 50, 80 et 120 km/h (la voiture tourne, le virage se resserre en ralentissant), braqué à fond en roue libre et sous les gaz à 50, 80 et 120 km/h (les gaz ne font pas aller une traction tout droit), virages braqués à fond sans tonneau et roues sur la courbe de GTA V, frein à main, dérapages rattrapés par le joueur au clavier, bordures, parking ; 6 silhouettes (~25 s) ; -- --tous --lot=i/3 pour les 72 (3 lots en parallèle), cf. §15
+"$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/ConduiteReelleTest.tscn  # conduite du joueur (façon GTA V), berline : 108 km/h et changement de voie au stick, freinage, frein à main (Espace) rattrapé par le joueur au clavier, bordure, volant partiel, rampe 16 %, entrée de parking, sortie, touche B (berline posée ; F8 ne pose plus rien), coût, cf. §15
+"$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/ChassisBancTest.tscn  # châssis par fiche (façon GTA V) : accélération et patinage, freinage et plongée, freinage fort en tournant, S et braquage à fond à 50 et 80 km/h (la voiture tourne), virages braqués à fond sans tonneau, frein à main, dérapages rattrapés par le joueur au clavier, bordures, parking ; 6 silhouettes (~30 s) ; -- --tous --lot=i/3 pour les 72 (3 x ~1 min en parallèle), cf. §15
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/CarKerbTest.tscn          # bordures : le joueur monte, l'IA non
 "$GODOT" --headless --path "$PROJET" res://scenes/tests/WheelSpinTest.tscn        # roues des 72 modèles : axe, sens, rayon, stroboscope, pivot, braquage, rayon de braquage par modèle
 "$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/ParkingStructureTest.tscn  # parkings à étages : plateaux, escalier, hélice, cf. §11
@@ -2510,8 +2502,7 @@ moteur du pack.
 > **REMPLACÉ LE SOIR MÊME par la conduite façon GTA V (§15).** Restent vrais : une fiche par modèle, sans catégories, dans
 > `resources/vehicle_physics/fiches_vehicules.csv` ; la garde de coque (`garde_cm`) et les colonnes de la circulation
 > (`trafic_kmh`, `trafic_accel_ms2`, étape C) ; l'arcade retirée pour le joueur (étape B) ; la mesure de la physique des
-> PNJ (étape D) ; les réglages globaux (`reglages_conduite.tres`), réduits à deux multiplicateurs (plus, depuis le
-> 2026-09-25, `reduction_braquage`, §15). Ne sont plus vrais : le
+> PNJ (étape D) ; les réglages globaux (`reglages_conduite.tres`), réduits à deux multiplicateurs. Ne sont plus vrais : le
 > châssis du pack (`ChassisReel`, `ChassisRoue`), les colonnes réalistes (masse_kg, puissance_kw, adherence, freinage_ms2...)
 > et leurs colonnes calculées (cdg_m, raideur_*, amort_*, et l'outil `FichesVehiculesOutil` qui les écrivait), la borne de
 > direction `glissement_avant_max`. Les chiffres ci-dessous sont ceux de ce châssis-là.
@@ -3015,11 +3006,6 @@ fichiers, 0 échec) passent. Le banc juge maintenant le blocage au frein à main
 > MOITIÉ de la valeur), les conversions des freins, du frein à main et des amortisseurs, l'arrière « 8 % de plus » (c'est
 > maintenant la colonne fTractionBiasFront), le quart de charge gardé par l'arrière au freinage (c'est la moitié), le
 > braquage de 35° des voitures (40°), et les chiffres des tableaux.
->
-> **TROISIÈME VERSION DE LA DIRECTION LE 2026-09-25 (sous-section « Troisième version ») : le braquage est de nouveau réduit
-> avec la vitesse, par la courbe de GTA V elle-même** (code d'ikt32), et non plus par une borne à nous comme dans la première
-> version. Le contre-braquage automatique reste coupé. Est devenu FAUX dans la deuxième version : « l'angle des roues est le
-> volant x fSteeringLock, à toute vitesse ».
 
 Le joueur, après avoir conduit le châssis réel (§13, §14) : « Je n'aime pas la conduite actuelle. Je veux la conduite de GTA
 V, pas une conduite réaliste. » Ce qui fait ce ressenti, dans ses mots :
@@ -3070,8 +3056,7 @@ Réponse donnée au joueur avant de coder :
   (« x,y,z », repère de GTA V ; remplace `avant_pct`). Gardées : `garde_cm`, `trafic_kmh`, `trafic_accel_ms2` (la
   circulation lit les mêmes valeurs qu'avant). Plus de colonnes calculées : `FichesVehiculesOutil` est supprimé.
 - `reglages_conduite.tres` : deux multiplicateurs (freinage, adhérence), remis à 1 : les fiches portent maintenant le niveau
-  de GTA V. `glissement_avant_max` supprimé (la direction se borne d'elle-même, ci-dessous). Depuis le 2026-09-25, un
-  troisième réglage, `reduction_braquage` : la réduction du braquage avec la vitesse de GTA V (« Troisième version »).
+  de GTA V. `glissement_avant_max` supprimé (la direction se borne d'elle-même, ci-dessous).
 
 **Conversions** (le détail est dans l'en-tête du tableau) :
 
@@ -3222,8 +3207,7 @@ du mod Manual Transmission d'ikt32, qui reproduit la direction de GTA V pour pou
 **Ce qui est fait** (`ChassisGTA.gd`, `FichesVehicules.gd`, `fiches_vehicules.csv`) :
 - **les trois aides retirées** : plus de borne du braquage à vitesse, plus de contre-braquage automatique, plus de roues qui
   suivent la trajectoire volant lâché, plus de « stabilité » qui resserrait le braquage. Le volant suit les touches (ou le
-  stick d'une manette : `get_action_strength`), et l'angle des roues est le volant x fSteeringLock, à toute vitesse
-  (**REMPLACÉ le 2026-09-25** : x la réduction de GTA V, « Troisième version ») ;
+  stick d'une manette : `get_action_strength`), et l'angle des roues est le volant x fSteeringLock, à toute vitesse ;
 - **fiches recalées** (script hors dépôt ; masse, moteur, ressorts, centre de gravité et colonnes de la circulation
   inchangés) : braquage 40° pour les voitures, 38° pour les SUV, pick-up, fourgons, utilitaires et blindés, 38 à 40° pour
   les camions et les bus ; fTractionCurveLateral aux nouvelles définitions (17 pour le bus à 23 pour les muscle cars) ;
@@ -3370,178 +3354,7 @@ Sur les 72 : décalage latéral de 0,16 à ~0,3 fois l'avance (médiane 0,21 à 
 18,5° au pire avant) ; freinage en ligne droite inchangé. Tests : `ChassisBancTest` (les 72, trois lots), `ConduiteReelleTest`
 (freinage 35,7 m, frein à main 100 % bloqué, 24° de dérive, inchangés), `CarKerbTest` OK.
 
-### Troisième version de la direction (2026-09-25) : la réduction du braquage de GTA V
-
-Le joueur, sur le PC de l'école (Godot en headless seulement, aucune vidéo : il les demandera à la maison) : « Toujours pas
-bon. 1. Plus je vais vite, moins la voiture tourne. 2. Quand je freine en tournant, je continue presque tout droit. » Son
-analyse : braquées à 40° à haute vitesse, les roues avant mettent le pneu bien au-delà de son angle d'adhérence maximale
-(pic vers 11°) ; il racle au lieu de tourner. C'est pour ça que GTA V réduit l'angle des roues à haute vitesse ; il avait
-demandé de retirer cette réduction la veille, « c'était une erreur de ma part ». Sa demande :
-- remettre la réduction du braquage avec la vitesse, « EXACTEMENT comme GTA V la fait », pas une limite à nous ;
-- le contre-braquage automatique reste coupé ;
-- vérifier le freinage et l'accélération en virage ;
-- mesurer avant et après : berline, sportive, camion, rayon braqué à fond à 50, 80 et 120 km/h, en accélérant, en roue
-  libre et en freinant. La voiture doit tourner de plus en plus serré en ralentissant, et franchement à toute vitesse ;
-- pas de tonneau, le frein à main qui dérape, la circulation telle quelle.
-
-**Son hypothèse est CONFIRMÉE** (sondes hors dépôt, `D:/p-recree/sondes/2026-09-25_braquage_vitesse/`, avec un LISEZMOI).
-Braqués à fond, les pneus avant glissaient à 30-47° pour un pic à 9-11° : 4,3 fois le pic en médiane sur les 72 à 120 km/h,
-3,3 fois à 50 km/h. Ils raclaient :
-- en roue libre à 120 km/h, la berline perdait 14 km/h en 0,65 s et ne tournait qu'à 9,7 m/s² ;
-- sur les 72, l'accélération latérale ne valait que 74 % de l'adhérence avant (médiane).
-
-Balayage de l'angle des roues à vitesse tenue (`sonde_optimum.gd`, réduction coupée) : la voiture tourne le plus fort quand
-le pneu avant glisse à son pic (9 à 11,6°).
-- Berline : 14° de roues à 50 km/h, 9° à 80, 6° à 110 ; à 40° de roues à 110 km/h, 12 % d'accélération latérale en moins.
-- Sportive : 14°, 7,5°, 6° ; à 40°, 15 % en moins.
-- Camion : 18°, 10,5°, 7,5° ; à 40°, 31 % en moins.
-
-**La recherche** (sources publiques ; le réseau de l'école bloque gta5-mods.com, gtamods.com et les autres sites de modding
-par un certificat intercepté ; GitHub passe, lu par le navigateur ou WebFetch) :
-- **la courbe** est celle du code public d'ikt32 : mod Manual Transmission, `Gears/CustomSteering.cpp`, fonction
-  `calculateReduction`, dépôt archivé. Elle y est reprise du mod Custom Steering d'InfamousSabre, dont la description la donne
-  pour « une copie presque exacte » de celle de Rockstar. Au-dessus de 3 m/s le long de l'avant de la voiture :
-  0,15 + 0,9^(v - 7,2), arrondie au millième par défaut, bornée à 1. Puis elle est mêlée à un réglage « Steering reduction »
-  (1 + (réduction - 1) x réglage ; 0,9 par défaut dans ce mod) et lissée (lerp vers sa valeur, 1 - 0,01^dt à chaque pas).
-  Ses valeurs : 1 jusqu'à 31 km/h, 0,644 à 50, 0,355 à 80, 0,240 à 108, 0,213 à 120, 0,15 au plus bas. Rien de la
-  vitesse ou du modèle n'y entre d'autre : c'est la même pour tous les véhicules ;
-- **GTA V y ajoute un contre-braquage automatique** de 15° au plus (menu du même mod : « Game default is 15 degrees »). Dans
-  ce code, le terme qui devait relâcher la réduction en glisse (`finalReduction`) compare des radians à des degrés : il ne la
-  relâche que de 1,7 % au plus. C'est donc le contre-braquage automatique qui rattrape les glisses, dans GTA V comme dans ce
-  mod ;
-- la réduction sert bien à garder le pneu avant près de son angle optimal. Glossaire GTACars : fSteeringLock est l'angle à
-  l'arrêt, « réduit depuis ce maximum » quand on roule plus vite. Menu du mod : le réglage est à monter pour un pneu à angle
-  optimal bas, à baisser pour un angle optimal haut ;
-- freinage : sans ABS, freiner fort bloque les roues dans GTA V et la direction ne répond plus ; le mod ajoute un ABS « pour
-  que le volant reste efficace ». Ce jeu a un ABS sur tous les véhicules depuis le 2026-09-24 ;
-- le handling.meta de référence (hors dépôt) : fSteeringLock à 40 ou 35 pour la plupart des voitures, fTractionCurveLateral
-  à 22,5 le plus souvent. Rien n'en est recopié ici.
-
-**Ce qui est fait.**
-- `ChassisGTA.reduction_gta` écrit la courbe telle quelle ; `_direction` en tire l'angle « bicyclette » des roues avant :
-  volant x fSteeringLock x la réduction, lissée comme dans ce code. `repartir` pose la réduction à la vitesse de départ, et
-  `braquage_effectif()` donne l'angle que le volant à fond obtient à la vitesse du moment. Aucun contre-braquage automatique.
-- Le réglage global `reduction_braquage` (`reglages_conduite.tres`) est le « Steering reduction » de ce code : 1 = la courbe
-  telle quelle, c'est la valeur retenue ; 0 = aucune réduction. Au-dessus de 1, la réduction s'accentue ; au-delà de 1,18,
-  le mélange du code d'ikt32 passerait sous zéro à très grande vitesse (la direction s'inverserait) : la réduction est bornée
-  à [0 ; 1] ici.
-- **En virage, le frein arrière cède au virage** (`_pneu`, comme le « Cornering Brake Control » des ABS réels) : il n'use
-  plus que ce que la demande en travers du pneu laisse du cercle d'adhérence. Sans cela, avec la réduction, freiner fort et
-  braquer à fond depuis 120 km/h faisait partir en tête-à-queue quatre modèles qui freinent à la limite de leurs pneus avec un
-  centre de gravité neutre : city_truck_02 (64° de dérive), city_truck_02_flat (58°), city_utility_truck (49°), city_hotrod
-  (53°). Sur l'ancien châssis, ces quatre-là restaient à 15-16° : c'était bien la réduction. L'avant, qui ne racle plus, tourne
-  mieux, et l'arrière délesté ne gardait que 66 % de son adhérence en travers (répartiteur à 75 %). Avec ceci, 16 à 17° de
-  dérive. En ligne droite rien ne change : freinage 100-0 identique (berline 31,3 m, sportive 29,4 m, camion 48,7 m).
-
-**Avant / après** (`sonde_rayons.gd` : sol plat, touches du jeu, D tenu ; rayon, accélération latérale et glissement du pneu
-avant relevés entre 0,4 et 0,9 s après le coup de volant, vitesse du moment entre parenthèses ; « frein » : cap de la vitesse
-tourné jusqu'à l'arrêt, décalage latéral pour l'avance). Le camion ne va qu'à 110 km/h : lancé à 120, il braque vers 113.
-
-| berline city_sedan_01 (pic 11°) | rayon | a_lat (m/s²) | glissement avant | roues |
-|---|---|---|---|---|
-| 50 km/h, roue libre | 13,8 m (38 km/h) -> **13,9 m** (41) | 9,2 -> **10,2** | 36 -> **25°** | 41 -> 30° |
-| 50 km/h, gaz | 17,5 m (50) -> **20,0 m** (53) | 11,3 -> **10,9** | 38 -> **22°** | 41 -> 25° |
-| 50 km/h, frein | tourné 62 -> **71°**, 1,7 -> **2,3 m** de côté pour 9 m | 5,6 -> **7,0** | 33 -> **27°** | 41 -> 36° |
-| 80 km/h, roue libre | 39,7 m (67) -> **36,0 m** (73) | 9,5 -> **11,8** | 44 -> **19°** | 41 -> 16° |
-| 80 km/h, gaz | 41,6 m (77) -> **46,9 m** (82) | 11,1 -> **11,2** | 43 -> **16°** | 41 -> 14° |
-| 80 km/h, frein | tourné 71 -> **91°**, 4,3 -> **6,9 m** de côté pour 22 m | 5,2 -> **8,2** | 43 -> **20°** | 41 -> 19° |
-| 120 km/h, roue libre | 95,2 m (106) -> **84,4 m** (113) | 9,7 -> **12,2** | 47 -> **16°** | 41 -> 9° |
-| 120 km/h, gaz | 90,1 m (114) -> **94,4 m** (120) | 11,4 -> **12,0** | 47 -> **14°** | 41 -> 8,5° |
-| 120 km/h, frein | tourné 80 -> **111°**, 9,3 -> **16,3 m** de côté pour 47 m | 5,1 -> **7,7** | 46 -> **14°** | 41 -> 10° |
-
-| sportive city_sports_car_02 (pic 10°) / camion city_truck_01 (pic 9°) | sportive : rayon, a_lat, glissement | camion : rayon, a_lat, glissement |
-|---|---|---|
-| 50 km/h, roue libre | 12,4 -> 12,2 m ; 11,0 -> **12,2** ; 33 -> **22°** | 25,4 -> 23,8 m ; 5,9 -> **6,7** ; 31 -> **19°** |
-| 50 km/h, gaz | 30,5 -> 34,9 m ; 9,8 -> 9,0 ; 38 -> **19°** | 35,5 -> 32,6 m ; 5,4 -> **6,2** ; 34 -> **18°** |
-| 50 km/h, frein | tourné 55 -> 56° ; 7,4 -> 7,7 ; 24 -> **20°** | tourné 54 -> **60°** ; 4,1 -> **5,3** ; 32 -> **22°** |
-| 80 km/h, roue libre | 32,9 -> 31,0 m ; 11,8 -> **13,9** ; 41 -> **18°** | 64,7 -> **53,7 m** ; 6,5 -> **8,4** ; 39 -> **13°** |
-| 80 km/h, gaz | 53,1 -> 63,5 m (92 km/h) ; 11,2 -> 10,0 ; 41 -> **13°** | 75,3 -> **62,3 m** ; 6,2 -> **8,0** ; 39 -> **12°** |
-| 80 km/h, frein | tourné 71 -> **77°** ; 8,0 -> **9,1** ; 39 -> **19°** | tourné 70 -> **87°** ; 4,3 -> **5,8** ; 39 -> **15°** |
-| 120 km/h, roue libre | 75,9 -> 73,7 m ; 12,4 -> **14,0** ; 45 -> **16°** | 126,9 -> **108,7 m** ; 6,9 -> **8,7** ; 42 -> **11°** |
-| 120 km/h, gaz | 97,1 -> 108,1 m (128 km/h) ; 12,0 -> 11,6 ; 43 -> **11°** | 131,3 -> **111,6 m** ; 6,9 -> **8,7** ; 42 -> **11°** |
-| 120 km/h, frein | tourné 85 -> **94°** ; 8,1 -> **8,8** ; 44 -> **13°** | tourné 80 -> **104°** ; 4,6 -> **5,4** ; 42 -> **11°** |
-
-**Le virage se resserre en ralentissant.** Berline qui freine braquée à fond depuis 120 km/h, rayon à chaque palier :
-122 m à 100 km/h, 77 m à 90, 58 à 80, 49 à 70, 38 à 60, 26 à 50, 18 à 40, 12 à 30, 6 à 20. Avant : 162, 130, 110, 96, 72,
-46, 28, 16,5 et 7,5 m.
-
-**Les gaz en tournant ne font pas aller une traction tout droit.** Sur les 14 tractions du parc, braquées à fond, les gaz
-gardent 92 à 108 % de l'accélération latérale de la roue libre : médiane 1,06 à 50 km/h, 0,95 à 80, 0,99 à 120. À 50 km/h,
-les roues avant patinent (7 m/s en médiane, 9,8 au plus) et perdent un peu de leur tenue en travers. La poussée des roues
-braquées compense cette perte. Avant la réduction, les gaz faisaient même tourner plus fort (1,12 à 1,26) : braquées à
-40°, les roues avant tiraient la voiture vers l'intérieur. Sur une propulsion ou une quatre-roues motrices très puissante,
-les gaz font glisser l'arrière (sportive à 50 km/h : 9,0 m/s² sous les gaz pour 12,2 en roue libre). Rien de nouveau là :
-même rapport avant la réduction.
-
-**Mais la courbe de GTA V ne met le pneu avant AU PIC qu'à haute vitesse** (dit au joueur, pas changé : il a demandé la
-courbe de GTA V, pas une limite à nous). Sur les 72, le glissement avant rapporté au pic vaut 1,38 fois en médiane à 120 km/h,
-1,67 fois à 80, mais 2,22 fois à 50. À vitesse tenue, la courbe donne 25,8° de roues à 50 km/h, contre 14° à l'optimum de
-notre pneu pour la berline :
-- à 50 km/h : 9 % d'accélération latérale en moins que l'optimum, 16 % sur le camion ;
-- à 80 km/h : 3 à 5,5 % en moins ;
-- à 110 km/h : 1 % en moins.
-Le réglage `reduction_braquage` n'y peut rien : au-dessus de 1, il réduirait trop à haute vitesse avant d'atteindre l'optimum
-à 50 km/h. La courbe a été faite pour le pneu de GTA V. Piste NON vérifiée : le code d'ikt32 prend fTractionCurveLateral
-entier pour l'angle optimal (`DrivingAssists.cpp`), et notre pneu a son pic à la moitié (définition retenue le 2026-09-24).
-
-**Le prix : les dérapages au frein à main se rattrapent plus lentement à haute vitesse. Le joueur décide.** La réduction
-limite aussi le contre-braquage que le joueur peut donner : 9,4° de roues au plus à 110 km/h. Dans GTA V, c'est le
-contre-braquage automatique, refusé ici, qui compense. Banc, les 72 modèles, même protocole (Espace lâché à 15° de dérive, puis
-le joueur au clavier) :
-
-| | dérive au plus fort, médiane (pire) | droite en, médiane (pire) |
-|---|---|---|
-| 50 km/h | 24° (32°) -> 27° (37°) | 0,82 s (1,33) -> 0,90 s (1,47) |
-| 80 km/h | 30° (38°) -> 39° (82°) | 1,08 s (1,35) -> 1,55 s (3,48) |
-| 110 km/h | 32° (40°) -> 47° (88°) | 1,32 s (1,93) -> 2,08 s (3,70) |
-
-Les 72 sont toujours rattrapés en moins de 4 s, sans tonneau (roulis 10,7° au pire, city_retro_car_01 ; aucune roue levée).
-Les pires sont des voitures anciennes et des muscle cars : lowpoly_kamaro à 88° de dérive, city_limousine et
-city_retro_car_03 en 3,70 s. Les six silhouettes : sportive 42° / 1,43 s à 110 km/h, berline 44° / 1,75 s, micro-citadine
-53° / 1,78 s. Le camion et le bus ne dérapent pas (4 à 8°). Deux suites possibles, NON FAITES, au choix du joueur :
-- lever la réduction tant qu'on tire le frein à main (une option du mod d'ikt32, « No reduction on handbrake », coupée par
-  défaut) : elle aide à lancer une glisse, pas à la rattraper ;
-- relâcher la réduction avec la dérive, pour rendre au joueur tout son contre-braquage quand la voiture est en travers ; ce
-  n'est plus la courbe de GTA V.
-
-**Freinage braqué à fond, sur les 72** (décalage latéral / avance, médiane) : 0,21 -> 0,26 à 50 km/h, 0,23 -> 0,33 à 80,
-0,23 -> 0,35 à 120. Trajectoire tournée jusqu'à l'arrêt : 79 -> 108° depuis 120 km/h. Dérive 20° au plus. Freinage fort en
-tournant (4° aux roues à 100 km/h) : 8,5° de dérive au plus.
-
-**Tests** (headless) :
-- `ChassisBancTest` : les six silhouettes, puis les 72 en trois lots. Phases nouvelles :
-  - `braque_libre_*` et `braque_gaz_*` à 50, 80 et 120 km/h ;
-  - `frein_braque_120` ;
-  - le rayon aux paliers de vitesse (échec si le virage s'ouvre en ralentissant) ;
-  - les roues contre la courbe de GTA V dans les `virage_*`, avec une réplique du lissage (sans elle, la balayeuse, qui ne
-    tient pas 50 km/h braquée à fond, ralentit dans la partie raide de la courbe : 0,8° d'écart) ;
-  - le critère des tractions (GAZ_TENUE).
-  Le freinage fort en tournant garde les mêmes 4° aux roues : 38 % du volant au lieu de 10 %. Le banc ÉCHOUE sur l'ancien
-  châssis (roues à la butée à toute vitesse ; virage de la micro-citadine qui s'ouvre à 90 km/h).
-- `ConduiteReelleTest` : le changement de voie à 108 km/h garde ses 2° aux roues (20 % du stick au lieu de 5 %) : 5,2 m de
-  côté, cap repris à 0,1° près, comme avant. Braquage à fond à 50 km/h : roues à 25,83° pour 25,84° selon la courbe. Frein à
-  main à 49 km/h : 27° de dérive, droite en 0,88 s. Freinage de 108 km/h : 35,7 m. Script du châssis : 81 µs par pas en
-  médiane.
-- `ParkingStructureTest` : rayons à 3 m/s inchangés (berline 3,00 m, camion 6,94, bus 6,93) ; rampes en 91,3 s.
-- `ProjectLoadCheck` : 641 fichiers, 0 échec.
-La circulation n'est pas touchée (ni `Car.gd`, ni `LoopSpawner.gd`) : `WorldTrafficSmokeTest` n'a pas été rejoué.
-
-**Pièges payés en le faisant.**
-- **Le joueur scripté (`PiloteClavier`) doit garder son volant rapporté à la butée à l'arrêt.** Rapporté à l'angle effectif
-  (la butée réduite), sa bande de tolérance devenait quatre fois plus fine en degrés de roues à 110 km/h. Il faisait alors
-  osciller la voiture à coups de touche (lacet ±0,8 rad/s), et la micro-citadine n'était jamais « droite » en 4 s. Rapporté à
-  la butée, il pousse la touche à proportion de ce qu'il voit ; la réduction baisse son gain à vitesse, et c'est justement à
-  ça qu'elle sert au clavier. Il n'est pas modifié.
-- **Le réseau de l'école intercepte le TLS** (« self signed certificate in certificate chain ») : gta5-mods.com, gtamods.com,
-  gtacars.net et leurs miroirs sont illisibles en direct ; GitHub (raw compris) passe.
-- **En Bash, `VAR=... && cmd &` détache aussi l'affectation** : la commande suivante ne voit pas la variable. Faire
-  `export VAR=...` avant.
-
-**Pas fait** : les captures au sol et les vidéos (PC de l'école : Godot en headless seulement ; le joueur les demandera à la
-maison) ; le réglage au ressenti.
-
 ### Reste
 
-Le réglage au ressenti, par le joueur, en jeu (le tableau, les deux multiplicateurs et la réduction du braquage sont faits
-pour ça) ; les dérapages à haute vitesse avec la réduction (« Troisième version », au choix du joueur) ; les chocs contre la
-circulation (§7) ; les sons.
+Le réglage au ressenti, par le joueur, en jeu (le tableau et les deux multiplicateurs sont faits pour ça) ; les chocs contre
+la circulation (§7) ; les sons.
