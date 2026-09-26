@@ -7,7 +7,7 @@ les leçons de ce dépôt qui restent valables. Écrit le 2026-09-25, sur le cod
 - **Le projet Unreal** : `F:\Projets\MafiaOpenWorld\MafiaOpenWorld` (C++, modèle Troisième personne, UE 5.8.3 installé
   dans `F:\epic\UE_5.8`), dépôt GitHub privé `JLCanadaPrice/MafiaOpenWorld`. Sa méthode, ses commandes et son plan sont
   dans son `CLAUDE.md`.
-- **L'export de la carte** : `F:\p-recree\export_unreal\` (hors dépôt), à lire en commençant par son `LISEZMOI.md`
+- **L'export de la carte** : `D:\p-recree\export_unreal\` (hors dépôt), à lire en commençant par son `LISEZMOI.md`
   (conventions d'axes, fichiers, contrôles). Il se refait sans toucher au jeu.
 - **Ce dépôt reste la référence** du jeu : ses mesures, ses décisions et ses pièges (`CLAUDE.md`). On ne le modifie plus
   que sur demande.
@@ -158,7 +158,7 @@ automatiques Unreal : `JoueurAPiedTest`, `ChassisBancTest`, `ConduiteReelleTest`
 
 ## 3. Ce qui mérite d'être migré
 
-1. **Le plan de la carte**, exporté (`F:\p-recree\export_unreal\`) : réseau routier (234 rubans, 149 carrefours et
+1. **Le plan de la carte**, exporté (`D:\p-recree\export_unreal\`) : réseau routier (234 rubans, 149 carrefours et
    raccords, 114 culs-de-sac, rond-point Echo Circle à deux voies, échangeurs, bretelles), graphes de circulation (carte
    et centre-ville, 348 feux) et piéton, plan du centre-ville, terrain (grille de 4 m, relief naturel, masque des tunnels,
    `.r16` prêt pour un paysage), rivière, lacs et port, voie ferrée, 1 637 bâtiments (emprise, hauteur, usage,

@@ -4,7 +4,7 @@ extends SceneTree
 # Construction, reçus en FBX (avec des .blend, .obj et un .cs Unity, ignorés). Une scène PRÊTE À POSER par modèle.
 #
 # Les FBX ne sont PAS dans le dépôt du jeu : ce sont des sources brutes, gardées dans le dépôt privé des sources
-# (F:/p-recree/sources-brutes/assets/<pack>/). Pour relancer cette conversion :
+# (D:/p-recree/sources-brutes/assets/<pack>/). Pour relancer cette conversion :
 #   1. copier les FBX de chaque pack dans res://assets/_fbx_import/<airport|farm|construction>/ ;
 #   2. Godot --headless --path <projet> --import ;
 #   3. Godot --headless --path <projet> --script res://scenes/world/props/tools/ConversionPacks.gd ;

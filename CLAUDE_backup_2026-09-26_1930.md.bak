@@ -6,7 +6,7 @@ travail imposée, les commandes exactes, les pièges déjà payés et l'état d'
 > **Série du 2026-09-24.** Plafonniers des parkings à étages : un seul modèle, celui du parking, copié là où il en
 > manquait (§11, étape 13). **Conduite réaliste, étape 1 FAITE** (§13) : essai sur la berline city_sedan_01, coupé par
 > défaut, F7 bascule arcade / réaliste, F8 pose une berline (B depuis le soir, §13). Puis, après les vidéos de l'essai
-> (hors dépôt, `F:/p-recree/videos_conduite/`), deux défauts corrigés :
+> (hors dépôt, `D:/p-recree/videos_conduite/`), deux défauts corrigés :
 > - la rampe d'accès des parkings à étages (27 % -> 9,6 %), avec l'assiette de l'arcade, fausse à chaque raccord (§11,
 >   étape 14) ;
 > - l'assistance de direction du pack, qui resserrait le virage en manœuvre ; elle est maintenant dosée par la vitesse
@@ -17,7 +17,7 @@ travail imposée, les commandes exactes, les pièges déjà payés et l'état d'
 > `ChassisBancTest` passé par les 72. Étape B FAITE : l'arcade retirée pour le joueur, plus de F7, tests migrés. Étape C
 > FAITE : la circulation roule et accélère selon la fiche de chaque modèle. Étape D FAITE (mesure seulement, rien de
 > construit) : une voiture physique coûte 0,21 ms par pas ; la version hybride tient au rond-point mais bloque un carrefour à
-> feux dense — **le joueur décide** (§14). Étape E FAITE : trois vidéos hors dépôt (`F:/p-recree/videos_conduite/`, 5 à
+> feux dense — **le joueur décide** (§14). Étape E FAITE : trois vidéos hors dépôt (`D:/p-recree/videos_conduite/`, 5 à
 > 7), évitement à 110 km/h en berline et à 85 km/h en bus, sportive contre camion. **Puis décisions du joueur** : la vraie
 > physique sur les PNJ, NON — la circulation reste cinématique, et l'idée de ne passer en physique que la voiture percutée
 > va à la feuille de route (§7) ; les 13 modèles bas ne sont pas surélevés. **Frein à main pour déraper, FAIT** (§14) : en
@@ -67,11 +67,8 @@ travail imposée, les commandes exactes, les pièges déjà payés et l'état d'
 > `CLAUDE.md`). **Lire `MIGRATION_UNREAL.md`** à la racine de ce dépôt : ce que fait chaque système, ce qu'Unreal fournit,
 > ce qui se migre (plan de la carte, fiches des véhicules, assets uniques faits dans Blender) et ce qui ne se migre pas
 > (scènes, code, packs low-poly), les leçons qui restent valables. La carte et les fiches sont exportées HORS dépôt dans
-> `F:\p-recree\export_unreal\` (son `LISEZMOI.md` : conventions d'axes, fichiers, contrôles ; ses outils le refont sans
+> `D:\p-recree\export_unreal\` (son `LISEZMOI.md` : conventions d'axes, fichiers, contrôles ; ses outils le refont sans
 > toucher au jeu). **Ce dépôt reste la référence** et ne se modifie plus que sur demande du joueur.
->
-> **DÉMÉNAGEMENT (2026-09-26, décision du joueur)** : tout `p-recree` est maintenant sur `F:\p-recree` (§1) ; `D:\p-recree`
-> garde l'ancienne copie, intacte.
 
 ## 1. Le projet
 
@@ -79,25 +76,18 @@ travail imposée, les commandes exactes, les pièges déjà payés et l'état d'
 - Moteur **Godot 4.7.2** (Forward+, D3D12 sous Windows), tout le code en **GDScript**.
 - Dépôt GitHub `JLCanadaPrice/Game-Godot-gta-like-`, branche de travail **`carte-3d`**.
 - Tag de retour : `avant-chantier-routes`.
-- **Le projet vit dans `F:\p-recree` depuis le 2026-09-26** : le SSD interne du PC de la maison, à côté du projet Unreal.
-  Tout `p-recree` y a été copié depuis le disque externe `D:` (un Samsung T7 dont la lettre changeait selon le PC ; il a
-  été `E:`), et chaque fichier copié a été comparé octet par octet. **`D:\p-recree` garde l'ancienne copie telle quelle.**
-  Deux choses n'y sont restées que sur D: :
-  - les copies de travail des sessions Claude terminées (`.claude/worktrees`, toutes propres, leurs commits sont dans le
-    dépôt) ;
-  - les images brutes des vidéos Unreal, dont les MP4 sont sur F:.
-  Une session ouverte sur `D:\p-recree\test\test` travaille sur l'ANCIENNE copie : ouvrir les nouvelles sur
-  `F:\p-recree\test\test`. Vérifier les chemins avant de relancer une commande d'une autre session.
+- Le projet vit sur un **disque externe dont la lettre change selon le PC** (actuellement `D:`,
+  il a déjà été `E:`). Vérifier les chemins avant de relancer une commande d'une autre session.
 - Git refuse le dépôt pour cause de propriétaire douteux : préfixer **toutes** les commandes par
   `git -c safe.directory=<chemin du dépôt>`.
-- Binaire Godot : `F:/p-recree/Godot_v4.7.2-stable/Godot_v4.7.2-stable_win64_console.exe`
+- Binaire Godot : `<disque>:/p-recree/Godot_v4.7.2-stable/Godot_v4.7.2-stable_win64_console.exe`
   (la variante `_console` écrit sur la sortie standard, c'est celle qu'il faut pour les tests).
 - `README.md` décrit un état très ancien du projet (sol gris de test) : ne pas s'y fier.
 - **L'historique a été réécrit le 2026-09-19** (`git filter-repo`) pour sortir 16 dossiers de
   sources d'assets brutes — `.fbx`, `.obj`, `.blend`, planches de textures d'origine, tous déjà
   ignorés par Godot via `.gdignore` et jamais chargés. Le dépôt est passé de **564 à 278 Mo**,
   l'arbre de travail de **2,19 Go à 987 Mo**. Ces sources vivent maintenant dans un **dépôt privé
-  séparé** (`F:/p-recree/sources-brutes`, arborescence identique) : privé parce que plusieurs packs
+  séparé** (`D:/p-recree/sources-brutes`, arborescence identique) : privé parce que plusieurs packs
   sont à licence NON VÉRIFIÉE. Conséquences pratiques : tous les SHA d'avant le 2026-09-19 sont
   périmés, et **ne jamais recommiter une source brute dans ce dépôt-ci** — si un pack doit être
   retravaillé, le copier hors du projet. Le compte de `ProjectLoadCheck` n'avait pas bougé (584) ce jour-là, ce qui
@@ -225,7 +215,7 @@ la cascade d'ombres attrape moins d'objets.
 `GODOT` = le binaire console, `PROJET` = la racine du dépôt.
 
 ```bash
-GODOT="F:/p-recree/Godot_v4.7.2-stable/Godot_v4.7.2-stable_win64_console.exe"; PROJET="F:/p-recree/test/test"
+GODOT="D:/p-recree/Godot_v4.7.2-stable/Godot_v4.7.2-stable_win64_console.exe"; PROJET="D:/p-recree/test/test"
 "$GODOT" --headless --path "$PROJET" --script res://scenes/world/map/tools/RoadBake.gd
 "$GODOT" --headless --path "$PROJET" --script res://scenes/world/map/tools/DistrictsBake.gd
 "$GODOT" --headless --path "$PROJET" --script res://scenes/world/map/tools/PlacesBake.gd
@@ -466,7 +456,7 @@ sans cela, une capture tombe au hasard dans son clignotement.
   vérifie sur chaque machine. Pour inspecter une collision, ouvrir la sous-scène concernée seule, ou ne réactiver le
   gadget qu'un instant. Sans ce fil de fer, le jeu ne coûte que **+0,8 ms par image (+10 %)** de plus qu'avant le
   chantier, moitié les véhicules, moitié les bâtiments exacts, et aucun des suspects vérifiés n'a changé (anti-apparition,
-  contrôle « enfermé » du noclip, rayons du culler) : sonde et journaux dans `F:/p-recree/sondes/2026-09-23_perf/`.
+  contrôle « enfermé » du noclip, rayons du culler) : sonde et journaux dans `D:/p-recree/sondes/2026-09-23_perf/`.
 - **`CityRenderOptimizer` imposait SON fondu à toutes les lumières du monde** (payé le 2026-09-23). Son passage est
   différé au démarrage (`_optimize.call_deferred()`), donc APRÈS les `_ready` : toute `Light3D` créée dans un `_ready`
   recevait `distance_fade` 180 + 30 m, quel que soit le réglage qu'on lui avait donné. Les 172 lumières fixes des
@@ -556,7 +546,7 @@ sans cela, une capture tombe au hasard dans son clignotement.
   l'écrivant** : le milieu de la boîte MONDE d'une roue asymétrique le long de son essieu (moyeu saillant d'un
   côté, les six modèles d'origine) glisse de 14 à 18 mm quand elle pivote, même autour d'un axe parfait ; c'est
   son centre LOCAL, ramené dans le monde, qui doit rester fixe. Captures de face et de trois quarts, avant et
-  après, dans `F:/p-recree/ground_shots/braquage_2026-09-21/` (hors dépôt) : de face à 1,2 m, le pare-chocs de la
+  après, dans `D:/p-recree/ground_shots/braquage_2026-09-21/` (hors dépôt) : de face à 1,2 m, le pare-chocs de la
   berline cache les roues, il faut descendre à 0,6 m ou se mettre de trois quarts pour les voir.
 - **`move_and_slide()` ne monte AUCUNE marche verticale**, si basse soit-elle. Les bordures de trottoir
   de la carte font **0,150 m** mesurés sur la collision cuite, en marche franche (la montée tient entre
@@ -779,7 +769,7 @@ débogage sur `V`.
   par l'IA) coûte 0,21 ms par voiture et par pas, et bloque un carrefour à feux dense, parce que l'IA ne sait pas piloter une
   voiture physique dans une circulation serrée. Une voiture percutée n'a pas besoin d'IA : elle encaisse le choc, glisse,
   s'arrête, puis reprend sa conduite cinématique, ou reste sur place, accidentée. Base possible : le châssis piloté de la
-  sonde de l'étape D (`F:/p-recree/sondes/2026-09-24_hybride/chassis_ia.gd`).
+  sonde de l'étape D (`D:/p-recree/sondes/2026-09-24_hybride/chassis_ia.gd`).
 - **ACCESSOIRES PRÊTS À POSER, pas encore posés** (2026-09-23) : trois packs reçus en FBX, convertis en une scène par
   modèle par `scenes/world/props/tools/ConversionPacks.gd` — `assets/airport_ground_vehicles/` (4 véhicules de piste),
   `assets/farm_buildings_quaternius/` (13 bâtiments et objets de ferme), `assets/low_poly_construction/` (81 éléments et
@@ -790,7 +780,7 @@ débogage sur `V`.
   côté d'une capsule de 1,80 m : véhicules d'aéroport à 1 ; bâtiments de ferme à 1,3 (la porte de la petite grange
   faisait 1,69 m) ; chantier au cas par cas, le pack étant incohérent (murs de 3 m justes, outils 1,5 à 4 fois trop
   gros). L'escalier de piste est en couleurs unies : sa texture palette manque au pack. Sources brutes dans le dépôt
-  PRIVÉ (`F:/p-recree/sources-brutes/assets/`), licences NON VÉRIFIÉES (`LICENSE_ATTRIBUTION.txt` de chaque dossier).
+  PRIVÉ (`D:/p-recree/sources-brutes/assets/`), licences NON VÉRIFIÉES (`LICENSE_ATTRIBUTION.txt` de chaque dossier).
   Rien n'est posé sur la carte : à décider avec le joueur (proposition : véhicules sur l'aire de trafic de l'aéroport,
   ferme au ranch et à Greenfield, chantier à Northgate Rise et en travaux de voirie).
 
@@ -1096,7 +1086,7 @@ de rayon centrée à 262,18 m ; Mk2 à Mk6 et Scraper001 n'en ont aucune.
   200 m), que `CityRenderOptimizer` respecte désormais (§6).
 - Vérifié : `DowntownBuildingsTest` (une copie de 222 triangles au-dessus de 261 m sur Mk1, matériau partagé, portée,
   une lumière avec son fondu) ; `DayNightTest` (sur 4 s d'horloge, allumé 37 % du temps pour 37,5 % attendus,
-  5 bascules, aucun désaccord entre les nœuds). Captures, allumé et éteint : `F:/p-recree/ground_shots/feu_mk1_2026-09-23/`
+  5 bascules, aucun désaccord entre les nœuds). Captures, allumé et éteint : `D:/p-recree/ground_shots/feu_mk1_2026-09-23/`
   (hors dépôt), vues `feu_mk1_*`.
 
 ### Feux arrière : deux niveaux, et le sol éclairé
@@ -1909,7 +1899,7 @@ du joueur, un commit).
   DayNightTest OK ; ProjectLoadCheck 627, 0 échec. Vues de référence du §3 : jour 333 / 352 / 611 / 350 / 268 / 554,
   nuit 277 / 181 / 480 / 267 / 222 / 458, les chiffres de l'étape 11 à un appel près (la mesure « avant » n'a pas été
   refaite sur la machine du jour : il aurait fallu réimporter un second arbre du projet).
-- Captures au sol, de jour et de nuit : `F:/p-recree/ground_shots/parkings_2026-09-23/` (hors dépôt) ; vues
+- Captures au sol, de jour et de nuit : `D:/p-recree/ground_shots/parkings_2026-09-23/` (hors dépôt) ; vues
   `parking_aeroport_passage`, `_escalier`, `_escalier_palier`, `_escalier_haut`, `_escalier_toit`, `_creneaux` et leurs
   variantes `_nuit`, `parking_centre_3_escalier`.
 
@@ -1918,7 +1908,7 @@ lumières : celles du modèle, dont le boîtier sombre fait un cadre (« un rebo
 plats ajoutés à l'étape 10 — 5 par niveau le long de l'allée, 3 par rampe couverte, 1 panneau au pied de l'escalier —,
 des rectangles lumineux sans boîtier qui flottaient sous le plafond. Il ne garde que ceux du modèle.
 
-- **Relevé sur les sommets avant de copier** (sondes hors dépôt, `F:/p-recree/sondes/2026-09-24_plafonniers/`) :
+- **Relevé sur les sommets avant de copier** (sondes hors dépôt, `D:/p-recree/sondes/2026-09-24_plafonniers/`) :
   - boîtier de 8,98 x 0,71 x 0,21 m dans `base_072` : 10 triangles `0a0d10` et un fond `727254` ;
   - vitre plate de `light_006`, 1,3 cm sous le boîtier à tous les niveaux : 10 triangles, un cadre de 0,20 m autour
     d'un panneau de 8,59 x 0,31 m ;
@@ -1953,7 +1943,7 @@ des rectangles lumineux sans boîtier qui flottaient sous le plafond. Il ne gard
   - DayNightTest OK : 140 vraies lumières fixes pour 140 luminaires, fondu 80 + 20 m.
   - DowntownBuildingsTest OK.
   - Appels de dessin des vues de parking identiques avant et après : mêmes maillages, même matériau.
-  - Captures de nuit au sol, avant et après, dans `F:/p-recree/ground_shots/plafonniers_2026-09-24/` (hors dépôt) :
+  - Captures de nuit au sol, avant et après, dans `D:/p-recree/ground_shots/plafonniers_2026-09-24/` (hors dépôt) :
     vues `parking_aeroport_plateau_nuit`, `_allee_plafonniers_nuit` (nouvelle), `_rampe_nuit`, `_escalier_nuit`,
     `_escalier_pied_nuit` (nouvelle), `parking_centre_3_plateau_nuit`.
 
@@ -1961,7 +1951,7 @@ des rectangles lumineux sans boîtier qui flottaient sous le plafond. Il ne gard
 les vidéos de la conduite réaliste : « elle fait 27 % et touche le pare-chocs ; qu'une berline passe sans toucher, en
 arcade comme en réaliste »).
 
-- **Relevé sur les sommets du modèle** (sonde hors dépôt, `F:/p-recree/sondes/2026-09-24_rampe_acces/`) : la rampe d'accès
+- **Relevé sur les sommets du modèle** (sonde hors dépôt, `D:/p-recree/sondes/2026-09-24_rampe_acces/`) : la rampe d'accès
   est faite de DEUX triangles, de la bande centrale du rez (x ±4,312, y 0,364, z 9,803) au sol extérieur (y 0, z 11,146).
   Cela fait 0,364 m sur 1,343 m, soit **27,1 %, 15,2°**. Entre son pied et la façade (z 11,868), le modèle n'a pas de sol.
   Sous elle se trouve la fondation (une face à z 11,146, de 0 à -2,43 m). L'angle d'attaque de la berline est de 13,5° :
@@ -2260,7 +2250,7 @@ centre-ville, en commençant par les modèles à perron de la carte, chaque éta
   - exact jusqu'à ~6 m (là où marchent et roulent joueur, PNJ et voitures) et boîte au-dessus : la plupart des triangles
     sont dans les étages ;
   - maillages de collision simplifiés dans Blender pour les modèles les plus lourds.
-- **Pièges payés en mesurant** (sondes gardées hors dépôt : `F:/p-recree/sondes/2026-09-23_collision_exacte/`, avec un
+- **Pièges payés en mesurant** (sondes gardées hors dépôt : `D:/p-recree/sondes/2026-09-23_collision_exacte/`, avec un
   LISEZMOI) :
   - (a) **un sol en `WorldBoundaryShape3D` loin de l'origine fait traverser les murs** aux `CharacterBody3D`. Mesuré dans
     une sonde : à 1 000 m, 18 capsules sur 88 passent ; à 2 000 m, toutes ; avec une dalle en boîte, aucune. Le jeu n'en
@@ -2411,7 +2401,7 @@ naissances vues sous 150 m.
 Tests : RoundaboutTrafficTest OK deux fois (**25 puis 21 sorties** pour 20 exigées, 0 file figée, les deux voies
 servent — marge mince, cf. §6), WorldTrafficSmokeTest OK, NoclipTest OK.
 
-**C. Sondes** : hors du dépôt dans `F:/p-recree/sondes/2026-09-23_collision_exacte/`, avec leurs logs. Leurs `.tscn`
+**C. Sondes** : hors du dépôt dans `D:/p-recree/sondes/2026-09-23_collision_exacte/`, avec leurs logs. Leurs `.tscn`
 pointent maintenant vers ce dossier (corrigé le 2026-09-23). Ajoutées dans la série : `sonde_enferme` (critère
 d'enfermement du noclip), `sonde_remplissage_marche` (joueur qui marche, naissances dans le champ jugées par un contrôle
 indépendant), `sonde_rond_point` (voitures gelées et éveillées sur l'îlot). Toujours sous `timeout` : une erreur
@@ -2485,7 +2475,7 @@ circulation, tests arcade à réécrire, sons).
    (`SteeringAssistance`), moins le sinus de l'angle entre la vitesse du centre de gravité et l'axe de la voiture. En virage
    lent, ce point, à 1,39 m devant l'essieu arrière, file vers l'INTÉRIEUR du virage (géométrie, pas glissade). Le pack y
    voit une dérive et ajoute du braquage ; le virage se resserre, et ainsi de suite jusqu'à la butée. Mesuré (sonde hors
-   dépôt, `F:/p-recree/sondes/2026-09-24_braquage/`), 45 % de volant à 12 km/h :
+   dépôt, `D:/p-recree/sondes/2026-09-24_braquage/`), 45 % de volant à 12 km/h :
    - le braquage effectif valait x 1,82, et le rayon 5,3 m, pour 9,5 m à l'épure ;
    - sans le terme de lacet, c'est pire (x 2,2) ; sans assistance du tout, 10,2 m.
 
@@ -2522,7 +2512,7 @@ branché sur `queue_free` sans condition). Chaque sortie a maintenant son numér
 
 **Coût.** Scripts du châssis (corps + 4 roues), par pas physique : **0,20 ms en médiane** dans la scène d'essai (0,24 en
 moyenne, 0,40 au 95e centile, 0,50 au plus), **0,21 ms dans le vrai monde** (`World.tscn`, circulation et PNJ ; sonde hors
-dépôt, `F:/p-recree/sondes/2026-09-24_conduite/`). Image entière (processeur, sans rendu) : +0,15 ms dans la scène d'essai ;
+dépôt, `D:/p-recree/sondes/2026-09-24_conduite/`). Image entière (processeur, sans rendu) : +0,15 ms dans la scène d'essai ;
 dans le monde, +0,08 et +0,31 ms en deux passes (4,9 ms en arcade), dans le bruit de ce PC. Ce coût n'existe que pendant
 qu'on conduit la berline en réaliste ; sans conducteur, le corps est figé.
 
@@ -2755,7 +2745,7 @@ Vérifié :
 Demande du joueur : « MESURE D'ABORD, ne construis pas [...] Évalue une version hybride : vraie physique seulement sur les
 quelques voitures PNJ proches du joueur, conduite simple au-delà. Dis-moi le coût réel et si l'IA peut piloter une voiture
 physique sans casser la circulation. Je décide après. » **Rien n'est dans le jeu.** Sondes et journaux hors dépôt, dans
-`F:/p-recree/sondes/2026-09-24_hybride/` (avec un LISEZMOI).
+`D:/p-recree/sondes/2026-09-24_hybride/` (avec un LISEZMOI).
 
 **Le prototype** (sonde) :
 - les K voitures de la circulation les plus proches du joueur (à moins de 50 m) deviennent physiques : le châssis réel, réglé
@@ -2813,7 +2803,7 @@ percutée est notée à la feuille de route (§7, « chocs réels contre la circ
 
 ### Étape E : les vidéos (2026-09-24)
 
-Hors dépôt, dans `F:/p-recree/videos_conduite/`, à côté des vidéos 1 à 4 de l'essai.
+Hors dépôt, dans `D:/p-recree/videos_conduite/`, à côté des vidéos 1 à 4 de l'essai.
 - Outil : `outils/video_etape_e.gd`.
 - Les AVI du Movie Maker sont convertis en MP4 par Blender, puis supprimés.
 - Décor : le vrai monde, piste principale de l'aéroport, 11 h, circulation retirée en mémoire. Le script appuie sur les
@@ -2920,7 +2910,7 @@ même un véhicule haut.
   - `ConduiteReelleTest` ;
   - `ProjectLoadCheck` : 640 fichiers, 0 échec.
 
-**Vidéo** : `F:/p-recree/videos_conduite/8_derapage_frein_a_main_sportive_80_kmh.mp4` (outil `outils/video_etape_e.gd
+**Vidéo** : `D:/p-recree/videos_conduite/8_derapage_frein_a_main_sportive_80_kmh.mp4` (outil `outils/video_etape_e.gd
 --clip=8`). La sportive à 80 km/h : frein à main et braquage à droite pendant 0,9 s, contre-braquage et gaz, puis la même chose
 à gauche. La caméra de poursuite est alignée sur la TRAJECTOIRE : celle du jeu, accrochée au cap de la voiture, la montrerait
 toujours droite.
@@ -2940,7 +2930,7 @@ toujours droite.
 - Rejoué SEUL, il passait.
 - Rejoué sur `b6801b5`, sans le frein à main, le même lot échouait de la même façon (1 pas).
 
-**La coque ne touchait pas la bordure.** Une sonde hors dépôt (`F:/p-recree/sondes/2026-09-24_garde_city_truck_02/`, avec un
+**La coque ne touchait pas la bordure.** Une sonde hors dépôt (`D:/p-recree/sondes/2026-09-24_garde_city_truck_02/`, avec un
 LISEZMOI) coule chaque forme de la coque vers le bas, sol exclu (`cast_motion`), au même pas que le banc :
 - dans le lot, la coque passait à **1,80 cm** de la bordure au plus près, sans jamais y entrer ; seule, à 3,44 cm. L'écart
   dépend bien de l'état du moteur physique, que laissent les véhicules passés avant le camion dans le lot. Le reste du lot 1
@@ -3222,7 +3212,7 @@ aucune au-delà : la circulation n'a pas changé), `ProjectLoadCheck` (640 fichi
 
 ### Vidéos
 
-Hors dépôt, dans `F:/p-recree/videos_conduite/`, outil `outils/video_gta.gd` (clips 9 à 12) :
+Hors dépôt, dans `D:/p-recree/videos_conduite/`, outil `outils/video_gta.gd` (clips 9 à 12) :
 - `9_virage_fort_berline_110_kmh_gta.mp4` : évitement braqué à fond à 110 km/h, 1,43 g, caisse penchée de 8,2° ;
 - `10_freinage_sportive_et_camion_100_kmh_gta.mp4` : depuis 100 km/h, vues de côté ; sportive 26,4 m, caisse plongée de
   2,9° ; camion 38,5 m, 1,4° ;
@@ -3239,7 +3229,7 @@ Le joueur, après avoir conduit la première version : « Deux problèmes, et ce
   Retire (ou réduis fortement) la limite de braquage en fonction de la vitesse. Si la voiture glisse parce que je braque
   trop, c'est à moi de gérer. »
 - une recherche sérieuse sur GTA V, et le handling.meta de GTA V, exporté par le joueur avec OpenIV
-  (`F:/p-recree/reference_gta/handling.meta`, HORS DU DÉPÔT), comme référence : « Ne copie pas ce fichier ni ses tableaux
+  (`D:/p-recree/reference_gta/handling.meta`, HORS DU DÉPÔT), comme référence : « Ne copie pas ce fichier ni ses tableaux
   dans mon dépôt, qui est public : mes fiches gardent leurs propres valeurs. » Rien de ce fichier n'est ici : ni extrait, ni
   tableau de ses valeurs ; seulement ce qu'il a appris sur les écarts entre familles et les définitions.
 
@@ -3359,7 +3349,7 @@ redescendues en 87 s),
 - **Le braquage à fond à 50 km/h avec Espace** faisait à peine déraper (12°) avec une inertie en lacet de 1,5 x la boîte :
   la voiture tournait serré en perdant sa vitesse. Ramenée à 1,0 (voitures), le frein à main fait pivoter comme dans GTA V.
 
-**Vidéos** (hors dépôt, `F:/p-recree/videos_conduite/`, outil `outils/video_gta2.gd`, clips 13 à 15 ; en bas de l'écran, les
+**Vidéos** (hors dépôt, `D:/p-recree/videos_conduite/`, outil `outils/video_gta2.gd`, clips 13 à 15 ; en bas de l'écran, les
 touches pressées et l'angle des roues) :
 - `13_derapage_contre_braque_par_le_joueur_sportive_80_kmh.mp4` : deux dérapages, D (puis A) et Espace jusqu'à 18°, puis le
   joueur contre-braque au clavier et remet les gaz : 35° et 34° de dérive, droite 1,15 s après Espace lâché ;
@@ -3424,7 +3414,7 @@ demandé de retirer cette réduction la veille, « c'était une erreur de ma par
   libre et en freinant. La voiture doit tourner de plus en plus serré en ralentissant, et franchement à toute vitesse ;
 - pas de tonneau, le frein à main qui dérape, la circulation telle quelle.
 
-**Son hypothèse est CONFIRMÉE** (sondes hors dépôt, `F:/p-recree/sondes/2026-09-25_braquage_vitesse/`, avec un LISEZMOI).
+**Son hypothèse est CONFIRMÉE** (sondes hors dépôt, `D:/p-recree/sondes/2026-09-25_braquage_vitesse/`, avec un LISEZMOI).
 Braqués à fond, les pneus avant glissaient à 30-47° pour un pic à 9-11° : 4,3 fois le pic en médiane sur les 72 à 120 km/h,
 3,3 fois à 50 km/h. Ils raclaient :
 - en roue libre à 120 km/h, la berline perdait 14 km/h en 0,65 s et ne tournait qu'à 9,7 m/s² ;
@@ -3618,7 +3608,7 @@ Demande du joueur (PC de l'école, headless seulement) : 1. les pieds sont bizar
 MESURANT, sans image, puis corriger ; 2. arme sortie, bras tendu en position de tir, avec les animations des packs du
 projet (dire si aucune ne convient) ; 3. viser au clic droit comme dans GTA V. Quatre commits : `8f4ad33` (pieds),
 `2dc0636` (arme), `6f53547` (visée), `9d486ff` (pieds sur le sol réel). Test : `JoueurAPiedTest` (quatre parties, 3 s).
-Sondes hors dépôt : `F:/p-recree/sondes/2026-09-25_joueur/` (LISEZMOI).
+Sondes hors dépôt : `D:/p-recree/sondes/2026-09-25_joueur/` (LISEZMOI).
 **Suite le même jour, au PC de la maison** (fenêtre, captures et vidéo) : la course ramenée à 7 m/s, décision du joueur,
 et tout vérifié À L'IMAGE au sol ; un commit, `a3147ec` (sous-sections « La course à 7 m/s », « Vérifié à l'image » et
 « Vidéo »).
@@ -3710,7 +3700,7 @@ sommets des chaussures `Suit_Feet`, par peau linéaire comme le moteur), vitesse
 
 ### Vérifié à l'image, au sol (2026-09-25, PC de la maison)
 
-Outil hors dépôt : `F:/p-recree/sondes/2026-09-25_joueur_images/regard.gd` (et sa scène). Le VRAI joueur, piloté par ses
+Outil hors dépôt : `D:/p-recree/sondes/2026-09-25_joueur_images/regard.gd` (et sa scène). Le VRAI joueur, piloté par ses
 actions, sur un sol d'essai quadrillé (carreaux de 0,5 m : une glisse se voit d'une image à l'autre), une pente de 20° et
 un trottoir de 15 cm, soleil rasant et ombres (le contact des pieds se lit à l'ombre). Une PLANCHE par cas (N images
 recadrées autour du joueur) : `captures/<cas>_<tag>.png`, `avant` pour le code de l'école, `apres` pour le code final.
@@ -3746,11 +3736,11 @@ visée (le test vérifiait le bras, l'épaule et le champ, pas la hauteur).
 
 ### Vidéo (2026-09-25)
 
-`F:/p-recree/videos_joueur/1_joueur_marche_course_arme_visee.mp4` (hors dépôt ; 30 s, 1280 x 720, 60 images/s). Le vrai
+`D:/p-recree/videos_joueur/1_joueur_marche_course_arme_visee.mp4` (hors dépôt ; 30 s, 1280 x 720, 60 images/s). Le vrai
 joueur dans le vrai monde, sur Founders Plaza à 13 h (à 11 h la rue était dans l'ombre des tours), circulation et piétons
 retirés en mémoire : il marche (Z, 5 m/s), court (Maj, 7 m/s) en traversant la rue et ses deux bordures de 15 cm,
 s'arrête, sort l'arme (1), vise (clic droit) et avance en visant (3 m/s). Filmé de côté, puis de derrière avec la caméra
-du jeu (HUD et réticule) ; touches pressées et vitesse en bas à droite. Outil : `F:/p-recree/videos_joueur/outils/`
+du jeu (HUD et réticule) ; touches pressées et vitesse en bas à droite. Outil : `D:/p-recree/videos_joueur/outils/`
 (`video_joueur.gd` : film, `--apercu=`, `--balayage` des heures ; `convertir_mp4.py --fps=60` ; `sonde_trajet.gd`, les
 trajets droits et dégagés autour du départ du joueur, avec leurs marches).
 
