@@ -1,0 +1,3790 @@
+# Repères pour Claude Code
+
+Fiche écrite pour être lue au début de chaque session : le contexte du projet, la méthode de
+travail imposée, les commandes exactes, les pièges déjà payés et l'état d'avancement.
+
+> **Série du 2026-09-24.** Plafonniers des parkings à étages : un seul modèle, celui du parking, copié là où il en
+> manquait (§11, étape 13). **Conduite réaliste, étape 1 FAITE** (§13) : essai sur la berline city_sedan_01, coupé par
+> défaut, F7 bascule arcade / réaliste, F8 pose une berline (B depuis le soir, §13). Puis, après les vidéos de l'essai
+> (hors dépôt, `F:/p-recree/videos_conduite/`), deux défauts corrigés :
+> - la rampe d'accès des parkings à étages (27 % -> 9,6 %), avec l'assiette de l'arcade, fausse à chaque raccord (§11,
+>   étape 14) ;
+> - l'assistance de direction du pack, qui resserrait le virage en manœuvre ; elle est maintenant dosée par la vitesse
+>   (§13, « Direction »).
+>
+> **Puis décision du joueur : conduite FULL RÉALISTE pour le joueur, arcade supprimée, sur les 72 modèles** (§14). Étape
+> A FAITE : une fiche par modèle (`resources/vehicle_physics/fiches_vehicules.csv`), le châssis réglé sur elle, le banc
+> `ChassisBancTest` passé par les 72. Étape B FAITE : l'arcade retirée pour le joueur, plus de F7, tests migrés. Étape C
+> FAITE : la circulation roule et accélère selon la fiche de chaque modèle. Étape D FAITE (mesure seulement, rien de
+> construit) : une voiture physique coûte 0,21 ms par pas ; la version hybride tient au rond-point mais bloque un carrefour à
+> feux dense — **le joueur décide** (§14). Étape E FAITE : trois vidéos hors dépôt (`F:/p-recree/videos_conduite/`, 5 à
+> 7), évitement à 110 km/h en berline et à 85 km/h en bus, sportive contre camion. **Puis décisions du joueur** : la vraie
+> physique sur les PNJ, NON — la circulation reste cinématique, et l'idée de ne passer en physique que la voiture percutée
+> va à la feuille de route (§7) ; les 13 modèles bas ne sont pas surélevés. **Frein à main pour déraper, FAIT** (§14) : en
+> voiture, Espace n'est plus que le frein à main ; il bloque les roues arrière quand la fiche le dit plus fort que les pneus
+> arrière (voitures, SUV, fourgons légers), pas sur les camions et les bus ; vidéo 8 hors dépôt. **Puis, après l'essai en jeu
+> du joueur (freins mous, voiture qui glisse) : freins et pneus renforcés, direction bornée à vitesse** (§14), par trois
+> réglages globaux dans `resources/vehicle_physics/reglages_conduite.tres`. **Puis, le soir, décision du joueur : « la
+> conduite de GTA V, pas une conduite réaliste ». FAIT** (§15) : un modèle de conduite à nous, inspiré de celui de GTA V
+> (`ChassisGTA`), à la place du pack VitaVehicle ; les fiches aux noms du handling.meta de GTA V (fMass, fBrakeForce,
+> fTractionCurveMax...), chacun documenté dans l'en-tête du tableau ; les 72 modèles au banc ; vidéos 9 à 12 hors dépôt.
+> **Puis, le même soir, deuxième version (§15, « Deuxième version ») : le joueur seul tourne les roues.** Retirés, à sa
+> demande : le contre-braquage automatique et la borne qui réduisait le braquage avec la vitesse (braquage de la fiche à
+> toute vitesse). La stabilité vient de la physique seule (partage de l'adhérence `fTractionBiasFront`, inertie
+> `vecInertiaMultiplier`, amortisseurs au critique, report de charge au freinage borné, répartiteur de freinage) ; les
+> fiches recalées sur une étude du handling.meta de GTA V (fichier de référence hors dépôt, jamais recopié). Les tests et
+> les vidéos 13 à 15 (hors dépôt) contre-braquent au clavier par `scenes/tests/PiloteClavier.gd`.
+> **Puis, le même soir : freiner ET tourner** (§15, « Freiner en tournant ») : S et braquage à fond allaient presque tout
+> droit ; l'ABS des roues avant partage maintenant l'adhérence selon la direction du glissement de la roue.
+> **Puis, le même soir : la berline de débogage se pose avec B, plus avec F8** (§13) : F8 est le raccourci de l'éditeur de
+> Godot pour ARRÊTER le jeu qu'il a lancé, et le jeu se coupait. Aucune touche du jeu sur F1 à F12 (§6).
+> Toujours en attente depuis le 2026-09-23 : le coût physique d'environ 2 ms (NON TOUCHÉ, le joueur le teste en jeu) et la
+> pose des trois packs d'accessoires convertis (§7).
+>
+> **Série du 2026-09-25 (PC de l'école : Godot en headless seulement, aucune capture ni vidéo).** **Troisième version de la
+> direction** (§15, « Troisième version ») : le braquage est de nouveau RÉDUIT AVEC LA VITESSE, cette fois par la courbe de
+> GTA V elle-même (code public d'ikt32, `ChassisGTA.reduction_gta` : 0,15 + 0,9^(v - 7,2), v en m/s), pas par une borne à
+> nous ; le contre-braquage automatique reste coupé. Mesuré avant : braqués à fond, les pneus avant glissaient à 30-47° pour
+> un pic à 9-11°. En virage, le frein arrière cède maintenant au virage (quatre modèles partaient en tête-à-queue en freinant
+> braqués depuis 120 km/h). Le prix, dit au joueur : les dérapages au frein à main se rattrapaient plus lentement à haute
+> vitesse (le contre-braquage était réduit aussi). **Puis, choix du joueur sur mesure : la réduction est LEVÉE pendant une
+> glisse au frein à main**, dès qu'il tient Espace et jusqu'à ce que la voiture soit redevenue droite : les dérapages se
+> rattrapent aussi vite qu'avant la réduction (1,07 s à 80 km/h, 1,32 à 110, en médiane sur les 72).
+> **Puis, le même jour : le joueur à pied** (§16). Les pieds ne bougeaient pas (l'import reciblé de `Suit.gltf` perdait
+> les pistes de position des pieds), les animations étaient jouées 4 fois trop lentement et toujours vers l'avant :
+> corrigé, mesuré (pieds posés au plancher de la mesure). Pieds sur le sol réel (pentes, bordures) par une IK des
+> jambes. Arme sortie : bras tendu en position de tir (Idle_Gun_Pointing du pack Suit ; celles d'UAL1 pointent de
+> travers sur ce squelette). Visée au clic droit façon GTA V.
+> **Puis, au PC de la maison (fenêtre, captures, vidéo) : la course (Maj) ramenée à 7 m/s**, décision du joueur (13,5
+> avant, que l'animation ne pouvait pas suivre), avec une foulée allongée pour que les pieds restent posés ; et tout le
+> travail de l'école vérifié À L'IMAGE, au sol : quatre défauts vus et corrigés (boucle de Run non fermée, attente arme
+> sortie figée, caméra de visée qui regardait le crâne, pied à cheval sur une bordure), le reste bon ; une vidéo hors
+> dépôt, de côté et de derrière (§16). **Le joueur autorise maintenant le push** quand il dit « commit et pousse », même
+> dans un texte collé (§2).
+>
+> **MIGRATION VERS UNREAL ENGINE 5.8 (décision du joueur, 2026-09-25, pour des graphismes réalistes).** Le nouveau projet
+> est `F:\Projets\MafiaOpenWorld\MafiaOpenWorld` (dépôt privé `JLCanadaPrice/MafiaOpenWorld`, sa méthode dans son
+> `CLAUDE.md`). **Lire `MIGRATION_UNREAL.md`** à la racine de ce dépôt : ce que fait chaque système, ce qu'Unreal fournit,
+> ce qui se migre (plan de la carte, fiches des véhicules, assets uniques faits dans Blender) et ce qui ne se migre pas
+> (scènes, code, packs low-poly), les leçons qui restent valables. La carte et les fiches sont exportées HORS dépôt dans
+> `F:\p-recree\export_unreal\` (son `LISEZMOI.md` : conventions d'axes, fichiers, contrôles ; ses outils le refont sans
+> toucher au jeu). **Ce dépôt reste la référence** et ne se modifie plus que sur demande du joueur.
+>
+> **DÉMÉNAGEMENT (2026-09-26, décision du joueur)** : tout `p-recree` est maintenant sur `F:\p-recree` (§1) ; `D:\p-recree`
+> garde l'ancienne copie, intacte.
+
+## 1. Le projet
+
+- Jeu **open world mafia** façon *Tulsa King*, vue à la troisième personne, en **3D**.
+- Moteur **Godot 4.7.2** (Forward+, D3D12 sous Windows), tout le code en **GDScript**.
+- Dépôt GitHub `JLCanadaPrice/Game-Godot-gta-like-`, branche de travail **`carte-3d`**.
+- Tag de retour : `avant-chantier-routes`.
+- **Le projet vit dans `F:\p-recree` depuis le 2026-09-26** : le SSD interne du PC de la maison, à côté du projet Unreal.
+  Tout `p-recree` y a été copié depuis le disque externe `D:` (un Samsung T7 dont la lettre changeait selon le PC ; il a
+  été `E:`), et chaque fichier copié a été comparé octet par octet. **`D:\p-recree` garde l'ancienne copie telle quelle.**
+  Deux choses n'y sont restées que sur D: :
+  - les copies de travail des sessions Claude terminées (`.claude/worktrees`, toutes propres, leurs commits sont dans le
+    dépôt) ;
+  - les images brutes des vidéos Unreal, dont les MP4 sont sur F:.
+  Une session ouverte sur `D:\p-recree\test\test` travaille sur l'ANCIENNE copie : ouvrir les nouvelles sur
+  `F:\p-recree\test\test`. Vérifier les chemins avant de relancer une commande d'une autre session.
+- Git refuse le dépôt pour cause de propriétaire douteux : préfixer **toutes** les commandes par
+  `git -c safe.directory=<chemin du dépôt>`.
+- Binaire Godot : `F:/p-recree/Godot_v4.7.2-stable/Godot_v4.7.2-stable_win64_console.exe`
+  (la variante `_console` écrit sur la sortie standard, c'est celle qu'il faut pour les tests).
+- `README.md` décrit un état très ancien du projet (sol gris de test) : ne pas s'y fier.
+- **L'historique a été réécrit le 2026-09-19** (`git filter-repo`) pour sortir 16 dossiers de
+  sources d'assets brutes — `.fbx`, `.obj`, `.blend`, planches de textures d'origine, tous déjà
+  ignorés par Godot via `.gdignore` et jamais chargés. Le dépôt est passé de **564 à 278 Mo**,
+  l'arbre de travail de **2,19 Go à 987 Mo**. Ces sources vivent maintenant dans un **dépôt privé
+  séparé** (`F:/p-recree/sources-brutes`, arborescence identique) : privé parce que plusieurs packs
+  sont à licence NON VÉRIFIÉE. Conséquences pratiques : tous les SHA d'avant le 2026-09-19 sont
+  périmés, et **ne jamais recommiter une source brute dans ce dépôt-ci** — si un pack doit être
+  retravaillé, le copier hors du projet. Le compte de `ProjectLoadCheck` n'avait pas bougé (584) ce jour-là, ce qui
+  est la preuve que rien de chargé n'etait parti ; il vaut **608** depuis les chantiers du
+  2026-09-20 (matériaux de balisage, de feux de véhicule, scripts et tests ajoutés), **611** depuis
+  le 2026-09-21 (trois lentilles de gyrophare « au repos »), **613** depuis le test du rond-point
+  (`RoundaboutTrafficTest`, même jour), **614** depuis les lampadaires du parking de l'aérogare
+  (`generated/places/lamp_heads.tres`), **616** depuis le vitrage et le porche de l'aérogare (deux
+  matériaux), **617** depuis `LampGlass.gd`, **619** depuis `WheelSpinTest` (2026-09-21 au soir) et **622** depuis le
+  parking à étages (`ParkingStructureKit.gd`, `ParkingStructureTest`, §11) et **625** depuis son éclairage
+  intérieur du 2026-09-22 (`parking_glow_material.tres` et les deux `parking_lights.tres`), **626** depuis l'outil
+  d'export des enveloppes de véhicules du 2026-09-23 (`EnveloppesExport.gd`, §12), **627** depuis les rampes invisibles
+  des entrées (`RampesEntree.gd`, même jour), **629** depuis le feu d'obstacle de Mk1 (`feu_obstacle.gdshader` et son
+  matériau, même jour, §9), **630** depuis l'outil de conversion des packs d'accessoires (`ConversionPacks.gd`, même
+  jour, §7), **635** depuis l'essai de la conduite réaliste (`ChassisReel.gd`, `ChassisRoue.gd`, `EssaiConduiteReelle.gd`,
+  `ConduiteReelleTest`, 2026-09-24, §13), **640** depuis les fiches des véhicules (`FichesVehicules.gd`,
+  `ChassisBancTest`, `FichesVehiculesOutil`, même jour, §14), **642** depuis les réglages globaux de la conduite
+  (`ReglagesConduite.gd`, `reglages_conduite.tres`, même jour, §14), et de nouveau **640** depuis la conduite façon GTA V
+  (même jour au soir, §15 : `ChassisGTA.gd` et `RoueGTA.gd` ajoutés ; `ChassisReel.gd`, `ChassisRoue.gd` et l'outil
+  `FichesVehiculesOutil` — son script et sa scène — retirés), puis **641** avec le joueur au clavier des tests
+(`scenes/tests/PiloteClavier.gd`, même soir, §15), puis **645** avec le joueur à pied du 2026-09-25 (`PoseTirModifier.gd`,
+`PiedsSolModifier.gd`, `JoueurAPiedTest` et sa scène, §16). **`ProjectLoadCheck` ne parcourt pas `res://assets`** (seulement scenes, scripts, resources, shaders) : les
+  98 scènes d'accessoires n'entrent pas dans son compte.
+
+## 2. Méthode de travail (imposée, non négociable)
+
+- **Mesurer depuis les vertices du maillage cuit**, jamais depuis une valeur théorique, une
+  constante ou un nom de fichier. Les outils de `scenes/world/map/tools/` en lecture seule
+  (`RampAudit`, `RampPoints`, `RampSteps`, `RampDrive`, `PlacesRangeAudit`) sont faits pour ça et
+  doivent être rejoués après chaque correction.
+- **Sauvegarde `.bak` datée avant chaque modification** :
+  `<Nom>_backup_<AAAA-MM-JJ_HHMM>.<ext>.bak`. **Jamais de copie `.tscn` ou `.gd`** sous un nom que
+  Godot va scanner : ça duplique l'UID et Godot charge la mauvaise scène. Ces `.bak` sont suivis
+  par git.
+- **Chaîne de cuisson COMPLÈTE, dans l'ordre documenté, sans sauter une seule étape** (§4). Sauter
+  `DistrictsBake`/`PlacesBake` fait perdre le nivellement des parcelles et casse `MapDistrictsTest` ;
+  sauter `VegetationBake` laisse une carte qui n'est pas celle que la chaîne produit.
+- **Tests headless après chaque étape** (§5) — sur un petit correctif, seulement les 2-3 tests directement
+  concernés (règles ci-dessous) —, **un commit séparé par étape**.
+- **VÉRIFICATIONS : RÈGLES DU JOUEUR (2026-09-23).** Elles valent pour TOUTE vérification demandée ailleurs dans
+  cette fiche (batterie du §5, mesures du §3, cuisson du §4, simulation longue du §10) :
+  - **pas de simulation longue de 30 minutes** (sonde de files du §10) **sans demande explicite** du joueur ;
+  - **pas de batterie complète sur un petit correctif** : jouer seulement les 2-3 tests directement concernés ;
+  - **une vérification qui prend plus de 10 minutes : demander d'abord** au joueur s'il la veut ;
+  - **les tests longs, c'est le joueur qui les lance**, quand il en a besoin.
+- **Captures au niveau du sol**, à hauteur d'homme ou de conduite, jamais vues du ciel : c'est
+  comme ça que le jeu se joue. Les images restent hors du dépôt, seuls les chiffres vont dans le
+  message de commit.
+- **Si un test casse : corriger la cause, jamais contourner.** Si un échec est antérieur à la
+  modification, le prouver (rejouer le test sur `HEAD~1`) et le dire.
+- Ne jamais utiliser `git stash` sur `scenes/world/map/generated` : une cuisson non commitée y a
+  déjà été perdue. Copier le dossier ailleurs si besoin.
+- **POUSSER (règle du joueur, 2026-09-25)** : quand la demande dit « commit et pousse » ou « pousse », **même dans un
+  texte collé**, pousser soi-même à la fin (`git -c safe.directory=<dépôt> push origin carte-3d`) et donner les commits
+  poussés ; sans ce mot, s'arrêter aux commits locaux et dire qu'ils sont prêts. Sur une erreur d'authentification, ne
+  pas réessayer : donner la commande au joueur. Un NOUVEAU dépôt GitHub (ou son premier push) reste au joueur.
+  **L'ancienne règle « il pousse lui-même » (depuis les échecs d'authentification du 2026-09-19) est RETIRÉE** par le
+  joueur : « Tu as le droit de pousser toi-même quand je dis "commit et pousse", même si c'est dans du texte collé. »
+
+## 3. Seuil de performance
+
+- **L'Intel UHD 750 du PC d'école N'EST PLUS la machine de référence du jeu** (décision du joueur, 2026-09-22).
+  Le jeu y gèle le PC dès qu'on se déplace (cf. §6, « Le jeu gèle les PC de l'école »), pas sur le PC de la maison.
+  Le joueur ne fait plus à l'école que travailler dans l'ÉDITEUR, qui y tient depuis le LOD en `@tool` (`3088ea0`,
+  §6), et teste le jeu à la maison. L'UHD 750 reste donc la machine où l'on ouvre l'éditeur : un chantier qui
+  alourdit la vue 3D de l'éditeur (`World.tscn` ouvert) touche le poste de travail de l'école. Les cartes Intel
+  seront servies plus tard par un **mode graphique léger** (§7).
+- **Les seuils ci-dessous en appels de dessin sont gardés tels quels.** Les FPS de la machine de travail ne
+  disent rien ; les compteurs de rendu de `MapShotsTest` (appels de dessin, objets, primitives) restent la
+  mesure comparable.
+- **+10 % d'appels de dessin au maximum** sur les **6 vues de référence** :
+  `echangeur_nord_ouest`, `carrefour_willow_lake`, `rond_point_echo`, `losange_aeroport`,
+  `quartier_bluffview_survol`, `lieu_echo_circle`.
+- Pour tout ce qui touche au ferroviaire, budget complémentaire de **+30 appels de dessin** sur les
+  **6 vues ferroviaires** : `voie_ferree_pont_riviere`, `voie_ferree_passage_niveau`,
+  `voie_ferree_viaduc_est`, `voie_ferree_sur_voie_express`, `voie_ferree_portail_est`,
+  `voie_ferree_heurtoir_ouest`. (Les trains n'apparaissent dans aucune des 6 vues de référence :
+  sans ce budget-là, le seuil serait respecté sans rien prouver.)
+- La mesure « avant » doit être refaite **sur la machine du jour**, code non modifié, avant la
+  modification — pas reprise d'une session ou d'un commentaire.
+
+- **Depuis le cycle jour/nuit, toute vue doit être mesurée DE JOUR ET DE NUIT.** Les 12 vues ci-dessous sont toutes
+  diurnes : de jour les halos de lampadaire sont cachés et les vraies lumières éteintes, donc elles ne prouvent
+  rien sur le coût nocturne. `MapShotsTest --heure=1` rejoue les mêmes vues de nuit ; les vues `nuit_*` au sol
+  servent aux captures.
+- **Les appels de dessin ne mesurent PAS le coût des lumières.** Une `OmniLight3D` ou une `SpotLight3D` n'ajoute
+  aucun appel de dessin : elle ajoute du travail dans la passe d'ombrage. Mesuré le 2026-09-19 : 0 et 1 540 vraies
+  lumières donnent exactement le même nombre d'appels. Pour comparer des approches d'éclairage, il faut le temps
+  GPU, et **la machine de développement ne sait pas le mesurer** : elle rend la scène en ~1,8 ms, les lumières y
+  sont noyées dans le bruit, et trois métriques s'y sont contredites (cf. §9). La seule mesure valable est
+  `RenderPerfTest` (qui accepte `--heure=`, `--bassin=` et `--toutes-lampes`) sur une machine dont le GPU est
+  le goulot : c'était l'UHD 750, ce sera la carte Intel visée par le mode graphique léger (§7).
+
+Référence relevée le 2026-09-18 en 800x450 (après le chantier de Northgate Rise) :
+
+| vue de référence | appels | | vue ferroviaire | appels |
+|---|---|---|---|---|
+| echangeur_nord_ouest | 347 | | pont_riviere | 397 |
+| carrefour_willow_lake | 395 | | passage_niveau | 258 |
+| rond_point_echo | 661 | | viaduc_est | 385 |
+| losange_aeroport | 395 | | sur_voie_express | 407 |
+| quartier_bluffview_survol | 267 | | portail_est | 201 |
+| lieu_echo_circle | 596 | | heurtoir_ouest | 154 |
+
+Référence relevée le **2026-09-19** en 800x450, après le cycle jour/nuit, sur la machine du jour. Le jour est
+mesuré à **12 h** et la nuit à **1 h**. La colonne « avant » est la mesure du même jour, code non modifié :
+
+| vue de référence | avant | jour 12 h | nuit 1 h | | vue ferroviaire | avant | jour | nuit |
+|---|---|---|---|---|---|---|---|---|
+| echangeur_nord_ouest | 354 | 333 | 259 | | pont_riviere | 406 | 404 | 342 |
+| carrefour_willow_lake | 402 | 352 | 175 | | passage_niveau | 268 | 266 | 209 |
+| rond_point_echo | 664 | 610 | 454 | | viaduc_est | 396 | 366 | 300 |
+| losange_aeroport | 400 | 351 | 252 | | sur_voie_express | 418 | 415 | 357 |
+| quartier_bluffview_survol | 274 | 268 | 213 | | portail_est | 199 | 179 | 89 |
+| lieu_echo_circle | 592 | 554 | 433 | | heurtoir_ouest | 161 | 152 | 61 |
+
+**La nuit coûte MOINS cher que le jour partout**, de 22 à 56 % d'appels en moins, et le jour lui-même a baissé.
+Ce n'est pas une surprise mais une conséquence voulue : `DayNightCycle` **coupe les ombres du soleil la nuit**
+(la lune n'en projette pas), et la passe d'ombre directionnelle est le plus gros poste d'appels de dessin de la
+scène. La baisse de jour vient du soleil qui culmine maintenant à 62° au lieu des 45° du soleil fixe d'avant :
+la cascade d'ombres attrape moins d'objets.
+
+## 4. Chaîne de cuisson (ordre exact)
+
+`GODOT` = le binaire console, `PROJET` = la racine du dépôt.
+
+```bash
+GODOT="F:/p-recree/Godot_v4.7.2-stable/Godot_v4.7.2-stable_win64_console.exe"; PROJET="F:/p-recree/test/test"
+"$GODOT" --headless --path "$PROJET" --script res://scenes/world/map/tools/RoadBake.gd
+"$GODOT" --headless --path "$PROJET" --script res://scenes/world/map/tools/DistrictsBake.gd
+"$GODOT" --headless --path "$PROJET" --script res://scenes/world/map/tools/PlacesBake.gd
+"$GODOT" --headless --path "$PROJET" --script res://scenes/world/map/tools/VegetationBake.gd
+"$GODOT" --headless --path "$PROJET" --script res://scenes/world/map/tools/MapBackgroundBake.gd
+"$GODOT" --headless --path "$PROJET" --script res://scenes/world/map/tools/TerrainBake.gd -- --from-heights
+"$GODOT" --headless --path "$PROJET" --import
+```
+
+La passe `--import` finale n'est pas facultative : `MapBackgroundBake` réécrit
+`map_background.png` et, sans réimport, le jeu affiche « Failed loading resource ».
+
+Durée mesurée le 2026-09-23 (PC où le disque est en `D:`) : **106 s pour la chaîne entière**, `--import` compris
+(RoadBake 18, DistrictsBake 16, PlacesBake 7, VegetationBake 9, MapBackgroundBake 6, TerrainBake 16, import 32). Elle
+reste donc sous la limite de 10 minutes du §2. Une recuisson sans changement de code ne change les scènes cuites que par
+leurs `unique_id`, tirés au hasard : leurs ressources `.res` ressortent identiques au bit près.
+
+Autres cuissons, plus rares, hors de cette chaîne : `RoadTexturesBake`, `TerrainTexturesBake`,
+`BuildingCatalogBake`, `TrainsBake` (fusionne les caisses du pack de trains en un maillage chacune dans
+`generated/trains/`, à relancer seulement si le pack change), `DowntownFurnitureBake` (mobilier du centre-ville :
+lampadaires, arbres, bancs, camions de caserne, **et les halos de lampadaire du cycle jour/nuit**). Vérifications
+sans effet de bord : `MapSpecCheck`, `RoadNetworkPreview`, `ProjectLoadCheck`.
+
+**Enveloppes par pièce des camions, bus et pick-up** (§12), à relancer si l'un de ces 18 modèles change : l'export Godot
+puis Blender, qui écrit `scenes/vehicles/enveloppes_pieces.json` et une image de contrôle par modèle (hors du dépôt) :
+
+```bash
+"$GODOT" --headless --path "$PROJET" --script res://scenes/vehicles/tools/EnveloppesExport.gd -- --sortie=<export.json>
+"<disque>:/p-recree/blender-5.2.2-windows-x64/blender.exe" -b --factory-startup --python scenes/vehicles/tools/enveloppes_pieces.py -- --entree=<export.json> --sortie="$PROJET/scenes/vehicles/enveloppes_pieces.json" --images=<dossier hors du dépôt>
+```
+
+**Toucher à `BuildingModels` ou à un modèle EverythingLibrary impose la chaîne ET `DowntownBuildingsBake`** (31 s) : depuis
+la collision exacte (§12), la carte et le centre-ville posent la MÊME forme de collision d'un modèle
+(`generated/buildings/models/<nom>_collision.res`, `BuildingModels.collision_of`), écrite par celui des deux qui cuit.
+
+**Toucher aux lampadaires impose DEUX cuissons hors chaîne** : `RoadBake` écrit les luminaires de la carte
+(`generated/roads/lamp_heads.tres`) et `DowntownFurnitureBake` ceux du centre-ville
+(`downtown/generated/lamp_heads.tres`). Oublier la seconde laisse 906 lampadaires sur 1 371 sans halo et sans
+lumière la nuit.
+
+## 5. Batterie de tests headless
+
+Les tests sont des **scènes** (sauf `ProjectLoadCheck`, qui est un script). Chacun imprime une
+ligne `<NOM>_RESULT OK` ou `FAIL`. **`CarDrivingTest` et `CarDropTest` n'en rendaient pas** jusqu'au
+2026-09-21 : ils n'imprimaient que des chiffres (`DRIVE_TEST_END`, `DROP_TEST_END`), et un script de
+batterie qui ne cherchait qu'une ligne `RESULT` a manqué en silence que la voiture finissait sur le
+toit. Depuis, ils impriment aussi `CAR_DRIVING_RESULT` et `CAR_DROP_RESULT` (critères en tête de
+chaque script), APRÈS leurs lignes de chiffres, dont les champs d'origine restent (`DRIVE_TEST_END`
+y gagne `brake_from`, `stop_time`, `stop_dist`, et `final_speed` passe à 5 décimales). Lire les
+chiffres reste utile : temps et distance d'arrêt, `final_drift` et `settle_time` de la chute.
+Après un arrêt sec, la voiture recule encore de ~5 cm/s en décroissant (le tangage se relâche et le
+modèle du pack n'a AUCUNE résistance au roulement) : `final_speed` sort donc juste sous 0,05, c'est
+attendu. (C'est la voiture du pack telle quelle, qui n'est plus conduite en jeu : le joueur conduit `ChassisGTA`, §15.)
+
+```bash
+"$GODOT" --headless --path "$PROJET" res://scenes/tests/MapRoadsTest.tscn          # rubans, croisements, pentes
+"$GODOT" --headless --path "$PROJET" res://scenes/tests/MapRailTest.tscn           # tracé de la voie, gabarit, trottoirs
+"$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/MapTrainsTest.tscn  # cantons, vagues, passages à niveau, collision des caisses
+"$GODOT" --headless --path "$PROJET" res://scenes/tests/MapDistrictsTest.tscn      # parcelles nivelées, emprises
+"$GODOT" --headless --path "$PROJET" res://scenes/tests/MapPlacesTest.tscn         # entrées à moins de 15 m d'une route, rien sur la chaussée
+"$GODOT" --headless --path "$PROJET" res://scenes/tests/MapTerrainTest.tscn        # tuiles, rivière, trous
+"$GODOT" --headless --path "$PROJET" res://scenes/tests/MapVegetationTest.tscn     # arbres, troncs, portées
+"$GODOT" --headless --path "$PROJET" res://scenes/tests/MapExplorationTest.tscn    # la carte reste parcourable
+"$GODOT" --headless --path "$PROJET" res://scenes/tests/MapGateTest.tscn           # portail et bosquet de Hollow Creek
+"$GODOT" --headless --path "$PROJET" res://scenes/tests/SimulationCullingTest.tscn # gel hors champ
+"$GODOT" --headless --path "$PROJET" res://scenes/tests/DayNightTest.tscn         # cycle jour/nuit, halos, luminaires
+"$GODOT" --headless --path "$PROJET" res://scenes/tests/VehicleLightsTest.tscn    # freins, gyrophares, véhicules garés
+"$GODOT" --headless --path "$PROJET" res://scenes/tests/WorldTrafficSmokeTest.tscn # trafic, vitesse de croisière par modèle (aléa connu, cf. §6)
+"$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/RoundaboutTrafficTest.tscn  # 5 min de circulation à Echo Circle, cf. §10
+"$GODOT" --headless --path "$PROJET" res://scenes/tests/NoclipTest.tscn            # noclip, aléa connu aussi
+"$GODOT" --headless --path "$PROJET" --fixed-fps 60 --quit-after 300 res://scenes/tests/VehicleCatalogTest.tscn  # catalogue des véhicules, 20 000 tirages
+"$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/CarDrivingTest.tscn  # accélération, virage, freinage : CAR_DRIVING_RESULT
+"$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/CarDropTest.tscn     # chute de 10 m : CAR_DROP_RESULT
+"$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/ConduiteReelleTest.tscn  # conduite du joueur (façon GTA V), berline : 108 km/h et changement de voie au stick (2° aux roues), freinage, braquage à fond à 50 km/h (roues sur la courbe de GTA V), frein à main (Espace) rattrapé par le joueur au clavier, bordure, volant partiel, rampe 16 %, entrée de parking, sortie, touche B (berline posée ; F8 ne pose plus rien), coût, cf. §15
+"$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/ChassisBancTest.tscn  # châssis par fiche (façon GTA V) : accélération et patinage, freinage et plongée, freinage fort en tournant, S et braquage à fond à 50, 80 et 120 km/h (la voiture tourne, le virage se resserre en ralentissant), braqué à fond en roue libre et sous les gaz à 50, 80 et 120 km/h (les gaz ne font pas aller une traction tout droit), virages braqués à fond sans tonneau et roues sur la courbe de GTA V, frein à main, dérapages rattrapés par le joueur au clavier (roues à la butée entière au frein à main : réduction levée), bordures, parking ; 6 silhouettes (~25 s) ; -- --tous --lot=i/3 pour les 72 (3 lots en parallèle), cf. §15
+"$GODOT" --headless --path "$PROJET" res://scenes/tests/CarKerbTest.tscn          # bordures : le joueur monte, l'IA non
+"$GODOT" --headless --path "$PROJET" res://scenes/tests/WheelSpinTest.tscn        # roues des 72 modèles : axe, sens, rayon, stroboscope, pivot, braquage, rayon de braquage par modèle
+"$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/ParkingStructureTest.tscn  # parkings à étages : plateaux, escalier, hélice, cf. §11
+"$GODOT" --headless --path "$PROJET" --fixed-fps 60 res://scenes/tests/JoueurAPiedTest.tscn  # joueur à pied (3 s) : boucles des animations fermées ; pieds posés dans chaque sens et en course (Maj, 7 m/s, foulée allongée), sur pente et bordure ; bras tendu arme sortie, attente arme en boucle ; visée au clic droit (caméra à hauteur d'épaule), voiture, PNJ, cf. §16
+"$GODOT" --headless --path "$PROJET" res://scenes/tests/DowntownStreetsTest.tscn
+"$GODOT" --headless --path "$PROJET" res://scenes/tests/DowntownBuildingsTest.tscn
+"$GODOT" --headless --path "$PROJET" res://scenes/tests/ShopBuildingsTest.tscn     # échec ANTÉRIEUR connu
+"$GODOT" --headless --path "$PROJET" --script res://scenes/world/map/tools/ProjectLoadCheck.gd   # attendu : 645 fichiers, 0 échec
+```
+
+Outil d'inspection, hors batterie : `res://scenes/tests/VehicleSortTest.tscn` aligne les véhicules du catalogue
+sur une grille plate, nom de fichier affiché au-dessus, caméra libre (ZQSD, souris, Espace/Ctrl, Maj). Sert à
+trier le parc ; un civil à poids nul y est écrit en rouge avec la mention « RETIRÉ DE LA CIRCULATION ».
+**Jetable : référencée nulle part, ni dans `World.tscn` ni sur la carte.**
+
+Retirer un véhicule de la circulation, de façon réversible : mettre son `traffic_weight` à 0 dans son
+`resources/vehicle_models/<id>.tres`. Pour le sortir carrément du catalogue (et donc du tirage, de la scène de tri
+et du futur système de police), le déplacer dans `resources/vehicle_models/retires/` — `VehicleCatalog._load()`
+balaie le dossier avec `DirAccess.get_files()`, qui n'est pas récursif. Voir le `LISEZMOI.txt` de ce sous-dossier.
+
+Captures et compteurs de rendu (fenêtré, pas headless : le rendu compte) :
+
+```bash
+"$GODOT" --path "$PROJET" --resolution 800x450 res://scenes/tests/MapShotsTest.tscn -- --out=<dossier> --views=vue1,vue2
+```
+
+`MapShotsTest` accepte aussi `--heure=<0..24>` (fige le cycle jour/nuit à cette heure, indispensable pour mesurer de
+nuit), `--bassin=<n>` (taille du bassin de vraies lumières de lampadaire), `--toutes-lampes` (une vraie lumière par
+luminaire : mesure de l'option écartée, jamais un réglage de jeu) et `--sans-image` (mesure sans `get_image()`, donc
+sans le plafond de 800x450 du §6). Une vue peut imposer sa propre heure par un 5e champ : c'est ce que font les vues
+`nuit_*`, `crepuscule_*` et `aube_*`. `--feu-obstacle=1` ou `0` fige le feu d'obstacle de Mk1 allumé ou éteint (§9) :
+sans cela, une capture tombe au hasard dans son clignotement.
+
+## 6. Pièges connus (tous déjà payés)
+
+- **`_own()` ne descend pas dans une scène instanciée** (`PlacesBake.gd`, fin de fichier) : les
+  enfants d'un modèle FBX n'ont pas de propriétaire, ne sont donc pas enregistrés dans la scène
+  cuite, et **tout réglage posé dessus est perdu** — les `visibility_range_end` ressortaient à 0,
+  donc jamais coupés (47 maillages de chantier encore dessinés à 1,1 km). Faire descendre `_own()`
+  partout a été essayé et **rejeté par la mesure** : `Places.tscn` passait de 66 ko à 2,9 Mo et
+  chaque maillage était stocké en double. La bonne réponse : fusionner le modèle en un maillage,
+  l'enregistrer en `.res` dans `generated/places/`, poser un `MeshInstance3D` par exemplaire et
+  régler la portée dessus (cf. `_fbx_model`). `_prop()` a encore le même défaut.
+- **`RoundaboutTrafficTest` n'a plus que peu de marge sur ses 20 sorties** depuis que l'anti-apparition marche
+  (2026-09-23, §12) : 25 puis 21 sorties en 300 s, contre 40 à 59 avant. Ce n'est pas un défaut de circulation : le
+  joueur est IMMOBILE sur l'îlot, et SimulationCuller gèle tout ce qui naît hors de sa vue ; seules les voitures nées
+  en vue au-delà de 150 m arrivent éveillées. S'il tombe sous 20, rejouer une fois avant d'accuser une modification.
+  Ne PAS baisser le seuil pour le faire passer : la vraie réponse est le gel en deux temps (§7).
+- **`WorldTrafficSmokeTest` et `NoclipTest` ont un aléa** : le premier signale parfois « 1 paires
+  avec véhicule long », le second a lâché une fois sur trois sur « voiture à portée » (la voiture
+  du trafic n'était pas encore arrivée). Avant d'accuser une modification, rejouer le test deux
+  fois, puis le rejouer sur `HEAD~1`. **Cause trouvée pour le premier le 2026-09-23** : il jugeait « même voie » dans le
+  repère d'UNE voiture, et prenait deux voitures côte à côte sur des voies voisines, dans un virage, pour une file
+  chevauchée. Corrigé (même voie dans les deux repères, §12) ; 3 réussites sur 3 depuis.
+- **Le GPU décroche en capture** (`0x887A0005`, `DXGI_ERROR_DEVICE_REMOVED` pendant `get_image()`).
+  Ne jamais capturer au-dessus de **800x450**, et si une vue tombe quand même, la reprendre seule
+  en **640x360** : les compteurs restent comparables entre les deux résolutions, pas les images.
+  Le premier lancement d'une session prend plusieurs minutes (compilation du cache de shaders).
+- **Un objet posé près d'un point de contrôle de `MapGateTest` casse le test** : le test y pose le joueur et le
+  fait marcher 10 m. Une ambulance garée à 3 m du point « parvis du St. Anselm Medical Center » (-290, 137) l'a
+  bloqué au bout de 1,4 m. Même règle que pour la végétation : **rien de solide à moins de 12 m d'un point de
+  contrôle**. Les 43 points sont listés dans `MapGateTest.gd`.
+- **`_fbx_model()` de `PlacesBake` fusionnait avec le transform LOCAL de chaque maillage**, pas avec son transform
+  relatif à la racine. Sans conséquence sur les FBX du chantier, dont la hiérarchie est plate, mais un `.glb` dont
+  les maillages sont sous un nœud mis à l'échelle sortait à une taille délirante — une ambulance de 225 m de long.
+  Corrigé le 2026-09-18 ; le nombre de triangles des modèles déjà posés n'a pas bougé.
+- **Le tonemapper ACES délave ce qui est posé à `albedo` 1.0, et un compteur de pixels par ratio de
+  canaux ment alors.** Payé le 2026-09-20 sur les feux de freinage : un rouge posé à 1.0 ressort à
+  **(184, 121, 82)**, un saumon dont le rapport rouge/vert ne vaut que 1,52. Le test de détection
+  `r > g × 1,8` ne matchait jamais, et j'ai conclu pendant des heures que le calque « ne produisait
+  aucun fragment » alors qu'il se dessinait parfaitement depuis le début. Deux règles :
+  **poser les couleurs émissives nettement sous 1.0** (0,62 pour un rouge qui doit rester rouge —
+  mesuré, il ressort à (178, 1, 3)) ; et surtout **REGARDER L'IMAGE avant de conclure d'un
+  compteur**. Un seuil sert à localiser, jamais à prouver qu'un rendu marche ou ne marche pas.
+  Quand tous les contrôles de structure sont bons (noeud dans l'arbre, visible, bonne
+  transformation, bon matériau, bonne géométrie) et que « ça ne marche toujours pas », c'est
+  l'instrument de mesure qu'il faut suspecter.
+- **20 modèles de véhicules sur 72 n'ont AUCUNE optique séparable** : ne pas les rechercher, c'est
+  mesuré. Le pack `lowpoly_cars_free` en entier (`lowpoly_armor/coupe/fenyr/ghini/italia/jeep/
+  kamaro/lamb/mobil/police/rally/van`, `normalcar1`, `normalcar2`, `sportscar`, `sportscar2`,
+  `suv`, `taxi`) n'utilise que des gris `#2e2e2e` et `#424242` à l'avant comme à l'arrière : rien
+  n'y distingue un phare d'un pare-chocs. S'y ajoutent, dans la famille `city_*`, le bus et
+  l'autocar (pas de verre clair `#cfeaf3` à l'avant), l'ambulance, le camion-poubelle, le
+  `city_truck_02` et le `city_stepvan_01` (pas de rouge d'optique `#782225` à l'arrière, seulement
+  de la livrée ou de la carrosserie). Élargir les listes de couleurs de `VehicleLightParts`
+  rallumerait de la tôle : c'est l'erreur déjà payée une fois, où la voiture de police sortait avec
+  46 triangles de phare au lieu de 8, jusque sur l'axe de la calandre. Couverture réelle :
+  **50 modèles sur 72 ont des phares, 48 des feux arrière, 9 des 11 véhicules d'urgence un
+  gyrophare.**
+- **UN ATLAS DE PALETTE NE DIT PAS SON SENS DE V, ET SE TROMPER INVERSE TOUT.** Le pack lowpoly_city
+  peint ses 71 bâtiments avec une palette de **4 x 4 texels de couleurs plates**. Échantillonnée en
+  `1 - v`, elle donne des murs vert vif et des fenêtres blanches ; échantillonnée en `v`, des murs
+  gris foncé et des fenêtres bleues. Les deux lectures sont « plausibles » sur le papier. Ce qui a
+  tranché, le 2026-09-20, c'est **une image** : trois bâtiments du pack rendus en plein jour, murs
+  gris et fenêtres bleues en grille. La bonne convention est `v` DIRECT, sans inversion. Règle
+  générale : devant un atlas, ne jamais conclure d'un échantillonnage sans avoir regardé le rendu.
+- **INVENTAIRE CORRIGÉ : LES FENÊTRES DU PACK lowpoly_city SONT SÉPARABLES, AU TEXEL DE PALETTE.**
+  L'inventaire du 2026-09-19 écrivait le contraire, noir sur blanc : « Pack lowpoly_city (71 bâtiments
+  du centre-ville) : UNE seule surface `base_Material` sur un atlas de palette. Les fenêtres n'y sont
+  pas séparables, ces bâtiments restent éteints. » **C'ÉTAIT FAUX**, et ça a laissé 71 bâtiments du
+  centre-ville éteints pour rien pendant une journée.
+  Ce qui est vrai, mesuré le 2026-09-20 : la palette fait **4 x 4 texels de couleurs plates**, chaque
+  triangle en vise un, et il suffit de lire lequel. Murs `#404040`, **vitrages `#68C0FF` et
+  `#23A3FF`**, encadrements `#808080`. La règle d'extraction par atlas est dans `BuildingWindows`
+  (`_by_atlas`), et le cuiseur du centre-ville lui passe la palette pour la famille `pack`.
+  **NE PAS RECONCLURE « NON SÉPARABLE » SUR CE PACK.** Et, plus largement : une seule surface et un
+  seul matériau ne veulent pas dire une seule matière. Tant qu'un modèle a des UV et une texture,
+  la séparation peut se faire au texel — l'épuiser AVANT d'écrire qu'un modèle n'a rien d'isolable.
+  Les vrais cas non séparables de ce projet, eux, sont vérifiés à l'image et nommés : `Mk3` (son seul
+  candidat dessine un treillis sur toute la façade) et `Scraper001` (28 triangles, aucune fenêtre
+  modélisée, aucun atlas — remplacé par un `Mk6` le 2026-09-20).
+- **Une voiture à l'arrêt a `_ai_speed` nul, donc ses feux de freinage s'allument.** `brake_lights_on`
+  rendait vrai sous `BRAKE_STOP_SPEED` — correct pour une voiture de la circulation qui s'arrête à un
+  feu, absurde pour les 22 véhicules GARÉS des lieux, qui auraient eu leurs feux allumés jour et nuit.
+  D'où `Car.is_parked()`, qui coupe feux de freinage ET feux de position.
+- **`LoopSpawner` plafonnait la circulation en comptant TOUT le groupe `vehicle`.** C'était juste tant
+  que lui seul en posait. Depuis les véhicules garés (22) et les blocs d'arrêt des passages à niveau
+  (2 par fermeture), le plafond `max_active` mangeait autant de voitures de circulation. Il ne compte
+  plus que SES PROPRES ENFANTS, comme `_recycle` le faisait déjà.
+  **CORRECTION du 2026-09-21 : c'était FAUX pour le mode `proximity`**, le seul qu'utilisent les deux
+  spawners de `World.tscn` — `_process_proximity` comptait toujours `get_nodes_in_group(kind).size()`, la
+  correction n'avait été faite que dans l'autre branche. La circulation plafonnait donc à 252 MOINS les
+  véhicules garés : 186 voitures au lieu de 252, et 136 une fois le parking de l'aérogare agrandi (section
+  E). C'est `RoundaboutTrafficTest` qui l'a trahi, faute de trafic (16 à 20 sorties au lieu de 30 à 48).
+  Les deux branches passent maintenant par `_actifs()`.
+- **`ShopBuildingsTest` échoue depuis avant ces chantiers** : ne pas l'imputer à la modification du
+  jour, ne pas le « réparer » au passage.
+- **Geler la circulation pour une capture demande `PROCESS_MODE_DISABLED`, pas
+  `set_physics_process(false)`.** Payé le 2026-09-21 sur `--cadrer=frein` : `SimulationCuller`
+  réveille les véhicules proches du joueur à chaque passage et leur REND leur `_physics_process`.
+  Entre le cadrage et le déclenchement il s'écoule ~250 images (~4 s) : le sujet repartait, relevé
+  à **17,51 m au lieu des 7,49 m** du cadrage, son feu était repassé au vert et il ne freinait plus.
+  Résultat, des captures de freinage sans la moindre flaque — et l'illusion que la fonction ne
+  marchait pas, alors que la voiture était simplement partie. Deux enseignements qui valent au-delà
+  de ce cas : un relevé pris AU CADRAGE ne vaut rien, il faut le prendre AU DÉCLENCHEMENT (d'où
+  `MAP_SHOT_OEIL` et `MAP_SHOT_LUMIERE`, qui impriment la position de la caméra et des vraies
+  lumières à l'image capturée) ; et le bassin de vraies lumières est réaffecté à chaque image aux
+  véhicules les plus proches de la CAMÉRA, donc il ne se pose sur le sujet qu'une fois la caméra
+  déplacée.
+- **Le mode `"sol"` de `MapShotsTest` élève aussi le point visé** : un point visé au-dessus d'un
+  bâtiment accroche son toit et retourne la caméra vers le ciel. Pour une caméra devant un immeuble,
+  relever la hauteur du sol et écrire des altitudes absolues.
+- **Une capture prise avec la caméra DU JOUEUR doit rendre la souris libre.** `Player._ready` capture la souris, et
+  tant qu'elle est capturée tout mouvement de souris sur la fenêtre de capture tourne la caméra — en conduite aussi.
+  Payé le 2026-09-21 sur la séquence de l'hélice : des vues de travers et plongeantes, prises d'abord pour un défaut de
+  la caméra de conduite. `Input.mouse_mode = MOUSE_MODE_VISIBLE` après l'instanciation du monde : le gestionnaire du
+  joueur ne lit la souris qu'en mode capturé. (`MapShotsTest` n'est pas concerné : il rend avec sa propre caméra.)
+- **LE LAC DU QUAI N'EST PAS CUIT : il vit dans `World.tscn`, et c'est le joueur qui le règle** (2026-09-23). L'eau au
+  sud du centre-ville est le noeud `Downtown/Quay/Water/Mesh` (un `ocean_mesh.glb` mis à l'échelle), posé à la main :
+  aucune cuisson n'écrit `World.tscn` (le seul outil qui l'ait jamais fait, `DowntownInstall`, est l'installateur ponctuel
+  du centre-ville, hors de toute chaîne), et `TerrainBake` ne le lit pas — le bassin qu'il creuse est une constante,
+  `TerrainModel.HARBOR_WATER = Rect2(-500, -650, 500, 156)`. Le joueur l'a agrandi et décalé dans l'éditeur le 2026-09-23
+  (échelle 15,66 x 3,31 -> 16,83 x 3,70) : une recuisson ne peut pas l'écraser. Ne pas le « remettre » sur la constante du
+  terrain. À distinguer de la rivière, elle CUITE par `TerrainBake` (`generated/Water.tscn`, `water/river_water.tres`).
+- **LE GADGET `CollisionShape3D` DE L'ÉDITEUR LE REND INUTILISABLE DEPUIS LA COLLISION EXACTE DES BÂTIMENTS**
+  (2026-09-23, cause confirmée par le joueur). Godot dessine un gadget en fil de fer pour CHAQUE `CollisionShape3D` de
+  la scène ouverte, sous-scènes instanciées comprises : avec `World.tscn` ouvert, **26,4 millions de segments**, contre
+  8,1 M avant le chantier des collisions (`cc5bc41`), dont **19,7 M pour les formes exactes** des bâtiments et des lieux
+  (1,4 M avant, x14). Tracé en jeu (`--debug-collisions`, même fil de fer), il fait passer une image de 15,6 à
+  **41,3 ms en noclip** (p95 69, max 110 ms) et de 9,9 à 19,8 ms en voiture. **Sur CHAQUE PC** : dans la vue 3D de
+  l'éditeur, Affichage > Gadgets > **décocher `CollisionShape3D`** — c'est ce qui a rendu l'éditeur fluide — et **ne
+  jamais cocher Débogage > « Formes de collision visibles »**. Ce réglage de l'éditeur n'est pas dans le dépôt : il se
+  vérifie sur chaque machine. Pour inspecter une collision, ouvrir la sous-scène concernée seule, ou ne réactiver le
+  gadget qu'un instant. Sans ce fil de fer, le jeu ne coûte que **+0,8 ms par image (+10 %)** de plus qu'avant le
+  chantier, moitié les véhicules, moitié les bâtiments exacts, et aucun des suspects vérifiés n'a changé (anti-apparition,
+  contrôle « enfermé » du noclip, rayons du culler) : sonde et journaux dans `F:/p-recree/sondes/2026-09-23_perf/`.
+- **`CityRenderOptimizer` imposait SON fondu à toutes les lumières du monde** (payé le 2026-09-23). Son passage est
+  différé au démarrage (`_optimize.call_deferred()`), donc APRÈS les `_ready` : toute `Light3D` créée dans un `_ready`
+  recevait `distance_fade` 180 + 30 m, quel que soit le réglage qu'on lui avait donné. Les 172 lumières fixes des
+  parkings (réglées à 80 + 20 m) se fondaient donc à 210 m en jeu — et `RenderPerfTest --parking`, qui les recrée après
+  ce passage, mesurait bien 80 + 20 : la mesure et le jeu ne voyaient pas la même chose. Il laisse maintenant une
+  lumière qui règle déjà son fondu ; `DayNightTest` vérifie le réglage des lumières de parking dans le vrai monde,
+  après ce passage (il échoue sur l'ancien optimiseur : 172 lumières sur 172 hors réglage).
+- **Un objet posé EN PERMANENCE sur la carte sans portée de visibilité se paie partout ailleurs.** Payé le
+  2026-09-22 sur les véhicules garés : 43 voitures dans trois parkings du centre-ville ajoutaient 25 appels de
+  dessin à une vue prise à 2 km de là, parce que leur maillage n'avait aucun `visibility_range_end`. Ce qui
+  n'existe qu'autour du joueur (la circulation, les PNJ) n'a pas ce problème ; tout ce qui est cuit ou instancié
+  une fois pour toutes, si. Cf. §11, étape 11.
+- Les `.tscn` cuits changent textuellement à chaque cuisson (identifiants de sous-ressources tirés
+  au hasard) : un `git status` « modifié » ne prouve pas un changement de contenu.
+- **CORRECTION du 2026-09-24 : le joueur ne conduit plus la `Car` arcade.** Quand il prend le volant, la voiture se
+  dote d'un châssis physique réglé sur la fiche du modèle et le suit ; la conduite arcade du joueur a été SUPPRIMÉE. Ce
+  châssis a d'abord été le « châssis réel » (`ChassisReel`, le cœur du même pack VitaVehicle, §14) ; c'est depuis le soir
+  du même jour `ChassisGTA`, la conduite façon GTA V, un modèle à nous (§15). `Car.gd` cinématique ne sert plus qu'aux 252 voitures de la
+  circulation et aux voitures garées ; `PlayerCarPhysics` reste la voiture de démonstration du pack, placée dans aucune
+  scène de jeu. La suite de cette note date d'avant :
+- **Il y a DEUX voitures dans ce jeu, et elles ne réagissent pas pareil au décor.** `Car.gd` est un
+  `CharacterBody3D` arcade : c'est le modèle des 252 voitures de la circulation ET ce que le joueur
+  conduit quand il prend une voiture dans la rue. `PlayerCarPhysics` (`PlayerCarController.gd` sur le
+  cœur `assets/car_physics`) est un `RigidBody3D` dont les quatre roues sont des **RayCast3D** : il n'y
+  a aucun collisionneur de roue. Son origine repose à **sol + 0,6785 m** (mesuré le 2026-09-21), bas de
+  carrosserie à 0,13 m, pneus au sol. **CORRECTION du 2026-09-21 : cette note disait « sa coque flotte
+  2,23 m au-dessus du sol, son origine reposant à sol + 2,566 m (…) toute sonde doit la lâcher à sol +
+  2,57 m ». C'était vrai de la voiture CASSÉE, pas une propriété du modèle** : ses rayons de roue étaient
+  restés à 2,7 m au lieu de 0,81 (cf. le piège « le pack VitaVehicle compte en pieds » plus bas). Ne pas
+  reposer une voiture de ce pack à 2,57 m. Elle n'est placée dans aucune scène de jeu : seules les deux
+  sondes l'instancient.
+- **LES ROUES : QUATRE DÉFAUTS SOUS UN SEUL SYMPTÔME** (2026-09-21 au soir). Le joueur voyait les roues de
+  « toutes les voitures » tourner « vers le haut au lieu de rouler vers l'avant ». `Car._update_visuals`
+  faisait tourner chaque roue autour du X LOCAL de son noeud, dans le même sens, avec un rayon fixe de
+  0,34 m. Relevé sur les 72 modèles posés comme en jeu, avec transformations composées à la main (hors de
+  l'arbre, `global_transform` rend l'identité et une première sonde a tout mesuré faux) :
+  1. le X local tombe bien sur l'essieu partout, mais sur les **six modèles d'origine** (`normalcar1/2`,
+     `sportscar`, `sportscar2`, `suv`, `taxi`) il pointe vers +X de la voiture : leurs **18 roues roulaient
+     vraiment à l'envers** ;
+  2. la roue avant droite de `normalcar2` a son **pivot à 0,32 m du centre** de la roue, dans son plan : elle
+     décrivait un cercle et montait dans la carrosserie ;
+  3. les rayons réels vont de **0,234 à 0,721 m** (le blindé SWAT) ;
+  4. et surtout l'**EFFET STROBOSCOPIQUE**, qui touche vraiment toutes les voitures : à 12 m/s et 60 images/s
+     une roue de 0,30 m tourne de 38° par image, et sa jante octogonale ne se distingue d'elle-même qu'à 45°
+     près : l'oeil la voit RECULER de 7° par image. Le sens était pourtant juste sur les 66 autres modèles :
+     mesuré roue par roue (le sommet du pneu avance), et vu à la pastille sur la berline city et le coupé
+     lowpoly.
+  `Car._mesurer_roue` donne maintenant à chaque roue, une fois par modèle : son axe et son sens (le haut du
+  pneu va vers -Z quand la vitesse est positive, déterminant compris), son rayon, son centre (on tourne
+  autour de lui), et un pas maximal par image de 45 % de la période de SA jante, mesurée sur ses sommets
+  (8 branches pour 226 roues, 10 pour 44, 12 pour 22). Au-delà de quelques m/s la roue tourne un peu moins
+  vite que la voiture ne roule, mais toujours dans le bon sens, et c'est ce que l'oeil lit. **Ce plafond vaut
+  par image AFFICHÉE, pas par pas physique** : `_update_visuals` tourne dans `_physics_process` à 60 Hz fixes,
+  et à 30 images/s deux pas de 20° font 40° à l'écran — le stroboscope reviendrait justement sur l'UHD 750.
+  Chaque roue compte ce qu'elle a déjà tourné depuis la dernière image affichée (`Engine.get_process_frames`).
+  `WheelSpinTest` vérifie les six points sur les 292 roues, dont le cumul à 15 images/s (il échoue sur un
+  plafond par pas physique : 81° par image pour une demi-période de 22,5°). Les séquences de contrôle
+  (pastille rouge en haut du pneu, trois images) se font avec une scène jetable.
+  **`PlayerCarPhysics` n'est pas concernée par ce correctif** : ses roues sont tournées par `wheel.gd`
+  (`rotate_x(deg_to_rad(wv))`, `wv` positif quand la roue avance vers le +Z de cette voiture), et elles
+  roulent dans le bon sens. Relevé sur la vraie simulation APRÈS `f2fe587`, le correctif de son
+  retournement sur le toit (cf. « le pack VitaVehicle compte en pieds » plus bas), qui a refait ses poses
+  de roue : en ligne droite jusqu'à 13,8 m/s, le haut du pneu va dans le sens de la marche sur les quatre
+  roues, 198 pas physiques sur 198, axe latéral. Elles tournent en revanche de 48° par pas physique (64° à
+  l'avant au démarrage), et leur jante n'a pas été mesurée : si cette voiture entre un jour en jeu,
+  vérifier l'effet stroboscopique comme pour `Car.gd`.
+- **LE BRAQUAGE ÉTAIT UN CARROSSAGE sur les 54 modèles `city_*`** (2026-09-21 au soir). Le joueur voyait, en
+  tournant, ses roues avant s'incliner vers l'intérieur ou l'extérieur au lieu de pivoter, et l'attribuait au
+  chantier des roues. **Mesuré sur les 72 modèles : le résultat est IDENTIQUE sur `975a4bf` et `8b466f1`, le défaut
+  est antérieur.** Le braquage était une rotation autour de (0, 1, 0) pré-multipliée à la base de repos de la roue,
+  donc exprimée dans le repère du PARENT de la roue — pas dans celui de la caisse, comme le prétendait le
+  commentaire. Le pack city range ses roues sous un noeud tourné de **90° autour de X** (son repère Z-up) : le Y de
+  ce parent est l'axe AVANT-ARRIÈRE de la voiture, et la roue braquée à fond s'inclinait de 29,8° sans pivoter du
+  tout. Les 18 autres modèles (lowpoly, modèles d'origine) n'ont pas de noeud tourné et braquaient juste. Le lacet
+  de 180° du catalogue n'y est pour rien (une rotation autour de la verticale, conjuguée par un lacet, reste la
+  même), et l'ordre de composition était bon (roulement dans le repère de la roue, braquage autour).
+  Correction : le braquage est une rotation autour de la verticale DE LA VOITURE, ramenée dans le repère du parent
+  par conjugaison, M⁻¹ · R(verticale, angle) · M, M étant la base du parent dans la voiture (`_wheel_parent_base`).
+  **Règle : un réglage « dans le repère de la caisse » appliqué à un noeud de modèle doit passer par la base de
+  son parent** — un pack peut ranger ses pièces sous un noeud tourné, et rien ne le signale.
+  **La circulation ne braquait pas du tout** : elle passait un braquage NUL à `_update_visuals`. Ses roues avant
+  prennent maintenant l'angle du virage qu'elle décrit, atan(empattement / rayon), l'empattement étant mesuré sur
+  les centres des roues (1,52 à 5,60 m) : 13° pour la berline dans un virage de 10 m de rayon.
+  `WheelSpinTest` braque les roues avant à fond des deux côtés, à trois angles de roulement : axe du moyeu
+  horizontal (carrossage nul), angle exact, bon côté, centre immobile, roues arrière immobiles — 864 braquages,
+  carrossage 0,00°. Il échoue sur l'ancien braquage (1 296 fautes, 29,8° de carrossage). **Piège de mesure payé en
+  l'écrivant** : le milieu de la boîte MONDE d'une roue asymétrique le long de son essieu (moyeu saillant d'un
+  côté, les six modèles d'origine) glisse de 14 à 18 mm quand elle pivote, même autour d'un axe parfait ; c'est
+  son centre LOCAL, ramené dans le monde, qui doit rester fixe. Captures de face et de trois quarts, avant et
+  après, dans `F:/p-recree/ground_shots/braquage_2026-09-21/` (hors dépôt) : de face à 1,2 m, le pare-chocs de la
+  berline cache les roues, il faut descendre à 0,6 m ou se mettre de trois quarts pour les voir.
+- **`move_and_slide()` ne monte AUCUNE marche verticale**, si basse soit-elle. Les bordures de trottoir
+  de la carte font **0,150 m** mesurés sur la collision cuite, en marche franche (la montée tient entre
+  deux relevés distants de 2 cm), sur trimesh pour les artères et sur piles de boîtes au centre-ville.
+  D'où `Car._try_step_up`, réservé au joueur. `scenes/world/CurbRamp.gd` était la réponse précédente :
+  il ne reconnaissait que des `StaticBody3D` nommés `*Walk*` portant une seule `BoxShape3D` — la
+  disposition du monde d'essai d'origine — et **il n'était attaché à aucun nœud de `World.tscn`**, donc
+  il ne tournait plus du tout. **Supprimé le 2026-09-19** (avec son `.uid`) ; il ne reste que dans
+  l'historique git et dans `World_backup_avant_integration.tscn.bak`. Ne pas le ressusciter.
+  **`Car._try_step_up` a été SUPPRIMÉ à son tour le 2026-09-24**, avec l'arcade du joueur : la voiture du joueur roule
+  sur son châssis réel, dont les roues à rayon montent les bordures (CarKerbTest : 4 modèles, 3 à 15 m/s, coque sans
+  contact) ; la circulation, elle, reste arrêtée par elles.
+- **À PIED, `StepClimb` SOULEVAIT TOUJOURS DE 0,40 m, ET LE SNAP DU JOUEUR FAIT 0,40 m** (corrigé le 2026-09-23,
+  `4ee4532`). Quand la capsule n'avait pas encore passé l'arête (marche vue à 0,2 m) ou ne pouvait pas monter dessus
+  (socle de 9 cm au pied d'un mur), `floor_snap_length` ne retrouvait plus le sol resté 0,40 m plus bas : le joueur
+  retombait en ~0,25 s. Saut parasite de 40 cm à chaque bordure de trottoir, défaut antérieur, trahi par la collision
+  exacte des lieux (murs à socle de l'hôpital, perron du commissariat). `StepClimb` lit maintenant le dessus de la marche
+  (rayon vertical 3 cm derrière le point touché par le rayon bas) et ne soulève que de sa hauteur + 2 cm. **Règle : ce
+  qui soulève un personnage doit rester SOUS la portée de ce qui le recale** (snap du joueur ; les PNJ, eux, sont recalés
+  par `_ground_ride_height` et n'avaient pas le défaut). Pour le mesurer : le rayon vertical tiré du CENTRE d'une capsule
+  posée sur une arête voit la marche d'en bas, un écart pied-sol de 10 à 18 cm n'y est pas un saut. Compter les images
+  où `is_on_floor()` est faux, et leur hauteur.
+- **Les autoloads ne sont pas enregistrés en mode `--script`** : une sonde qui instancie
+  `PlayerCarPhysics` échoue sur « Identifier not found: VitaVehicleSimulation ». La lancer comme
+  **scène**, pas comme script.
+- **Un `CharacterBody3D` inerte n'est jamais repoussé** : c'est lui qui résout ses pénétrations dans
+  `move_and_slide()`. Une sonde qui pose un corps sans l'animer et regarde si un train le pousse mesure
+  zéro, quelle que soit la collision d'en face.
+- **Le pack VitaVehicle (`assets/car_physics`) compte en PIEDS, et il a été écrit pour GodotPhysics.**
+  Payé le 2026-09-21 : `PlayerCarPhysics` finissait sur le toit dans ses deux sondes. Trois causes
+  empilées, trouvées dans cet ordre et mesurées une à une :
+  1. **Une mise à l'échelle faite à moitié.** 1 unité du pack = 0,30592 m (README du pack ; son projet
+     tourne à `default_gravity = 32.035`, soit 9,8 m/s²). La voiture avait été réduite à 0,3 (coque,
+     maillage, position des roues, `S_MaxCompression`, `A_Geometry1`), mais PAS ses rayons de roue
+     (2,7 au lieu de 0,81), son pneu (rayon 0,944 au lieu de 0,283), `AckermannPoint` (-3,8 au lieu de
+     -1,14) ni `Steer_Radius` (13 au lieu de 3,9). Centre de gravité à 2,4 m au-dessus des pneus pour
+     une voie de 1,32 m : anti-tonneau coupé, elle se couchait sur le flanc EN LIGNE DROITE. Et le
+     modèle de pneu, dont les seuils sont écrits en pieds, recevait des charges en mètres : il voyait
+     3,27 fois moins de charge qu'à la conception (14,7 au lieu de 48 par tick), d'où un patinage
+     permanent (125 m/s en surface de pneu pour 1,4 m/s au sol).
+     **La masse de 90 n'y était pour rien** : c'est la convention du pack (`Weight/10`, la même dans
+     `base car.tscn`), et raideur et amortissement ne dépendent pas de l'unité de longueur. Passer la
+     masse à 900 « répare » les sondes en posant la voiture sur ses butées (compression 0,18 pour 0,15
+     de course) : fausse piste. Correction : `LengthScale = 0.3` sur la voiture (le modèle de pneu
+     calcule en unités du pack, `car.gd` et `wheel.gd` convertissent aux frontières), et ces quatre
+     longueurs ramenées à l'échelle.
+  2. **Jolt n'est pas GodotPhysics.** GodotPhysics met le centre de gravité à l'origine de la forme de
+     collision, Jolt au vrai centroïde de la coque : 20 cm plus haut, 32 cm plus en arrière, stabilité
+     statique 0,96 au lieu de 1,35. Une fois le pneu réparé, elle basculait en virage avant de glisser.
+     Correction : `center_of_mass_mode = Custom`, (0 ; -0,1875 ; 0,2175), l'origine de sa
+     `CollisionShape`.
+  3. **Un filtre qui retardait l'amortisseur.** Le lissage de la vitesse verticale ajouté dans
+     `wheel.gd`, où l'oscillation d'une caisse instable avait été prise pour du bruit de mesure, la
+     renvoyait en l'air à 61 % de sa vitesse d'impact sur la chute de 10 m. Retiré.
+  L'anti-tonneau (`_anti_rollover_correction`) et le limiteur à 6 m/s en virage
+  (`_cornering_speed_governor`), ajoutés par des sessions précédentes contre le symptôme, sont
+  **coupés** (code laissé, `false` par défaut) : ils ne se déclenchent plus — mêmes chiffres au
+  dix-millième allumés ou éteints — et l'anti-tonneau est lui-même instable (Kd·dt/I = 14,8).
+  Règle générale : **devant un moteur physique importé, vérifier ses unités et le moteur physique pour
+  lequel il a été écrit AVANT de toucher à ses réglages.** Reste en unités du pack : les scripts de
+  `misc/` (fumée, traces, sons ; pas branchés) lisent `w_size` — utiliser `w_radius` pour placer quoi
+  que ce soit au rayon de la roue.
+
+- **LE LOD DES BÂTIMENTS DANS L'ÉDITEUR : CE QUI A ÉTÉ MESURÉ AVANT DE L'ÉCRIRE** (2026-09-22).
+  `CityRenderOptimizer` est passé `@tool` pour que la vue 3D de l'éditeur profite elle aussi du LOD des
+  bâtiments lointains. Quatre choses valent d'être sues, toutes mesurées :
+  1. **`get_viewport().get_camera_3d()` rend NULL dans un script `@tool`.** Le viewport existe bien
+     (`SubViewport`), mais sa caméra non. `update_building_lods` aurait donc pris sa sortie
+     `if cam == null: return` **en silence**, en laissant croire que le LOD était appliqué. La vue 3D n'expose sa
+     caméra que par `Engine.get_singleton("EditorInterface").get_editor_viewport_3d(0).get_camera_3d()`, qui rend
+     une vraie `Camera3D` (vérifié dans un éditeur lancé sous Xvfb). D'où `_camera_lod()`, deux sources selon
+     `Engine.is_editor_hint()`.
+  2. **Modifier `lod_bias` dans l'éditeur n'écrit RIEN dans les scènes, et c'est structurel.** Reproduit le chemin
+     de sauvegarde de l'éditeur : `World.tscn` instancié en `GEN_EDIT_STATE_MAIN`, empaqueté (96 019 o), les
+     441 maillages de bâtiment passés à `lod_bias = 0.25`, ré-empaqueté (96 077 o) : **`lod_bias` apparaît 0 fois
+     dans les deux**. Ces 441 vivent tous dans des sous-scènes INSTANCIÉES (`Map.tscn` -> `generated/Buildings.tscn`,
+     `Downtown/Buildings.tscn`), et Godot ne sérialise les surcharges de propriété que pour les nœuds appartenant à
+     la scène sauvegardée. **RÉSERVE : ce résultat vaut pour l'état par défaut.** Activer « Enfants modifiables »
+     (Editable Children) sur `Map` ou `Downtown` changerait la donne — les surcharges deviendraient sérialisables,
+     et un Ctrl+S écrirait alors 441 `lod_bias` dans les scènes cuites. Ne pas activer cette option sur ces deux
+     nœuds sans revérifier ce test.
+  3. **Le reste de `_optimize()` n'est PAS inoffensif dans l'éditeur, d'où le périmètre réduit.** Même protocole :
+     `apply_distance_culling` touche 1 879 nœuds et **2 sont bien écrits** (+58 o) — `Downtown/Quay/QuayPavement/Mesh`
+     et `Downtown/Quay/Seabed/Mesh`, les deux seuls `MeshInstance3D` déclarés directement dans `World.tscn`. Les
+     occluders, eux, sont ajoutés par `mi.add_child(occ)` **sans `owner`** et ne sont donc jamais sérialisés (0
+     occurrence), mais ils sont inutiles dans l'éditeur : les scènes en portent déjà **131** (`map/generated/Buildings.tscn`)
+     et **391** (`downtown/generated/Buildings.tscn`) de cuits. **L'éditeur n'est donc pas dans le régime « avant
+     optimisation » (102 ms) mais dans « occlusion sans LOD » (48 ms)** ; c'est 48 -> 30,8 ms qui est visé, pas
+     102 -> 30,8. Dans l'éditeur on applique le LOD et RIEN d'autre : ni occlusion, ni culling par distance, ni
+     MultiMesh.
+  4. **LE SEUIL DU §3 NE SAIT PAS VALIDER CE CHANGEMENT.** Comme pour les lumières, le LOD ne bouge pas les appels
+     de dessin. Mesuré dans l'éditeur, `World.tscn` ouvert, caméra par défaut : **4 416 106 -> 3 854 098 primitives
+     (-12,7 %), appels de dessin 6 564 dans les deux cas**, objets 7 142 dans les deux cas ; 441 bâtiments relevés,
+     411 au-delà des 150 m. La mesure qui vaut pour ce genre de chantier est donc le nombre de PRIMITIVES, et le
+     temps GPU sur l'UHD 750 (`RenderPerfTest`), jamais les appels.
+  Le comportement en jeu est inchangé d'une ligne : tout l'ajout est derrière `Engine.is_editor_hint()`, et
+  `update_building_lods()` garde sa signature — `RenderPerfTest._verify_lod` l'appelle de l'extérieur.
+  Dernière réserve, qui n'est pas mesurée mais assumée : **`_process` tourne en permanence dans l'éditeur** (boucle
+  sur 441 maillages). L'intervalle y est donc porté à `lod_update_interval_editeur` = **0,5 s**, au lieu des 0,25 s
+  du jeu. `lod_dans_editeur = false` coupe tout l'ajout sans toucher au jeu.
+- **LE JEU GÈLE LES PC DE L'ÉCOLE (Intel UHD 750) QUAND ON SE DÉPLACE** — constaté par le joueur, noté le
+  2026-09-22 pour mémoire. Ses mots : le jeu « gèle le PC quand on se déplace ». C'est le JEU seul : l'éditeur, lui, y
+  tient depuis le LOD en `@tool` (note précédente). Sur TOUS les PC de l'école, pas sur le PC de la maison, et
+  **déjà présent au commit `0ceb547`** (2026-09-20, les phares) : ce n'est donc pas une régression des chantiers qui
+  ont suivi (roues, braquage, parking à étages). **Non diagnostiqué** : on n'a que le symptôme, aucune mesure ni cause
+  relevée. Décision prise en conséquence : l'UHD 750 n'est plus la machine de référence du jeu (§3), et les cartes
+  Intel seront servies par un mode graphique léger (§7). Si on le reprend : le reproduire d'abord sur un PC de
+  l'école — le PC de la maison ne le montre pas —, avec `RenderPerfTest`, avant de toucher au moindre réglage.
+- **AUCUNE TOUCHE DU JEU SUR F1 À F12** (payé le 2026-09-24 au soir). La berline de débogage se posait avec F8, qui est
+  aussi le raccourci de l'éditeur de Godot pour ARRÊTER le jeu qu'il a lancé : lancé par F5, le jeu se coupait au lieu
+  de poser la voiture. L'éditeur 4.7 transmet au jeu qu'il lance ses raccourcis d'arrêt, de suspension et d'image
+  suivante, et le jeu les lui renvoie même quand sa fenêtre a le focus (relevé dans les chaînes du binaire 4.7.2 :
+  `scene:setup_embedded_shortcuts`, `SceneDebugger::_handle_embed_input`, `request_quit`) ; les autres touches de
+  fonction sont aussi des raccourcis de l'éditeur (aide, lancer, pause, débogueur). La berline se pose maintenant avec
+  **B**. Avant de donner une touche à une commande, relever TOUT ce qui est déjà pris, relevé du 2026-09-24 :
+  - actions de `project.godot` (touches PHYSIQUES, donc ZQSD sur un clavier AZERTY) : W A S D, Espace, E, M, I, T, R, 1,
+    Maj, Alt, Ctrl, clic gauche ; `[` et `]` (boîte manuelle) ne sont lues que par le pack VitaVehicle, et
+    `toggle_debug_mode` (F1) aussi, par `assets/car_physics/MAIN/car.gd`, une voiture placée dans aucune scène de jeu ;
+  - touches lues en dur dans les scripts (`KEY_*`, touche LOGIQUE) : N, Maj+N, Ctrl+N (`DayNightCycle`), R
+    (`VehicleLights`, gyrophare en conduite), B (`EssaiConduiteReelle`) ; Échap (`ui_cancel`, `Player`) ; la scène de tri
+    des véhicules lit en plus Z, Q, les flèches et Entrée ;
+  - raccourcis personnalisés de l'éditeur : aucun sur ce PC (`editor_settings-4.7.tres`, `shortcuts = []`).
+  `toggle_contacts` (lue par `ContactsPanel.gd`) n'existe pas dans `project.godot`, mais ce panneau n'est plus instancié
+  nulle part.
+
+## 7. État d'avancement
+
+**Fait** — la carte 3D est le gros du travail accompli : modèle de terrain et rivière, réseau
+routier complet (autoroutes, échangeurs, bretelles, artères, anneau et rond-point Echo Circle,
+113 carrefours du centre-ville, 114 culs-de-sac en bulbe, glissières, marquage, trottoirs),
+voie ferrée de 4,5 km avec ses ouvrages, quartiers et 1 196 bâtiments, 12 lieux (aéroport, motel,
+ranch, planque, hôtel, hôpital, commissariat, casino, concessionnaire Liberty Motors, Greenfield,
+Echo Circle, chantier de Northgate Rise), végétation (20 297 arbres), trafic routier sur
+`CircuitPath` avec feux, cédez-le-passage et suivi de véhicule, PNJ sur `PathGraph`, gel de
+simulation hors champ (`SimulationCuller`), centre-ville et intérieurs d'appartements, noclip de
+débogage sur `V`.
+
+**Reste à faire** (liste du joueur, par ordre d'importance qu'il donnera lui-même) :
+
+- **combat** ; y faire les **zones de touche par os des PNJ** (tête, torse, membres), décidé le 2026-09-23 (§12) : la
+  capsule de 0,4 x 1,8 m reste leur forme de déplacement ;
+- **gangs rivaux** ;
+- **labo de drogue** (les modèles sont dans `assets/drug_lab`) ;
+- **porte d'entrepôt** ;
+- **appartements reliés à la carte** (les intérieurs existent, ils ne sont pas raccordés aux
+  bâtiments de la carte) ;
+- **concessionnaire enrichi** ;
+- ~~**bug : 34 erreurs « instance déjà libérée » dans `Car._cycle_de_suivi`**~~ **CORRIGÉ le 2026-09-23.** La remontée
+  de chaîne affectait le `_devant` d'une autre voiture à `cur`, typée `Object` : ce `_devant` date de SA dernière
+  revérification et peut désigner une voiture libérée depuis (budget d'arêtes épuisé ; recyclage de `LoopSpawner` en
+  jeu). Il est maintenant lu sans type et testé par `is_instance_valid` AVANT l'affectation ; chaîne rompue -> `false`,
+  ce que la fonction interrompue par l'erreur rendait déjà (mesuré). Vérification déterministe (A arrêtée suit B, B
+  libérée, C remonte la chaîne) : 1 erreur -> 0, mêmes valeurs rendues sur 4 cas, vrai cycle compris. Aucun autre cas
+  dans `Car.gd` : `_devant`, `_passe_outre`, `diag_objet`, `_diag_carrefour_objet` et les paramètres typés ne reçoivent
+  que des voitures de l'index de la frame physique en cours, donc vivantes. Mesuré en 4.7.2 : une instance libérée
+  vaut `== null`, passe sans erreur dans une variable NON typée, et, passée à un paramètre typé, interrompt l'APPELANT ;
+- ~~**flaques de sang des PNJ à hauteur fixe**~~ **CORRIGÉ le 2026-09-23.** `NPC._die` mesure le sol sous le PNJ
+  (`_ground_below` : rayon vertical parti juste au-dessus de la tête, calque 1 seulement) et y pose la flaque à +0,05 m
+  et le corps de repli à +0,5. Sonde jetable, flaque - sol avant -> après : plateau de l'aéroport (sol 5,28) -5,18 ->
+  +0,05 ; pont routier (-782 ; -693, sol 9,05) -8,95 -> +0,05 ; **trottoir à plat (sol 0,20) -0,10 -> +0,05 : même à
+  plat, la flaque était enterrée partout où marchent les PNJ** ; chaussée (0,05) inchangée ; corps de repli à +0,50
+  partout. **`Car._add_body_stain` n'avait pas l'hypothèse de hauteur** (la tache vit dans le repère de la voiture),
+  mais la même famille EN LONGUEUR : tache à z = -2,02 fixe, le pare-chocs de la voiture d'essai ; 62 modèles sur 72
+  l'avaient à plus de 5 cm derrière leur avant (autocar 3,72 m), 5 dans le vide devant (micro-citadine 0,79 m).
+  **CORRIGÉ le même jour** : la tache est posée SUR la carrosserie mesurée (triangles du modèle, `TriangleMesh`, une
+  fois par modèle), couchée selon la normale, gardée seulement si ses points (un tous les 4 cm) ont la caisse derrière
+  eux à 0,5-3 cm et rien devant, roues comprises comme obstacle ; rangée sous le modèle. Sonde jetable, 24 taches par
+  modèle jugées un point par centimètre : **0 bonne sur 1 728 avant, 1 712 à 1 719 après** (trois tirages) ; restent
+  1 à 3 taches à un détail plus fin que 4 cm (rivet du blindé SWAT, tube de pare-buffle, fente de calandre) et 7 à 13
+  non posées (0,4 à 0,75 %, surtout la jeep lowpoly : aucun emplacement propre en 24 essais). Coût : 1,2 ms au pire
+  par tache, 2,1 ms à la première d'un modèle ;
+- **mode graphique léger**, plus tard, pour les PC à carte graphique Intel : c'est le gel des PC de l'école (§6)
+  qui l'a fait inscrire. Réglages déjà en place qu'il pourra piloter : le bassin de vraies lumières
+  (`StreetLights.pool`, 16, §9), les vraies lumières des parkings (`StreetLights.interieur_fixe` : 35 fixes par parking
+  ou bassin de 8, §11 étapes 12 et 13), les ombres du soleil (`DirectionalLight3D`, portée 240 m), le LOD des bâtiments
+  (`CityRenderOptimizer.building_lod_bias` 0,25 au-delà de `lod_near_radius` 150 m), la distance des silhouettes du
+  centre-ville (`DowntownHLOD`, 650 m) ; côté moteur, l'échelle de rendu 3D du viewport (`scaling_3d_scale`, non
+  utilisée aujourd'hui). Ni SSAO ni glow ne sont activés, rien à gagner de ce côté. La mesure qui décidera est le
+  temps GPU (`RenderPerfTest`) sur une carte Intel, pas les appels de dessin (§3) ;
+- **bug : 0 voiture exposée** chez le concessionnaire ;
+- ~~**bug : l'anti-apparition de `LoopSpawner` ne refuse presque rien**~~ **CORRIGÉ le 2026-09-23** (§12, fin) : plus
+  aucune voiture ne naît en vue à moins de 150 m (31 avant, en marchant depuis Founders Plaza) ; au-delà, on la laisse
+  naître, faute de quoi un joueur immobile ne voit plus rien arriver. Voir la puce suivante ;
+- **gel en deux temps pour la circulation**, chantier futur, décidé par le joueur le 2026-09-23 : c'est la vraie
+  solution d'une anti-apparition TOTALE. `SimulationCuller` gèle tout ce qui est à plus de 50 m et hors de la vue ; une
+  voiture qui naît hors de la vue est donc aussitôt gelée et n'arrive jamais. Mesuré sur l'îlot d'Echo Circle avec une
+  anti-apparition totale : 42 voitures, TOUTES gelées, 0 éveillée en une minute, et RoundaboutTrafficTest à 0 sortie. Il
+  faudrait que les voitures gelées AVANCENT le long de leur trajet sans physique (abscisse sur l'arête, pas de
+  `move_and_slide`, pas de visuel), comme c'est déjà prévu pour les trains (§8, étape 5). On pourrait alors refuser
+  toute naissance en vue, à toute distance, et relever `RoundaboutTrafficTest` à ses 40-59 sorties d'avant ;
+- ~~**marches trop hautes pour `StepClimb`** devant certaines entrées~~ **FAIT le 2026-09-23** : rampes de collision
+  invisibles devant 10 entrées (§12, « Rampes invisibles des entrées »), la limite de 0,40 m du joueur restant où elle est.
+  La première liste donnée au joueur était FAUSSE pour 3 modèles sur 6 : le cabinet médical, les petits commerces alt01 et
+  le DataCenter n'ont pas d'escalier d'entrée (c'étaient des socles le long des murs et des cônes décoratifs), et 7 autres
+  modèles en avaient un (les georgiennes alt01, 02, 03, 05, la pizzeria, le pub, la maison de ville) ;
+- ~~**bug : `PlayerCarPhysics` finit SUR LE TOIT**~~ **CORRIGÉ le 2026-09-21** (cause : §6, « le pack
+  VitaVehicle compte en pieds »). Avant : `CarDrivingTest` `min_up_dot = -0,9977`, `final_speed =
+  11,99` ; `CarDropTest` `up_dot = -0,9999` et 20,39 m de dérive (mêmes chiffres sur `0344b79`, donc
+  antérieur aux chantiers d'éclairage). Le premier suspect, `mass = 90.00`, était faux : voir §6.
+  Après : `CarDrivingTest` `min_up_dot = 0,9969` (roulis max 4,5° en virage), arrêtée en 1,317 s sur
+  8,14 m depuis 11,23 m/s ; `CarDropTest` retombée à plat (`up_dot = 1,0000`), 9 mm de dérive, posée
+  en 2,57 s. Rappel : ce `RigidBody3D` n'est placé dans aucune scène de jeu (les 252 voitures de la
+  circulation et la voiture prise dans la rue sont des `Car.gd` arcade) ;
+- **chantier « relier tous les bâtiments à la route »** (cf. ci-dessous).
+- **conduite réaliste** (pack VitaVehicle, §13 et §14) : étape 1 FAITE le 2026-09-24, essai sur la berline city_sedan_01
+  (F7 / F8 ; F7 retirée depuis, F8 devenue B, §13), et deux défauts des vidéos corrigés le même jour (rampe d'accès des
+  parkings, direction). Puis décision du joueur, le même jour : **full réaliste pour le joueur, arcade supprimée, sur les
+  72 modèles**, chacun sur sa fiche (§14 ;
+  étapes A, les fiches, B, l'arcade retirée, C, la circulation par modèle, D, la physique des PNJ mesurée, et E, les
+  vidéos, FAITES), et le frein à main pour déraper, le même jour (§14). Décisions du joueur, toujours le 2026-09-24 : la
+  vraie physique sur les PNJ, non (la circulation reste cinématique) ; les 13 modèles plus bas que les bordures ne sont pas
+  surélevés. **Puis, le soir : « la conduite de GTA V, pas une conduite réaliste » — FAIT** (§15), un modèle à nous à la
+  place du pack, les fiches aux noms du handling.meta de GTA V. **Puis, le même soir : plus aucune aide de direction, le
+  joueur seul tourne les roues — FAIT** (§15, « Deuxième version »). Restent : le réglage au ressenti par le joueur, les chocs
+  contre la circulation (puce suivante), les sons.
+- **chocs réels contre la circulation**, plus tard (idée retenue par le joueur le 2026-09-24, après la mesure de l'étape D
+  du §14) : ne passer en physique QUE la voiture que le joueur percute, au moment du choc. Aujourd'hui une voiture de la
+  circulation est cinématique, de masse infinie pour le châssis du joueur : il rebondit sur elle, et elle n'est que
+  « sonnée » (`Car.knock`). La version hybride mesurée à l'étape D (les 8 voitures les plus proches en physique, pilotées
+  par l'IA) coûte 0,21 ms par voiture et par pas, et bloque un carrefour à feux dense, parce que l'IA ne sait pas piloter une
+  voiture physique dans une circulation serrée. Une voiture percutée n'a pas besoin d'IA : elle encaisse le choc, glisse,
+  s'arrête, puis reprend sa conduite cinématique, ou reste sur place, accidentée. Base possible : le châssis piloté de la
+  sonde de l'étape D (`F:/p-recree/sondes/2026-09-24_hybride/chassis_ia.gd`).
+- **ACCESSOIRES PRÊTS À POSER, pas encore posés** (2026-09-23) : trois packs reçus en FBX, convertis en une scène par
+  modèle par `scenes/world/props/tools/ConversionPacks.gd` — `assets/airport_ground_vehicles/` (4 véhicules de piste),
+  `assets/farm_buildings_quaternius/` (13 bâtiments et objets de ferme), `assets/low_poly_construction/` (81 éléments et
+  outils de chantier). Chaque scène : maillage fusionné sur un matériau partagé par pack (un appel de dessin), échelle
+  RÉELLE cuite dans les sommets, posée au sol et centrée, portée de visibilité (75 x taille apparente), collision
+  EXACTE pour ce qui est fixe (39), une enveloppe CONVEXE par pièce pour ce qui pourrait bouger (40 ; changer la racine
+  en RigidBody3D suffit), aucune pour les outils à main (19). Échelles relevées sur les sommets et vérifiées à l'image à
+  côté d'une capsule de 1,80 m : véhicules d'aéroport à 1 ; bâtiments de ferme à 1,3 (la porte de la petite grange
+  faisait 1,69 m) ; chantier au cas par cas, le pack étant incohérent (murs de 3 m justes, outils 1,5 à 4 fois trop
+  gros). L'escalier de piste est en couleurs unies : sa texture palette manque au pack. Sources brutes dans le dépôt
+  PRIVÉ (`F:/p-recree/sources-brutes/assets/`), licences NON VÉRIFIÉES (`LICENSE_ATTRIBUTION.txt` de chaque dossier).
+  Rien n'est posé sur la carte : à décider avec le joueur (proposition : véhicules sur l'aire de trafic de l'aéroport,
+  ferme au ranch et à Greenfield, chantier à Northgate Rise et en travaux de voirie).
+
+### Chantier à prévoir : relier les bâtiments à la route
+
+Les lieux et les bâtiments sont posés sur la pelouse sans rien qui les raccorde à la chaussée : on tombe
+régulièrement sur 2 à 3 m d'herbe entre une dalle et le trottoir, et sur des dalles voisines séparées par une
+bande d'herbe. Le commissariat et l'hôpital ont été traités les 2026-09-19 (`d818e1e`, `ca797e8`), le reste non.
+
+**L'hôpital a été repris le 2026-09-21 au soir** : le joueur voyait encore de l'herbe entre les murs et les
+parkings. Les lisières avaient été posées contre la BOÎTE du modèle (48 x 47 m), or le rez-de-chaussée de
+`Business_Hospital` est en RETRAIT sous les étages (arcades, surplomb, auvent) : l'herbe courait sous le
+surplomb jusqu'au pied des vrais murs, et derrière le bâtiment elle montait jusqu'au mur. Aucun balayage vu du
+ciel ne pouvait le voir, le toit le cache ; il a fallu tirer les rayons à 0,3 m du sol et faire le tour au sol.
+Réponse : UNE dalle de béton sur toute l'emprise du modèle et une bande de 1,5 m derrière, butant sur l'enrobé
+des parkings sans le chevaucher. **Leçon pour la suite du chantier : une liaison posée contre la boîte d'un
+modèle ne garantit rien au pied de ses murs — regarder le rez-de-chaussée, ou paver sous l'emprise.**
+
+**Recensement du 2026-09-19**, mesuré et non estimé : pour chaque bâtiment on part de son centre et on marche vers
+l'extérieur dans les quatre directions d'axe, au pas de 1 m jusqu'à 50 m, en retenant la direction qui atteint une
+chaussée ou un trottoir en traversant le moins d'herbe.
+
+| ensemble | bâtiments | reliés sans herbe | **coupés par de l'herbe** | sans route à moins de 50 m |
+|---|---|---|---|---|
+| quartiers (`buildings/lots.json`) | 1 196 | 486 | **682** | 28 |
+| centre-ville (`downtown/generated/buildings.json`) | 441 | 441 | 0 | 0 |
+| **total** | **1 637** | 927 | **682 (41,7 %)** | 28 |
+
+Épaisseur d'herbe à traverser : **médiane 8 m, maximum 34 m**. Le centre-ville est indemne parce que l'intérieur
+de ses îlots est déjà dur (sol à +0,200 m) ; le problème est entièrement dans les quartiers.
+
+Ce qu'il faut savoir avant de s'y mettre, tiré des deux sites déjà faits :
+
+- Altitudes de référence, relevées au rayon : **pelouse d'îlot -0,050 m, dalle de lieu +0,020 m, chaussée
+  +0,050 m, trottoir +0,200 m**. Poser une liaison au même dessus que la dalle qu'elle rejoint (`y + 0,05` dans
+  `PlacesBake`) ne crée aucune marche ; la seule marche restante est celle de 7 cm que les dalles avaient déjà
+  sur la pelouse.
+- **Découper en bandes étroites fabrique le défaut qu'on corrige.** Au commissariat, trois bandes (parvis vers
+  trottoir, allée, cheminement) ont laissé un îlot d'herbe de 10 x 10,5 m enclavé entre elles. Mieux vaut peu de
+  grands rectangles qui se touchent sur toute leur longueur, et faire mordre chaque liaison de 0,5 m sur la dalle
+  qu'elle rejoint.
+- Le contrôle qui décide est le **cheminement** : échantillonner la polyligne rue -> entrée tous les 0,25 m et
+  exiger zéro case d'herbe. Un balayage de la façade au pas de 1 m sert à débusquer les poches enclavées.
+
+### Parc de véhicules
+
+Le catalogue est `resources/vehicle_models/*.tres` (un `VehicleModelData` par modèle), lu par
+`VehicleCatalog` et appliqué par `Car._setup_model()`. **72 modèles, 214 variantes de couleur** :
+61 civils, 5 police, 3 urgence, 3 SWAT. Toute la famille `city_*` est à l'échelle **1,65**, mesurée
+et non supposée : à cette échelle une berline du pack fait 2,02 m de large contre 2,111 m pour une
+voiture du jeu.
+
+`VehicleCatalog.AMBIENT_ROLES` (`civil`, `police`, `emergency`) est ce que tire la circulation de
+fond. Le `role` dit ce que le véhicule EST — c'est par lui que le futur système de police ira
+chercher ses voitures — et sa présence dans le trafic se règle par son **poids**, pas en le
+déguisant en civil. Poids des véhicules rares : police sedan et SUV 0,10, police van 0,05, police
+truck 0,03, ambulance 0,08, fourgon d'urgence 0,05, camion de pompiers 0,04, soit **1,4 % du
+trafic**.
+
+**SWAT** : rôle `swat`, poids 0, jamais tiré par la circulation. `VehicleCatalogTest` échoue si un
+SWAT reçoit un poids. Ils sont prêts pour les missions et le futur système police.
+
+**Hélicoptères** (`Veh_Air_Ambulance_Helicopter`, `Veh_Police_Helicopter`, `Veh_SWAT_Helicopter`) :
+**hors catalogue pour l'instant**, et c'est volontaire. Ils sont utilisables plus tard — 10,62 ×
+1,69 × 3,38 m à l'échelle 1,65, 726 à 876 triangles, un seul matériau, et surtout `Rotor_Main` et
+`Rotor_Tail` sont des **nœuds séparés donc animables** (celui de la police a en plus un
+`Search_Light`). Mais ils n'ont **aucune roue** : `Car.gd` est un véhicule terrestre et
+`VehicleCatalogTest` exige au moins 3 roues dont exactement 2 avant. Les mettre au catalogue
+casserait le test. Il faudra **un contrôleur de vol distinct**, et exempter le rôle `aircraft`
+(déjà en réserve dans l'enum de `VehicleModelData`) des contrôles de roues.
+
+Retirer un véhicule de la circulation, de façon réversible : voir la note de la §5 sur
+`traffic_weight` et `resources/vehicle_models/retires/`.
+
+## 8. Chantier en cours : trains en mouvement
+
+Étapes 1 à 4 construites et commitées le 2026-09-18 ; **l'étape 5 (optimisation) reste à faire**, le
+joueur voulant d'abord essayer en jeu.
+
+Modèles retenus, et eux seuls (pack `assets/Modular Train Pack-zip`, **pas encore commité**,
+3,0 Mo, sans fichier de licence, importé le 2026-09-18) : `HighSpeed_Front`, `HighSpeed_Wagon`,
+`CargoTrain_Front`, `CargoTrain_Wagon`, `CargoTrain_Container`, `CargoTrain_CoalContainer`. Les
+`Locomotive_*` ne sont pas utilisés. Aucun de ces matériaux n'a de texture (couleurs unies,
+toutes opaques, `emission` activée par l'import à neutraliser) : chaque caisse peut donc être
+cuite en une seule surface à couleurs de sommets, soit **un appel de dessin par caisse**, et les
+wagons d'un même type se dessinent en `MultiMeshInstance3D`.
+
+Voie mesurée : 1 124 points au pas de 4,00 m, **4 492 m**, rayon minimal **191,4 m**, pente
+maximale **3,00 %**, altitudes de 0,70 à 18,92 m, **voie unique avec deux culs-de-sac** à
+(2168, 15,40, 195) et (-2170, 0,70, 800), **3 ouvrages** où le train passe au-dessus d'une route
+en tranchée (dégagement 5,80 m), **rien au-dessus de la voie** nulle part, et **2 passages à
+niveau** seulement : `art_a7_n:0` en (-389,4 ; 252,2) et `art_a8:0` en (-113,3 ; 274,5), artères
+de 10,5 m, ligne d'arrêt à 8,9 m de l'axe.
+
+Les cinq étapes, une par commit :
+
+1. `rail_path.tres` cuit par `RoadBake` + `MapRailTest`. **fait** (`bbf8938`)
+2. Modèles fusionnés en `.res`, `RailPath.gd`, `Train.gd`, une rame grande vitesse. **fait** (`cc05177`)
+3. Cantons (280 m), plusieurs trains, sens unique par vague, terminus. **fait** (`d3d9df6`)
+4. Passages à niveau : blocs d'arrêt invisibles du groupe `vehicle` + barrières en décor. **fait**
+5. `SimulationCuller`, `MultiMesh`, mesure de perf sur les 12 vues. **à faire**
+
+Compositions arrêtées : **1 + 4** pour la grande vitesse (60,48 m, 90 km/h), **1 + 14 panachés**
+pour le fret (155,56 m, 55 km/h, 73 176 triangles). Repli prévu pour une carte faible : 1 + 10 (à ranger dans le
+mode graphique léger, §7).
+Pack de trains commité à l'étape 1 avec ses `.import` et un `LICENSE_ATTRIBUTION.txt` qui le classe
+en licence NON VÉRIFIÉE.
+
+Ce que l'étape 5 devra savoir :
+
+- **Un appel de dessin par caisse** pour l'instant : 5 pour une rame grande vitesse, 15 pour un fret.
+  C'est le `MultiMesh` de l'étape 5 qui doit ramener ça à un appel par type de caisse.
+- **Gel en deux temps** : un gel strict au-delà de 50 m ferait qu'un train attendu à un passage à
+  niveau, à 240 m et hors écran, n'arriverait jamais. Le gel doit laisser avancer l'abscisse du train
+  (`Train.head`) et ne couper que l'écriture des transformations de caisses (`Train._place`).
+- **Effet de bord connu des blocs d'arrêt** : `LoopSpawner._process_proximity` compte
+  `get_nodes_in_group("vehicle")` pour son plafond `max_active`. Pendant une fermeture, les 2 blocs du
+  passage gonflent ce compte, donc une ou deux voitures de moins apparaissent pendant ~20 s. Corrigeable
+  d'une ligne dans `LoopSpawner` si ça gêne ; laissé tel quel pour ne toucher à rien du trafic.
+- **Piétons aux passages à niveau** : les 4 traversées de trottoir de la carte sont toutes sur les
+  2 passages à niveau (mesuré par `MapRailTest`), aucune ailleurs. Les barrières n'arrêtent pas les
+  PNJ : il n'y a pas encore de version piétonne des blocs d'arrêt.
+
+Réserve à ne pas oublier à l'étape 5 : un gel strict au-delà de 50 m ferait qu'un train attendu à
+un passage à niveau, à 240 m et hors écran, **n'arriverait jamais**. Le gel doit laisser avancer
+l'abscisse du train et ne couper que l'écriture des transformations de wagons.
+
+## 9. Cycle jour/nuit et éclairage des lampadaires
+
+Construit le 2026-09-19. Deux nœuds dans `World.tscn`, volontairement séparés parce qu'ils n'ont ni le même rôle
+ni le même coût :
+
+- **`DayNight`** (`scenes/world/DayNightCycle.gd`) : l'heure, la course du soleil, le ciel, le brouillard,
+  l'ambiante. N'allume rien lui-même ; il publie `hour_changed(heure, facteur_nuit)`.
+- **`StreetLights`** (`scenes/world/StreetLights.gd`) : écoute, et allume.
+
+**Durée : 48 minutes réelles pour 24 h de jeu** (2 min par heure de jeu, la durée de GTA V). Jour utile 6 h-20 h
+soit 28 min, nuit noire 21 h-5 h soit 16 min. Le « facteur nuit » vaut 0 en plein jour, 1 en pleine nuit et
+interpole entre 5-7 h et 19-21 h : c'est lui qui fond les lampadaires, pas un interrupteur.
+
+**Touche `N`** : +1 h. **`Maj+N`** : -1 h. **`Ctrl+N`** : fige ou relance le cycle. Une horloge s'affiche en haut
+à droite pendant 2,5 s après chaque changement, et en permanence quand le cycle est figé.
+
+### Comment les 1 371 lampadaires s'allument sans coûter
+
+**Il y a 1 371 mâts et 1 534 luminaires** (les doubles en portent deux) : 505 mâts / 628 luminaires sur la carte
+(`RoadBake`), 866 mâts / 906 luminaires au centre-ville (`DowntownFurnitureBake`). Les chiffres de 1 375 / 1 540
+qu'on lit plus haut dans les mesures du 2026-09-19 étaient exacts ce jour-là : `RoadBake` a depuis refusé 4 mâts
+faute de dégagement (cf. l'anomalie corrigée en fin de chapitre), ce qui retire 4 mâts et 6 luminaires.
+
+Deux mécanismes, et c'est la séparation qui tient le budget :
+
+1. **Le verre des luminaires, partout** (jusqu'au 2026-09-21 : une boîte « halo » posée sur chaque tête, cf.
+   « Le verre des lampadaires » plus bas). Une copie des triangles du verre de chaque modèle, non éclairée,
+   **fusionnée avec les autres en un maillage par cellule** (carte) ou par bloc (centre-ville) : 97 maillages,
+   28 488 triangles pour toute la carte. Cachés le jour (0 appel de dessin), visibles la nuit (**1 appel par
+   cellule visible**). Les 1 542 luminaires partagent **UN SEUL matériau** (`scenes/world/lamp_glow_material.tres`) :
+   c'est la condition pour que le moteur les regroupe, exactement la leçon déjà payée sur les mâts (cf.
+   `LampPoleLayer`, où une copie de matériau par poteau avait fabriqué 378 appels). `DayNightTest` échoue si un
+   deuxième matériau apparaît, et si UN SEUL luminaire n'a pas son verre allumé.
+2. **Les vraies lumières, seulement près du joueur.** Un bassin de **16 `SpotLight3D` sans ombre** suit la caméra
+   et se pose sur les 16 luminaires les plus proches, réaffecté toutes les 0,25 s ou dès que la caméra a bougé de
+   4 m. Cône de 55° et portée 17 m, calés sur la géométrie mesurée (luminaire à 6,2 m, artère de 10,5 m) : la
+   flaque couvre la chaussée et ses deux trottoirs.
+
+**Le réglage se change sans recompiler** : `pool` sur le nœud `StreetLights`. À 0, il ne reste que les halos — la
+rue garde ses lampadaires visibles mais perd ses flaques de lumière au sol (comparaison au sol faite, la
+différence est nette). C'est le premier bouton à baisser sur une carte Intel (mode graphique léger, §7).
+
+### Pourquoi pas une vraie lumière par lampadaire, et pourquoi je ne peux pas le chiffrer ici
+
+L'option a été construite et mesurée (`--toutes-lampes` : 1 540 `SpotLight3D`). **Trois métriques ont été
+essayées, aucune ne départage les options sur la machine de développement :**
+
+1. **Appels de dessin** : identiques à l'unité près entre 0, 8, 16, 32, 64 et 1 540 lumières. Normal, et c'est
+   une leçon à retenir : une lumière ponctuelle n'ajoute aucun appel de dessin, elle ajoute du travail dans la
+   passe d'ombrage. Le seuil du §3 ne mesure donc PAS le coût de l'éclairage.
+2. **`viewport_get_measured_render_time_gpu`, 800x450** : « 0 lumière » ressortait plus lent que 1 540, et b32
+   plus rapide que b16. Incohérent.
+3. **Même compteur en 1920x1080 sans capture, médiane sur 60 images** : b8, b32 et b64 donnaient 0,66 ms au
+   centième près, et « 0 lumière » restait la plus lente. Toujours incohérent.
+4. **Temps d'image à l'horloge, 1920x1080, vsync coupée, médiane sur 120 images** : 1 540 lumières ressortait
+   *plus rapide* que 0 sur une vue. L'écart entre les options est sous le bruit.
+
+Cause : cette machine rend la scène en ~1,8 ms quand l'UHD 750 met 30 à 100 ms (chiffres de `CityRenderOptimizer`).
+Le GPU n'est jamais le goulot ici, donc le coût des lumières ne sort pas. **Ne pas recommencer à chercher une
+cinquième métrique sur cette machine.** `RenderPerfTest` accepte désormais `--heure=`, `--bassin=` et
+`--toutes-lampes` : c'est là, sur une machine dont le GPU est le goulot (la carte Intel du mode graphique léger,
+§7), que la comparaison se fait.
+
+Le choix du bassin borné ne repose donc pas sur un écart mesuré ici, mais sur le fait que **son pire cas est borné
+par construction** : 16 lumières quoi qu'il arrive, où que soit le joueur. Le coût de l'option à 1 540 est, lui,
+non borné et non mesuré — ce qui est exactement la raison de ne pas l'embarquer.
+
+### Ce que ça rend possible plus tard
+
+Les **phares de véhicules** et les **gyrophares** se posent sur la même architecture, sans rien réinventer :
+le `hour_changed` donne l'allumage automatique au crépuscule, les halos non éclairés à matériau partagé donnent
+les feux de tous les véhicules lointains pour un appel de dessin par lot, et un bassin de vraies lumières borné
+donne les phares du joueur et des quelques voitures les plus proches. Le seul piège connu : un gyrophare qui
+clignote a besoin d'un matériau qui change, donc **il faut un matériau partagé par état** (bleu allumé, rouge
+allumé, éteint) et faire clignoter tout le monde en phase, jamais un matériau par véhicule.
+
+### Anomalie antérieure révélée par ce chantier, et corrigée
+
+**5 luminaires (3 mâts) de la carte étaient plantés sous un tablier routier**, tête à 0,005 à 0,493 m de
+l'ouvrage, en (-697,1 / -694,6 ; 0,84 ; -776,1), (-720,6 / -718,3 ; 0,84 ; -635,8) et (53,3 ; 7,38 ; 791,6). Ces
+mâts existaient depuis le chantier des routes ; le cycle jour/nuit n'a fait que les révéler, en demandant pour la
+première fois OÙ sont les luminaires.
+
+**C'est réglé, et le contrôle a changé de place.** `RoadBake` exige maintenant `Network.CLEARANCE` au-dessus du
+pied avant de poser un mât et en **refuse 4** (`"lampadaires_refuses": 4` dans sa sortie), d'où 505 mâts au lieu
+de 509 et 628 luminaires au lieu de 634. Le comptage vit désormais dans **`MapRoadsTest`**, qui le mesure sur les
+triangles des chaussées cuites au lieu d'un rayon : `MAP_ROADS_LAMPES ... 0 mât(s) sous un ouvrage`. `DayNightTest`
+ne garde que ses propres bornes de dégagement (5,9 - 7,2 m sous le luminaire).
+
+**Son rayon de dégagement ne regarde que la couche 1, le monde statique** — leçon payée le 2026-09-21. Une
+berline garée pile sous le luminaire du parking de l'aérogare renvoyait 4,75 m au lieu de 6,2 et le test accusait
+un mât enterré alors qu'il mesurait un toit de voiture. Toute sonde qui mesure le SOL doit exclure la couche 3
+(les véhicules, `Car.tscn` `collision_layer = 4`).
+
+### Fenêtres allumées : les huit cas signalés le 2026-09-20, et ce qu'ils étaient
+
+Le joueur a listé huit bâtiments mal ou pas éclairés. Ce n'était pas un défaut mais **quatre défauts
+différents**, et un seul touchait vraiment l'extraction :
+
+| cas signalé | ce que c'était | corrigé ? |
+|---|---|---|
+| lowrise building, midrise building | les **71 bâtiments du pack lowpoly_city**, une seule surface sur un atlas de palette. On avait conclu « pas séparable » : c'était faux, les vitrages visent les texels `#68C0FF` et `#23A3FF` | **oui**, règle d'atlas — 218 à 268 carreaux par modèle, contre 0 |
+| midrise industrial, TraditionalSkyscraper | trois modèles vitrent leur façade avec **UN SEUL QUAD** : `Industrial_TraditionalSkyscraper_alt02`, `Industrial_ModernSkyscraper_alt06`, `Industrial_WideOfficeBuilding_alt04` n'avaient que **4 carreaux**, un par façade. Le tirage à 28 % allumait donc une FAÇADE ENTIÈRE d'un coup | **oui**, re-maillage au grain d'une travée — 4 carreaux deviennent 336 à 608, de 2,2 x 2,9 m |
+| Central Precinct, St. Anselm, Ashford Grand Hotel | leurs modèles ont un vitrage tout à fait ordinaire (56, 130 et 735 carreaux). La cause n'était pas dans les modèles : **`PlacesBake` n'appelait jamais `BuildingWindows`** | **oui**, 389 carreaux allumés sur les 12 lieux |
+| core_002_Scraper001 | `Scraper001` est une **boîte de 28 triangles**, 33 x 153 x 33 m, une seule surface `Material`, aucune fenêtre modélisée et aucun atlas où en chercher | **NON, et ce n'est pas corrigeable** par extraction. Il est posé UNE seule fois. Le remplacer par une tour de la série Mk (qui, elles, ont un vitrage) est un changement d'une ligne de données, à décider |
+
+Deux constats de la même passe, à ne pas refaire :
+
+- **Mk3 est confirmé non séparable.** Son seul candidat sérieux, `Material.002`, est 100 % vertical
+  sur toute la hauteur — mais rendu en rouge il dessine un **treillis triangulé sur toute la façade**,
+  pas un bandeau vitré. Ne pas y revenir sans une nouvelle image.
+- **`Industrial_Warehouse_alt01` n'a aucun matériau de vitrage** (`Mat_Standard`, `Mat_Refl`). Un
+  entrepôt sans fenêtre est un entrepôt sans fenêtre.
+
+Et un défaut trouvé à l'image pendant la correction : les panneaux de mur-rideau des tours à
+facettes, allumés d'un bloc, fabriquaient des **nappes blanches de plusieurs dizaines de mètres
+flottant entre les immeubles**. La première réponse — ne plus allumer un carreau trop grand qu'on ne
+sait pas retailler — a été **RETIRÉE le 2026-09-20 au soir** : elle éteignait bien plus que les
+nappes (un modèle est tombé de 42 carreaux à 6). Voir la sous-section suivante.
+
+### Balisage de l'aéroport (Prairie Wind International)
+
+315 feux, posés selon le balisage réel (OACI annexe 14 / FAA) : **bords de piste blancs** espacés de
+60 m, **seuils verts** et **fins de piste rouges** en barres de part et d'autre (dans la vraie vie
+c'est le même feu bidirectionnel, vert d'un côté et rouge de l'autre ; on ne sait pas faire un feu
+directionnel à ce prix, les deux barres sont donc à 3 m l'une de l'autre, vert à l'extérieur),
+**PAPI** de 4 feux moitié blancs moitié rouges à côté de chaque seuil, **bords de voie de circulation
+bleus**, projecteurs blancs sur l'aire de trafic, bandeau de l'aérogare et vigie de la tour allumés,
+feu d'obstacle rouge en haut du mât.
+
+Deux écarts au réel, assumés et dits :
+
+- **Le jaune de la zone de prudence.** En vrai les 600 derniers mètres (ou le dernier tiers) des
+  bords de piste sont jaunes. Sur une piste de 900 m ce tiers fait 300 m à chaque bout, soit les deux
+  tiers de la piste en jaune : ça se lit comme une erreur. Le jaune ne couvre donc que les 300
+  derniers mètres du seuil 09, celui par lequel on se pose.
+- **La rampe d'approche** court jusqu'à 900 m avant le seuil en vrai. Le plateau de l'aéroport
+  s'arrête à 70 m à l'ouest : on pose donc des barres tant que le terrain reste au niveau de la piste
+  (`APPROACH_TOLERANCE`), **mesuré à chaque barre**, et on s'arrête là où il décroche. Six barres
+  tiennent, soit 120 m.
+
+Un feu réel fait 0,30 m et ne ferait plus un pixel au-delà de 200 m : ils font **0,55 m** ici, assumé,
+pour que la piste reste lisible depuis l'aérogare et depuis l'air.
+
+Le balisage **ne se fond pas au crépuscule, il s'allume** : un balisage de piste est commandé par un
+interrupteur. `StreetLights` montre ou cache le groupe `airport_glow` au passage de `AIRPORT_ON_AT`.
+Un matériau par couleur, partagé, donc **un appel de dessin par couleur visible**, zéro le jour.
+
+**Piste secondaire raccourcie le 2026-09-23** (demande du joueur) : elle allait de x 620 à 1040, et son bout ouest,
+côté parking, passait 20 m au-delà de la clôture (x = 640), seuils compris. Elle va maintenant de x 651 (le bord ouest de
+la voie de circulation qui la rejoint) à 1040, seuils vert et rouge à 651 et 654 : 11 m à l'intérieur. 271 feux au
+lieu de 273. **Relevé en passant, pas corrigé** : le bord sud de la piste principale (z -1372,5) et ses feux de bord
+dépassent de 0,5 m la clôture sud (z -1372), qui court donc sur le rebord de l'enrobé.
+
+### Feu d'obstacle de la plus haute tour (2026-09-23)
+
+Demande du joueur : le point rouge au sommet de l'antenne de **Mk1** (263,3 m, la plus haute tour) doit clignoter comme
+un vrai feu d'obstacle, visible de loin, surtout de nuit. Relevé sur les sept modèles du pack de gratte-ciels : c'est la
+seule surface rouge en haut d'une tour — `Material.003` (albédo 0,91 / 0,10 / 0,10), 222 triangles, une boule de 1,24 m
+de rayon centrée à 262,18 m ; Mk2 à Mk6 et Scraper001 n'en ont aucune.
+
+- **On allume la géométrie du modèle**, comme le verre des lampadaires : `DowntownBuildingsBake._feu_obstacle` recopie
+  ces 222 triangles 2 cm devant l'original (nœud `FeuObstacle` du bâtiment, groupe `feu_obstacle`). Aucune boîte
+  ajoutée. Un seul matériau, partagé (`scenes/world/feu_obstacle_material.tres`).
+- **Visible de loin.** Sans rien d'autre, la boule tombait sous le pixel : relevé à l'image à 1,3 km en 800x450, zéro
+  pixel rouge, allumée ou non. Le matériau est donc un petit shader (`feu_obstacle.gdshader`) : non éclairé, sans
+  brouillard, rouge à 0,62 (sous le seuil de délavage ACES), et la copie, recentrée sur la boule et mise à l'échelle de
+  son rayon, GROSSIT avec la distance pour ne jamais paraître plus petite que 0,004 rad de rayon — la taille exacte de
+  près (jusqu'à 310 m), quelques pixels de loin, comme l'éblouissement d'un vrai feu. Après : 2 x 2 pixels rouges en
+  800x450 à 1,3 km comme à 600 m (coin sud-est du centre-ville), 0 éteint ; vu à l'image, un point rouge net
+  au-dessus de la tour. `extra_cull_margin` 20 m, portée 6 000 m (au-delà du plan lointain).
+- **Clignotement** (`StreetLights`, `FEU_PERIODE` 2 s, `FEU_ALLUME` 0,75 s) : 30 éclats par minute, de jour comme de
+  nuit, tous les feux en phase — l'ordre de grandeur d'un feu rouge de moyenne intensité (FAA L-864, OACI type B : 20 à
+  40 éclats par minute). Éteint, on voit la boule rouge du modèle. Plus une `OmniLight3D` rouge sans ombre au centre
+  de la boule (14 m, énergie 3), qui clignote avec elle et rougit le haut du mât ; elle a son propre fondu (1 500 +
+  200 m), que `CityRenderOptimizer` respecte désormais (§6).
+- Vérifié : `DowntownBuildingsTest` (une copie de 222 triangles au-dessus de 261 m sur Mk1, matériau partagé, portée,
+  une lumière avec son fondu) ; `DayNightTest` (sur 4 s d'horloge, allumé 37 % du temps pour 37,5 % attendus,
+  5 bascules, aucun désaccord entre les nœuds). Captures, allumé et éteint : `F:/p-recree/ground_shots/feu_mk1_2026-09-23/`
+  (hors dépôt), vues `feu_mk1_*`.
+
+### Feux arrière : deux niveaux, et le sol éclairé
+
+- **La nuit, tout véhicule qui roule porte ses feux rouges en permanence** (matériau `vehicle_tail`,
+  albedo 0,30) ; **dès qu'il freine il passe au rouge vif** (`vehicle_brake`, albedo 0,62). Deux
+  matériaux sur la MÊME géométrie d'optique, et deux listes **disjointes** : les poser ensemble ferait
+  un combat en z.
+- **Le freinage éclaire le sol** : un bassin borné de 4 `SpotLight3D` rouges dirigés vers l'arrière et
+  vers le bas, **le joueur d'abord**.
+- Une **voiture garée** n'allume rien : `Car.is_parked()` coupe les deux.
+- Le défaut corrigé : quand le joueur conduisait, `brake_lights_on()` ne regardait que la VITESSE.
+  Les feux ne s'allumaient donc qu'une fois la voiture presque arrêtée, et appuyer sur S en roulant
+  ne faisait rien, ni de jour ni de nuit. La pédale est maintenant relevée là où elle est lue.
+
+### Gyrophares
+
+**Éteints par défaut.** Ils s'allumeront sur événement ; le déclencheur est prêt
+(`VehicleLights.set_gyro()`, `toggle_gyro()`, `allumer_urgences()`), le système d'événements ne l'est
+pas. Le joueur qui conduit un véhicule d'urgence bascule avec **R**.
+
+**Chaque feu dans SA couleur, feu par feu** (refait le 2026-09-21 sur la description du joueur, photos à
+l'appui). La première version coupait la rampe en une moitié gauche et une moitié droite, sans regarder
+la couleur de chaque segment : le segment BLANC du milieu d'une rampe de police s'allumait à moitié
+rouge et à moitié bleu, et le camion de pompiers allumait en rouge ses segments blancs de gauche et en
+blanc ses segments rouges de droite. `VehicleLightParts.feux_urgence` rend maintenant les feux UN PAR UN
+(composante connexe de triangles d'une même couleur de palette : rouge `#782225`, blanc `#cfeaf3`,
+jaune `#eba335`), avec leur position sur la caisse. Inventaire relevé feu par feu sur les 11 véhicules :
+
+| véhicule | feux d'urgence modélisés |
+|---|---|
+| police berline, SUV, fourgon, camion ; SWAT APC 02 | rampe de toit rouge / BLANC / rouge |
+| SWAT APC 01 | rampe à cinq segments rouge / blanc / rouge / blanc / rouge |
+| camion de pompiers | la même rampe à cinq segments, plus deux feux de cabine rouge + blanc : 5 rouges, 4 blancs, aucun ambre |
+| ambulance | rampe de cabine rouge / blanc / rouge, et 15 feux rouges et JAUNES sur les flancs et la face arrière de la caisse |
+| fourgon d'urgence | rampe rouge / blanc / rouge |
+| SWAT tank, lowpoly_police | aucun |
+
+Le rouge de livrée `#ad3e2a` (bande de l'ambulance, caisse du camion) est exclu : ce n'est pas un feu.
+
+Trois façons d'allumer, selon ce qu'est le véhicule (`_genre_urgence`) :
+
+- **POLICE et SWAT** : les feux rouges de la moitié gauche de la rampe s'allument en ROUGE, ceux de la
+  moitié droite en BLEU, et les deux moitiés **alternent** (bleu allumé + rouge éteint, puis l'inverse),
+  double éclat par phase, huit temps de 0,125 s. Le **segment blanc du milieu reste tel quel**, jamais
+  allumé ; un segment rouge pile au milieu (SWAT APC 01) reste éteint aussi, pour la symétrie. Rampe
+  éteinte, la moitié droite garde une lentille BLEUE au repos.
+- **POMPIERS** : **ALTERNANCE d'un vrai camion américain** (refait le 2026-09-21 au soir : la première
+  version allumait tout en même temps sur le mot « synchronisées », que le joueur a précisé ensuite). Les
+  rouges et les blancs alternent, et sur chaque rampe la gauche et la droite alternent aussi : quatre
+  quarts de seconde, rouges de GAUCHE, rouges de DROITE, blancs de GAUCHE, blancs de DROITE, double éclat
+  dans chaque quart (seize temps de 1/16 s, `POMPIERS_TEMPS_N`). Tous les feux servent, jamais tous
+  ensemble. Le rouge pile au milieu de la rampe avant s'allume dans les deux quarts rouges. Relevé feu par
+  feu : rampe avant rouge / blanc / ROUGE / blanc / rouge, plus une paire de rouges et une paire de blancs
+  sur les flancs du toit, soit cinq calques `pomp_rouge_g/_d/_m` et `pomp_blanc_g/_d`. `VehicleLightsTest`
+  vérifie sur un cycle : jamais rouge ET blanc, jamais gauche ET droite, jamais tout, chaque calque allumé.
+  Pour la capture, `--gyro=0`, `2`, `4`, `6` figent les quatre quarts (`gyro_force` tombe maintenant au
+  premier quart d'un temps, pour que l'horloge à seize temps du camion tombe sur un temps allumé).
+- **AMBULANCE et fourgon d'urgence** : le **« sapin de Noël »** — tous les feux, rouges et blancs, chacun
+  à son rythme. Les feux JAUNES de la caisse passent au BLANC, allumés comme éteints (calque
+  `sapin_repos` quand la rampe est coupée). Pour ne pas payer un matériau par feu, les feux sont
+  répartis en **4 groupes de phase** (ordre avant → arrière puis gauche → droite, donc deux voisins ne
+  sont jamais dans le même groupe), chacun avec sa période : 0,46 / 0,58 / 0,71 / 0,83 s, déphasés de
+  0 / 0,31 / 0,17 / 0,52 s. Des déphasages de quelques centièmes faisaient partir les quatre groupes
+  allumés ensemble au premier instant, vu à l'image.
+
+**Huit matériaux pour toute la ville, un par état, jamais un par véhicule** : rouge, bleu, blanc
+allumés (non éclairés), les lentilles rouge, bleue et blanche **au repos** (éclairées, donc sombres la
+nuit), plus l'éteint gris et l'ambre historiques. Un calque par modèle, par groupe et par couleur ;
+l'état du moment change le POINTEUR de matériau du calque, jamais le matériau.
+
+**LA MOITIÉ BLEUE DISPARAISSAIT EN JEU (corrigé le 2026-09-21 au soir).** Un calque, c'est UN `MultiMesh` par
+modèle et par famille. Les voitures de police ÉTEINTES passaient par le calque `urg_bleu` des voitures
+allumées, et après elles : dès qu'une voiture éteinte du même modèle était à portée — une des voitures de
+patrouille garées devant le Central Precinct —, `_poser_repos` réaffectait le calque à ELLE, et la voiture que
+le joueur venait d'allumer avec R perdait sa moitié bleue. Le rouge, que personne ne réaffecte, restait.
+**Les captures ne pouvaient pas le voir** : `--gyros-allumes` allume TOUS les véhicules d'urgence, donc aucune
+voiture éteinte. Les rampes éteintes ont maintenant leur calque, `urg_bleu_repos` (même géométrie) ;
+`MapShotsTest --gyro-seul` n'allume que le véhicule d'urgence le plus proche de la caméra, comme en jeu ; et
+`VehicleLightsTest` pose le cas mixte (une berline allumée, l'autre éteinte) et lit QUELS véhicules sont dans
+quel calque (`VehicleLights.racines_posees`) — les transformations d'un `MultiMesh` ne se relisent pas en
+headless, le serveur de rendu factice les rend à zéro. Règle : **deux états d'un même modèle ne partagent
+jamais un calque**.
+
+**Ils éclairent le décor** : bassin borné de 3 `OmniLight3D` sur la même horloge, joueur prioritaire.
+Rouge ou bleu pour la police, rouge pour les pompiers, rouge ou blanc pour le sapin — le **blanc à
+35 % de l'énergie** du rouge : à énergie égale il noyait tout le sol autour de l'ambulance.
+
+### Véhicules garés conduisibles
+
+Les 22 véhicules en stationnement des lieux — 3 voitures de patrouille au Central Precinct,
+3 ambulances au St. Anselm, 8 camions dans les 4 casernes, 8 voitures au parking de l'aéroport —
+étaient **cuits en décor** : leur maillage était fusionné dans celui du lieu, leur collision était une
+boîte du lieu. Une voiture de police devant le commissariat était un morceau de bâtiment.
+
+Les cuissons écrivent maintenant une **fiche** par véhicule (`places.json` clé `parked`,
+`downtown/generated/parked.json`) et `ParkedVehicles` instancie une **vraie `Car`** au lancement :
+même scène, même catalogue, même zone d'interaction, donc **on monte dedans comme dans n'importe
+quelle voiture de la rue**. Le rôle du catalogue suit avec — la voiture de patrouille a donc son
+gyrophare, éteint par défaut.
+
+Elles ne roulent pas (aucun `setup()`, donc aucun trajet) et `Car.park()` les met dans l'état
+« laissée là », le seul qui laisse la gravité les poser au sol quand elles n'ont pas de trajet. Elles
+ne disparaissent pas : le compte à rebours d'abandon n'est armé que lorsque le joueur les quitte.
+
+### Recenser les fenêtres allumées : la méthode, et les chiffres
+
+**Vérifier sur trois modèles ne suffit pas.** La correction du 2026-09-20 au matin avait été validée
+sur trois cas représentatifs et déclarée finie ; plusieurs familles de bâtiments restaient noires. La
+vérification qui vaut est un **recensement de toute la population**, lu sur le monde CUIT :
+
+1. charger tous les maillages de carreaux (`buildings/window_glow_*.res` pour la carte,
+   `buildings/windowglow*.res` pour le centre-ville — **attention, `windowglowsky_*` est un préfixe
+   distinct, l'oublier fait ressortir toutes les tours à zéro**) ;
+2. **parcourir les CARREAUX, pas les bâtiments**, et donner chaque barycentre au bâtiment dont
+   l'emprise est la plus PROCHE (distance à la boîte, 0 si dedans) — la carte par
+   `buildings/lots.json`, le centre-ville par `downtown/generated/buildings.json` ;
+3. sortir la liste des bâtiments à zéro carreau, **groupée par modèle**, et la lire.
+
+**Le point 2 a une histoire.** La première version testait la CONTENANCE avec une marge fixe autour
+de l'emprise, et le résultat dépendait de la marge : **89 bâtiments noirs à 1,5 m, 83 à 6 m**. La
+cause est réelle et pas un arrondi — le vitrage de certains modèles déborde l'emprise notée dans
+`lots.json`, l'auvent d'une station-service par exemple, si bien que `Business_GasStation` et
+`Industrial_Warehouse_alt03` ressortaient noirs alors qu'ils ont 12 carreaux chacun (mesuré :
+1,5 à 8,3 m² l'unité). Le **plus proche** ne dépend d'aucun réglage, et c'est cette version-là qui
+donne les chiffres ci-dessous. Un recensement dont le résultat bouge avec un seuil n'est pas un
+recensement.
+
+Chiffres relevés ainsi, sur 1 637 bâtiments posés. **Les trois colonnes sont mesurées avec LE MÊME
+instrument**, en rejouant la sonde sur les mondes cuits de `0344b79` et de `470ed6d` (worktree déjà
+importé, `git checkout <commit> -- scenes/world/*/generated` suffit, la sonde ne lit que des `.res`
+et des `.json`) :
+
+| | `0344b79` | `470ed6d` | ce commit |
+|---|---|---|---|
+| triangles de carreaux allumés | 47 668 | 83 146 | **127 580** |
+| bâtiments avec ≥ 1 fenêtre | 1 413 | 1 508 | **1 548** |
+| bâtiments sans aucune lumière | 224 | 129 | **89** |
+| modèles distincts concernés | 39 | 19 | **12** |
+| lieux avec fenêtres | 0 | 7 | **10** sur 12 |
+
+**Les 89 qui restent ne sont pas corrigeables et il ne faut pas essayer.** Les 12 modèles, avec leur
+compte : `SmallIndustrialStructure_alt01` (14), `alt05` (13), `IndustrialBuilding_alt02` (12),
+`alt07` (11), `StorageFacility` (8), `Warehouse_alt01` (7 + 6 au centre-ville), `Warehouse_alt02` (6),
+`Farm_MetalWindmill` (6), `Farm_Barn` (4), `Mk3` (1), `Historical_Bandstand` (1). Aucun n'a de
+matériau de vitrage (`Mat_Standard`, `Mat_Refl`). Peindre des fenêtres qui n'existent pas est
+explicitement refusé.
+
+De la même passe : `Industrial_TraditionalSkyscraper_alt07` n'a de vitrage que sur **deux façades sur
+quatre** dans le modèle (560 carreaux, tous sur ±X). Ce n'est pas un défaut d'extraction, c'est
+l'asset. Vérifié aussi que toutes ses normales pointent vers l'extérieur — l'hypothèse « carreau
+poussé dans le mur » a été testée et écartée.
+
+### Un recensement par emprise ne voit pas un étage noir
+
+Payé le 2026-09-21 sur les **dix `building_02x3`** du centre-ville (le pack empilé sur trois étages) :
+le recensement ci-dessus les donnait « allumés », et ils l'étaient — mais seulement jusqu'à 40 m. Le
+troisième étage était noir partout. `DowntownBuildingsBake._pack_panes` écrivait `y = sommet` (sommet
+de la pièce dans SON repère) au lieu de `y += sommet` : le troisième étage repartait de 18,87 m au lieu
+de 40,29 m, ses carreaux étaient cuits À L'INTÉRIEUR du deuxième, et le deuxième portait des carreaux
+décalés de 2,55 m. Un `x2` n'était pas touché (sa deuxième pièce part bien du sommet de la base).
+
+Deux enseignements :
+
+- **Le recensement contrôle maintenant aussi la HAUTEUR** : pour chaque bâtiment, jusqu'où montent ses
+  carreaux allumés, et chaque exemplaire est comparé au meilleur exemplaire de SON modèle — la hauteur
+  d'un modèle compte son toit, donc un ratio bas identique sur tous les exemplaires est une propriété du
+  modèle, pas un défaut. Après correction : les 20 immeubles empilés montent à 95-97 % de leur hauteur.
+  Les 19 exemplaires qui restent 25 points sous le meilleur de leur modèle (maisons, `Townhouse`,
+  `Restaurant`) tombent tous sur un palier d'étage entier : c'est le tirage à 28 % qui n'a allumé aucune
+  des rares fenêtres de leur dernier niveau, pas une erreur de pose.
+- **Une vue de contrôle doit être vérifiée elle-même.** La première capture de l'immeuble 114, prise de
+  l'ouest, montrait un bloc uni sans fenêtre de jour comme de nuit — c'était `midrise_113`, un bureau
+  de 29 m posé juste devant. Couper les silhouettes HLOD (`MapShotsTest --sans-hlod`, ajouté pour ça)
+  n'y changeait rien, et c'est la liste des emprises le long de la ligne de visée qui l'a montré.
+
+### La portée des carreaux doit suivre celle du bâtiment
+
+Symptôme à connaître : **un bâtiment qui reste visible alors que ses fenêtres ont disparu** est un
+écart de portée, pas un défaut d'extraction. Relevé le 2026-09-20 sur le monde cuit :
+
+- **Centre-ville, aucun écart.** `WindowGlow` est à **650 m**, exactement le `hlod_distance` de
+  `DowntownHLOD` : au-delà, le bâtiment lui-même cède la place à sa silhouette fusionnée, donc les
+  deux s'éteignent ensemble. Les gratte-ciels marqués `no_hlod` gardent leur maillage à toute
+  distance et portent un `WindowGlowSky` à **4 000 m**. `core_003_Mk1` et `midrise_182` sont dans ce
+  cas : leur noirceur venait du taux d'allumage, pas de la portée.
+- **Carte, écart réel mais invisible.** `DistrictsBake.WINDOW_GLOW_RANGE` est **fixe à 1 100 m**
+  alors que la portée d'un modèle est proportionnelle à sa taille (`RANGE` par usage, `office`
+  1 100) et monte jusqu'à **1 165,21 m** : **33 couples modèle-cellule sur 557** dépassent 1 100.
+  Bande concernée : 65 m, à une distance où un carreau de 2,6 m fait moins d'un pixel. Constaté et
+  laissé tel quel ; si un jour on y touche, la bonne valeur est le maximum de `ranges` de la
+  cellule, pas une constante.
+
+### Trois corrections de l'extraction, le 2026-09-20 au soir
+
+1. **UN CARREAU TROP GRAND EST SUBDIVISÉ, PLUS JAMAIS JETÉ.** La version du matin retaillait en
+   grille sur la boîte 2D et n'allumait pas ce qu'elle ne savait pas retailler (carreau non plan, ou
+   qui ne remplit pas sa boîte). Ça marchait sur un quad bien carré et ça éteignait tout le reste.
+   Maintenant on **découpe les triangles du modèle** sur la grille de travées de 2,6 x 3,2 m. Aucune
+   contrainte de planéité ni de rectangle, **aucun débordement possible** puisqu'on ne fait que
+   redécouper ce qui existe, et une nappe de mur-rideau devient une grille de fenêtres.
+
+   **DEUX MANIÈRES DE DÉCOUPER, ET LA PREMIÈRE A ÉTÉ REJETÉE PAR L'IMAGE** (2026-09-21). La version
+   du 20 au soir coupait chaque triangle au milieu de son plus long côté jusqu'au grain d'une travée,
+   puis rangeait chaque morceau dans la case de son **barycentre**. Tous les comptes étaient bons —
+   107 372 carreaux posés, 13 modèles noirs, les tours allumées — et pourtant, au sol devant une tour
+   à mur-rideau, les fenêtres sortaient en **taches irrégulières** : des L, des drapeaux, des découpes
+   en dents de scie. Un morceau dont le barycentre tombe dans une case déborde dans la voisine, et le
+   contour d'une case est donc la réunion de morceaux qui dépassent. **Aucun compteur ne pouvait le
+   dire ; il a fallu recadrer sur la façade et regarder.** La version qui tient rogne chaque triangle
+   contre les quatre plans de sa case (Sutherland-Hodgman, mené en 3D pour que les carreaux non plans
+   passent aussi) et re-triangule le morceau gardé : les carreaux sont alors de vrais rectangles.
+   Coût mesuré : 107 372 -> 110 982 carreaux posés au centre-ville, les triangles en proportion.
+2. **AU MOINS UNE FENÊTRE ALLUMÉE par bâtiment qui a des carreaux.** Une maison de 7 carreaux a
+   0,72^7 = 10 % de chances de ressortir entièrement noire : 41 maisons de la carte l'étaient, et
+   c'était la cause n°1 du recensement. Le carreau retenu est celui de clé de tirage maximale, donc
+   stable d'une cuisson à l'autre comme tout le reste.
+3. **LES LIEUX BÂTIS EN PRIMITIVES ONT AUSSI DES FENÊTRES.** Le motel, le chantier, Echo Circle,
+   Liberty Motors et l'aérogare ne sont pas des modèles : ils sont dessinés en `_box` et `_quad`, donc
+   `BuildingWindows` n'avait rien à y extraire. Leurs vitrages sont les quads peints d'une couleur de
+   `VITRAGES` ; `PlacesBake._quad` les reconnaît à la couleur au moment où il les dessine et en fait
+   des carreaux, découpés au même grain que les autres.
+
+**Le taux d'allumage se règle en ligne de commande** : les trois cuiseurs de fenêtres acceptent
+`--fraction=<0..1>`, ce qui permet de cuire la ville à plusieurs taux et de comparer les images
+depuis le même point sans toucher au code. Mesuré le 2026-09-20 : **28 %, 40 % et 55 % coûtent
+exactement le même nombre d'appels de dessin** (487, 488, 488 sur la silhouette depuis le quai) —
+les carreaux sont fusionnés dans les mêmes maillages de cellule, le taux ne change que des triangles.
+Le choix est donc purement visuel.
+
+### Une lumière de véhicule n'éclaire pas son propre véhicule
+
+Le gyrophare projetait bien son rouge sur les murs et le sol, **mais la rampe elle-même restait
+grise**. Ce n'était ni le matériau (bon), ni la géométrie (bonne : 11 triangles à 0,92 m sur le toit),
+ni la visibilité (le calque était posé, visible, avec le matériau rouge). La rampe de ces modèles est
+une bande PLATE peinte sur le toit, et l'OmniLight du gyrophare, posée juste au-dessus, **inondait ce
+toit de rouge** : la bande s'y noyait.
+
+La réponse est celle qui servait déjà aux mâts de lampadaire : les carrosseries sont sur le calque
+visuel 3 (`Car.DECAL_EXCLUDE_LAYERS = 4`), on retire donc ce bit du `light_cull_mask` des gyrophares
+et des feux de freinage. La lumière éclaire le décor et pas le véhicule qui la porte, et la rampe
+ressort. **Règle générale : une lumière portée par un véhicule ne doit jamais éclairer les
+carrosseries.**
+
+### Les deux repères opposés d'une voiture
+
+Payé le 2026-09-20 : **l'avant d'une VOITURE est `-basis.z`** (`Car._drive_physics` : `var fwd :=
+-global_transform.basis.z`), mais **l'avant d'un MODÈLE est son `+Z`**, et le catalogue lui applique
+`model_yaw_deg = 180` pour aligner les deux. Les deux repères sont donc opposés. Mesurer un recul sur
+le mauvais des deux donne un résultat de signe inverse — c'est arrivé sur la flaque de freinage, où
+le test a d'abord annoncé « la lumière est devant la voiture » alors que le code était juste.
+
+La flaque de freinage part maintenant de la **demi-longueur réelle de la caisse**, relevée à
+l'extraction (`Parts.caisse`) et remise à l'échelle du catalogue, plus 0,55 m : elle tombe derrière la
+poupe et non plus sous la voiture, où la plaçait un recul de 0,25 m pris depuis le CENTRE du véhicule.
+Et elle ne sort que la nuit : un vrai feu de freinage n'éclaire pas la chaussée en plein soleil.
+
+### Se garer sur le marquage
+
+`PlacesBake._parking` **rend maintenant la liste des places qu'il dessine** : centre de chaque place
+(l'intervalle entre deux traits, 2,8 m de large et 5,2 m de profondeur, centre à 1,4 m du trait) et
+direction du nez. Les voitures du parking de l'aérogare sont posées sur ces places, une par place, au
+lieu de coordonnées écrites à la main qui tombaient à côté du marquage.
+
+Le tirage est **stable et dérivé de la position de la place**, comme celui des fenêtres : une place
+garde sa voiture, son angle et son décalage d'une cuisson à l'autre. Une place sur trois reste vide,
+et chaque voiture prend quelques degrés de travers et un peu d'avance ou de recul, pour que la rangée
+ne soit pas alignée au cordeau. **58 véhicules garés** au total, contre 14.
+
+### Parking de l'aérogare refait comme un vrai (2026-09-21)
+
+`_parking_aerogare` remplace l'appel direct à `_parking` pour Prairie Wind :
+
+- **Plus rien sur la raquette de la route** (le « petit rond-point » au bout de l'accès). Les deux rangées de
+  bord couraient sur toute la longueur du parking, jusque sur la raquette : trois voitures bleues y étaient
+  garées. `_rangee` ne dessine ni n'occupe plus une place dont le centre est à moins de 3 m d'une chaussée ou
+  d'une raquette (même emprise que `_near_road`), ni ses traits : 2 places retirées. C'était aussi un défaut
+  de CIRCULATION : la sonde de toute la carte de la section D a trouvé une voiture de la circulation arrêtée
+  pour de bon derrière l'une d'elles, en faisant demi-tour sur la raquette.
+- **Une double rangée face à face au milieu**, nez contre un îlot de 2 m (bordure de 0,15 m, que la voiture du
+  joueur franchit comme un trottoir), qui NE fait PAS toute la longueur : 102 m sur 126, soit **12 m d'allée à
+  chaque bout** pour faire le tour. Deux allées de 11,95 m entre les rangées de bord et la double rangée.
+- **154 places, 102 voitures** : même tirage stable qu'avant (une place garde sa voiture d'une cuisson à
+  l'autre), une place sur trois vide.
+- **Sens variés** : une partie des voitures est garée en marche arrière, nez vers l'allée — **49 sur 102**
+  mesurées. Le seuil vise 40 %, mais ce tirage partage des bits avec celui des places vides.
+- **4 lampadaires doubles (le `lamp_2` des terre-pleins de la carte) sur l'îlot, et nulle part ailleurs** :
+  aucune voiture n'y roule. Crosses en travers, une tête au-dessus de chaque rangée : 8 luminaires, écrits
+  dans `generated/places/lamp_heads.tres`, que `StreetLights` (bassin de vraies lumières) et `DayNightTest`
+  lisent avec ceux de la carte et du centre-ville. Poteaux de collision nommés `LampsDouble_airport_<i>`,
+  comme ceux de `RoadBake`, pour que `DayNightTest` retrouve leur pied.
+- **Deux modèles du tirage n'existaient pas** : `Veh_Microcar_01_Yellow` et `Veh_Minivan_01_White` au lieu de
+  `Veh_Microcar_Yellow` et `Veh_Minivan_White`. `_garer_sur_place` sortait sans rien dire, donc un tirage sur
+  sept laissait sa place vide en silence (87 voitures au lieu de 102 sur le nouveau parking). Corrigé.
+
+Véhicules garés au total : 108 dans `places.json` (102 à l'aérogare, 3 voitures de patrouille, 3 ambulances)
+et 8 camions dans les casernes du centre-ville.
+
+### Le verre des lampadaires (2026-09-21)
+
+Chaque luminaire portait la nuit une **boîte « halo »** de 0,46 x 0,30 x 0,44 m (0,34 x 0,26 x 0,40 au
+centre-ville) posée sur la tête. Ses faces étaient de plus enroulées à l'envers (relu dans l'ancien
+`_glow_mesh` : sommets dans l'ordre trigonométrique vus de l'extérieur, donc face avant tournée vers
+l'intérieur) : on voyait de l'extérieur les faces du FOND de la boîte, autour de la tête qui en masquait le
+centre — ce qui explique le gros contour jaune creux de la photo du joueur.
+**C'est maintenant la géométrie de la lampe elle-même qui s'allume** (`scenes/world/map/tools/LampGlass.gd`,
+appelé par `RoadBake`, `DowntownFurnitureBake` et `PlacesBake`), même méthode que les optiques des véhicules :
+les triangles qui SONT le verre, repérés par la couleur qu'ils échantillonnent et leur position dans la tête,
+recopiés 6 mm devant l'original sur le matériau partagé.
+
+| modèle | où | verre | triangles par tête |
+|---|---|---|---|
+| `modular_roads/lamp_1` | trottoirs, anneaux, culs-de-sac | plaque #efd094/#efce94 sous la tête, face vers le bas, 6,134 m | 6 + 16 de rebord |
+| `modular_roads/lamp_2` | terre-pleins, îlot du parking de l'aérogare | idem, 6,051 m, une plaque par crosse | 6 + 16 de rebord |
+| `lowpoly_city/lamp_single`, `lamp_double` | centre-ville | diffuseur #ffd800 sous la crosse, fond et quatre pans | 16 |
+
+**« L'intérieur de la tête » compte aussi.** Sur les modèles de la carte, la plaque est en RETRAIT de 5,8 cm
+dans le capot : au-delà d'une trentaine de mètres, vue sous une dizaine de degrés, le rebord la masque et le
+lampadaire paraît éteint (vu à l'image, pas supposé). On allume donc aussi les **parois intérieures du rebord**,
+comme le réflecteur d'une vraie tête : règle de POSITION (entre le bas du capot et la plaque, sous l'emprise
+de la plaque, tournées vers son axe), puisque le rebord a la couleur du capot. Vérifié triangle par triangle :
+16 par tête, exactement les parois relevées à la sonde. Au sol, une file de lampadaires reste lisible jusqu'à
+une cinquantaine de mètres ; au-delà, c'est la flaque des vraies lumières qui porte. Vu d'en haut, une tête
+de la carte est sombre, comme une vraie tête cobra.
+
+**Piège payé en l'écrivant : un `PackedVector3Array` est une VALEUR.**
+`(dico["v"] as PackedVector3Array).append(p)` ajoute dans une COPIE et laisse le dictionnaire vide, sans
+erreur. La première cuisson n'a donc produit aucun verre, et `RoadBake`, qui n'écrit un maillage que s'il y a
+du verre, a laissé les anciens halos en place sur le disque. Le recensement de `DayNightTest` avait le même
+défaut dans sa grille de recherche. Toujours relire le tableau dans une variable, ajouter, puis réécrire.
+
+### Aérogare de nuit : vitrage allumé d'un bloc, porche, parvis (2026-09-21)
+
+- **Plus de carreaux tirés au hasard à l'aérogare.** Le découpage du vitrage en carreaux allumés à 28 % y
+  faisait des « carreaux bizarres », beiges, posés au hasard sur les deux façades (photos du joueur). Dans
+  `_airport()`, `_vitrage_uniforme` détourne chaque quad de vitrage (`VITRAGES`) vers `_vitrage_allume` :
+  le quad lui-même, décalé d'1 cm vers l'extérieur (devant la vitre, derrière les meneaux à 2 cm), dans le
+  calque des lumières d'aéroport — **3 991 m² de vitrage, allumés uniformément** avec le balisage, sur un
+  seul matériau (`airport_vitrage_material.tres`, blanc froid bleuté, non éclairé). La vigie de la tour
+  en profite aussi. 152 carreaux de moins dans le compte des lieux (609 -> 457).
+- **Le bandeau de 38 feux blancs** posés tous les 10 m à mi-hauteur des façades, et les 4 feux de la vigie,
+  faisaient des points blancs isolés sur une façade noire (photo 8) : retirés, le vitrage les remplace. Le
+  feu d'obstacle rouge du mât reste. 315 -> 273 feux de balisage.
+- **Porche d'entrée** : quatre plafonniers de 8 x 1,6 m encastrés sous l'auvent
+  (`airport_porche_material.tres`) et **trois `SpotLight3D` sans ombre** dirigées vers le sol, dans le
+  groupe `airport_glow`, allumées avec le balisage. Coût borné : trois lumières fixes. `StreetLights`
+  montrait ce groupe en le traitant comme des `GeometryInstance3D` ; une lumière n'en est pas une, d'où
+  le passage à `Node3D`.
+- **Parvis de béton** entre la façade côté ville, la route d'accès, sa raquette et le parking : il restait
+  11 à 17 m de pelouse, on sortait de l'aérogare dans l'herbe et le porche était planté dedans. Relevé au
+  rayon avant d'écrire (pas de 2 m sur x 250..660, z -1216..-1120) : terrain 5,00 m, route et raquette
+  5,30 m, bordure de la raquette 5,45 m, parking 5,28 m. UNE dalle de 243,5 x 17,5 m (4 261 m²), au niveau
+  du parking, donc 2 cm SOUS la chaussée : elle file sous le bord de la route et sous la raquette, qui la
+  recouvrent sans combat en z, et ce sont leurs bords qui dessinent la limite. Elle mord de 0,5 m sous la
+  façade et sous la tour, et bute sur le parking au même niveau. Les poteaux de l'auvent descendent de 2 cm
+  pour se poser dessus.
+
+## 10. Circulation : Echo Circle à deux voies, et les interblocages (2026-09-21)
+
+Le joueur a vu une file figée sur l'anneau. Une sonde jetable a laissé rouler la circulation et relevé,
+pour chaque voiture arrêtée, ce qui la retenait (lu sur `Car.diag_raison`, cf. plus bas). **Quatre
+interblocages**, chacun permanent une fois formé, et les deux derniers **ANTÉRIEURS** au chantier :
+
+1. **Entrée contre anneau.** La voiture qui attendait à une entrée cédait à toute voiture de l'anneau à
+   moins de 14 m du point d'entrée, même arrêtée, même déjà passée ; et la voiture de l'anneau cherchait
+   ses obstacles dans un couloir DROIT de 22 m le long de son cap. Sur un cercle de 30 m, ce couloir file
+   tangent, vers l'extérieur, là où attendent les voitures des entrées : elle freinait pour une voiture
+   qui n'était pas sur sa route. Reproduit en 47 s de jeu. Correction : sur l'anneau, `Car` ne suit que
+   les voitures de l'anneau dans SA voie, mesurées LE LONG DU GRAPHE (`_ring_gap_to`), et ignore les
+   voitures qui attendent à une entrée ; à l'entrée, on ne cède qu'aux voitures qui ARRIVENT sur ce point
+   (`ring_arrival_distance`, 18 m en amont) ou qui l'occupent encore.
+2. **Priorité de virage cédée à la voiture de derrière**, au bout de chaque branche (bretelle de sortie,
+   bretelle d'entrée et artère s'y rejoignent, sans feu) : la voiture de TÊTE cédait sa priorité de virage
+   à la voiture qui la SUIVAIT, inscrite plus tôt au même noeud, et celle-ci la suivait.
+3. **Cycles de priorité de virage, sur toute la carte.** Au carrefour à feux (-100, -316), la voiture
+   engagée dans le bloc cédait à une voiture qui attendait DERRIÈRE ELLE sur une autre approche ; au bout de
+   la branche ouest, A cédait à B, bloquée derrière C, qui cédait à D, bloquée derrière A. Règle : **une
+   voiture arrêtée derrière une autre ne réclame plus sa priorité** (`retenue_par_une_voiture`), elle la
+   retrouve dès que la voie devant elle se libère ; elle subsume la règle du point 2.
+4. **Suivi en rond au milieu d'un carrefour**, apparu une fois le point 3 corrigé, au carrefour à feux
+   (-28, -316) : quatre voitures engagées dans le bloc, une par approche, chacune arrêtée derrière la
+   suivante dans son couloir d'obstacles. On remonte la chaîne des voitures suivies (`_cycle_de_suivi`) ;
+   si elle revient à soi et que TOUTES sont arrêtées, une seule passe outre — la plus petite
+   `get_instance_id()`, pour que ce soit toujours la même — pendant 4 s, et les autres la suivent.
+
+**Antériorité prouvée** : la même sonde, rejouée sur le monde de `0344b79` (worktree déjà importé, `Car.gd`
+d'avant le chantier), relève au bout de 270 s **104 voitures figées depuis 40 s ou plus, en 21 files** :
+36 au carrefour (-28, -316), les autres aux entrées d'Echo Circle, aux deux bouts de ses branches, en
+(222, -313), (-100, 116), (-28, -244)… Le rond-point n'était que l'endroit où le joueur l'a vu.
+
+**DEUX VOIES.** L'anneau fait 8 m entre son trait intérieur (r = 26 m) et son trait extérieur (r = 34 m) :
+la place de deux voies de 4 m. Le graphe n'en avait qu'une, au milieu, à r = 30 m. `RoadNetwork` donne
+maintenant aux arêtes de l'anneau les voies `[-2, +2]` : **intérieure à r = 28 m, extérieure à r = 32 m**.
+Aucun noeud ne bouge ; ce sont les trajectoires qui passent de r = 30 à r = 28 ou 32. La voie est tirée à
+l'entrée, moitié-moitié (Echo Circle n'a que deux branches : tout le monde va « en face », et les deux voies
+sont permises pour ça) ; en sortant, la voie intérieure traverse l'extérieure, donc elle CÈDE à une voiture
+de l'extérieure à sa hauteur ou juste derrière (`_ring_merge_limit`), jamais l'inverse — sauf si celle-ci
+est elle-même arrêtée derrière une autre (point 3). Le nombre de sorties à laisser passer est tiré à
+l'entrée aussi, jamais celle par laquelle on est arrivé : plus de demi-tour sur l'anneau.
+
+| noeud | rôle | position (inchangée) | voie unique avant | intérieure après | extérieure après |
+|---|---|---|---|---|---|
+| 247 | entrée est (NE) | (137,52 ; -327,94) | idem | (135,69 ; -327,14) | (139,36 ; -328,74) |
+| 248 | sortie ouest (NO) | (82,81 ; -328,68) | idem | (84,62 ; -327,83) | (81,00 ; -329,52) |
+| 249 | entrée ouest (SO) | (82,81 ; -303,32) | idem | (84,62 ; -304,17) | (81,00 ; -302,48) |
+| 250 | sortie est (SE) | (136,84 ; -302,59) | idem | (135,05 ; -303,49) | (138,63 ; -301,70) |
+
+**`RoundaboutTrafficTest`** (dans la batterie) : 5 min de vraie circulation, joueur sur l'îlot ; échoue si
+3 voitures de la zone sont figées 40 s, si moins de 20 voitures sortent de l'anneau, ou si une voie ne sert
+jamais. Il ne remplace pas la simulation longue (seulement à la demande du joueur, §2), qui se fait avec la sonde de toute la carte (30 min de jeu,
+gel coupé).
+
+**Simulation longue, résultat** : 30 min de jeu sur toute la carte, gel coupé, 186 voitures en
+circulation (le plafond de `LoopSpawner` mangeait alors les voitures garées, cf. §6) : **aucune file de
+voitures en circulation figée 40 s**, sauf UNE, derrière une voiture GARÉE sur la raquette de l'aérogare
+(476,6 ; -1194,1), arrêtée là 1 078 s — c'est ce qui a fait retirer ces voitures de la raquette (parking
+de l'aérogare, §9). **Rejouée après les sections E (raquette dégagée) et la correction de `LoopSpawner`**,
+cette fois avec les **252 voitures** en circulation : 30 min de jeu, **aucune file figée, pire arrêt 34 s**.
+
+Trois pièges de mesure, payés pendant ce chantier :
+
+- **Une sonde de circulation doit neutraliser `SimulationCuller`.** Il fige ce qui est à plus de 50 m du
+  joueur ET hors de sa vue. Une première sonde posait le joueur à 54 m du centre : une partie de l'anneau
+  était gelée, et la sonde comptait du GEL comme du blocage. D'où `--sans-gel` (logique de circulation
+  seule) et `--joueur-centre`, et le joueur sur l'îlot dans le test.
+- **Une sonde ne doit pas refaire les règles de `Car` : elle doit les LIRE.** Tant qu'elle reconstruisait
+  « qui attend qui » avec les anciennes règles, elle décrivait encore l'ancien interblocage après la
+  correction. `Car` expose maintenant `diag_raison` (« suit », « cede_anneau », « fusion_anneau »,
+  « insertion », « priorite_virage », « feu ») et `diag_objet`, sans effet sur la conduite.
+- **Regarder au-delà du rond-point.** Le point 3 ne se voyait pas depuis l'anneau : la file de la branche
+  ouest venait d'un carrefour à 130 m. La sonde qui l'a trouvé remonte chaque file jusqu'à sa TÊTE, sur
+  toute la carte, puis suit la chaîne d'attente de la tête jusqu'à un cycle.
+
+## 11. Parking à étages (Business_ParkingStructure) — chantier du 2026-09-21
+
+Le modèle `assets/building_pack_everythinglibrary/Business/Business_ParkingStructure.glb` est posé 3 fois au
+centre-ville (blocs 0, 72 et 77) et le sera une fois à l'aéroport. Anatomie RELEVÉE sur ses sommets (repère du
+modèle : origine au sol, entrée côté +Z) :
+
+- **5 plateaux** praticables, dessus à **0,35 / 4,95 / 9,50 / 14,05 / 18,60 m** (4,60 puis 4,55 m d'un plancher à
+  l'autre). Chaque étage est UNE pièce de 28 triangles : dalle de 0,40 m et muret de rive de 1,93 m d'un seul tenant ;
+  intérieur x -21,76..21,76, z -9,75..9,80 ; muret de bout de 1,34 m d'épaisseur (x 21,76..23,10).
+- Une rangée de **5 poteaux** au milieu (z ±0,54 ; x = 0, ±10, ±16), des montants de façade, **4 tours d'angle
+  pleines** et une tour arrière pleine ; aux deux bouts, deux montants découpent trois travées (z ±2,46..3,54).
+- La **« cage vitrée »** est une tour (x ±5,52, z 7,48..11,87) que chaque plateau traverse : une pièce de 11 x 2,3 m
+  par niveau, fermée côté parking. Au rez-de-chaussée un passage de 7,7 m la traverse : c'est l'entrée des voitures,
+  avec une rampe d'accès de 0,36 m sur 1,35 m (27 % : **refaite le 2026-09-24**, étape 14).
+- Enroulement des faces : la convention de Godot (faces avant en sens horaire), vérifié triangle par triangle.
+
+**Étape 1 — les cônes.** `light_006` ne contient que les « cônes de lumière » opaques (photos 05 et 06) : 16 prismes
+blancs de 13,4 x 3,3 m pendus sous les plafonniers, 4 par niveau, et un sous l'auvent, soit 298 triangles. Les
+BOÎTIERS des plafonniers sont dans `base_072` et restent. `BuildingModels.EXCLUS` écarte les maillages `light_*` de ce
+modèle à la fusion. **Piège payé en le faisant** : la boîte du modèle doit continuer d'englober les pièces écartées.
+Le centre-ville pose chaque bâtiment au CENTRE DE SA BOÎTE, et le cône de l'auvent dépassait de 0,39 m devant la
+façade : le retirer de la boîte faisait glisser les trois parkings de 0,195 m. C'est le tirage des fenêtres
+allumées, qui dépend de la position, qui l'a trahi (31 133 -> 31 135 carreaux). Contrôle qui décide : après la
+cuisson, `downtown/generated/buildings.json` et les cellules `windowglow_*` sont identiques octet pour octet.
+
+**Étape 2 — une collision par dalle.** Chaque parking n'avait qu'une boîte pleine de 48 x 26 x 22 m : on marchait sur
+son toit, jamais dedans. `ParkingStructureKit.collision` rend les **triangles exacts** du maillage fusionné (1 040 :
+dalles, murets, poteaux, tours), partagés par les trois exemplaires (`downtown/generated/buildings/parking_collision.res`).
+**Deux faces** (`backface_collision`) : le modèle a des cloisons SANS ÉPAISSEUR — la face de la tour vitrée côté parking
+est un seul plan — qu'on traverserait depuis la pièce de l'escalier. `ParkingStructureTest` lâche un piéton (la capsule
+du joueur) et une voiture à 1 m au-dessus de chaque plateau de chaque exemplaire : les 30 s'y posent, à 5 mm près. Les
+plateaux y sont relevés sur le maillage cuit (`planchers()`) : **0,36 / 4,93 / 9,49 / 14,05 / 18,61 m** au centimètre.
+
+**Étape 3 — la voiture du joueur : rayon de braquage et assiette en pente** (`Car.gd`, commit séparé parce que ça
+touche toute la conduite). *Supprimé le 2026-09-24 avec l'arcade du joueur : sa voiture roule sur son châssis réel (§14),
+qui prend la pente par ses roues et braque selon la géométrie du pack ; ParkingStructureTest le vérifie.*
+- **Rayon de braquage.** Le lacet valait `TURN_RATE x v / DRIVE_MAX_SPEED` : un rayon CONSTANT de 24 / 2,4 = **10 m à
+  toute vitesse**, le double d'une vraie voiture. Impossible de faire demi-tour dans un étage (19 m entre les murets,
+  poteaux au milieu), de suivre une rampe en hélice ou d'entrer à angle droit dans une travée. `rayon_braquage(v)` :
+  **5,5 m sous 4 m/s**, les 10 m d'avant au-delà de 12 m/s, linéaire entre les deux. Mesuré sur le vrai
+  `_drive_physics` (arc parcouru / lacet) : 5,50 m à 3 m/s, 7,67 m à 8 m/s, 10,00 m à 16 m/s. **REMPLACÉ le
+  2026-09-22 par le braquage par modèle (étape 6)** : ce rayon était le même pour une citadine et un autocar, et le
+  joueur le trouvait encore « trop grand partout ».
+- **Assiette en pente.** La boîte de collision ne s'incline jamais : `move_and_slide` la fait bien monter une pente de
+  12 %, mais horizontale, appuyée sur son arête avant (en montée) ou arrière (en descente). À mi-pente, la roue la plus
+  haute de la berline du pack city flottait à **0,38 m**. Le modèle prend maintenant l'angle du sol sous la voiture
+  (normale lissée) et descend de la demi-longueur de la caisse x tan(angle) : les quatre roues à 1,6 cm de la pente.
+  Visuel seulement, joueur seulement (la circulation ne va pas sur les rampes). Piège de signe : la rotation du modèle
+  se compose avec son lacet de catalogue de 180°, un angle positif autour de son X BAISSE le nez — d'où le
+  `cos(lacet)`. **REMPLACÉ le 2026-09-24 (étape 14)** : ce calcul n'est juste que sur une pente continue ; à chaque
+  raccord il enfonçait le modèle dans le sol (0,5 m à l'entrée d'un parking). Le modèle se pose maintenant sur le sol
+  relevé au rayon sous CHAQUE ESSIEU (`Car._poser_assiette`).
+- `ParkingStructureTest` mesure les deux sur un sol témoin : rayons à 3, 8 et 16 m/s, et une vraie rampe de 12 %
+  d'un seul tenant (plat, pente, plat) que la voiture du joueur monte en 8,4 s puis redescend en marche arrière.
+
+**Étape 4 — l'exemplaire de l'aéroport** (`PlacesBake._parking_etages`). Zone rouge de la photo 07, relevée sur le
+réseau avant de choisir : route d'accès `art_a9_s:2`, artère de 9 m, dessus à 5,30 m, axe à z -1194..-1199 entre
+x 300 et 457 ; raquette `n_air` en (470, -1195), bord à 9,5 m ; deux noeuds du graphe de circulation dans la zone,
+tous deux sur la raquette ; aucun noeud piéton. Origine du modèle en **(405, -1167,2)**, lacet de 180° : façade et
+entrée face à la route, bout est du modèle (où se raccorde la rampe) du côté ouest du site. Béton tout autour
+(x 352..432, z -1196..-1145), 2 cm SOUS la route — dont le bord sud va de z -1194,4 à -1190,1 — pour que ce soit le
+bord de la chaussée qui dessine la limite, sans herbe ; allée d'enrobé de la route au seuil de l'entrée. Collision
+exacte versée dans celle du lieu. `ParkingStructureTest` vérifie l'emprise (+0,5 m) : 0 point de chaussée, 0 noeud
+ni arête du graphe de circulation, 0 noeud du PedGraph ou du Circuit — `MapPlacesTest` ne regarde les graphes qu'à
+90 m du centre d'un lieu, et ce parking est à 165 m de celui de l'aéroport. Vues au sol `parking_aeroport_*`.
+
+**Étape 5 — le premier niveau praticable : rampe, escalier, sortie de voiture** (`ParkingStructureKit.praticable` et
+`helice`, appelés par `PlacesBake._parking_etages` et `DowntownBuildingsBake._parking_praticable`). Le maillage du
+parking est découpé et complété à la cuisson (`Maillage.decouper` : soustraction de rectangles alignés sur les axes,
+Sutherland-Hodgman) ; chaque découpe compte ses triangles touchés, et **zéro est une faute** : la cote relevée ne
+correspond plus au modèle.
+
+- **Pourquoi une rampe EXTÉRIEURE.** À 12 %, 4,57 m d'un plancher à l'autre demandent au moins 38,1 m de rampe, dans
+  une dalle de 43,5 m entre murs de bout : ses deux bouts tomberaient contre les murs, sans la place d'y entrer ni d'en
+  sortir en tournant, même au rayon de 5,5 m. Dehors, une **hélice** : centre dans l'axe de la travée sud du bout est
+  (repère du modèle (37,2 ; -5,62), à 13 m de la tour d'angle), voie de 4,5 m entre r = 8 et 12,5 m, parapet de
+  0,3 x 1,1 m, dalle de 0,3 m ; à chaque niveau un **palier plat de 60°** devant la travée ; entre deux paliers,
+  **300° de rampe** raccordés sur 20° ; une rampe d'entrée de 40° depuis le béton du site jusqu'au palier du rez. On
+  monte dans le sens des angles croissants. Pente relevée sur la COLLISION, un rayon tous les 0,25 m : **11,7 % au bord
+  intérieur, 11,0 % à l'axe, 8,0 % au bord extérieur, aucun ressaut (0,000 m)**. Dessous fermé jusqu'au sol là où il
+  passe à moins de 2,5 m (`JUPE_H`), noyau plein au centre, 4 poteaux hors du palier et de l'approche de la bouche.
+  Deux défauts trouvés par le test en conduisant : la jupe du premier tour **enfermait la bouche** de la rampe
+  d'entrée (la voiture qui redescendait restait prisonnière dessous), et deux poteaux étaient plantés sur l'approche.
+- **Travée ouverte** : au rez et au niveau 1, le muret de la travée sud du bout est (z -7,70..-3,54) est découpé et
+  le sol prolongé jusqu'au bord ; on y entre à angle droit depuis le palier (virage à gauche en montant).
+- **Escalier dans la cage vitrée**, dans les QUATRE exemplaires (les trois du centre-ville partagent
+  `downtown/generated/buildings/parking_praticable.res`) : deux volées de 13 contremarches de 0,176 m, giron 0,28 m
+  (32°), de part et d'autre d'un palier ; mur d'échiffre, garde-corps, écran côté vitrage ; porte de 1,32 x 2,2 m
+  découpée dans la face de la tour à chaque niveau desservi ; trémie de 5,12 x 2,25 m dans la dalle du dessus (et,
+  au niveau 1, dans le plafond du passage d'entrée). Collision : **rampes invisibles par les nez de marches**.
+  **Défaut payé** : la rampe de la volée B partait du bord du palier au lieu du NEZ de la première marche, un giron plus
+  à l'est (on monte vers -x, le nez d'une marche de B est son bord EST) : chaque nez dépassait la rampe d'une
+  contremarche. La capsule butait sur la première marche ; le vrai joueur passait quand même, grâce à `StepClimb`
+  (0,4 m) — un contrôle fait avec le seul vrai joueur ne l'aurait pas vu.
+- **Centre-ville : l'escalier, pas de rampe.** Aucun des trois n'a la place d'une rampe à un bout (voisins à moins de
+  8 m). La circulation IA n'entre dans aucun parking : aucune arête du graphe n'y mène.
+- **Sortir d'une voiture ailleurs que sur le sol plat.** `Player._exit_vehicle` posait le joueur à **y = 1,3 fixe**
+  (code du premier commit, monde plat d'essai). Au niveau 1, et partout où la carte est plus haute — le plateau de
+  l'aéroport est à 5,3 m —, c'était SOUS le sol : rejoué avec l'ancien code, `ParkingStructureTest` relève un pied à
+  **-10,75 m**, en chute libre. Il sort maintenant à la hauteur de la voiture (origine + 0,85 m).
+- `ParkingStructureTest` : l'escalier monté du rez au niveau 1 dans les quatre parkings (capsule au centre-ville,
+  VRAI joueur à l'aéroport) ; l'hélice montée puis redescendue par la voiture conduite comme au clavier
+  (`move_forward` / `move_left` / `move_right`, poursuite d'un tracé) **avec le vrai joueur au volant**, qui en sort
+  au niveau 1 (pied à 10,21 m pour un plancher à 10,21) puis sur le béton du site (5,28 pour 5,28).
+- **Limite visuelle connue** : les faces de la tour vitrée n'ont qu'un côté. Depuis la cage d'escalier on voit le
+  parking et la rue au travers, comme du verre ; depuis le parking, la face est opaque.
+- Vues au sol `parking_aeroport_rampe_*`, `_travee_niveau1`, `_porte_rez`, `_escalier`, `_escalier_haut`,
+  `parking_centre_3_escalier*`.
+
+**Étape 6 — rayon de braquage par modèle, réduit à vitesse** (`Car.gd`, 2026-09-22 ; *supprimé le 2026-09-24 avec
+l'arcade du joueur, §14 : le rayon « entre murs » reste la géométrie de chaque modèle, et c'est celle du châssis réel*). Modèle BICYCLETTE sur
+l'empattement MESURÉ de chaque modèle : lacet = v · tan(δ) / L. À basse vitesse δ = `MAX_STEER_RAD` (29,8°, l'angle
+que montrent les roues avant à fond) ; à vitesse, δ se réduit pour que l'accélération latérale ne dépasse jamais
+`BRAQUAGE_A_LAT` = 15 m/s² (tan δ = L · a / v²) — c'est le seul réglage. Les roues avant montrent l'angle réellement
+appliqué, réduit compris. La voie (écart des roues avant) est mesurée avec l'empattement (`_mesurer_empattement`).
+- Rayon « entre murs » (roue avant extérieure, celui des fiches techniques, `rayon_entre_murs()`), relevé sur les 72
+  modèles par `WheelSpinTest` (contrôle 9) : **berlines 5,30 à 5,91 m**, SUV et pick-ups 5,10 à 7,34, fourgons 5,08 à
+  7,66, coupés et citadines 3,52 (micro-citadine) à 7,24, camions 6,35 à 11,73, limousine 9,34, **bus 11,51 et autocar
+  12,13**. Rangées à part après mesure : `normalcar2` (empattement 2,00 m) est une citadine, pas une berline, et la
+  balayeuse de voirie (1,77 m, 4,10 m) un engin compact, pas un camion.
+- Mesuré en conduite (`ParkingStructureTest`, arc / lacet, braquage à fond) : à 3 m/s, berline 4,07 m au milieu de la
+  voiture (5,30 m entre murs), camion 9,45 m, bus 9,24 m ; à 16 m/s, les trois à 16,8 m et 15,3 m/s² (le frottement
+  retire 0,15 m/s à la vitesse de consigne, d'où 16,8 au lieu de 17,1).
+- Pour une berline, au milieu de la voiture : 4,1 m jusqu'à 28 km/h, 9,6 m à 43 km/h, 17 m à 58 km/h, 38 m à 86 km/h.
+  Les 10 m d'avant, à 86 km/h, demandaient 5,9 g.
+- La circulation n'est pas concernée : elle suit son graphe (`_ai_speed`, `_heading_deg`), et ses roues prennent déjà
+  l'angle de son virage (`_braquage_ia`). Simulation longue rejouée après le changement : 30 min de jeu sur toute la carte, gel coupé,
+  252 voitures, **aucune file figée à aucun relevé** (toutes les 30 s) ; pire arrêt isolé 41 s, une seule voiture (34 s le
+  2026-09-21 : les départs sont tirés au hasard d'une simulation à l'autre).
+
+**Étape 7 — l'escalier jusqu'au toit, la cage opaque, les garde-corps de l'escalier** (2026-09-22).
+
+- **Escalier empilé jusqu'au toit** dans les quatre parkings (`escaliers` passe de 1 à 4). Les volées se superposent
+  d'un étage à l'autre, et c'est ce qui donne les hauteurs libres : la volée A du dessus (marches pleines depuis son
+  plancher) fait le plafond de la volée A du dessous, **2,46 m** au-dessus de sa marche la plus haute ; sous la volée B,
+  **4,24 m** partout (les deux volées ont le même profil, décalé d'un étage). La tour monte AU-DESSUS du toit (relevé au
+  plan : elle existe encore à 21,11 m alors que le toit est à 18,61) : l'escalier débouche dans sa tête, et la porte y
+  est découpée comme aux autres niveaux. Découpes comptées à la cuisson : 13 portes, 18 trémies, 0 faute.
+- **La cage vitrée est opaque de l'intérieur** (`Maillage.doubler`). Ses faces n'ont qu'UN côté dans le modèle : depuis
+  l'escalier on voyait le parking et la rue au travers (limite notée à l'étape 5). Chaque face de la cage est recopiée à
+  l'envers — enroulement inverse, normale opposée, même couleur — **après** les découpes de portes, donc avec leurs
+  trous : 53 + 20 + 16 = 89 faces doublées. Visuel seulement : la collision est déjà à deux faces.
+- **Garde-corps de l'escalier**, 1,05 m, avec collision : au bord EST de chaque trémie — depuis la partie est de la
+  cage, on tombait sur le palier 2,3 m plus bas — et, au dernier niveau desservi, EN TRAVERS du couloir de la volée A,
+  qui n'a plus de volée au-dessus et restait un trou ouvert juste à côté de l'arrivée. Aux étages intermédiaires, la
+  fente de 0,28 m entre le bord de trémie et la première contremarche de la volée suivante est comblée.
+- `ParkingStructureTest` : les quatre parkings montés du rez au TOIT (capsules au centre-ville, VRAI joueur à
+  l'aéroport), pied à 18,81 m au centre-ville et 23,89 m à l'aéroport, en 24 s ; puis **20 piétons poussés à 3 m/s
+  contre les garde-corps** (bord est de chaque trémie des quatre parkings, couloir de la volée A au toit) : les 20 sont
+  arrêtés, debout sur leur plancher.
+- Collision du parking : 1 441 → **2 707 triangles** au centre-ville, 2 767 à l'aéroport (hélice comprise).
+
+**Étape 8 — la rampe INTÉRIEURE, évaluée à 16 % et à 18 %** (2026-09-22, sur demande du joueur, qui veut les quatre
+parkings identiques et tout en intérieur ; la décision d'abattre l'hélice lui revient).
+
+**CORRECTION DE L'ÉTAPE 5.** Il y est écrit qu'« une rampe intérieure ne tient pas dans le modèle ». C'était vrai **à
+12 %**, la seule pente essayée alors : 4,57 m d'un plancher à l'autre y demandent 38,1 m, dans une dalle de 43,5 m entre
+murets. Les vrais parkings montent souvent à 15-18 % : à **16 %** il faut 28,56 m (29,26 m avec les raccords à mi-pente),
+à **18 %** 25,4 m (26,1 m), et il reste alors 7,1 m (16 %) ou 8,7 m (18 %) à chaque bout pour tourner. **Ne pas
+reconclure « impossible » sans dire à quelle pente.**
+
+Disposition évaluée, la seule qui tienne : rampe dans la bande du **mur arrière**, entre la tour arrière (x ±5,52,
+z -9,75..-7,48) et la rangée de poteaux (z ±0,54) — axe à z = -5,55, voie de 3,5 m entre garde-corps, montant vers +x ;
+**demi-tour à chaque bout** autour des poteaux de bout (x ±15,885, qui tombent dans l'îlot du demi-tour) ; voie de retour
+côté façade. Les rampes se superposent d'un niveau à l'autre (même profil décalé d'un étage) : la dalle du dessus est
+percée sur toute la bande, et la hauteur libre sous la rampe supérieure vaut **4,27 m**, constante. La bande côté façade
+ne peut pas servir : la cage d'escalier (x ±5,52, z 7,48..9,80) et sa porte y donnent.
+
+Mesuré, pas estimé : les **72 modèles du catalogue**, montée ET descente d'un étage, avec la vraie `Car` conduite comme
+au clavier (poursuite d'un tracé) sur une maquette aux cotes relevées (murets de 1,95 m, 6 tours, 5 poteaux, trémie,
+garde-corps). On compte les contacts dont la normale est presque horizontale — mur, poteau, garde-corps.
+
+| famille | 16 %, demi-tours de 4,7 m | 18 %, demi-tours de 5,8 m |
+|---|---|---|
+| berlines (7) | 6 sans contact, 1 frôlement | **7 sans contact** |
+| coupés, sport, citadines (26) | 16 sans contact, 5 frôlent, 4 frottent, 1 bloqué | 24 sans contact, 2 frôlent |
+| SUV et pick-ups (10) | 5 sans contact, 2 frôlent, 2 frottent, 1 bloqué | 7 sans contact, 3 frôlent |
+| fourgons (12) | 2 sans contact, 7 frottent, 3 bloqués | 5 sans contact, 3 frôlent, 3 frottent, 1 bloqué |
+| camions (13), bus (2), limousine | aucun ne passe proprement | 2 camions sans contact, le reste frotte ou bloque |
+| places marquées par étage | **10** | 2 à 4 |
+
+Les chiffres qui expliquent le tableau : le demi-tour d'une berline de 4,20 x 2,06 m balaie
+sqrt((R + 1,03)² + 2,10²), soit 5,96 m à R = 4,7 et 7,13 m à R = 5,8, pour 7,1 m (16 %) ou 8,7 m (18 %) disponibles ;
+et le rayon au milieu de la voiture vaut 4,07 m pour une berline, 5,10 m pour un fourgon, 9,45 m pour un camion
+(étape 6). La hauteur ne limite pas : la trémie est ouverte sur presque toute la bande, d'où 4,27 m libres — sauf la
+**boîte de collision, qui reste horizontale sur la pente** : un véhicule long et haut a besoin de sa hauteur PLUS
+pente x longueur (3,9 m pour le camion de glaces), et c'est ce qui l'a coincé sous le bord de trémie dans un premier
+essai à 3,2 m de dégagement.
+
+En échange, la bande arrière est perdue pour le stationnement à tous les niveaux, et fourgons, camions et bus ne
+montent plus — ce qu'impose de toute façon la barre de hauteur d'un vrai parking à étages.
+
+**Étape 9 — la rampe intérieure posée dans les quatre parkings, l'hélice retirée, garde-corps et barre de hauteur**
+(2026-09-22). Le joueur a tranché l'étape 8 : « Option A : 16 %, demi-tours de 4,7 m, 10 places par étage. Les places
+comptent plus que les gros véhicules, et un vrai parking à étages interdit de toute façon les camions. »
+
+- **Une rampe par niveau, dans la bande arrière** (`ParkingStructureKit._rampe`, `RAMPE_Z = -5,55`) : voie de 3,50 m
+  entre deux garde-corps de 0,15 x 1,05 m, longueur 29,26 m (x -14,63..14,63) avec 0,70 m de raccord à chaque bout,
+  tablier de 0,37 m, trémie percée sur toute la bande (+0,02 m de jeu) dans la dalle du dessus. Quatre rampes empilées
+  mènent du rez au toit. Demi-tour de 4,7 m à chaque bout, allée de retour à z 3,85, hauteur libre **4,27 m**.
+  **L'hélice extérieure de l'aéroport est supprimée** (`helice()` et la méta `parking_helice_axe` avec elle) : les
+  quatre parkings sont identiques, `PARKING_RAMPES = 4` à l'aéroport comme au centre-ville.
+- **Barre de hauteur à l'entrée des quatre** (`BARRE_HAUTEUR = 2,15`), poutre jaune entre deux montants gris en travers
+  du passage (z 11,95..12,15), avec un panneau `Label3D` « 2.15 m » sur sa face extérieure, lisible à 4 m (capture).
+  **La cote vient de la mesure de l'étape 8, pas d'un chiffre rond** : le plus haut des 38 modèles qui montent la rampe
+  est le 4x4 lowpoly à 2,07 m, d'où 8 cm de garde ; la barre arrête dehors **22 des 34 modèles que la rampe refuse**.
+  Les 12 qu'elle laisse entrer sont des voitures BASSES mais trop longues ou trop larges pour les demi-tours
+  (limousine, coupés lowpoly, gros pick-ups) : une barre de hauteur ne peut rien contre elles, un vrai parking non plus.
+- **Garde-corps partout où l'on peut tomber** : les deux bords de chaque rampe, le pourtour de chaque trémie, et ceux
+  de l'escalier (étape 7). 1,05 m, avec collision. Vérifiés par la POUSSÉE et pas par la cote : **88 poussées, 60
+  piétons à 3 m/s et 28 voitures à 4 m/s, 88 arrêtés du bon côté, debout sur leur plancher.**
+- Relevé sur la collision cuite des quatre rampes, 1 392 rayons : **16,0 % au pire, ressaut 0,000 m**. Le vrai joueur
+  au volant monte du béton au toit en **79,3 s** et redescend en **78,7 s**, et sort debout aux deux bouts (pied à
+  23,89 m pour un toit à 23,89 ; 5,64 pour 5,64). Le camion `city_truck_01` (2,79 m) est arrêté dehors par le portique
+  (z 16,29 pour un portique à 11,95), la berline `city_sedan_01` (1,45 m) entre (z -1,54).
+
+Quatre pièges payés en le faisant, tous de la même famille — **la mesure qui ment avant la géométrie qui cloche** :
+
+1. **Un bandeau de plafonniers pendait 20 cm au-dessus du tablier de la rampe** (`base_072`, x 9,42..18,40,
+   y 4,40..4,61) : la voiture s'arrêtait net à mi-pente et la sonde annonçait **129,6 %** de pente. Le retrait
+   (`Maillage.retirer_boite`) exigeait que TOUS les sommets d'un triangle soient dans la boîte et n'en enlevait que 16
+   d'un bandeau de 9 m qui traverse la bande. Au test du **barycentre** : 84 triangles retirés, 0 anomalie, 16,0 %.
+2. **Une voiture d'essai lâchée à cheval sur la lisse** finit sur le garde-corps d'en face : elle part maintenant à 3 m.
+   Et sur les parapets d'une rampe, une voiture ne tient pas en travers d'une voie de 3,50 m : `_pousse_oblique` la
+   fait monter la rampe à 20° dans le parapet.
+3. **Deux voitures lâchées au même point se catapultent** (décalées à x ±3).
+4. **Un contrôle de hauteur sur une pente à 16 %** doit tolérer 0,5 m : la boîte de collision reste horizontale, donc
+   l'origine monte de demi-longueur x pente, soit ~0,34 m pour une berline.
+
+Et un cinquième, de cadrage : les véhicules du test de la barre partaient **en marche arrière** (les deux finissaient
+« dehors », donc le test passait pour une mauvaise raison) ; leur cap se prend sur la direction MONDE du modèle,
+`_aeroport.global_transform.basis * Vector3(0, 0, -1)`, jamais sur un angle écrit à la main.
+
+**Étape 10 — l'éclairage intérieur des quatre parkings** (2026-09-22). Un parking couvert est sombre **DE JOUR
+aussi** : ce n'est pas un éclairage de nuit, rien ne se fond au crépuscule, les lumières sont allumées en permanence.
+D'où un matériau non éclairé à couleur fixe (`scenes/world/parking_glow_material.tres`), des maillages toujours
+visibles que `StreetLights` ne touche jamais — zéro travail par image — et un SECOND bassin de vraies lumières,
+borné lui aussi, toujours actif.
+
+- **CE QU'ON ALLUME EXISTE DÉJÀ DANS LE MODÈLE, et l'inventaire du 2026-09-21 était incomplet.** Il disait :
+  « `light_006` ne contient que les cônes de lumière opaques » et « les boîtiers des plafonniers sont dans
+  `base_072` ». Le premier point est FAUX : relevé triangle par triangle, `light_006` porte **162 triangles PLATS**
+  (trois sommets à la même hauteur au mm) et 136 non plats. Les plats sont les **VITRES** des plafonniers — 17
+  panneaux, quatre par niveau couvert à x ±(9,42..18,40) et z ±(5,02..5,73), 8,98 x 0,71 m, plus un de 8,58 x 0,31 m
+  sous l'auvent. Ce sont eux qu'on rallume, recopiés 12 mm plus bas sur le matériau partagé, comme le verre des
+  lampadaires et les optiques des véhicules. Les cônes restent écartés.
+- **Ce qu'on AJOUTE, et pourquoi.** (REMPLACÉ le 2026-09-24 : les bandeaux et panneaux plats décrits ici sont
+  retirés, des copies du plafonnier du modèle les remplacent, cf. étape 13.) Les deux panneaux z < 0 de chaque niveau
+  tombent dans la bande de la rampe et disparaissent avec le plafond que la rampe a remplacé (60 triangles sur 162,
+  même boîte de découpe que leurs boîtiers). Restent **deux** luminaires par niveau, aux deux bouts : **le milieu du plateau restait NOIR, vu à
+  l'image**. Un vrai parking aligne ses plafonniers le long de l'allée, c'est ce qu'on fait : **5 bandeaux d'allée
+  par niveau** (z 3,85), **3 bandeaux par rampe couverte** à 4,08 m au-dessus de la voie, et **1 panneau par niveau
+  dans la cage d'escalier**, qui n'en a aucun dans le modèle et qui est fermée. La rampe du haut n'en a pas : sa
+  trémie perce la dalle du toit sur toute la bande, elle est à ciel ouvert.
+- **Les vraies lumières sont OMNIDIRECTIONNELLES, pas des cônes comme les lampadaires — réglé à l'image.** Un cône
+  vers le bas posait bien sa flaque sur le tablier mais laissait murs, poteaux et plafond noirs, et un plateau de
+  parking se lit par ses poteaux. `StreetLights.pool_interieur` = **8 `OmniLight3D` sans ombre**, portée 14 m,
+  énergie 2,6, posées sur les 8 luminaires les plus proches de la caméra, **sans dépendre de l'heure**. Le réglage
+  se baisse comme celui des lampadaires, sans recompiler.
+- Compté à la cuisson, par parking : 102 triangles de vitre du modèle gardés, 60 emportés par la bande, 9 bandeaux de
+  rampe, 20 bandeaux d'allée, 5 panneaux de cage — **48 luminaires par parking, 192 en tout**, 680 triangles pour les
+  quatre, **un seul matériau**.
+- `ParkingStructureTest` vérifie les quatre points qui peuvent casser : un maillage de lumières par parking, **un
+  seul matériau partagé** (sinon le moteur ne les regroupe plus), aucun niveau sans luminaire, et surtout **2,90 m de
+  dégagement au minimum sous un luminaire de la partie roulante** — un véhicule qui passe la barre de 2,15 m ne doit
+  jamais pouvoir taper dedans. Relevé : **3,95 m au pire**. C'est la faute déjà payée avec les boîtiers du modèle,
+  qui pendaient 20 cm au-dessus du tablier de la rampe.
+
+**Étape 11 — les places marquées et les voitures garées** (2026-09-22), qui ferme le chantier.
+
+- **Dix places par niveau, le long de la façade**, exactement le chiffre de l'évaluation de l'étape 8. Relevé sur le
+  modèle : intérieur du plateau z -9,75..9,80 ; cage d'escalier x ±5,52 à partir de z 7,48 ; tours d'angle
+  x ±(20,13..24,18) à partir de |z| 7,70. D'où **deux files de cinq places de 2,80 m**, de part et d'autre de la
+  cage, entre x ±6,12 et x ±20,12 : 14,00 m chacune, au centimètre. Place de 2,80 x 5,20 m comme en surface, nez
+  vers la façade, desservie par l'allée (z 3,85) ; une voiture de 4,20 m s'arrête à 0,50 m du muret de rive.
+  **200 places en tout** (5 niveaux x 10 x 4 parkings), marquage cuit dans le maillage partagé.
+- **Un parking se vide en montant**, comme dans la vraie vie : 67 % des places occupées au rez, puis 50, 33, 25 et
+  17 % sur le toit. **63 voitures**, 20 à l'aéroport et 43 au centre-ville ; le parc passe de 108 à **179 véhicules
+  garés**. C'est aussi ce qui borne le coût : remplir les 200 places aurait fait 200 `Car` de plus.
+- **Le tirage vit dans le kit** (`tirage_place`), pas dans les cuiseurs : l'aérogare passe par `PlacesBake` et les
+  trois autres par `DowntownBuildingsBake`, et deux copies du même tirage auraient dérivé à la première retouche.
+  Stable et dérivé de la position comme celui des fenêtres : une place garde sa voiture, son angle et son décalage
+  d'une cuisson à l'autre.
+- **Deux cuiseurs n'écrivent jamais le même fichier** : les voitures des parkings du centre-ville vont dans
+  `downtown/generated/parked_parkings.json`, à part de `parked.json` qu'écrit `DowntownFurnitureBake` (les camions
+  de caserne). Le premier cuiseur lancé seul aurait effacé le travail de l'autre. `ParkedVehicles` lit les trois
+  fichiers.
+- **UN VÉHICULE GARÉ ÉTAIT DESSINÉ À N'IMPORTE QUELLE DISTANCE, et ça se paie à l'autre bout de la carte.** Les
+  43 voitures des trois parkings du centre-ville coûtaient **+25 appels de dessin à l'échangeur nord-ouest, à 2 km
+  de là**, +24 à Echo Circle et +15 au rond-point — reproduit deux fois, puis prouvé en retirant leur fichier de
+  fiches (333 / 610 / 553, exactement les chiffres d'avant). Les voitures de la CIRCULATION n'ont pas ce défaut :
+  elles n'existent qu'autour du joueur. `ParkedVehicles` pose donc `visibility_range_end = 300 m` sur les maillages
+  de chaque véhicule qu'il instancie — une caisse de 4 m y fait moins de trois pixels en 800x450. Après : **333 /
+  352 / 610 / 351 / 268 / 554 de jour et 277 / 181 / 480 / 267 / 222 / 459 de nuit, avec 179 véhicules garés au lieu
+  de 108**, soit les chiffres du commit précédent à trois appels près. Leçon générale : **tout objet posé EN
+  PERMANENCE sur la carte a besoin d'une portée**, la règle déjà appliquée aux bâtiments, aux carreaux allumés et
+  aux halos ; seul ce qui n'existe qu'autour du joueur peut s'en passer.
+- `ParkingStructureTest` vérifie les 200 places par le rayon, pas par la cote : le tablier sous les quatre coins de
+  la voiture et au centre (**0,004 m d'écart au plancher au pire**), **2,00 m de dégagement au-dessus** de chaque
+  place (un poteau, un bandeau de plafonnier ou un bout de rampe dans une place encastrerait la voiture cuite), et
+  chaque fiche de véhicule garé retombe sur une place (**63 sur 63**).
+
+**Le chantier du parking à étages est terminé.**
+
+**Étape 12 — l'escalier déplacé, les poteaux retirés, des places en créneau, les lumières fixes** (2026-09-23, demandes
+du joueur, un commit).
+
+- **L'ESCALIER BARRAIT L'ENTRÉE DES VOITURES.** Il était dans la pièce de la tour vitrée, et au rez cette pièce EST le
+  passage d'entrée (x ±3,87) : la volée A y posait ses marches pleines sur 3 m du passage, le mur d'échiffre le coupait
+  sur toute sa hauteur, l'écran côté façade pendait à 1,95 m. Il est maintenant dans la **bande arrière**, entre la
+  trémie de la rampe et le muret arrière, adossé à la tour arrière : x 5,54..10,66, z -9,75..-7,55 (repère du modèle).
+  Relevé au maillage avant de le poser : aucun montant de façade entre la tour arrière (face x = 5,52, du sol à
+  22,13 m) et la tour d'angle (x 20,13). C'est le MÊME escalier, dessiné dans son repère d'origine et posé par une
+  transformation rigide (`ESC_XF`, demi-tour et translation) : rampes invisibles par les nez de marches, fente comblée,
+  garde-corps en travers du couloir de la volée A au toit suivent sans être réécrits. On y entre par l'est de la bande
+  arrière ; il débouche au toit à l'air libre. Le passage d'entrée redevient un tunnel libre de 7,74 m ; la pièce de
+  la tour vitrée n'a plus de porte ni de doublure : fermée, inaccessible.
+- **PAROI CÔTÉ RAMPE**, du rez au toit + 1,05 m (x 5,40..10,66, z -7,56..-7,48) : la volée A longe la trémie de la
+  rampe, et aux étages le garde-corps de 1,05 m de cette trémie passait sous les pieds de qui monte — on tombait sur la
+  rampe du dessous. Elle remplace ce garde-corps sur la longueur de l'escalier.
+- **VOLÉES DE 1,00 M, PAS 0,95 — ESSAYÉ ET REJETÉ.** La bande fait 2,27 m entre le muret (-9,75) et la trémie de rampe
+  (-7,47). La première version y mettait des volées de 0,95 m, avec une paroi à l'épaisseur du garde-corps (0,14 m) :
+  les capsules de ParkingStructureTest restaient coincées dans les trois parkings du centre-ville, entre le bout du
+  mur d'échiffre et la rampe invisible, en s'engageant dans la volée B — 7,5 cm de jeu de chaque côté d'une capsule
+  de 0,80 m, et le vrai joueur a la même (le sien passait à l'aéroport). Paroi amincie à 0,08 m, écran à 0,05 m collé
+  au muret : 1,00 m comme à l'origine. Le test vise la volée B 5 cm côté écran, comme l'ancien (9,25 pour 9,20).
+- **POTEAUX DU MILIEU RETIRÉS** : cinq pièces séparées de 0,87 x 1,08 m (x 0, ±9,915, ±15,885 ; z ±0,54) qui
+  traversent tous les étages d'un seul tenant, 112 triangles. Retrait au test des TROIS sommets
+  (`Maillage.retirer_boite(..., true)`) : les dalles sont d'un seul tenant dessous, rien n'est percé.
+- **PLACES EN CRÉNEAU LE LONG DE LA RAMPE** : quatre par niveau, 6,00 x 2,60 m, x -12..12, z -3,43..-0,83 (entre le
+  garde-corps de la trémie et l'allée, place libérée par les poteaux), trait continu côté allée et traits en travers.
+  Hors du balayage des demi-tours, qui tournent autour de x ±15,13 et ne reviennent à l'intérieur de ce point que dans
+  l'allée ou dans la rampe. Tirage à moins de travers (1,5°) et de décalage (0,08 m) qu'en bataille : relevé sur les
+  douze modèles tirés à l'échelle du catalogue, 2,20 m de large au plus (SUV 01), 4,49 m de long (berline 02).
+  **280 places** (200 + 80), **89 voitures garées dans les parkings** (63 avant), dont 26 en créneau ; 31 à
+  l'aéroport, 58 au centre-ville.
+- **LUMIÈRES FIXES, TOUJOURS ALLUMÉES** (`StreetLights.interieur_fixe`, vrai par défaut). Le bassin de 8 de l'étape 10
+  ne se posait que sur les luminaires les plus proches de la caméra : vu du bout d'un plateau, le reste restait sans
+  lumière réelle. Maintenant une OmniLight3D sans ombre par luminaire, fondue par la distance au-delà de 80 + 20 m ;
+  les parkings sont à 458 m au moins l'un de l'autre, donc au plus 43 lumières actives à la fois. Mesuré
+  (`RenderPerfTest --parking`, RTX 4070 SUPER, 1920x1080, vsync coupée, modes alternés, médianes de trois passes) :
+
+  | vue | GPU sans lumière | bassin de 8 | 43 fixes | image (sans / bassin / fixes) |
+  |---|---|---|---|---|
+  | plateau du niveau 1, 12 h | 0,732 ms | 0,992 | 1,434 | 2,28 / 2,35 / 2,52 ms |
+  | allée du rez, 12 h | 0,744 | 0,990 | 1,257 | 2,39 / 2,26 / 2,34 |
+  | à 300 m, 12 h | 0,858 | 0,855 | 0,854 | 2,37 / 2,36 / 2,34 |
+  | plateau du niveau 1, 1 h | 0,616 | 0,842 | 1,277 | 1,95 / 1,94 / 1,97 |
+  | allée du rez, 1 h | 0,627 | 0,846 | 1,106 | 2,07 / 2,06 / 2,18 |
+  | à 300 m, 1 h | 0,715 | 0,718 | 0,719 | 2,26 / 2,19 / 2,19 |
+
+  Dans un parking, +0,27 à +0,44 ms de GPU sur le bassin ; l'image, limitée par le processeur, ne bouge pas au-delà
+  du bruit ; à 300 m, rien (0 lumière active). **Contrairement aux lampadaires du 2026-09-19 (§9), le compteur GPU est
+  ici stable au millième d'une passe à l'autre** : 43 lumières qui se recouvrent toutes dans un volume fermé vu de
+  l'intérieur. Sur une carte Intel, ce coût serait à multiplier : le bassin reste disponible
+  (`interieur_fixe = false`, ou `StreetLights.regler_interieur`) pour le mode graphique léger (§7).
+- **PLUS DE FENÊTRE ALLUMÉE SUR LE PARKING** : son seul vitrage, la grande vitre de la tour de l'entrée (12 carreaux),
+  s'allumait la nuit comme la fenêtre d'un bureau. À l'aéroport c'était le seul carreau allumé du lieu (relevé :
+  `airport_fenetres.res` tenait 6 sommets, tous dans l'emprise du parking) : le fichier n'est plus produit, il est
+  retiré du dépôt.
+- **DEUX DÉFAUTS ANTÉRIEURS DE L'ÉTAPE 9, trouvés en faisant.** Le retrait des boîtiers de plafonnier qui pendent dans
+  le volume des rampes venait après la découpe de chaque trémie de rampe, au test du CENTRE, dans une boîte qui
+  commençait à x -15,13. (a) Cette boîte contenait les chants de dalle que la découpe venait d'ajouter : relevé sur le
+  maillage cuit de HEAD, **1 triangle au lieu de 2 sur chaque chant long de chaque trémie, aux quatre planchers** — la
+  tranche de la dalle était ouverte en triangle sur 29 m, le long des deux bords de chaque rampe. (b) Le bout ouest du
+  boîtier ouest (x -18,40..-15,13) restait pendu, et sa vitre gardait allumé un triangle : 4 têtes de vraie lumière et
+  20 triangles allumés par parking flottaient au-dessus de la rampe (relevé sur le kit de HEAD). Corrigé : retrait sur
+  le modèle BRUT, avant toute découpe, au test des TROIS sommets, dans une boîte x ±20,5 : 96 triangles, soit 2
+  boîtiers de 12 triangles par plafond de bande, relevés un à un (couleurs des boîtiers, x -18,40..18,40, 0,21 m de
+  haut). Même boîte pour les vitres. Luminaires : **43 par parking**, 172 en tout (48 et 192 avant : -5 panneaux de
+  la cage, +4 au-dessus du pied du nouvel escalier, -4 têtes flottantes). **35 par parking depuis l'étape 13.**
+- Vérifié : ParkingStructureTest OK — l'escalier monté du rez au toit dans les quatre parkings en 24 s (capsules au
+  centre-ville, vrai joueur à l'aéroport) ; 88 poussées contre les garde-corps (60 piétons, 28 voitures), dont 16
+  contre la paroi de l'escalier au palier de chaque volée et 4 contre le garde-corps du toit, toutes arrêtées ; 280
+  places plates à 4 mm près et libres sur 2,00 m, 89 fiches sur leur place ; rampes montées en 79,3 s et redescendues
+  en 78,7 s, 16,0 %, sans ressaut ; barre de hauteur. VehicleLightsTest, MapPlacesTest, DowntownBuildingsTest,
+  DayNightTest OK ; ProjectLoadCheck 627, 0 échec. Vues de référence du §3 : jour 333 / 352 / 611 / 350 / 268 / 554,
+  nuit 277 / 181 / 480 / 267 / 222 / 458, les chiffres de l'étape 11 à un appel près (la mesure « avant » n'a pas été
+  refaite sur la machine du jour : il aurait fallu réimporter un second arbre du projet).
+- Captures au sol, de jour et de nuit : `F:/p-recree/ground_shots/parkings_2026-09-23/` (hors dépôt) ; vues
+  `parking_aeroport_passage`, `_escalier`, `_escalier_palier`, `_escalier_haut`, `_escalier_toit`, `_creneaux` et leurs
+  variantes `_nuit`, `parking_centre_3_escalier`.
+
+**Étape 13 — un seul modèle de plafonnier** (2026-09-24, demande du joueur). Au plafond, le joueur voyait deux sortes de
+lumières : celles du modèle, dont le boîtier sombre fait un cadre (« un rebord ») autour de la vitre, et les bandeaux
+plats ajoutés à l'étape 10 — 5 par niveau le long de l'allée, 3 par rampe couverte, 1 panneau au pied de l'escalier —,
+des rectangles lumineux sans boîtier qui flottaient sous le plafond. Il ne garde que ceux du modèle.
+
+- **Relevé sur les sommets avant de copier** (sondes hors dépôt, `F:/p-recree/sondes/2026-09-24_plafonniers/`) :
+  - boîtier de 8,98 x 0,71 x 0,21 m dans `base_072` : 10 triangles `0a0d10` et un fond `727254` ;
+  - vitre plate de `light_006`, 1,3 cm sous le boîtier à tous les niveaux : 10 triangles, un cadre de 0,20 m autour
+    d'un panneau de 8,59 x 0,31 m ;
+  - boîtier encastré dans la dalle de 5 cm (rez) à 11 cm (niveau 3).
+- **Les bandeaux sont retirés. Ce qui manque est éclairé par des COPIES de ce plafonnier, boîtier et vitre**, alignées
+  sur le pas du modèle lui-même, 13,913 m : l'écart entre les deux plafonniers d'une de ses rangées (x ±13,913) et
+  celui de l'auvent (x 0). Par niveau couvert :
+  - rangée de la façade (z 5,376, celle du modèle) : une copie au milieu (x 0), entre ses deux plafonniers ;
+  - rangée de l'allée (z 0, l'axe du bâtiment, où étaient les poteaux) : trois copies, x -13,913 / 0 / 13,913 ;
+  - escalier : une copie dans la bande arrière, au pied des volées (x 10,90..19,89, entre la trémie et la tour d'angle).
+
+  Par rampe couverte : deux copies inclinées à 16 % sous le tablier de la rampe du dessus, sur la rangée du modèle que
+  la rampe a emportée (z -5,376), centres à ±6,957 (le même pas). La rampe du haut reste à ciel ouvert, sans plafonnier.
+  À chaque niveau, une copie est à la hauteur des plafonniers d'origine de CE niveau (relevée sur leurs vitres, pas
+  une cote théorique) ; sous une rampe, elle est encastrée de 5 cm comme au rez.
+- **Par parking, 35 plafonniers et 35 vraies lumières fixes** (43 avant) : 9 du modèle, dont celui de l'auvent, et
+  26 copies ; 140 pour les quatre parkings. Le boîtier d'une copie va dans le maillage du parking (et dans sa
+  collision, comme celui des originaux) ; sa vitre va dans `ParkingLumieres`, sur le matériau partagé.
+- **Défaut antérieur corrigé en passant : l'auvent avait DEUX vraies lumières au même endroit.** Les lumières des vitres
+  du modèle étaient groupées par signe de x ; la vitre de l'auvent, à cheval sur x = 0, formait deux groupes de même
+  centre. Elles sont maintenant groupées par triangles qui se touchent : un plafonnier, une lumière.
+- **Contrôle à la cuisson** (`_obstacle_plafonnier`, sur le parking tel qu'il est avant les copies) :
+  - rien ne traverse le bas du boîtier d'une copie, rien ne passe dans les 30 cm dessous ;
+  - un plafond la tient partout, sinon elle flotterait ;
+  - le gabarit doit être retrouvé (12 triangles de boîtier, 10 de vitre), ainsi que le plafonnier d'origine de chaque
+    niveau ; sinon, faute.
+
+  Résultat : 0 faute sur les quatre parkings.
+- **Vérifié.**
+  - ParkingStructureTest OK : 140 luminaires, **4,01 m** de dégagement au pire sous un luminaire de la partie roulante
+    (une copie de rampe). Escalier, 88 poussées, 280 places, rampes (79,3 / 78,7 s) et barre inchangés.
+  - DayNightTest OK : 140 vraies lumières fixes pour 140 luminaires, fondu 80 + 20 m.
+  - DowntownBuildingsTest OK.
+  - Appels de dessin des vues de parking identiques avant et après : mêmes maillages, même matériau.
+  - Captures de nuit au sol, avant et après, dans `F:/p-recree/ground_shots/plafonniers_2026-09-24/` (hors dépôt) :
+    vues `parking_aeroport_plateau_nuit`, `_allee_plafonniers_nuit` (nouvelle), `_rampe_nuit`, `_escalier_nuit`,
+    `_escalier_pied_nuit` (nouvelle), `parking_centre_3_plateau_nuit`.
+
+**Étape 14 — la rampe d'accès de l'entrée, et l'assiette de l'arcade aux raccords** (2026-09-24, demande du joueur après
+les vidéos de la conduite réaliste : « elle fait 27 % et touche le pare-chocs ; qu'une berline passe sans toucher, en
+arcade comme en réaliste »).
+
+- **Relevé sur les sommets du modèle** (sonde hors dépôt, `F:/p-recree/sondes/2026-09-24_rampe_acces/`) : la rampe d'accès
+  est faite de DEUX triangles, de la bande centrale du rez (x ±4,312, y 0,364, z 9,803) au sol extérieur (y 0, z 11,146).
+  Cela fait 0,364 m sur 1,343 m, soit **27,1 %, 15,2°**. Entre son pied et la façade (z 11,868), le modèle n'a pas de sol.
+  Sous elle se trouve la fondation (une face à z 11,146, de 0 à -2,43 m). L'angle d'attaque de la berline est de 13,5° :
+  bas de caisse à 0,20 m, 0,84 m devant l'essieu avant.
+- **Mesuré avant, avec la vraie berline** (`ConduiteReelleTest`, étape « entree » ajoutée pour ça, quatre traversées) :
+  - en réaliste, la coque touchait (13 pas à 4 m/s, 5 pas à 7 m/s), avec 11,7 et 13,8° de tangage et le dessous du modèle
+    à 0,000 m ;
+  - en arcade, le dessous du modèle passait à **0,505 m SOUS le sol** (0,345 m à 7 m/s). Ce n'était pas la rampe seule, voir plus bas.
+- **La nouvelle rampe** (`ParkingStructureKit._rampe_acces`, dans les quatre parkings) :
+  - elle va de la ligne de façade (sol extérieur) à la face intérieure de la tour vitrée (z 7,478, plancher du rez) : 4,39 m ;
+  - elle est raccordée en arc de 0,6 m aux deux bouts, **9,6 % au plus (5,5°)** ;
+  - la bande centrale du rez est découpée dessous (6 triangles) ;
+  - la hauteur du rez est lue sur le haut de la rampe du modèle (0,364), car `planchers()` arrondit au centimètre.
+  Tout reste entre les joues du passage (x ±3,87), qui descendent jusqu'au sol. Dehors, rien ne change, et la barre de
+  hauteur garde ses 2,15 m au-dessus du sol extérieur. Contrôles à la cuisson (0 faute sur les quatre parkings) :
+  - la rampe du modèle retirée doit compter exactement 2 triangles ;
+  - trois lignes de rayons, un tous les 5 cm de la façade à 1 m dans le rez : pente de 11 % au plus, aucune marche de
+    plus de 1 cm, le rez retrouvé à sa hauteur.
+  À l'aéroport, l'allée d'enrobé (1 cm au-dessus du béton) entre dans le passage jusqu'à z 11,15 : la rampe la recouvre à
+  partir de 0,35 m de la façade.
+- **L'ASSIETTE DE L'ARCADE ÉTAIT FAUSSE À CHAQUE RACCORD** (`Car.gd`, défaut antérieur, étape 3). Elle prenait la
+  normale du sol sous la BOÎTE, et descendait le modèle d'une demi-longueur x tan(angle). Or la boîte glisse sur son arête
+  avant : au pied d'une rampe, elle touche déjà la pente alors que les roues sont encore sur le plat, et le modèle était
+  cabré de tout l'angle de la rampe et descendu d'autant. Sur la rampe adoucie, le modèle passait encore 1,9 cm sous le sol.
+  `_poser_assiette` relève maintenant le sol AU RAYON sous chaque essieu (positions mesurées par `_mesurer_empattement`) :
+  - le modèle est cabré de asin((avant - arrière) / empattement) et descendu pour que chaque essieu se pose sur son sol ;
+  - chaque relevé est suivi à 2,5 m/s au plus : une pente continue est suivie exactement, une bordure est montée en ~0,06 s ;
+  - en l'air, le modèle revient dans l'axe de la boîte.
+  Sur une pente continue, les deux calculs donnent la même pose. À mi-pente de la rampe témoin de 12 %
+  (`ParkingStructureTest`), les roues sont maintenant à **4 mm** de la pente (1,6 cm avant).
+- **Après** (quatre traversées) :
+  - réaliste, 4 et 7 m/s : **0 contact de coque**, dessous du modèle à **0,116 et 0,102 m** du sol au plus près, pneus à 7 mm
+    dans le sol (compression du pneu du pack), 6,0 et 7,2° ;
+  - arcade, 4 et 7 m/s : dessous à **0,142 m**, pneus à **2 mm** du sol au pire, modèle incliné de 5,5° au plus (la pente
+    de la rampe).
+- Vérifié :
+  - `ConduiteReelleTest` OK (étape « entree » : elle échoue sur l'ancienne rampe) ;
+  - `ParkingStructureTest` OK : barre, rampes 79,3 / 78,7 s, 280 places, 140 luminaires ;
+  - `MapPlacesTest`, `DowntownBuildingsTest`, `CarKerbTest` OK.
+  Cuisson : chaîne complète 90 s, `DowntownBuildingsBake` 23 s.
+- **Relevé en passant, pas traité** : dans la même chaîne, `DowntownBuildingsBake` écrit trois fois « Cannot create file »
+  en réécrivant des modèles de la carte que `DistrictsBake` venait d'écrire (`Business_SmallBusiness_alt02`, `Business_Pub`,
+  `Business_Restaurant`, `BuildingModels._bake`). Ces fichiers ressortent identiques à HEAD : rien n'est perdu.
+
+## 12. Collisions : inventaire mesuré et décisions (2026-09-23)
+
+Le joueur voulait refaire TOUTES les collisions « à la forme réelle » (combat, poursuites, missions). **ERRATUM du même
+jour** : l'inventaire lui a d'abord annoncé que « 92 % des façades collent déjà à leur boîte », et il a réduit sa demande à
+« ce qui rapporte » sur cette base. **C'ÉTAIT FAUX** (erreur de signe dans la sonde, piège 4 ci-dessous) : corrigé, la boîte
+déborde de plus de 1 m sur un tiers des façades, et 71 % des bâtiments de la carte ont un escalier, un perron ou un socle
+englouti. Mesures faites par sondes jetables (hors dépôt), sur le monde chargé et sur les scènes cuites chargées seules.
+
+**Ce qui existe.**
+
+| catégorie | objets | collision | triangles de collision | triangles visibles |
+|---|---|---|---|---|
+| bâtiments de la carte | 1 196 | 1 191 boîtes englobantes + 5 exactes (station-service, `TRIMESH_MODELS`) | 32 842 | 7,47 M |
+| bâtiments du centre-ville | 441 | 438 boîtes + 3 exactes (parkings, `_forme()`) | 29 367 | 2,18 M |
+| lieux nommés (12) | 94 formes | 85 boîtes + 9 surfaces exactes (dalles, parking de l'aérogare) | 9 269 | 115 k |
+| véhicules (72 modèles) | 252 en circulation + 179 garés | 1 boîte ajustée au modèle (`_fit_collision_to_model`) | 12 | ~690 par voiture |
+| PNJ | 315 au plus | capsule 0,4 x 1,8 m | analytique | — |
+| mobilier du centre-ville | 1 775 | 1 768 cylindres (lampadaires, troncs, poteaux, fontaine) + 7 boîtes (abribus) | analytique | 593 k |
+| lampadaires de la carte | 505 | cylindres | analytique | — |
+| trottoirs du centre-ville | 1 418 | boîtes (dalles : exactes par nature) | 17 016 | 371 k |
+| routes / terrain / troncs | 133 / 242 / 308 | exactes (trimesh, heightmaps) | 0,21 M / 1,84 M / 0,16 M | — |
+
+**Écarts mesurés.** Bâtiments : rayons tous les 0,25 m à 0,3 / 1,0 / 1,7 m du sol, depuis 5 cm HORS de la boîte, distance
+signée corrigée. La boîte déborde du vrai mur de plus de 0,5 m sur **54,7 % des façades de la carte (53,5 % au centre-ville)**,
+de plus de 1 m sur **33,0 % (35,9 %)**, de plus de 2 m sur 19,2 % (22,0 %). Pires modèles (part des façades avec plus de 1 m
+de vide) : Factory_alt01 100 % (x5), CommercialBuilding_alt05 100 % (x28), IndustrialBuilding_alt03 95 % (x7), éolienne en treillis
+92 % (x6), kiosque 89 %, CommercialBuilding alt03/04/02/01 86 à 88 % (x47), DataCenter 85 %, GeneralStore 82 % (x14).
+**Escaliers, perrons, socles et rampes ENGLOUTIS** (mesure demandée par le joueur, de 0 à 1,2 m) : **843 bâtiments sur 1 191 à
+la carte (70,8 %, 29 modèles) et 170 sur 438 au centre-ville (38,8 %, 17 modèles).** Méthode qui tient : le mur au plus proche
+des rayons horizontaux à 1,5 / 2 / 2,5 / 3 m (une fenêtre ne le cache pas à toutes les hauteurs), un obstacle sous 0,6 m au moins
+0,25 m devant lui, et la forme lue par des rayons VERTICAUX entre la face de la boîte et ce mur seulement. Ce que c'est, vu en
+coupe à 1,2 m (Blender, colorée par la hauteur) pour trois d'entre eux : la maison georgienne alt04 (x64 à la carte) a un perron
+sur TOUTE la largeur de la façade, palier à 0,75 m et marche devant, que la boîte avale en entier ; la maison familiale alt04 une
+marche d'entrée de ~1,3 x 1 m ; l'immeuble commercial alt04 (x25), en L, un socle de 0,25 à 0,37 m qui déborde des murs tout
+autour, et TOUT l'angle intérieur du L, ~11 x 11 m de sol vide, dans sa boîte. Selon la sonde, sans image : les autres
+georgiennes (x214) des perrons à marches de ~3 m de large, les maisons familiales et grandes maisons (x456) une marche ou des
+marches d'entrée de 1,3 à 1,8 m, les maisons de ville (x55) des marches, les commerces et usines un socle de 0,15 à 0,56 m, le
+tribunal (x7) un grand escalier. Lieux (faces de boîte à 1 m du sol avec plus de 1 m de vide) : commissariat 80 %, hôpital
+72 % (ses arcades), grange du ranch 56 %, casino 52 %, planque 27 %, hôtel 20 % ; **l'avion de l'aéroport n'a AUCUNE
+collision.** Véhicules (72 modèles, rayons tous les 5 cm) : au pare-chocs la boîte colle (0,08 m en médiane), mais devant la
+bande capot / pare-brise elle déborde de **1,44 m en médiane, 3,22 m au pire** ; une enveloppe convexe unique
+(`create_convex_shape`, 20 à 160 points) ramène ça à **0,32 m (0,73 au pire)**.
+
+**Coût mesuré d'une collision exacte sur les 1 637 bâtiments** : 93 modèles, 356 229 triangles uniques ; **+22 Mo dans Jolt**
+(mémoire privée du processus : Jolt alloue hors du compteur de Godot) et ~14 Mo de faces côté Godot, ~12 Mo sur disque ;
+construction +211 ms ; 50 000 rayons 119 -> 144 ms (+21 %), 20 000 balayages de capsule 70 -> 44 ms (moins de départs en
+pénétration). Banc synthétique (espaces physiques dédiés), pas une image de jeu.
+
+**Chemins.** **0 point sur 29 510 du PedGraph et 0 sur 19 534 du graphe de circulation** (tous les 1 m) dans une boîte de
+bâtiment : des collisions de bâtiment exactes ne changent aucun trajet de PNJ ni de circulation. Restent concernés le joueur (à
+pied et en voiture), les PNJ hors graphe (éjectés, esquive) et tout ce qui tire des rayons sur la couche 1 (`SimulationCuller`,
+anti-apparition de `LoopSpawner`, dégagement des lampadaires, caméra « sol » de `MapShotsTest`).
+
+**Jolt et outils, mesuré.** Deux maillages concaves ne se touchent pas : **une voiture en trimesh traverse une route en trimesh**
+(-12,7 m en 1,5 s) ; en enveloppe convexe elle tient. Un trimesh sur un `CharacterBody3D` bute bien contre des boîtes. V-HACD :
+`Mesh.convex_decompose` n'est PAS exposé au script ; `MeshInstance3D.create_multiple_convex_collisions` l'est, mais a rendu
+UNE coque pour la berline avec ses réglages par défaut. Blender 5.2 en ligne de commande : `convex_hull`, décimation, remesh,
+shrinkwrap, bisect ; aucune décomposition convexe installée. `TriangleMesh` (`create_from_faces`, `intersect_segment`,
+`face_index` dans l'ordre des triangles fournis) est exposé au script et sert de maillage de mesure.
+
+**Pièges payés en mesurant.** (1) La boîte est la boîte englobante : un mur est AU RAS de sa face. Un rayon qui part 1 mm à
+l'intérieur passe derrière le mur et compte toute la profondeur comme du vide — première mesure à 37 % au lieu de 8 %. Partir
+HORS de la boîte. (2) En jeu, `CityRenderOptimizer` convertit une partie des bâtiments du centre-ville en MultiMesh au démarrage :
+mesurer sur les scènes cuites chargées seules. (3) En GDScript, un `PackedFloat32Array` rangé dans un `Array` est COPIÉ : lui
+ajouter des valeurs via le tableau ne touche pas l'original. (4) **L'ERREUR QUI A FAUSSÉ LA DÉCISION** : en corrigeant (1), la
+distance a été écrite `(p - touché) · dir` au lieu de `(touché - p) · dir`, bornée à 0 : tout rayon qui touchait un mur valait 0,
+seuls ceux qui traversaient toute la boîte comptaient. D'où « 7,9 % », et le MÊME pourcentage à 0,5, 1 et 2 m — c'était le
+signal : un compteur qui ne dépend pas de son seuil est cassé. Trouvée parce que la sonde des perrons rendait 0 partout et que
+sa trace montrait 0,00 m à toutes les hauteurs. (5) Des rayons horizontaux à 1,2 m passent par les fenêtres : le mur sous
+l'appui passe pour un perron. (6) Un rayon VERTICAL ne rencontre jamais un mur vertical : une marche verticale « jusqu'au mur »
+entre dans le bâtiment et prend son plancher surélevé pour un perron. Trois chiffres faux (28 %, 82 %, 0 %) avant le bon.
+
+**Godot seul ou Blender, par catégorie.** Les deux sont disponibles, comme pour les 24 modèles du labo et les pièces du
+parking.
+
+| catégorie | outil | pourquoi | état |
+|---|---|---|---|
+| bâtiments et lieux (statiques) | **Godot seul** | Les cuiseurs versent les triangles du modèle dans une forme concave, comme ils le font déjà pour la station-service (`TRIMESH_MODELS`) et les parkings. Coût mesuré faible. Blender seulement au cas par cas : escalier changé en rampe, éolienne en treillis, simplification si le joueur accroche des détails. | lieux : fait ; tous les bâtiments : fait (fin du §12) |
+| véhicules, déplacement | **Godot** (`create_convex_shape`) ; **Blender** pour camions, bus et pick-up | Une enveloppe unique relie la cabine et la benne. Blender coupe donc la caisse aux marches de son profil et fait une enveloppe par pièce. Aucune décomposition convexe automatique n'est utilisable : le V-HACD de Godot rend UNE coque pour la berline, et Blender n'en a pas. | fait |
+| véhicules, tirs | **Godot** (triangles du modèle, couche 4) | La forme concave est statique et seuls les rayons l'interrogent : Jolt n'a jamais à la faire collisionner. | fait |
+| PNJ | **Godot seul** | Capsule pour marcher ; zones par os (tête, torse, membres) pour le combat. | zones par os : chantier combat (§7) |
+| mobilier, poteaux, lampadaires, trottoirs, routes, terrain | **rien** | Déjà adaptés ou déjà exacts. Décision du joueur : on ne les fait pas. | — |
+
+**Ce qui vaut le coup, et l'ordre.** L'inventaire proposait quatre étapes :
+1. les lieux de mission et l'avion ;
+2. « la dizaine de modèles à porches ou arcades (~140 exemplaires), les ~80 autres modèles collent déjà » ;
+3. la silhouette des véhicules pour les tirs ;
+4. la forme de déplacement des véhicules, en dernier.
+
+**Le point 2 reposait sur le faux 7,9 %.** Mesure corrigée : 29 modèles et 843 bâtiments de la carte ont une entrée
+engloutie, et un tiers des façades a plus de 1 m de vide. « Les modèles concernés » couvrent donc presque toute la ville,
+et la collision exacte partout coûte peu : +22 Mo dans Jolt, +211 ms au chargement, rayons +21 %.
+
+Ordre en vigueur :
+1. véhicules : fait ;
+2. lieux de mission : fait, le joueur regarde en jeu ;
+3. tous les bâtiments en exact : fait (dernière sous-section), le joueur regarde en jeu ;
+4. le combat : zones par os des PNJ, dégâts aux véhicules.
+
+Restent en boîte ou en cylindre : poteaux, lampadaires, troncs, bancs, abribus, clôtures.
+
+**Risques.**
+- **JOLT : DEUX FORMES CONCAVES NE SE TOUCHENT PAS.** Une voiture en trimesh traverse la route, qui est aussi un trimesh
+  (mesuré : -12,7 m en 1,5 s). Règle : jamais de `ConcavePolygonShape3D` sur ce qui bouge. Tout corps mobile est convexe
+  (enveloppe, boîte, capsule) ; le concave est réservé au décor statique et aux zones de tir (masque vide). Une fois les
+  bâtiments exacts, un corps mobile en trimesh les traverserait aussi, alors qu'aujourd'hui il bute contre leurs boîtes.
+- PNJ et circulation : aucun risque pour leurs trajets. Aucun point du PedGraph ni du graphe routier n'est dans une boîte
+  de bâtiment. (Vérifié après coup, dernière sous-section : 0 PNJ bloqué, 0 point de voie touché.)
+- Le joueur, à pied ou en voiture, entre dans ce que la boîte bouchait :
+  - des marches à franchir (`_try_step_up`) ;
+  - les plafonds bas des arcades, pour la voiture ;
+  - un modèle creux (des façades sans intérieur) ne doit pas l'avaler : vérifié, aucun ne l'avale (dernière sous-section).
+- Les rayons sur la couche 1 changent de résultat :
+  - `SimulationCuller` : un bâtiment exact cache moins, donc plus d'entités réveillées (mesuré : +1,2 %) ;
+  - l'anti-apparition de `LoopSpawner` (mesuré : inchangée, et elle ne refuse presque rien de toute façon, §7) ;
+  - « le dégagement des lampadaires » : n'existe pas en jeu, aucun script ne tire ce rayon ;
+  - la caméra « sol » de `MapShotsTest` : non vérifiée (captures fenêtrées, pas sur le PC de l'école).
+- Tests à rejouer : MapGateTest, MapPlacesTest, MapExplorationTest, SimulationCullingTest, DayNightTest et
+  ParkingStructureTest ; pour les véhicules, CarKerbTest et CarDrivingTest. Selon le §2 : seulement ceux que touche
+  l'étape, et prévenir le joueur avant toute vérification ou chaîne de plus de 10 min.
+- Deux mesures manquent :
+  - l'écart entre la capsule et le vrai corps des PNJ, qui dépend de la pose animée ;
+  - le coût dans une vraie image de jeu : le banc ci-dessus est synthétique.
+
+**Décisions du joueur (2026-09-23).**
+- **Véhicules** : forme de déplacement = enveloppe convexe qui suit la SILHOUETTE (capot penché, toit, coffre ; rétroviseurs et
+  petits détails sans importance), plus de boîte ; **collision exacte réservée aux tirs** (c'est ce qui débloque le combat) ;
+  camions, bus et pick-up : **enveloppes par pièce faites dans Blender**. Jamais de trimesh pour le déplacement (mesure ci-dessus).
+- **Bâtiments** : son problème principal, ce sont les ESCALIERS et PERRONS devant les entrées, que la boîte engloutit. Mesure à
+  faire de 0 à 1,2 m tous les 10 cm AVANT de décider : si beaucoup de bâtiments sont concernés, collision exacte partout ; sinon,
+  les modèles concernés seulement. **Mesuré : 70,8 % à la carte, 38,8 % au centre-ville, 62 % en tout — « beaucoup ». Le
+  joueur a appliqué sa règle : collision exacte sur TOUS les bâtiments, carte et centre-ville, en commençant par les modèles à
+  perron. FAIT (`2534f55`, `d68f46c`, `f7bf8b7`), voir la dernière sous-section.**
+- **Lieux de mission**, dans tous les cas : collision exacte sur l'hôpital, le commissariat, le casino, le ranch, la planque,
+  l'hôtel et l'aéroport (arcades de l'hôpital et du commissariat praticables), et une collision pour l'avion de l'aéroport.
+  **FAIT** (`bca191b`), voir la dernière sous-section ; PAUSE, le joueur regarde en jeu.
+- **On ne fait pas** : le mobilier, les poteaux et lampadaires ; les zones par os des PNJ vont au chantier combat (§7).
+
+### Véhicules : fait le 2026-09-23
+
+- **Déplacement : enveloppe convexe qui suit la silhouette** (`Car._poser_enveloppes`, une fois par modèle, cache
+  statique). Deux retouches : rétroviseurs ramenés à la largeur de la caisse sous la ceinture (bas 55 % de la hauteur), et
+  sous les pare-chocs une face VERTICALE jusqu'au sol, comme l'ancienne boîte : c'est elle que touchent les bordures de
+  0,15 m, et `_try_step_up` comme l'arrêt de la circulation en dépendent. La boîte englobante reste une DONNÉE
+  (`_boite_caisse`, `boite_caisse()`) : `_half_length`, hauteur de caisse, bande d'impact des taches, tests.
+- **Camions, bus et pick-up (18 modèles) : enveloppes PAR PIÈCE**, faites dans Blender (commandes au §4) : la caisse est
+  coupée aux marches de son profil lu au rayon (saut de plus de 0,35 m : cabine / benne, cabine / caisse), une enveloppe
+  par tronçon, par roue et par pièce séparée (tourelle du blindé). Les bus sortent en UN tronçon, leur enveloppe unique
+  étant déjà juste. Images de contrôle regardées (profil et trois-quarts) ; piège de lecture : l'enveloppe d'une caisse en
+  pavé coïncide avec ses faces et ne se voit pas au rendu, ce sont les étendues des points qui le prouvent.
+- Mesuré sur la forme réellement posée (72 modèles, rayons tous les 5 cm), débord devant la bande capot / pare-brise,
+  médiane : **voitures 1,46 -> 0,32 m, camions 1,31 -> 0,05 m, pick-up 1,50 -> 0,38 m, bus 0,29 -> 0,00 m** ;
+  au-dessus : voitures 0,37 -> 0,06, camions 0,26 -> 0,08, pick-up 0,73 -> 0,22 (l'enveloppe de la benne va jusqu'aux
+  ridelles : c'est la silhouette de profil, l'intérieur de la benne n'est pas creusé).
+- **Tirs : zone exacte sur la couche 4** (`Car.COUCHE_TIRS`, `StaticBody3D` « ZoneDeTir », triangles du modèle, masque
+  vide). Le rayon d'arme du joueur passe de `0b11` à `0b1011` : **avant, les balles traversaient les voitures.** Un tir
+  de face à hauteur de pare-brise s'arrête sur la vitre, 1,30 m derrière l'avant de l'ancienne boîte ; le rayon de sol d'un
+  PNJ (masque 1) ne voit ni la voiture ni sa zone de tir. Aucun dégât aux véhicules pour l'instant : le touché s'arrête là.
+- **Ce qui a bougé et pourquoi.** La voiture du joueur repose 2 cm plus bas (l'enveloppe s'arrête au bas des pneus, la
+  boîte avait 2 cm de marge). Une voiture sans conducteur s'arrête 27 cm plus près d'une bordure (c'est le bas du
+  pare-chocs qui touche, plus la pointe la plus avancée du modèle). `WorldTrafficSmokeTest` échouait 3 fois sur 6 avec les
+  enveloppes (0 sur 4 avec la boîte, même jour) : pas un défaut de suivi, voir §6 — le test est corrigé.
+- Tests adaptés : `VehicleCatalogTest` (lit `boite_caisse()`, vérifie les enveloppes convexes dans la boîte et la zone de
+  tir sur la couche 4), `ParkingStructureTest` et `WheelSpinTest` (lisaient la boîte comme `BoxShape3D`), `CarKerbTest`
+  (joue maintenant, en plus du modèle tiré au sort, un pick-up, un camion et un bus), `WorldTrafficSmokeTest` (même voie
+  dans les deux repères).
+
+### Lieux de mission : fait le 2026-09-23 (vérifié ; PAUSE, le joueur regarde en jeu)
+
+- **Code** (`e168b60`, `PlacesBake.gd` seul) : `LIEUX_EXACTS` (hospital, precinct, casino, ranch, safehouse, hotel, airport) ;
+  `_model()` y verse les triangles du modèle dans la forme exacte « Surfaces » du lieu au lieu de sa boîte ;
+  `_prop(..., collision = true)` pour les deux avions ; `stats["collision_exacte_triangles"]`. Aucune correction n'a été
+  nécessaire dans ce code.
+- **Cuisson** (`bca191b`) : **39 579 triangles** exacts. Hôpital 9 512, commissariat 13 052, casino 380, ranch 6 852,
+  planque 1 565, hôtel 1 610, aéroport 14 823 (surfaces, 5 hangars et 2 avions). L'hôtel et le casino ont maintenant une
+  forme « Surfaces » (`hotel_shape.res`, `casino_shape.res`).
+- **Sonde** (jetable, hors dépôt) : des capsules au gabarit et au code de marche du joueur partent vers chaque face de chaque
+  bâtiment, puis le VRAI joueur, piloté au clavier, fait six trajets.
+  - **Hôpital** : on entre sous l'auvent d'entrée, sous les arcades arrière (61 lignes sur 95, jusqu'à 11 m) et sous
+    l'auvent ouest. Il n'a pas d'escalier : ses entrées sont de plain-pied.
+  - **Commissariat** : on monte le perron de face (38 lignes sur 50), le palier est à 0,76 m. On le monte aussi par les
+    côtés, et on s'arrête aux portes, sous le portique, 5,3 m derrière l'ancienne face.
+  - **Avions** : 0 -> 77 rayons horizontaux arrêtés sur 185, et les capsules ne les traversent plus. Ils ont un fuselage,
+    des ailes à 0,97-1,17 m et 3,31-3,51 m, et des roues. Une capsule qui marche dans l'envergure bute sur le bout d'aile ;
+    celle qui touche l'aile en biais glisse le long du bord effilé et la contourne.
+- **Aucun modèle n'avale le joueur.** Les intérieurs sont creux mais fermés. Les plans en coupe le montrent (sol et
+  obstacles par case de 0,2 m, trajets par-dessus) : les capsules qui dépassent la moitié de la boîte longent des bandes
+  ouvertes (auvents, perron, encoches en L) et s'arrêtent aux murs. **Piège de lecture : « au-delà de la moitié de la boîte »
+  ne veut pas dire « dans le bâtiment », regarder le plan.** L'éolienne du ranch se traverse entre ses pieds, et
+  MapPlacesTest la voit quand même.
+- **Défaut révélé, antérieur** : le saut parasite de `StepClimb`, voir le §6 (`4ee4532`).
+- **Tests** : MapPlacesTest, MapGateTest, ParkingStructureTest OK ; ProjectLoadCheck donne 626 fichiers et 0 échec.
+- **Seuil du §3** : non concerné, et non mesuré. Une forme de collision ne fait aucun appel de dessin, et les 6 vues de
+  référence ont une caméra fixe (aucune n'est en mode « sol »).
+- **Reste** : le joueur regarde en jeu. Les bâtiments de la ville ont suivi (sous-section suivante).
+
+### Tous les bâtiments : faits le 2026-09-23 (PAUSE, le joueur regarde en jeu le soir)
+
+Décision du joueur, le 62 % de perrons engloutis tombant dans sa règle : collision exacte sur TOUS les bâtiments, carte et
+centre-ville, en commençant par les modèles à perron de la carte, chaque étape vérifiée à la sonde comme les lieux.
+
+- **Code.**
+  - `BuildingModels.collision_of(nom)` : les triangles du modèle dans son repère, à deux faces, enregistrés à côté de son
+    maillage (`generated/buildings/models/<nom>_collision.res`), partagés par ses exemplaires, par la carte et par le
+    centre-ville ; l'option `with_trimesh` (une face, forme incrustée dans la scène) a disparu.
+  - `DistrictsBake` n'a plus de boîtes : une `CollisionShape3D` par bâtiment portant la forme de son modèle, dans la
+    transformation du modèle.
+  - `DowntownBuildingsBake._forme` : exacte pour les modèles EverythingLibrary (via `collision_of`), les gratte-ciels et le
+    pack urbain (forme à côté de leur maillage). Le parking à étages garde ses triangles retaillés.
+- **Étapes.**
+  - `2534f55` : les 33 modèles à perron de la carte, 869 bâtiments sur 1 196, relevés par rayons sur le maillage avec la
+    méthode de l'erratum. L'erratum en comptait 29 et 843 ; sa sonde est perdue, d'où l'écart.
+  - `d68f46c` : les 26 autres modèles de la carte, soit les 1 196 bâtiments, 59 modèles, 154 151 triangles.
+  - `f7bf8b7` : le centre-ville, 441 bâtiments, 62 modèles, 290 876 triangles.
+  - Au total : 104 formes concaves uniques, 404 000 triangles. **Tailles réelles** : 4,2 Mo à l'étape 1, 5,6 Mo à l'étape 2,
+    12,6 Mo en tout (92 fichiers) plus 0,29 Mo pour le parking. Les messages des trois commits donnent 6,2, 9,1 et 14,6 Mo :
+    c'est FAUX, ce sont des lectures de `du -h`, qui compte les blocs du disque externe. Voir le piège (e) ci-dessous.
+- **Aucun bâtiment n'avale le joueur ni une voiture.**
+  - Labo : les 93 modèles posés, seuls sur une dalle, en exact ; 25 662 capsules du joueur (de face et à 45°) et 9 448
+    berlines (12 et 30 m/s). Résultat : 0 enfermée, 0 coincée.
+  - En situ, dans World.tscn : 3 exemplaires de chaque modèle de la carte, 2 de chaque modèle du centre-ville (281 en tout),
+    74 093 capsules et 18 935 voitures. Résultat : 0 enfermée dans un bâtiment, 0 coincée, 0 passée sous un plancher. Les
+    seules « enfermées » sont dans le parking à étages, où l'on entre ; le seul « debout sur le bâtiment » est sur l'escalier
+    extérieur de `pack:building_06` (1,53 m).
+- **Perrons.** La plupart se montent à pied maintenant : commerces, usines, maisons familiales, grandes maisons, et le tribunal
+  (1,24 m). Certains ont une dernière marche au-dessus des 0,40 m de `StepClimb` et demandent un saut, voir le §7.
+- **Trajets.** 3 points du PedGraph sur 30 350 frôlent `building_06` de l'îlot des boutiques (4 avec sa boîte) ; aucun point
+  de voie du Circuit sur 177 713. **0 PNJ bloqué** en jeu : 3 endroits avec le culler, puis 737 entités éveillées.
+- **SimulationCuller et LoopSpawner.** Mesurés sur 165 poses × 4 caps, avec les critères exacts des deux scripts et les noeuds
+  réels des graphes :
+  - éveillées : 5 697 → 5 763 sur 29 068 dans le champ, soit +1,2 % (centre-ville +0,7 %, carte +2,9 %) ;
+  - anti-apparition : 14 refus, inchangé.
+- **Coût réel sur le PC de l'école, même binaire, sondes identiques.**
+  - Chargement de World.tscn : 3,7-4,0 s → 4,0-4,1 s. L'entrée dans l'arbre prend environ 150 ms de plus : Jolt construit
+    les 104 maillages.
+  - Mémoire privée du processus : +423 → +440 Mo, soit +17 Mo, dont +12 Mo comptés par Godot.
+  - Rayon moyen : 2,3-2,7 → 4,2-4,8 µs.
+  - **Physique par image, en jeu** (spawners, graine fixe) : A/B dans le même binaire, les boîtes étant remises à
+    l'exécution. Cette émulation redonne au chiffre près les comptes « avant ». Médianes :
+    - Founders Plaza : 4,6-5,5 → 6,3-7,9 ms, soit environ +1,9 ms (+37 %). Trois causes s'y additionnent : 17,5 → 25,3
+      entités éveillées à cet endroit, des requêtes de déplacement plus chères, et les rayons du culler (+0,1 à 0,25 ms) ;
+    - culler coupé, 737 entités éveillées dans les deux cas : 32,5-33,4 → 36,6-36,7 ms, soit environ 5 µs de plus par
+      entité et par image.
+- **Tests corrigés, pas contournés.** MapDistrictsTest et DowntownBuildingsTest vérifiaient la collision par UN rayon au
+  centre de l'emprise. Il tombait dans l'angle intérieur des immeubles commerciaux en L (alt01 à 05 : 6 à la carte, 71 au
+  centre-ville), sur la plateforme basse d'`IndustrialBuilding_alt06` (2) et dans le puits central de `pack:building_04`
+  (14). Ces bâtiments ont bien leur collision : 13 à 24 rayons sur 25 la touchent sur leur emprise. Les tests cherchent maintenant le toit au centre, puis sur une grille 5 x 5. Les
+  rayons de sol de MapDistrictsTest ignorent la collision des bâtiments, qu'ils touchaient au plancher ou au perron.
+- **Pas vérifié ici.** La caméra « sol » de `MapShotsTest` et les captures : le joueur est sur le PC de l'école et
+  regarde en jeu le soir.
+- **Si le coût physique gêne**, deux pistes, non faites :
+  - exact jusqu'à ~6 m (là où marchent et roulent joueur, PNJ et voitures) et boîte au-dessus : la plupart des triangles
+    sont dans les étages ;
+  - maillages de collision simplifiés dans Blender pour les modèles les plus lourds.
+- **Pièges payés en mesurant** (sondes gardées hors dépôt : `F:/p-recree/sondes/2026-09-23_collision_exacte/`, avec un
+  LISEZMOI) :
+  - (a) **un sol en `WorldBoundaryShape3D` loin de l'origine fait traverser les murs** aux `CharacterBody3D`. Mesuré dans
+    une sonde : à 1 000 m, 18 capsules sur 88 passent ; à 2 000 m, toutes ; avec une dalle en boîte, aucune. Le jeu n'en
+    utilise pas ;
+  - (b) **Jolt refuse les corps au-delà de 10 240** (réglage du projet). Ceux-là ne bougent pas, et seule une erreur au
+    journal le dit : une première version du labo annonçait « 0 entré » pour la moitié des modèles sans rien avoir mesuré ;
+  - (c) **en situ, un critère doit viser l'exemplaire** : sur le terrain en pente, « monté de plus de 1 m » et « tombé »
+    mesurent la colline, et les rayons d'« enfermé » butent sur les voisins et les arbres. Il faut regarder la forme touchée
+    (`shape_find_owner` puis `shape_owner_get_owner` sur le corps de la cellule) ;
+  - (d) **un script de sonde qui ne compile pas laisse Godot ouvert sans fin** : la scène se charge sans script et rien
+    n'appelle `quit()`. Toujours lancer sous `timeout` ;
+  - (e) **`du -h` sur le disque externe compte les blocs**, soit 1,5 fois la taille réelle ici. Pour une taille de fichier,
+    utiliser `du -b` ou `stat` ;
+  - (f) **les temps de ce PC varient d'une course à l'autre** : 4,4 à 5,9 ms pour la même scène. Pour un avant/après, il
+    faut alterner les modes plusieurs fois et prendre des médianes.
+
+### Rampes invisibles des entrées : faites le 2026-09-23
+
+Décision du joueur : NE PAS remonter la limite de 0,40 m de `StepClimb` (il grimperait sur des murets et des capots
+partout), mais poser, comme dans le parking à étages, une rampe de collision invisible là où l'escalier d'entrée est trop
+raide ; l'escalier visible reste.
+
+- **Relevé.**
+  - Audit de tous les modèles posés : une capsule du joueur par ligne de façade (tous les 0,25 m), et le palier de chaque
+    ligne mesuré au rayon, soit le plus haut plat de 0,40 m devant le mur à 1 m de haut.
+  - Chaque cas trouvé a été regardé à l'image (rendu du modèle seul, fenêtré, 800x450) : c'est ce qui sépare une entrée
+    d'un socle.
+  - Dix modèles ont une entrée qu'on n'atteint pas à pied :
+    - un bloc de pierre plein de 0,50 à 0,68 m devant la porte des georgiennes alt01, 02, 03 et 05 ;
+    - le perron de l'alt04, contremarche de 0,40 m sous un palier à 0,75 m ;
+    - le deck de 0,43 m des deux supérettes ;
+    - la terrasse de 0,68 m de la pizzeria ;
+    - l'escalier arrière du pub, trois marches de 0,24 m trop raides pour StepClimb, qui montent LE LONG de la façade ;
+    - la dernière marche de la maison de ville, trop peu profonde devant la porte.
+  - Ce ne sont PAS des entrées, et il n'y a pas de rampe :
+    - les socles le long des murs du cabinet médical, des petits commerces alt01, des lofts, de TraditionalSkyscraper_alt02,
+      d'IndustrialBuilding_alt03 et de Mk3 ;
+    - les cônes décoratifs du DataCenter ;
+    - l'arrière et les côtés des decks et terrasses ;
+    - les côtés des blocs de pierre.
+  - À part, non traité : la cour-parking d'IndustrialBuilding_alt06 est surélevée de 0,36 à 0,66 m (2 exemplaires).
+- **Code.**
+  - `RampesEntree.gd` : un quadrilatère par entrée, dans le repère du modèle, du pied (y = -0,05, le terrain aplani) au bord
+    avant du palier (5 mm au-dessus).
+  - `BuildingModels.collision_of` ajoute ces triangles à la forme exacte du modèle, donc sur la carte et au centre-ville, et
+    appelle `RampesEntree.verifier` à chaque cuisson. Le contrôle exige le palier au bord haut, et aucun dessus du modèle
+    au-dessus de la rampe.
+- **Pente.** 40° au plus, la limite de sol du joueur étant 45°. Moins si un nez de marche l'exige : la rampe passe au-dessus
+  de CHAQUE nez, leçon du parking. Cela donne 30,3° au pub (nez de la marche basse) et 27,5° à la maison de ville.
+- **Ce qu'on voit.**
+  - Les marches étant plus raides que 40°, la rampe commence devant la boîte du modèle, de 0,21 à 0,59 m selon le modèle
+    (0 pour le pub et la maison de ville).
+  - Le joueur y monte donc avec les pieds un peu au-dessus des marches visibles, 0,2 à 0,35 m au plus fort (perron de l'alt04).
+- **Vérifié.**
+  - Labo, de face : les lignes inatteignables tombent à 0 sur les façades équipées. Il ne reste que les côtés des blocs et
+    l'arrière des decks.
+  - Le VRAI joueur au clavier, un exemplaire de la carte et un du centre-ville par modèle : **19 montées sur 19 arrivent au
+    palier**, 0 ou 1 image hors sol (15 cm au plus).
+  - En situ sur 40 exemplaires : 0 capsule ni voiture enfermée ou coincée.
+  - Trajets : inchangés (PedGraph 3 points près de `building_06`, Circuit 0), donc les rampes qui débordent sur les trottoirs
+    du centre-ville ne touchent aucun trajet de PNJ.
+  - Tests : MapDistrictsTest, DowntownBuildingsTest, MapGateTest OK ; ProjectLoadCheck 627, 0 échec.
+
+### EN COURS (2026-09-23, 16 h 30) : reprendre ici
+
+Consignes du joueur pour cette série : 1. rampes invisibles sous les escaliers d'entrée trop hauts, sans remonter la
+limite de 40 cm du joueur — **FAIT** (e204792, ci-dessus) ; 2. anti-apparition du LoopSpawner à corriger « en visant
+1 m au-dessus du point comme le culler », vérifier à la sonde que le nombre de refus devient réaliste et que la
+circulation se remplit toujours normalement ; 3. le coût physique d'environ 2 ms : **NE RIEN TOUCHER**, le joueur le
+teste en jeu. Un commit par point, tests concernés seulement. (Il poussait lui-même à l'époque ; règle retirée le
+2026-09-25, cf. §2 « Pousser ».)
+
+**A. RÉGRESSION CORRIGÉE** (`Player.gd` seul), causée par la collision exacte de tous les bâtiments (2534f55,
+d68f46c, f7bf8b7) et passée inaperçue parce que NoclipTest n'était pas dans les tests lancés à ces étapes. Une coque
+creuse n'expulse plus un joueur posé dedans ; une boîte pleine le faisait (Jolt le sortait par la face la plus proche).
+
+- **Sortie de voiture.** `_exit_vehicle` posait le joueur sur `ExitPoint` (côté gauche, x local -1,7) **sans rien
+  vérifier** : une voiture garée flanc contre un mur le déposait dans le bâtiment. Il prend maintenant le PREMIER
+  point LIBRE : la portière (inchangée, donc rien ne bouge en terrain dégagé), puis le côté passager, l'arrière,
+  l'avant, enfin le toit — les quatre derniers déduits de `boite_caisse()`. **Libre** = le segment depuis la voiture
+  (à la hauteur de sortie) ne touche aucun décor (masque 1) ET une capsule réduite (0,3 x 1,2 m, la même qu'en sortie
+  de noclip) ne chevauche au point ni décor ni véhicule (masque 1 | 4, la voiture quittée exclue). Faute de place
+  nulle part, la portière comme avant : mieux vaut le comportement d'avant qu'un joueur bloqué dans sa voiture.
+- **Sortie de noclip.** `_land_after_noclip` ne reconnaissait « dans un bâtiment » qu'au CHEVAUCHEMENT d'une capsule
+  avec le monde statique, ce qui est faux dans une coque creuse. Il reconnaît maintenant aussi l'ENFERMEMENT : un
+  rayon vers le haut et huit à l'horizontale butent sur LA MÊME forme (même corps, même forme), **et** le joueur
+  n'est PAS POSÉ sur cette forme. Ce second critère est ce qui distingue une coque fermée d'un volume fait pour être
+  parcouru — dans un parking à étages, le muret de rive de 1,93 m arrête bel et bien les huit rayons horizontaux et
+  la dalle du dessus le rayon vertical, mais le sol sous les pieds est la forme elle-même. Il évite d'avoir à citer
+  une ressource par son nom.
+- **La portée verticale doit couvrir la plus haute tour.** À 60 m, un joueur lâché à 30 m dans un gratte-ciel de
+  115 m ne trouvait rien au-dessus de lui et passait pour libre : NoclipTest échouait encore. `ENFERME_HAUT` = 250 m
+  (la plus haute tour du jeu fait 153 m), `ENFERME_COTE` = 60 m.
+- **Mesures.** `sonde_sortie`, même sonde sur les deux codes : **10 cas sur 10 dans le bâtiment avant, 10 sur 10
+  dehors après** (le joueur posé à 2,66 à 3,27 m du mur, alors que l'ExitPoint reste 0,11 à 0,62 m DANS le mur).
+  `sonde_enferme` (nouvelle) : **23 cas, 0 faute** — les 20 niveaux des quatre parkings laissés sur place, le parvis
+  de l'hôpital et une rue aussi, et le témoin lâché dans la tour de NoclipTest reposé 85,92 m plus haut, sur le toit
+  (115,92 m). NoclipTest OK. ParkingStructureTest OK, le vrai joueur sort toujours de sa voiture sur le toit (23,89
+  pour un sol à 23,89) et au rez (5,65 pour 5,64).
+- **DEUX DÉFAUTS DE LA SONDE, trouvés en route et corrigés — la sonde accusait le jeu à tort.**
+  1. Son rayon de recherche du mur n'excluait pas le JOUEUR. Tant que la sortie était cassée, le joueur finissait
+     DANS le bâtiment et ne gênait pas ; une fois corrigée il reste DEHORS, et le rayon du cas suivant tapait dans sa
+     capsule : mur annoncé 3,06 m trop près (2,66 m + 0,40 m de rayon), voiture garée 3 m trop loin, et la sonde
+     annonçait « DANS LE BÂTIMENT » pour cinq cas qui marchaient.
+  2. Elle visait toujours la face -X du bâtiment. En centre-ville, où les bâtiments sont à moins de 8 m les uns des
+     autres, le point « 4 m dehors » tombe DANS le voisin : la voiture était garée à l'intérieur du gratte-ciel
+     `midrise_095`, où aucune place n'est évidemment libre. Elle essaie maintenant les quatre façades et garde la
+     première vraiment dégagée (capsule de 1,4 m libre au point de départ, et le rayon de retour doit toucher LA
+     FORME VISÉE, vérifié par `shape_find_owner`).
+  **Règle : une sonde qui pose un objet « contre un mur » doit vérifier QUEL mur elle a trouvé, et s'exclure
+  elle-même du décor qu'elle mesure.** Et, comme pour les captures : le relevé qui compte est pris AU DÉCLENCHEMENT
+  (la sonde imprime maintenant la place où le joueur est POSÉ, avant que la gravité ne le fasse glisser).
+
+**B. ANTI-APPARITION RÉPARÉE** (`LoopSpawner.gd` seul). Trois changements, tous tranchés par le joueur sur mesure :
+
+1. **Viser 1 m au-dessus du point, comme le culler.** Le rayon visait le point AU SOL, rasait la chaussée et butait sur
+   une bordure avant d'arriver : **14 refus sur 37 007** points dans le cône (0,0 %, `sonde_vue`, 165 poses x 4 caps).
+   À 1 m : **5 946, soit 16,1 %**, du même ordre que les 19,8 % de cibles que le culler juge visibles.
+2. **Tester la VOIE, pas le noeud.** Une voiture naît 1,8 à 2,8 m à côté du noeud, dans sa voie
+   (`sample_offset(arête, noeud, 0, voie)`) ; on teste maintenant chaque position de naissance possible (chaque arête,
+   les deux voies). Trouvé par un contrôle INDÉPENDANT du spawner (frustum réel de la caméra + ligne de vue vers la
+   voiture née) : avec la seule visée à 1 m, 20 naissances sur 159 restaient dans le champ, et pour chacune le critère
+   du spawner jugeait le NOEUD caché.
+3. **Ne refuser que sous 150 m.** Une anti-apparition totale TUE la circulation autour d'un joueur immobile :
+   `SimulationCuller` gèle tout ce qui naît hors de sa vue. Sur l'îlot d'Echo Circle, 42 voitures toutes gelées, 0
+   éveillée en une minute, **RoundaboutTrafficTest à 0 sortie** (45 avant). La circulation d'avant tenait parce que des
+   voitures naissaient sous ses yeux. Au-delà de 150 m une voiture fait moins de 6 pixels : on la laisse naître en
+   vue, éveillée, et c'est elle qui amène la circulation. La vraie réponse, le gel en deux temps, est au §7.
+
+Mesures, même graine, même PC. « Marche » = le vrai joueur suit les trottoirs du PedGraph à 5 m/s depuis Founders
+Plaza, 449 m en 90 s (`sonde_remplissage_marche`, nouvelle) ; « vues » = voitures nées à l'écran et en vue directe,
+jugées par le contrôle indépendant ; « immobile » = `sonde_remplissage`, joueur planté à Founders Plaza.
+
+| variante | marche, 60 s / 90 s | vues en marchant, dont sous 150 m | immobile, 60 s | Echo Circle, éveillées à 60 s |
+|---|---|---|---|---|
+| avant (point au sol) | 183 / 201 | 63 sur 215, **31** | 163 | 34 |
+| 1 m seul (essai) | 139 / 145 | 20 sur 159, 5 | 80, plafonné dès 5 s | **0** (test à 0 sortie) |
+| 1 m + voies, avec report (essai) | 116 / 115 | **0** sur 129 | — | — |
+| 1 m + report sur points cachés (essai) | 151 / 163 | 32 sur 177 | — | — |
+| **retenu : 1 m, voies, refus sous 150 m** | **159 / 171** | 41 sur 185, **0** | **108**, en croissance | **31** |
+
+Deux essais écartés, à ne pas refaire : **REPORTER une tentative refusée sur un point caché** (dette de tentatives
+soldée dans la même image) ne rend PAS la densité — le goulot n'est pas le rythme mais l'OCCUPATION : 91 % des refus
+sont « une voiture à moins de 12 m » (`min_gap`), 7 % seulement « visible », et une dette portée à 64 tentatives et 12
+essais par image n'a rien changé (118 contre 116). Et **ne refuser que sous 150 m SANS tester les voies** laissait 7
+naissances vues sous 150 m.
+
+Tests : RoundaboutTrafficTest OK deux fois (**25 puis 21 sorties** pour 20 exigées, 0 file figée, les deux voies
+servent — marge mince, cf. §6), WorldTrafficSmokeTest OK, NoclipTest OK.
+
+**C. Sondes** : hors du dépôt dans `F:/p-recree/sondes/2026-09-23_collision_exacte/`, avec leurs logs. Leurs `.tscn`
+pointent maintenant vers ce dossier (corrigé le 2026-09-23). Ajoutées dans la série : `sonde_enferme` (critère
+d'enfermement du noclip), `sonde_remplissage_marche` (joueur qui marche, naissances dans le champ jugées par un contrôle
+indépendant), `sonde_rond_point` (voitures gelées et éveillées sur l'îlot). Toujours sous `timeout` : une erreur
+d'analyse laisse Godot bloqué — payé encore une fois dans cette série.
+
+## 13. Conduite réaliste : essai sur la berline (étape 1, 2026-09-24)
+
+> **REMPLACÉ LE SOIR MÊME par la conduite façon GTA V (§15)** : le châssis décrit ici (`ChassisReel`, `ChassisRoue`, le cœur
+> du pack VitaVehicle) n'existe plus dans le jeu (il reste dans l'historique git et dans ses `.bak`). Ce chapitre et le §14
+> gardent ce qu'on en a appris ; les fiches ont changé de colonnes (§15).
+
+> **Suite au §14** (même jour) : les 72 modèles, chacun sur sa fiche. Deux choses écrites ci-dessous sont FAUSSES, et les
+> chiffres de l'essai de la berline ont été relevés avec le défaut qui les explique : le corps rigide recevait
+> l'amortissement par défaut du projet (0,1 /s, une traînée de 2,5 m/s² à 90 km/h, §14). La « vitesse de pointe, ~145 km/h
+> (bridée ailleurs dans le pack, pas étudiée) » venait de là, pas du pack ; l'arrêt en 15,4 s pied levé aussi. Et le
+> centre de gravité, la coque et le moteur de la berline sont maintenant ceux de sa fiche.
+
+Plan chiffré remis au joueur le 2026-09-24 et validé : **étape 1 = essai sur UNE berline, désactivé par défaut, puis ARRÊT**
+— le joueur teste le ressenti en jeu avant toute suite (réglages au ressenti, autres modèles, poids lourds, chocs contre la
+circulation, tests arcade à réécrire, sons).
+
+**L'essayer (F5).**
+- À pied, **B** pose une berline `city_sedan_01` à 7-13 m devant le joueur (la précédente disparaît si personne n'est
+  dedans) ; **E** pour monter. **C'était F8 jusqu'au soir du 2026-09-24** : F8 est aussi le raccourci de l'éditeur de
+  Godot pour ARRÊTER le jeu qu'il a lancé, et le jeu se coupait (§6). B n'est prise par aucune action du projet ni par
+  aucune touche lue dans un script, et elle est à la même place en AZERTY et en QWERTY. `ConduiteReelleTest` la tape
+  comme au clavier et vérifie que F8 ne pose plus rien.
+- ~~**F7** bascule arcade / réaliste~~ : **F7 n'existe plus depuis le 2026-09-24** (§14), la conduite réaliste est la seule.
+  Le bandeau en bas de l'écran est devenu un compteur (rapport, vitesse), pour toute voiture conduite.
+- Commandes réalistes (mêmes touches physiques que l'arcade) : W accélère ; S freine puis, TENU ~0,5 s à l'arrêt, passe la
+  marche arrière (S accélère alors en arrière, W freine) ; A/D braquent ; Espace est le frein à main.
+- ~~Seul `city_sedan_01` passe en réaliste~~ : tous les modèles depuis le 2026-09-24, chacun sur sa fiche (§14).
+
+**Architecture** (`Car.gd` section CONDUITE RÉALISTE, `ChassisReel.gd`, `ChassisRoue.gd`, `EssaiConduiteReelle.gd` posé par
+`Player._ready`).
+- La voiture reste une `Car`. En montant, elle se dote d'un châssis `ChassisReel` — le cœur du pack VitaVehicle,
+  un RigidBody3D, quatre roues à rayon, boîte automatique, pneus — enfant `top_level` de la Car, et le SUIT : la Car prend sa
+  position et son cap (jamais son roulis ni son tangage : caméra, sortie, circulation et zones voient une voiture droite),
+  le modèle son roulis et son tangage, chaque roue sa rotation, son braquage et son débattement. Le corps arcade est coupé
+  (couches à 0) tant que le châssis existe.
+- Construit sur les MESURES du modèle (`Car._mesures_chassis`) : roues sur les centres relevés, pneu au rayon relevé (jante
+  15 : 0,296 m pour 0,301 m), empattement 2,33 m, `Steer_Radius` = empattement / tan(29,8°) = 4,07 m, soit le rayon de
+  l'arcade ; centre de gravité à 0,50 m du sol, 59,5 % sur l'avant ; coque = silhouette du modèle relevée à 0,20 m, pour que
+  les bordures de 0,15 m passent dessous.
+- À la descente : pédales à zéro, frein de parking et frein à main ; le corps se fige une fois arrêté et ne coûte plus rien ;
+  remonter le dégèle. (Il était rendu à l'arcade si on remontait F7 coupé : l'arcade a été supprimée le 2026-09-24.)
+- Ce qui lit la Car marche sans changement : phares (le modèle est reposé à l'image AVANT VehicleLights,
+  `process_priority` -10), feux de freinage (`ChassisReel.freine()` -> `_player_braking`), gyrophares et R, zone de tir,
+  écrasement (`_drive_speed`), culler (gel et dégel du châssis), `knock` (le châssis encaisse), sortie (`rids_exclus`).
+
+**Ce qui manquait au pack, corrigé dans `ChassisReel` — les fichiers du pack ne sont PAS modifiés** (`PlayerCarPhysics`,
+`CarDrivingTest` et `CarDropTest` restent tels quels) :
+1. **Pédales restées enfoncées à la sortie** (le pack ne les met à jour que si `Controlled`), et il lit W et S même sans
+   conducteur pour passer une vitesse depuis le point mort — un joueur qui marche à côté l'enclenchait. Sans conducteur :
+   stationnement forcé.
+2. **Recul après l'arrêt** : résistance au roulement (CRR 0,012), maintien sous 1,5 m/s, et ADHÉRENCE À L'ARRÊT — le pneu du
+   pack est visqueux (sa force naît du glissement), une voiture freinée en pente glissait. Mesuré : 0,2 mm en 2 s à plat,
+   0,1 mm sur la rampe à 16 %.
+3. **Boîte bloquée en deuxième** : la boîte décide des passages AVANT que le pack ne borne ses pédales ; pied au plancher elle
+   voyait 1,2 au lieu de 1 et attendait 7 150 tr/min (x le rayon du pneu en pieds), au-dessus du limiteur à 7 000 : plafond à
+   83-86 km/h. Pédales bornées avant la boîte.
+4. **La voiture du pack n'est pas une berline** : ~20 kW aux roues, traînée LINÉAIRE en vitesse (0,025 x v m/s², 2,5 fois la
+   vraie à 100 km/h). Réglée sur une berline : traînée en v² sur la surface frontale mesurée (Cx 0,30, 1 300 kg), couple x 2,5
+   ET embrayage (`ClutchGrip`) x 2,5 — sans l'embrayage, le surcroît de couple le fait patiner, le moteur monte au limiteur et
+   la boîte ne monte plus (mesuré à x 3).
+5. **Antipatinage déclaré (`TTCS`) mais jamais écrit** : écrit, par `tcsweight` ; seuil 1,5 m/s + 25 % de la vitesse. Un
+   seuil fixe bloquait la boîte en troisième : le pneu du pack pousse avec 20 à 30 % de glissement.
+6. **Première enclenchée en ~3 pas au lieu de ~0,5 s** : W répond en 0,18 s. La marche arrière garde son délai.
+7. **Direction qui se durcissait d'un coup en manœuvre** (corrigé le 2026-09-24, vu dans les vidéos). **Ce n'est PAS le
+   terme de lacet** de l'assistance, le premier suspect : mesuré, il contre-braque. La cause est le terme de DÉRIVE
+   (`SteeringAssistance`), moins le sinus de l'angle entre la vitesse du centre de gravité et l'axe de la voiture. En virage
+   lent, ce point, à 1,39 m devant l'essieu arrière, file vers l'INTÉRIEUR du virage (géométrie, pas glissade). Le pack y
+   voit une dérive et ajoute du braquage ; le virage se resserre, et ainsi de suite jusqu'à la butée. Mesuré (sonde hors
+   dépôt, `F:/p-recree/sondes/2026-09-24_braquage/`), 45 % de volant à 12 km/h :
+   - le braquage effectif valait x 1,82, et le rayon 5,3 m, pour 9,5 m à l'épure ;
+   - sans le terme de lacet, c'est pire (x 2,2) ; sans assistance du tout, 10,2 m.
+
+   À vitesse, c'est l'inverse : l'assistance reprend du braquage (x 0,59 à 43 km/h), et c'est elle qui tient la voiture
+   dans les changements de voie à 108 km/h. `ChassisReel` la **DOSE PAR LA VITESSE** : nulle sous 18 km/h
+   (`ASSISTANCE_V0`), entière au-delà de 36 km/h (`ASSISTANCE_V1`), en courbe douce entre les deux. Avec 45 % de volant, le
+   rayon vaut maintenant 9,9 m à 7,6 km/h, 10,2 m à 12 km/h, 10,3 m à 18 et 23 km/h, pour 9,5 m à l'épure : le glissement
+   des pneus ajoute 5 à 12 %. Au-delà de 36 km/h, rien ne change : même double changement de voie à 108 km/h (4,2°,
+   29°/s, retour à 2,1° de l'axe), même freinage.
+
+Et dans `Car.gd`, un défaut ANTÉRIEUR à l'essai, que l'essai aurait montré tout de suite : **une voiture quittée puis reprise
+dans les 25 s disparaissait sous le joueur**, et lui avec, 25 s après la PREMIÈRE sortie (le compte à rebours d'abandon était
+branché sur `queue_free` sans condition). Chaque sortie a maintenant son numéro (`_abandon_gen`).
+
+**Mesuré** (`ConduiteReelleTest`, vrai joueur, vraie berline, ~5 s en headless) :
+
+| essai | mesure |
+|---|---|
+| repos | origine à 0,443 m du sol (arcade 0,449), pneus à 5 mm du sol au pire, 0 mm de dérive |
+| départ | roule 0,18 s après W ; 0-50 km/h 4,0 s ; 0-100 9,8 s ; 108 km/h en 11,4 s (plafond à 83 km/h sans les corrections 3 et 4) |
+| 108 km/h, double changement de voie | 4,2° de roulis au plus, 29°/s de lacet, revient à 2,1° de l'axe |
+| freinage 108 -> 0 | 43,4 m en 2,90 s, droit (1 cm, 0,0°) ; puis 0,2 mm en 2 s, sans pédale |
+| braquage à fond à 50 km/h | 0,78 g, 4,1° de roulis, pas de tonneau |
+| pied levé depuis 49 km/h | arrêtée en 15,4 s sur 93 m |
+| rayon de braquage à 3 m/s | 5,51 m entre murs (arcade 5,30), 4,44 m au centre (5,44 / 4,37 avant le dosage de l'assistance, qui en manœuvre ajoutait du braquage jusqu'à la butée) |
+| volant partiel : 45 % tenu à 12 km/h (étape ajoutée le 2026-09-24) | rayon 10,12 m au centre, épure du pack 9,12 m (x 1,11) ; 5,59 m (x 0,61) avec l'assistance entière |
+| bordure de 0,15 m, de face et à 30° | montée (0,156 et 0,158 m), traversée, redescendue ; coque jamais en contact |
+| rampe à 16 % (collision cuite d'un parking du centre-ville) | montée sans contact, 10,4° de tangage ; arrêt en pleine pente tenu (0,1 mm en 2 s) ; redémarrage en côte en 0,75 s |
+| entrée du même parking, rampe d'accès refaite le 2026-09-24 (27 % -> 9,6 %, §11 étape 14), à 4 et 7 m/s | réaliste : coque jamais en contact, dessous du modèle à 0,10 m du sol au plus près ; arcade : 0,14 m, pneus sur le sol à 2 mm près (13 pas de contact et 0,5 m SOUS le sol en arcade avec l'ancienne) |
+| sortie en gardant W, puis W et S pressés à côté | 0 mm, corps figé ; joueur à 2,8 m |
+| remontée dans les 25 s | la voiture est toujours là 48 s après la première sortie |
+| F7 en roulant (6 bascules) | vitesse gardée (0,16 m/s d'écart) ; un pas de roulage d'écart (0,25 m à 54 km/h), aucun saut |
+| F8 (devenue B le soir même) | berline posée à 7 m, au sol (0,449 m) |
+
+**Coût.** Scripts du châssis (corps + 4 roues), par pas physique : **0,20 ms en médiane** dans la scène d'essai (0,24 en
+moyenne, 0,40 au 95e centile, 0,50 au plus), **0,21 ms dans le vrai monde** (`World.tscn`, circulation et PNJ ; sonde hors
+dépôt, `F:/p-recree/sondes/2026-09-24_conduite/`). Image entière (processeur, sans rendu) : +0,15 ms dans la scène d'essai ;
+dans le monde, +0,08 et +0,31 ms en deux passes (4,9 ms en arcade), dans le bruit de ce PC. Ce coût n'existe que pendant
+qu'on conduit la berline en réaliste ; sans conducteur, le corps est figé.
+
+**Pas fait** (suite du plan, sur décision du joueur) : réglage au ressenti ; les autres modèles et les poids lourds ; les
+CHOCS contre la circulation (elle est cinématique, de masse infinie pour le châssis : il rebondit, la voiture percutée est
+seulement « sonnée » par `knock`, comme en arcade) ; la vitesse de pointe, ~145 km/h (bridée ailleurs dans le pack, pas
+étudiée) ; les tests arcade qui conduisent la voiture du joueur (inchangés, le réaliste étant coupé par défaut) ; les sons
+moteur du pack.
+
+**Pièges payés en le faisant.**
+- **`RigidBody3D.linear_velocity` n'est relue qu'APRÈS le pas physique** : les impulsions déjà appliquées pendant le pas ne
+  s'y voient pas. L'adhérence à l'arrêt, qui compensait la gravité, la compensait deux fois (par les pneus freinés et par son
+  calcul), et la voiture MONTAIT la rampe à 2,4 cm/s. Lire `PhysicsServer3D.body_get_direct_state(rid).linear_velocity`.
+- **Un tableau compacté rangé dans un Dictionary** (`(d[k] as PackedFloat32Array).append(x)`) : l'ajout va à une copie. Payé
+  une fois de plus dans le test (rayon, accélération latérale et coût à 0) : `Array` ordinaire.
+- **Une Basis est en flottants 32 bits** : un ajustement de cercle résolu avec elle sur des coordonnées de plusieurs centaines
+  de mètres sortait faux (0 m, 1 370 m). Recentrer les points et résoudre en flottants.
+- **Un corps libéré en différé (`queue_free`) reste un pas dans l'espace physique** : à la bascule vers l'arcade, le châssis
+  et la voiture se repoussaient (0,76 m de chute). Le retirer de l'arbre d'abord.
+- **Le seuil de passage de la boîte automatique du pack est multiplié par le rayon du pneu** (en pieds) : un pneu plus grand,
+  des passages plus hauts.
+
+## 14. Conduite réaliste : une fiche par véhicule, les 72 modèles (2026-09-24)
+
+> **REMPLACÉ LE SOIR MÊME par la conduite façon GTA V (§15).** Restent vrais : une fiche par modèle, sans catégories, dans
+> `resources/vehicle_physics/fiches_vehicules.csv` ; la garde de coque (`garde_cm`) et les colonnes de la circulation
+> (`trafic_kmh`, `trafic_accel_ms2`, étape C) ; l'arcade retirée pour le joueur (étape B) ; la mesure de la physique des
+> PNJ (étape D) ; les réglages globaux (`reglages_conduite.tres`), réduits à deux multiplicateurs (plus, depuis le
+> 2026-09-25, `reduction_braquage`, §15). Ne sont plus vrais : le
+> châssis du pack (`ChassisReel`, `ChassisRoue`), les colonnes réalistes (masse_kg, puissance_kw, adherence, freinage_ms2...)
+> et leurs colonnes calculées (cdg_m, raideur_*, amort_*, et l'outil `FichesVehiculesOutil` qui les écrivait), la borne de
+> direction `glissement_avant_max`. Les chiffres ci-dessous sont ceux de ce châssis-là.
+
+Décision du joueur après l'essai de la berline (§13) : **conduite FULL réaliste pour le joueur, arcade supprimée, sur les 72
+modèles conduisibles**. Ses exigences :
+1. **pas de tonneau** : braquer à fond à haute vitesse fait glisser ou sous-virer, jamais coucher ; essayé à 50, 80, 110 km/h
+   et à la vitesse de pointe, sur chaque silhouette ;
+2. **le pare-chocs ne frotte plus** en entrant dans les parkings ni sur les bordures ;
+3. **chaque véhicule a ses propres caractéristiques, PAS DE CATÉGORIES**, dans un tableau lisible qu'il ajustera à la main ;
+   le poids joue sur la conduite (freine plus long, tourne moins vif, accélère moins) ;
+4. la circulation prend les vitesses et accélérations de chaque modèle ; la vraie physique sur les PNJ est **mesurée
+   seulement**, il décide après ;
+5. d'abord UN modèle de chaque silhouette pour régler, puis les autres ; des vidéos ; un commit par étape ; pas plus de
+   10 min de vérification sans lui demander.
+
+Étapes : **A**, les fiches, le châssis réglé sur elles et le banc (ce chapitre) ; **B**, l'arcade retirée pour le joueur ;
+**C**, la circulation ; **D**, la mesure de la physique hybride sur les PNJ ; **E**, les vidéos.
+
+### Le tableau
+
+`resources/vehicle_physics/fiches_vehicules.csv` : une ligne par modèle, séparateur `;`, décimales avec un point, lignes `#`
+de commentaire. Son en-tête décrit chaque colonne. **Il est importé en `keep`** (`fiches_vehicules.csv.import`) : sans cela
+Godot en ferait une table de traductions. Lu une fois par `scripts/data/FichesVehicules.gd` (classe `FichesVehicules`) ;
+une case vide prend la valeur de la berline (`DEFAUTS`).
+
+Chaque ligne est estimée pour SON modèle, d'après son nom, sa forme et ses dimensions mesurées : masse (750 kg pour la
+micro-citadine, 18 t pour la benne à ordures), transmission, puissance (35 à 588 kW), vitesse de pointe, cx, répartition
+avant, adhérence, freinage, fréquence et amortissement de suspension, barres anti-roulis, garde de la coque, et vitesse et
+accélération dans la circulation (étape C).
+
+Les colonnes CALCULÉES (`cdg_m`, `raideur_av_nmm`, `raideur_ar_nmm`, `amort_av_nsm`, `amort_ar_nsm`) sont écrites par
+`scenes/vehicles/tools/FichesVehiculesOutil.tscn`. L'outil charge le modèle comme en jeu et applique les formules du jeu
+(`FichesVehicules.calculees`). Une case remplie est gardée, une case vide recalculée. **Pour qu'une suspension suive une
+masse modifiée, vider ses cases**, ou passer `-- --recalculer`, qui réécrit tout.
+
+Formules :
+- **centre de gravité** = min(0,38 x hauteur, voie / (2 x `SSF_MIN` x adhérence)), avec `SSF_MIN` = 1,8 : le véhicule
+  glisse avant de pouvoir se coucher ;
+- **ressort** = (2π f)² x masse portée par la roue ; f = `suspension_hz` à l'avant, x 1,08 à l'arrière ;
+- **amortisseur** = `amortissement_pct` de l'amortissement critique 2√(k m) ;
+- **barre anti-roulis** : `AR_Elast` = φ / ((1 - φ) x 2 x écrasement statique), φ = sa part de la raideur en roulis de
+  l'essieu ;
+- **moteur** : multiplicateur du couple du pack k = puissance x 0,85 / 70 (mesuré : 68 à 73 kW aux roues par unité de k,
+  sur 5 gabarits) ; boîte étagée pour la vitesse de pointe à 6 000 tr/min en cinquième, tenue par un limiteur ;
+- **freins** : le couple qui donne la décélération de la fiche. Répartition = la charge sur l'avant au freinage maximal
+  (transfert = hauteur du centre de gravité / empattement x décélération / g), + 3 % ;
+- **traînée** : cx x surface frontale mesurée (boîte du modèle x 0,8), en v².
+
+### Ce que le banc a fait trouver
+
+Tout est corrigé dans `ChassisReel` et `ChassisRoue` ; les fichiers du pack sont intacts.
+
+1. **LE CORPS RIGIDE RECEVAIT L'AMORTISSEMENT DU PROJET.** Défaut de Godot : 0,1 /s en translation comme en rotation
+   (`physics/3d/default_linear_damp` ; `project.godot` n'en règle aucun). C'est une traînée de 0,1 x v : 2,5 m/s² à 90 km/h,
+   5,4 à 195, plus que la traînée et le roulement réels réunis. La berline à 100 kW plafonnait à 81 km/h : ses pneus avant
+   poussaient de 6,4 kN à 90 km/h et elle n'accélérait que de 2,1 m/s². Coupé (`DAMP_MODE_REPLACE`, 0). **Tout RigidBody3D
+   du projet l'a par défaut.**
+2. **Le ralenti du moteur du pack est fragile.** Son frottement interne pèse surtout au ralenti :
+   - multiplié comme le couple, il faisait caler un petit moteur (k < 0,8) ;
+   - sur un gros moteur (k de 1,9 à 3), le ralenti décrochait au premier pas, régime à zéro avant qu'on n'accélère.
+   Le frottement ne suit donc k qu'en dessous de 1. La traînée interne, le gros des pertes à haut régime, suit k : la
+   puissance devient proportionnelle à k.
+3. **Freinage réparti à 73 % sur l'avant**, une constante : la berline partait en tête-à-queue (34,5°), car à 9,5 m/s² son
+   arrière ne porte plus que 17 % du poids. La répartition est maintenant calculée (ci-dessus).
+4. **L'ABS du pack agit sur TOUTES les roues à la fois, par à-coups** (1, puis 0,5, puis 0) : 8,2 m/s² de moyenne pour 9,5
+   demandés, 52 m d'arrêt. Il est coupé et remplacé par un **ABS roue par roue** (`ChassisRoue`) : seule la roue qui glisse
+   de plus de 2 m/s + 5 % de la vitesse est desserrée. Berline : 52 -> 44,5 m.
+5. **Antipatinage trop permissif** (1,5 m/s + 25 % de la vitesse). À 90 km/h, les roues arrière d'une sportive de 588 kW
+   patinaient de 3 à 7 m/s, au-delà de la saturation du pneu : plus rien ne tenait la voiture en travers, et la
+   lowpoly_fenyr tournait en ligne droite, volant au centre. La consigne est maintenant le glissement où le pneu du pack
+   sature, lu dans `wheel.gd` : 0,95 m/s à l'arrêt, 2 m/s à 90 km/h. Fenyr : 92 -> 344 km/h, en ligne droite.
+6. **Le frein moteur manquait**, une fois l'amortissement parasite retiré : pied levé à 49 km/h, la berline roulait encore à
+   17 km/h au bout d'une minute. `FREIN_MOTEUR` = 0,4 m/s², en prise, pied levé : elle s'arrête en 21 s.
+7. **Sur les bordures, la coque touchait EN DESCENDANT, à l'arrière.** Quand les roues arrière tombent de la bordure, la
+   caisse plonge (dépassement de l'amortissement) et l'arrière, encore au-dessus de la bordure, la touche. Corrigé par :
+   - l'amortissement relevé de 12 points sur toutes les fiches (33 -> 45 % pour la berline) ;
+   - une garde de coque de 28 cm au moins, et au dessous du modèle - 2 cm (40 cm au plus) pour les véhicules hauts. Le
+     camion de pompiers, dessous à 0,56 m, touchait avec une coque à 0,28 m.
+8. **Une marge anti-tonneau de 1,4 ne suffisait pas.** Le bus s'est couché à 89 km/h braqué à fond (8,3 m/s², centre de
+   gravité à 1,12 m). Trois effets s'ajoutent : le roulis de la caisse, son dépassement quand on braque d'un coup, et les
+   pneus, qui donnent jusqu'à 1,13 x l'adhérence (mesuré). Avec 1,8 : 5,3° de roulis au pire.
+
+Pièges de MESURE, payés en écrivant le banc :
+- **v x lacet surestime l'accélération latérale** dès que la voiture pivote : 22 m/s² annoncés pour 9,7 réels. Mesurer la
+  variation de la vitesse perpendiculaire à elle-même.
+- **Le dessous d'un modèle, relevé tranche par tranche, comptait des tranches de toit** (la visière d'un fourgon). Leur
+  rayon partait au-dessus de la barre de hauteur du parking et la prenait pour le sol : -0,6 m annoncés, 0,27 m réels. Ne
+  garder que les tranches basses.
+- **`PhysicsDirectBodyState3D.get_contact_local_position` rend une position MONDE**, malgré son nom.
+- **Au banc, un « contact de coque » est une coque à moins de 2 cm**, pas une coque qui touche : Jolt signale ses contacts
+  spéculatifs (note en fin de chapitre). Pour savoir de combien elle passe, couler la coque vers le bas (`cast_motion`).
+
+### Le banc : `scenes/tests/ChassisBancTest`
+
+Chaque véhicule, monté en réaliste sur sa fiche, passe les mêmes essais :
+- repos ;
+- accélération pied au plancher : 0-50, 0-100, vitesse atteinte, rapports ;
+- freinage fort depuis 100 km/h ;
+- braquage à fond à 50, 80, 110 km/h et à la vitesse de pointe ;
+- bordures de 0,15 et 0,17 m, de face et à 30° ;
+- entrée d'un parking à étages, à 4 et 7 m/s.
+
+Il échoue sur un tonneau, deux roues d'un même côté en l'air plus de 0,3 s, un contact de coque, une boîte restée en
+première, ou un freinage qui dévie. `-- --trace` imprime l'état du moteur, des roues et des contacts.
+
+**Les 72 modèles passent.** Trois lots en parallèle, 2 min. Les six silhouettes de réglage :
+
+| silhouette | 0-100 | atteint en 40 s (fiche) | freinage 100-0 | roulis au pire | accél. latérale | bordure 15 cm, dessous du modèle |
+|---|---|---|---|---|---|---|
+| city_microcar, 750 kg, 45 kW | 11,8 s | 135 km/h (140) | 46,1 m | 4,1° | 9,3 m/s² | 0,001 m |
+| city_sedan_01, 1 300 kg, 100 kW | 9,7 s | 180 (195) | 44,3 m | 4,1° | 9,8 | 0,033 |
+| city_sports_car_02, 1 500 kg, 420 kW | 4,2 s | 314 (320) | 40,3 m | 1,4° | 10,7 | -0,046 |
+| city_suv_02, 1 900 kg, 170 kW | 8,3 s | 191 (200) | 44,5 m | 3,4° | 9,5 | 0,266 |
+| city_truck_01, 7,5 t, 190 kW | 27,6 s | 106 (110) | 53,9 m | 1,8° | 7,8 | 0,201 |
+| city_bus_01, 12 t, 220 kW | 0-50 en 9,8 s | 86 (90) | 45,0 m depuis 85 km/h | 5,2° | 7,3 | 0,160 |
+
+Sur les 72 :
+- 0-100 de 3,8 s (lowpoly_rally) à 39 s (camion de pompiers) ;
+- freinage 39 à 47 m pour les voitures, 49 à 69 m pour les poids lourds ;
+- roulis au plus 8,5° (voitures anciennes, suspension molle) ;
+- accélération latérale de 7,3 (poids lourds) à 11,2 m/s².
+
+Les vitesses de pointe des véhicules peu puissants ou peu profilés ne sont pas atteintes en 40 s : c'est l'équilibre
+puissance / traînée. La berline a 85 kW aux roues, qui la mèneraient à 199 km/h, mais à 180 km/h il ne lui reste que
+21 kW de surplus.
+
+### Reste : 13 modèles plus bas que les bordures
+
+Ce n'est pas une affaire de suspension. Prise de face, une bordure entre dans le pare-chocs de tout modèle dont le dessous
+est plus bas qu'elle. La coque physique ne touche nulle part, et la voiture passe.
+- **Bordure de 15 cm** : lowpoly_italia 5,7 cm (9,5 cm de garde), city_sports_car_02 et _03 4,5 cm, lowpoly_rally 3,6,
+  city_muscle_car_03 1,2, lowpoly_ghini 0,9, city_retro_car_03 0.
+- **Bordure de 17 cm** (raquette de l'aérogare) : en plus, city_mail_truck, city_microcar, lowpoly_armor, normalcar1, taxi,
+  normalcar2, de 0,1 à 1,8 cm.
+- **Entrée des parkings** : lowpoly_italia 2,1 cm, city_sports_car_02 0,8 cm.
+
+Seul remède : surélever ces caisses sur leurs roues d'autant (6 cm pour l'italia), ce qui se verrait en permanence.
+**Décision du joueur, le 2026-09-24 : on ne les surélève pas.** La balayeuse (city_sweeper) touche par ses brosses, c'est
+voulu.
+
+### Étape B : l'arcade retirée pour le joueur (2026-09-24)
+
+Le joueur n'a plus qu'une conduite : quand il prend le volant de n'importe quel modèle, la voiture se dote de son châssis
+réel, réglé sur sa fiche (`Car.appliquer_mode_conduite`). Retiré de `Car.gd` : `_drive_physics`, `_try_step_up`,
+`_resolve_drive_collisions`, l'assiette de la boîte sur les pentes (`_poser_assiette`, `_pente`, `_abaisse`), le braquage
+réduit à vitesse (`angle_braquage`, `rayon_braquage`, `BRAQUAGE_A_LAT`), les constantes `DRIVE_*`, la bascule F7
+(`conduite_reelle`, `_retirer_chassis`). `rayon_entre_murs` reste : c'est la géométrie du modèle, celle du châssis réel.
+`EssaiConduiteReelle` garde F8 (poser une berline, outil de débogage ; **B depuis le soir**, §13) et un compteur, rapport
+et vitesse. La caméra de conduite finit de reculer à `Player.DRIVE_ZOOM_SPEED` = 30 m/s ; c'était 24, la vitesse
+maximale de l'arcade.
+
+**Défaut trouvé en migrant, corrigé** : à la création du châssis, le délai du pack avant la marche arrière (`sassistdel`)
+valait 0 au lieu de 60, sa valeur de repos. Un S enfoncé dès la montée passait aussitôt la marche arrière, et S accélérait
+alors en arrière au lieu de freiner. Trouvé par `VehicleLightsTest`, dont la voiture freinait dès son lancement.
+
+Tests migrés, tous OK :
+- `CarKerbTest` : la voiture du joueur, sur son châssis réel, monte la bordure de 0,15 m à 3, 6, 10 et 15 m/s puis la
+  redescend en marche arrière (S tenu à l'arrêt) ; aucun contact de coque, pour le modèle tiré au sort, le pick-up, le camion
+  et le bus. La voiture de la circulation sans conducteur reste arrêtée devant.
+- `VehicleLightsTest` : feux de freinage par la pédale du châssis ; flaque derrière la poupe.
+- `ParkingStructureTest` :
+  - rayon à 3 m/s, braquage à fond, au centre de la voiture : berline 4,30 m (géométrie du pack 4,19), camion 10,12 m,
+    bus 10,13 m. La berline tient dans les demi-tours de 4,70 m ;
+  - rampe à 12 % : montée en 8,6 s, redescente en marche arrière en 9,0 s, roues à 7 mm de la pente, tangage 7,2° ;
+  - 88 poussées contre les garde-corps (les voitures lancées à 4 m/s), barre de hauteur ;
+  - rampes intérieures, le vrai joueur au volant : du rez au toit en 94,5 s, retour en 89,9 s.
+- `WheelSpinTest`, contrôle 9 : le rayon « entre murs » par famille (le braquage réduit à vitesse n'existe plus).
+- `ConduiteReelleTest` : sans F7 ni passages en arcade ; coût d'une image, voiture conduite, 0,46 ms en médiane.
+
+**Piège payé en migrant `ParkingStructureTest` : un pilote automatique d'arcade ne sait pas conduire le châssis réel.**
+Le volant proportionnel à l'angle du cap suffisait à l'arcade, qui braque sans retard. Le volant du pack met ~0,7 s d'une
+butée à l'autre, et le demi-tour de 4,70 m demande 0,87 de volant pour 0,95 disponible. La voiture en sortait en retard,
+tournée vers les places, et touchait la voiture garée du test ; même une poursuite pure, même à 2 m/s. Ce qui tient, c'est
+la commande des vidéos :
+- la courbure du tracé 0,3 s plus loin, pour anticiper le retard du volant ;
+- corrigée de l'écart de cap et de l'écart latéral (commande de Stanley) ;
+- sur un tracé dense (un repère tous les 1,5 m). Des repères espacés de 6 m, ou un trou de 9 m au toit, suffisaient à la
+  mettre en défaut.
+
+### Étape C : la circulation par modèle (2026-09-24)
+
+Demande du joueur : « les camions plus lents, les sportives plus vives ». Dans `Car.setup`, chaque voiture de la circulation
+prend deux valeurs de sa fiche :
+- **sa vitesse de croisière** : `trafic_kmh`, de 35 km/h (benne à ordures) à 46 (sportives). La vitesse que passe le
+  spawner (12 m/s dans `World.tscn`) est celle de la berline de référence, la fiche par défaut à 43 km/h ; chaque modèle
+  roule dans le rapport de sa fiche. Un spawner réglé plus lent ou plus vite décale donc tout le monde d'autant ;
+- **son accélération** : `trafic_accel_ms2`, de 1,1 à 4,8 m/s², au lieu de 3,5 pour tous (`AI_ACCEL`, gardé en repli).
+
+Le freinage reste `AI_DECEL` = 12 m/s² pour tous : c'est lui que supposent les distances de décision devant les obstacles
+et aux carrefours (`INTERSECTION_CHECK_DIST` couvre jusqu'à 16 m/s de croisière ; la plus rapide est à 12,8).
+
+Vérifié :
+- `WorldTrafficSmokeTest` relève la croisière de chaque voiture. Elle est réglée sur la fiche au millième près, et
+  aucune voiture ne la dépasse. Les poids lourds roulent à 39,2 km/h en moyenne, les sportives à 45,9 ;
+- `RoundaboutTrafficTest` : 28 sorties en 300 s (20 exigées ; 21 à 25 avant), aucune file figée, les deux voies servent ;
+- `MapRoadsTest` : 798 m au moins en 70 s (350 exigés).
+
+### Étape D : la vraie physique sur les PNJ, MESURÉE seulement (2026-09-24)
+
+Demande du joueur : « MESURE D'ABORD, ne construis pas [...] Évalue une version hybride : vraie physique seulement sur les
+quelques voitures PNJ proches du joueur, conduite simple au-delà. Dis-moi le coût réel et si l'IA peut piloter une voiture
+physique sans casser la circulation. Je décide après. » **Rien n'est dans le jeu.** Sondes et journaux hors dépôt, dans
+`F:/p-recree/sondes/2026-09-24_hybride/` (avec un LISEZMOI).
+
+**Le prototype** (sonde) :
+- les K voitures de la circulation les plus proches du joueur (à moins de 50 m) deviennent physiques : le châssis réel, réglé
+  sur leur fiche comme celui du joueur, piloté par des champs au lieu du clavier ;
+- l'IA de `Car.gd` les pilote, ses décisions inchangées (suivi, carrefours, feux, rond-point) : un régulateur tient sa
+  vitesse, une poursuite pure depuis l'essieu arrière suit sa voie, et une vitesse de virage borne l'accélération latérale
+  à 4 m/s² ;
+- au-delà de 60 m, elles redeviennent cinématiques.
+
+Il a fallu, pour qu'une voiture physique suive le graphe :
+- faire avancer sa progression par sa vitesse, comme la voiture cinématique : par la seule projection, une voiture qui coupe
+  l'angle au bout d'une arête n'en change jamais ;
+- lui faire connaître l'arête suivante 30 m avant les noeuds du rond-point, pour anticiper l'angle ;
+- raccorder progressivement la voie visée quand elle saute de 2 m d'une arête à l'autre ;
+- ne la convertir que dans l'axe de sa voie : en virage, le cap de la voiture cinématique retarde de jusqu'à 60° sur la voie.
+
+**Coût, mesuré** (N voitures physiques en rond, sol plat, en alternance) : **0,21 à 0,22 ms par voiture et par pas
+physique**, linéaire jusqu'à 64 voitures (13,7 ms). Dont 0,18 à 0,19 ms de scripts du châssis, le reste pour le moteur
+physique. Le pilote de la sonde ajoute ~0,1 ms par voiture. Pour 8 voitures physiques, ~2,5 ms par pas ; pour les 252,
+~75 ms (le joueur estimait 50). Un PC qui rend à 30 images/s fait deux pas par image : le coût par image double.
+
+**La circulation, mesurée** (vrai monde, joueur immobile, K = 8) :
+- **rond-point d'Echo Circle**, circulation ordinaire, 300 s : aucune file figée, aucun contact, aucun décrochage (voiture
+  à plus de 6 m de sa voie), 25 sorties (16 sans voiture physique : c'est le hasard des départs). Écart à la voie 0,40 m en
+  médiane, 1,9 m au 95e centile. Mais seulement 1,9 voiture physique en moyenne : le gel du joueur immobile (§7) laisse
+  l'anneau peu fréquenté ;
+- **carrefour à feux (-28, -316), circulation dense** (gel à 150 m au lieu de 50), 180 s. Sans voiture physique, aucune
+  file figée. Avec 7,5 voitures physiques en moyenne :
+  - **34 voitures figées 40 s**, 22 paires de véhicules en contact, souvent durable ;
+  - 10 décrochages sur 22 conversions ;
+  - aucun passage au rouge.
+
+  Ramener leur vitesse pour que leurs distances d'arrêt redeviennent celles que l'IA suppose n'y change presque rien
+  (38 figées, 7 paires en contact).
+
+**Pourquoi le carrefour casse**, relevé contact par contact :
+1. L'IA décide en supposant que toute voiture freine à 12 m/s² sans délai (`Car.AI_DECEL`). Un châssis réel freine selon sa
+   fiche (6 à 11 m/s²). La voiture physique qui en suit une autre l'emboutit quand celle-ci pile, pour une priorité de virage
+   par exemple.
+2. Les virages de carrefour du graphe sont des angles vifs. Les voitures cinématiques les coupent et s'y chevauchent
+   librement (7,2 m d'écart à leur voie au pire). Des voitures physiques ne se chevauchent pas : elles se touchent sur le
+   côté, puis se poussent hors de leur voie.
+3. Une voiture cinématique a une masse infinie pour la physique : elle pousse la voiture physique qu'elle touche.
+
+**Ce qu'il faudrait pour aller plus loin**, à décider par le joueur :
+- des distances de décision par véhicule (son freinage réel) ;
+- une géométrie de voie lissée aux carrefours ;
+- un évitement latéral en virage ;
+- une reprise des voitures poussées hors de leur voie.
+
+C'est une refonte des décisions de la circulation, pas un réglage.
+
+**Décision du joueur (2026-09-24) : on garde la circulation actuelle.** L'idée de ne passer en physique que la voiture
+percutée est notée à la feuille de route (§7, « chocs réels contre la circulation »).
+
+### Étape E : les vidéos (2026-09-24)
+
+Hors dépôt, dans `F:/p-recree/videos_conduite/`, à côté des vidéos 1 à 4 de l'essai.
+- Outil : `outils/video_etape_e.gd`.
+- Les AVI du Movie Maker sont convertis en MP4 par Blender, puis supprimés.
+- Décor : le vrai monde, piste principale de l'aéroport, 11 h, circulation retirée en mémoire. Le script appuie sur les
+  touches du joueur.
+
+Les trois vidéos :
+- **`5_virage_fort_evitement_berline_110_kmh.mp4`**, berline city_sedan_01 à 110 km/h. La piste ne fait que 45 m de large,
+  et un seul braquage à fond à 110 km/h (rayon ~100 m) la quitterait. D'où un ÉVITEMENT, le test de l'élan :
+  - à fond à droite jusqu'à 25° de cap ;
+  - à fond à gauche jusqu'à revenir dans l'axe ;
+  - volant lâché, puis freinage.
+
+  C'est le pire cas pour le tonneau, puisque le roulis s'inverse. Résultat : 1,00 g, roulis 4,7° au plus, 25 m de décalage
+  latéral.
+- **`6_virage_fort_evitement_bus_85_kmh.mp4`** : la même manœuvre avec le bus city_bus_01 à 85 km/h, celui qui se couchait
+  avant la marge anti-tonneau de 1,8. Résultat : 0,75 g, roulis 5,3° au plus.
+- **`7_sportive_contre_camion_acceleration.mp4`** : écran partagé, une caméra de poursuite par véhicule (deux SubViewport
+  qui partagent le monde). En 10 s pied au plancher :
+  - city_sports_car_02 (420 kW, 1 500 kg) : 0-50 en 2,1 s, 0-100 en 4,2 s, 192 km/h, 300 m ;
+  - city_truck_01 (190 kW, 7 500 kg) : 0-50 en 7,3 s, 59 km/h, 99 m.
+
+Pièges payés en le faisant :
+- **tenir S à l'arrêt passe la marche arrière** : un script qui « freine » un véhicule arrêté le fait reculer. Il faut
+  lâcher les pédales à l'arrêt. Quand deux châssis lisent la même pédale, mettre en stationnement (`Controlled = false`)
+  celui qui s'arrête le premier ;
+- **`trait` est un mot réservé en GDScript 4.7** : une variable de ce nom est une erreur d'analyse. La scène est restée
+  ouverte jusqu'au délai (piège (d) du §12) : faire un essai headless court avant un film ;
+- **un véhicule lancé en mouvement doit partir à sa hauteur de repos**, sinon il rebondit à l'image. Pour ces quatre
+  modèles, elle va de 0,443 à 0,454 m ;
+- l'ancien outil `video_conduite.gd` (vidéos 1 à 4) appelait l'arcade retirée : il est réparé, et son clip 4 roule
+  maintenant en réaliste.
+
+### Frein à main : le dérapage (2026-09-24)
+
+Demande du joueur : « Quand je suis en voiture, Espace doit être le frein à main, et seulement ça [...] en roulant, braquer +
+Espace doit bloquer les roues arrière et faire partir l'arrière en glisse, comme un vrai frein à main. Quand je relâche, la
+voiture reprend de l'adhérence. » La sportive doit déraper facilement, le camion beaucoup moins, et rien ne doit se coucher,
+même un véhicule haut.
+
+**Ce qui manquait**, relevé au banc avant de rien changer :
+- **La boîte automatique ne débrayait pas.** Sur une propulsion ou une intégrale, le moteur entraînait encore les roues
+  arrière : avec le même frein à main pour tous, 0 % de blocage sur le SUV, le camion et le bus à 50 km/h. La boîte manuelle
+  du pack, elle, débraye au frein à main.
+- **Les roues arrière ne se bloquaient pas assez sur 19 modèles** (moins de 80 % du temps), parmi les 53 dont le frein à main
+  dépasse ce que tiennent les pneus arrière. 15 ne se bloquaient presque jamais : le hot rod, les sportives lowpoly, la jeep,
+  les pick-ups lourds... Mesure : frein à main seul, en ligne droite, depuis 50 km/h. Elles freinaient à la limite du pneu
+  en tournant encore. Le frein du pack ralentit une roue sans jamais l'arrêter quand elle est grande et chargée : il lui
+  manque le terme que reçoit le frein au pied (`distanced -= brakeline`, `wheel.gd`). Or une roue qui roule garde son
+  adhérence en travers : pas de dérapage.
+- Espace ne faisait déjà pas sauter en voiture : `Player._physics_process` sort avant de lire le saut. Restait un cas : un
+  appui mis en mémoire (`JUMP_BUFFER`, 0,12 s) juste avant de monter pouvait faire sauter à la descente.
+
+**Ce qui est fait.**
+- **Une colonne de plus dans les fiches, `frein_main_ms2`** : la décélération que le frein à main peut donner à lui seul,
+  sur les roues arrière. Elle est estimée pour chaque modèle d'après ce qu'il est :
+  - une voiture a un frein à câble sur ses freins arrière : 7 m/s² pour une berline, 9 à 11,5 pour les muscle cars et les
+    sportives, 10,5 pour la voiture de rallye ;
+  - un SUV, un pick-up ou un fourgon, le même : de 4,5 à 7 ;
+  - un camion, un bus, un blindé ont un frein de parc, fait pour tenir le véhicule garé : 2,5 à 4.
+- **Quand il dépasse ce que tiennent les pneus arrière, il les BLOQUE.** Le seuil vaut adhérence × g × part du poids sur
+  l'arrière, à l'arrêt. La roue arrière est tenue arrêtée tant qu'Espace est tiré (`ChassisRoue.bloque_frein_main`, réglé
+  par `ChassisReel`). En dessous, le frein du pack freine sans bloquer : c'est le cas de 19 modèles, camions, bus, blindés
+  lourds et utilitaires lourds.
+- **Au frein à main, la boîte débraye et garde son rapport** (`ChassisReel.transmission`). Sans cela, roues motrices
+  bloquées, elle redescendait en première, et le moteur aurait freiné l'arrière d'un coup au relâcher.
+- **Ni l'ABS ni l'antipatinage ne touchent au frein à main.** L'ABS roue par roue ne desserre que la part du frein au pied
+  (`B_Bias`), jamais `HB_Bias`. L'antipatinage ne coupe que les gaz, et seulement quand une roue motrice tourne plus vite que
+  le sol, jamais quand elle est bloquée.
+- `Player` remet à zéro l'appui de saut mis en mémoire, à la montée et à la descente.
+
+**Mesuré** (`ChassisBancTest`, `ConduiteReelleTest`) :
+- **Frein à main seul, en ligne droite depuis 50 km/h, sur les 72 modèles.**
+  - 53 modèles bloquent leurs roues arrière, 100 % du temps une fois le levier monté. Ils décélèrent autant que tiennent les
+    pneus arrière : 3,8 m/s² pour la berline, 5,7 pour la sportive.
+  - Les 19 autres freinent à la valeur de leur fiche, plus ~0,4, sans bloquer : le camion à 3,4 m/s² pour 3,0.
+  - Avec le frein au pied en même temps, les roues restent bloquées : 8,8 m/s² pour la berline, 10,0 pour la sportive.
+  - Cap au plus 0,4° : la voiture freine droit.
+- **Dérapage** : braquage à fond et frein à main pendant 1,2 s, puis tout relâché. Dérive au plus :
+
+| | 50 km/h | 80 km/h | 110 km/h |
+|---|---|---|---|
+| city_sports_car_02 | 42° (15° en 0,7 s) | 37° | 37° |
+| city_sedan_01 | 38° | 40° | 38° |
+| city_truck_01 | 2° | 14° | 18° |
+| city_bus_01 | 2° | 5° | — |
+
+  - La dérive des voitures plafonne vers 35-45°. L'assistance de direction du pack contre-braque d'elle-même quand l'arrière
+    glisse (son terme de dérive), et c'est ce qui garde la glisse rattrapable.
+  - À 50 km/h, 1,2 s de frein à main fait faire aux voitures un demi-tour : 111 à 146° de cap, jusqu'à l'arrêt.
+  - À 80 et 110 km/h, une fois relâchées, elles reprennent l'adhérence en 0,3 à 1,2 s. Le pire : 2,6 s pour la grande
+    américaine des années 1950, à la suspension molle.
+- **Les 72 modèles, à 50, 80 et 110 km/h : aucun ne se couche.** Roulis au plus 8,0° (city_retro_car_03), aucune roue
+  levée.
+- **Gaz tenus pendant et après le frein à main** (sportive, berline, camion, hypercar, muscle car, bus) : l'arrière reste
+  bloqué 96 % du temps, et la voiture reprend l'adhérence en 0,6 à 1,3 s en réaccélérant.
+- **`ConduiteReelleTest`**, le vrai joueur au volant de la berline à 49 km/h : la vraie touche Espace (qui porte aussi le saut,
+  à pied) avec braquage à fond pendant 1 s.
+  - Frein à main tiré à 1,00, roues arrière bloquées 100 % du temps, 30° de dérive.
+  - Adhérence reprise 1,1 s après le relâcher.
+  - Le joueur reste assis : vitesse verticale 0.
+- Tests OK :
+  - `ChassisBancTest` sur les six silhouettes, avec les nouvelles phases `frein_main` et `derapage_50/80/110`, et la
+    comparaison sportive / camion (au moins deux fois plus de dérive, à chaque vitesse) ;
+  - `ConduiteReelleTest` ;
+  - `ProjectLoadCheck` : 640 fichiers, 0 échec.
+
+**Vidéo** : `F:/p-recree/videos_conduite/8_derapage_frein_a_main_sportive_80_kmh.mp4` (outil `outils/video_etape_e.gd
+--clip=8`). La sportive à 80 km/h : frein à main et braquage à droite pendant 0,9 s, contre-braquage et gaz, puis la même chose
+à gauche. La caméra de poursuite est alignée sur la TRAJECTOIRE : celle du jeu, accrochée au cap de la voiture, la montrerait
+toujours droite.
+
+**Pièges payés en le faisant.**
+- **Le premier tête-à-queue de la vidéo était un CHOC contre la clôture de l'aéroport** : de 58 à 11 km/h en 33 ms, et un lacet
+  passé de 0,9 à 4,3 rad/s. La clôture sud court sur le bord de l'enrobé de la piste (z -1372). La voiture partait à 6 m de
+  ce bord, et au second dérapage son nez y arrivait. Une vitesse qui tombe en un pas n'est pas une affaire de pneus.
+- **Un critère de roue bloquée en m/s ment.** « Moins de 1 m/s » ne voit pas un blocage à 1,8 m/s pour 13 m/s au sol : le frein
+  du pack n'arrête jamais tout à fait une roue que le pneu entraîne. Juger en part de la vitesse au sol (15 %).
+- **La dérive d'une voiture presque arrêtée n'a pas de sens** : à 1 m/s, une voiture qui pivote encore peut avoir une vitesse
+  de n'importe quel sens. Ne la compter qu'au-dessus de 3 m/s.
+
+**Échec ANTÉRIEUR relevé en passant, CORRIGÉ le 2026-09-24 : la garde de coque de city_truck_02 passe de 28 à 30 cm**
+(colonne `garde_cm`). Dans le banc complet (`--tous --lot=1/3`), city_truck_02 échouait sur la bordure de 17 cm prise à 30° :
+« la coque touche », pendant 1 à 2 pas.
+- Rejoué SEUL, il passait.
+- Rejoué sur `b6801b5`, sans le frein à main, le même lot échouait de la même façon (1 pas).
+
+**La coque ne touchait pas la bordure.** Une sonde hors dépôt (`F:/p-recree/sondes/2026-09-24_garde_city_truck_02/`, avec un
+LISEZMOI) coule chaque forme de la coque vers le bas, sol exclu (`cast_motion`), au même pas que le banc :
+- dans le lot, la coque passait à **1,80 cm** de la bordure au plus près, sans jamais y entrer ; seule, à 3,44 cm. L'écart
+  dépend bien de l'état du moteur physique, que laissent les véhicules passés avant le camion dans le lot. Le reste du lot 1
+  passait à 3,67 cm au moins ;
+- **Jolt signale un contact dès que deux formes sont à moins de 2 cm** : c'est sa distance de contact spéculatif
+  (`physics/jolt_physics_3d/simulation/speculative_contact_distance`, 0,02 par défaut, que `project.godot` ne règle pas). Les
+  deux pas comptés par le banc sont exactement ceux où l'écart du pas précédent était sous 2 cm (1,80 cm ; à 2,03 cm, plus de
+  contact). **Au banc, « la coque touche » veut donc dire « la coque passe à moins de 2 cm »** ;
+- l'endroit : le coin arrière droit du bas de la caisse (x -0,88, z -2,52 dans le repère du châssis, 1,6 m derrière l'essieu
+  arrière), juste après que la roue arrière droite tombe de la bordure. C'est le cas du point 7 ci-dessus.
+
+**À 30 cm : 4,38 cm au plus près**, seul comme dans le lot.
+- Les trois lots passent (72 modèles), les six silhouettes aussi.
+- Les autres essais du camion ne bougent qu'à l'arrondi (freinage 50,5 -> 50,4 m, roulis + 0,1 à 0,2°). Il reste arrêté
+  par la barre du parking (2,66 m de haut).
+- Son dessous visible est à 0,239 m, et la coque est invisible : rien ne change à l'œil.
+
+C'est une exception à la règle du point 7 (28 cm au moins, ou le dessous du modèle - 2 cm), qui lui donnait 28 cm.
+
+### Freins, pneus et direction à vitesse (2026-09-24)
+
+Retour d'essai en jeu du joueur : « le FREINAGE est trop mou, la voiture met trop longtemps à s'arrêter » ; « la voiture
+GLISSE trop quand on va vite, et aussi quand on tourne à vitesse moyenne ». Il veut des pneus plus accrocheurs et des freins
+plus forts, « réaliste, mais plus agréable à conduire, comme dans un jeu », en gardant les écarts entre modèles, et deux
+multiplicateurs qu'il puisse régler lui-même sans toucher aux 72 lignes.
+
+**Trois réglages globaux** dans `resources/vehicle_physics/reglages_conduite.tres` (script `scripts/data/ReglagesConduite.gd`,
+lu par `FichesVehicules.reglage`) :
+- **`multiplicateur_freinage` = 1,3** : la décélération des freins de chaque fiche (`freinage_ms2`) et son frein à main
+  (`frein_main_ms2`) ;
+- **`multiplicateur_adherence` = 1,25** : l'adhérence du pneu, et sa raideur avec elle ;
+- **`glissement_avant_max` = 5°** : la borne de la direction à vitesse (ci-dessous).
+
+Les fiches gardent les valeurs des vrais véhicules. Les valeurs effectives sont `FichesVehicules.adherence_effective`,
+`freinage_effectif` et `frein_main_effectif`, et c'est ce que le châssis roule (`ChassisReel.configurer`). À 1, 1 et 0, on
+retrouve la conduite d'avant, à 0,3° de dérive et 0,2 m de freinage près : la borne anti-tonneau est recalculée au lancement
+sur la voie mesurée, ce qui déplace le centre de gravité de quelques dixièmes de millimètre.
+
+**Ce qu'on a trouvé**, au banc, avant de choisir :
+- **Plus d'adhérence seule ne change pas la glisse.** À freins x 1,3 et adhérence x 1,25, la berline passe de 1,00 à 1,24 g,
+  mais sa dérive à 110 km/h reste à 10° (celle du SUV à 16°, du camion à 18°).
+- **La glisse venait de la direction au clavier.** D ou Q tenus, c'est le braquage à fond. Le pack ne le réduit avec la
+  vitesse que de 1 / (1 + vitesse x SteerAmountDecay / assistance) : il en reste les deux tiers à 110 km/h. Le virage demandé
+  valait alors une dizaine de fois ce que tiennent les pneus, qui décrochaient aussitôt.
+- **Borner le braquage au seul angle du virage que tiennent les pneus ne marche pas.** Essayé : la voiture ne tournait plus
+  qu'à 0,27 à 0,5 g. Deux raisons :
+  - l'assistance de direction du pack (ses termes de dérive et de lacet) est taillée pour tout son braquage, et en mangeait
+    les trois quarts ;
+  - à vitesse, c'est le glissement du pneu avant qui fait tourner, pas l'angle géométrique : le pneu du pack ne donne sa
+    force qu'en glissant.
+- **Le pneu du pack atteignait sa force en glissant trop.** Sa force monte avec le glissement, sans pic. Rendu 2,5 fois plus
+  raide, il ne glisse presque plus à vitesse, mais le SUV et le camion partent de travers à 50 km/h braqués à fond (12-13°).
+  1,6 fois plus raide est le bon compromis.
+
+**Ce qui est fait** (`ChassisReel`, `ChassisRoue`) :
+- **adhérence x multiplicateur**, avec la raideur du pneu x le même multiplicateur. Le pneu décroche donc au même
+  glissement, en plus fort, et les consignes de l'ABS et de l'antipatinage restent justes ;
+- **pneu 1,6 fois plus raide** (`RAIDEUR_PNEU`, fixe) : la force maximale ne change pas, mais le pneu y arrive en glissant
+  1,6 fois moins. Le seuil de l'ABS et la consigne de l'antipatinage sont divisés d'autant ;
+- **centre de gravité borné avec l'adhérence effective** (`FichesVehicules.cdg_max`, règle `SSF_MIN` = 1,8) : plus
+  d'adhérence ne fait coucher personne ;
+- **freins x multiplicateur** (couple et répartition) ; et une **pédale de frein enfoncée à fond en 0,17 s**
+  (`PEDALE_FREIN`). Le pack mettait 0,33 s, soit 4,6 m parcourus à 100 km/h avant de freiner à fond ;
+- **borne de la direction à vitesse** (`_borne_braquage`) : le braquage à fond vaut au plus l'angle du virage que tiennent
+  les pneus (empattement x adhérence x g / v²), plus `glissement_avant_max` degrés de glissement du pneu avant.
+  - Elle passe par `SteerAmountDecay`, réglé à chaque pas, et ne fait que retenir le braquage : en manœuvre, rien ne change.
+  - Le contre-braquage reste libre : le pack le desserre quand la voiture glisse.
+  - L'assistance de direction du pack est ramenée dans le rapport de la borne en virage ordinaire, mais reste entière en
+    glissade franche (dérive au-delà de 10°), pour rattraper un dérapage.
+  - **La borne est levée tant que le frein à main bloque les roues arrière** : c'est le geste pour faire pivoter la voiture.
+    Le camion, dont le frein à main ne bloque pas, reste borné.
+
+**Avant / après** (`ChassisBancTest`, braquage à fond, vitesse tenue ; « dérive » = angle entre la vitesse et l'axe de la caisse) :
+
+| | freinage 100-0 | accélération latérale au plus | dérive à 80 / 110 km/h | dérapage au frein à main 50 / 80 / 110 |
+|---|---|---|---|---|
+| city_sports_car_02 | 40,2 -> **32,0 m** | 10,7 -> **13,3 m/s²** (1,09 -> 1,35 g) | 7,9 / 8,9° -> **2,6 / 3,3°** | 42 / 37 / 37° -> 44 / 36 / 37° |
+| city_sedan_01 | 44,8 -> **35,4 m** | 9,8 -> **12,3 m/s²** (1,00 -> 1,25 g) | 7,6 / 10,1° -> **2,6 / 4,1°** | 38 / 40 / 38° -> 38 / 38 / 37° |
+| city_truck_01 | 53,7 -> **42,7 m** | 7,8 -> **9,9 m/s²** (0,79 -> 1,00 g) | 8,4 / 21,6° -> **0,9 / 4,1°** | 2 / 14 / 18° -> 10 / 6 / 7° |
+
+Sur les 72, avant -> après :
+- dérive à la limite à 110 km/h : médiane 17,4 -> **3,9°**, pire 25,3 -> **5,8°**, jamais sous 2,6° : à la limite, la
+  voiture glisse encore un peu, progressivement ;
+- accélération latérale à 80 km/h : médiane 9,2 -> **11,5 m/s²** ;
+- **aucun tonneau, aucune roue levée**, à 50, 80, 110 km/h et à la vitesse de pointe : roulis au pire 8,45 -> **8,31°**
+  (city_retro_car_01) ;
+- dérapage au frein à main : relâché, l'adhérence revient en **1,63 s** au pire (2,62 avant) ;
+- les mêmes 53 modèles bloquent leurs roues arrière au frein à main ;
+- freinage le plus long : camion de pompiers, 68,9 -> **58,9 m**.
+
+`ConduiteReelleTest`, la berline au clavier :
+- freinage de 108 km/h à l'arrêt : 50,7 -> **40,2 m** ;
+- braquage à fond à 50 km/h : 0,93 -> **1,19 g** ;
+- double changement de voie à 108 km/h : lacet au plus 56 -> 27°/s, roulis 4,2 -> 3,5° ;
+- frein à main (Espace à 49 km/h) : 29° de dérive, adhérence reprise en 0,95 s.
+
+Tests : banc des 72 (trois lots), `ChassisBancTest` (six silhouettes), `ConduiteReelleTest` et `ProjectLoadCheck` (642
+fichiers, 0 échec) passent. Le banc juge maintenant le blocage au frein à main sur les valeurs effectives.
+
+**Régler soi-même** (`reglages_conduite.tres`, relu au lancement du jeu) :
+- `multiplicateur_freinage` : plus haut, tout le monde freine plus court. Au-delà de ce que tiennent les pneus, l'ABS
+  plafonne : monter l'adhérence avec.
+- `multiplicateur_adherence` : plus haut, plus de grip. Le centre de gravité descend tout seul pour que rien ne se couche.
+- `glissement_avant_max` : plus haut, la voiture tourne plus serré à vitesse et glisse davantage à la limite ; 0 rend la
+  direction du pack seul (le braquage à fond au clavier qui faisait glisser).
+
+## 15. Conduite façon GTA V : un modèle à nous (2026-09-24 au soir)
+
+> **DEUXIÈME VERSION LE MÊME SOIR (dernière sous-section) : le joueur seul tourne les roues.** Ce qui suit décrit la première
+> version ; y sont devenus FAUX, et marqués comme tels : la direction bornée à vitesse, le contre-braquage automatique et la
+> « stabilité » qui resserrait le braquage (trois aides RETIRÉES), la définition de fTractionCurveLateral (le pic est à la
+> MOITIÉ de la valeur), les conversions des freins, du frein à main et des amortisseurs, l'arrière « 8 % de plus » (c'est
+> maintenant la colonne fTractionBiasFront), le quart de charge gardé par l'arrière au freinage (c'est la moitié), le
+> braquage de 35° des voitures (40°), et les chiffres des tableaux.
+>
+> **TROISIÈME VERSION DE LA DIRECTION LE 2026-09-25 (sous-section « Troisième version ») : le braquage est de nouveau réduit
+> avec la vitesse, par la courbe de GTA V elle-même** (code d'ikt32), et non plus par une borne à nous comme dans la première
+> version. Le contre-braquage automatique reste coupé. Est devenu FAUX dans la deuxième version : « l'angle des roues est le
+> volant x fSteeringLock, à toute vitesse ».
+
+Le joueur, après avoir conduit le châssis réel (§13, §14) : « Je n'aime pas la conduite actuelle. Je veux la conduite de GTA
+V, pas une conduite réaliste. » Ce qui fait ce ressenti, dans ses mots :
+- beaucoup plus d'adhérence qu'en vrai : les voitures tournent fort et collent à la route ;
+- des freins très puissants, ça s'arrête net ;
+- une carrosserie qui bouge beaucoup : elle plonge au freinage, s'écrase à l'accélération, penche en virage, mais ne se
+  couche jamais (sa règle reste) ;
+- au-delà de la limite, une glisse PROGRESSIVE et contrôlable, pas un décrochage ;
+- du patinage possible au démarrage ;
+- un frein à main qui ne bloque que les roues arrière, pour partir en glisse facilement ;
+- une direction réactive et vive, même au clavier ;
+- une accélération nerveuse.
+
+Ses consignes : les réglages des fiches aux MÊMES NOMS que le handling.meta de GTA V, « pour que je m'y retrouve », chacun
+documenté ; les 72 modèles, leurs masses et leurs écarts gardés, réglés dans l'esprit de GTA V ; lui dire d'abord si le pack
+VitaVehicle peut donner ce comportement ; garder l'absence de tonneau, le frein à main qui dérape et la circulation telle
+quelle ; des vidéos (virage fort, freinage, dérapage au frein à main) ; les tests concernés seulement.
+
+### Le pack réglé autrement, ou un modèle à nous ? Un modèle à nous
+
+Réponse donnée au joueur avant de coder :
+- **le pneu du pack n'a pas de courbe d'adhérence** : sa force naît du glissement et monte avec lui, sans pic ni palier. Il ne
+  tient qu'en glissant ; il ne sait ni coller, ni glisser progressivement passé une limite. C'est pourtant exactement ce que
+  décrivent fTractionCurveMax, fTractionCurveMin et fTractionCurveLateral ;
+- **son moteur (régime, embrayage, boîte automatique)** a demandé six corrections (§13) et reste mou ; GTA V pousse
+  directement (fInitialDriveForce) jusqu'à une vitesse de pointe (fInitialDriveMaxFlatVel) ;
+- **son frein n'arrive pas à bloquer une grande roue**, et son assistance de direction contrarie une direction vive ;
+- **il compte en pieds, avec des forces au dixième**, et coûtait 0,2 ms par voiture.
+
+### Ce qui a été fait
+
+- `scenes/vehicles/ChassisGTA.gd`, le châssis, et `scenes/vehicles/RoueGTA.gd` (réglages et état d'une roue ; tout le calcul
+  est dans le châssis, en un appel par pas), à la place de `ChassisReel` et `ChassisRoue` (supprimés). `Car.gd` le crée à la
+  montée et le suit comme avant (mêmes noms : `vitesse_avant`, `freine`, `rapport`, `repartir`, `pousser`, `figer`,
+  `activer_simulation`, `Controlled`, `roues` avec `wv`, `w_size` et l'enfant `animation`) ; il ajoute seulement la boîte du
+  modèle à ses mesures (`boite`, pour l'inertie).
+- `scripts/data/FichesVehicules.gd` : les colonnes aux noms de GTA V et leurs CONVERSIONS en grandeurs physiques (constantes
+  `G_PAR_*`, `PERTE_BASSE_VITESSE`, `AMORT_PAR_UNITE`), que lit le châssis.
+- `resources/vehicle_physics/fiches_vehicules.csv` : 72 lignes réécrites (script de conversion hors dépôt), et un en-tête qui
+  dit, pour chaque colonne, ce qu'elle fait dans CE jeu, son unité, et sa place dans GTA V. Les valeurs sont tirées des
+  anciennes fiches de chaque modèle (masse, puissance, freins, adhérence, suspension, répartition) et de sa géométrie relevée
+  (empattement, voie, hauteur), dans l'esprit de GTA V : adhérence x 1,4, décélérations des freins x 1,55, suspensions plus
+  souples. Les écarts entre modèles restent ceux des vrais véhicules.
+- **Colonnes** : `fMass`, `fInitialDriveForce`, `fInitialDriveMaxFlatVel` (en km/h : GTA V l'écrit dans une unité à multiplier
+  par 1,32), `fDriveBiasFront` (remplace `transmission`), `fBrakeForce`, `fBrakeBiasFront`, `fHandBrakeForce`,
+  `fSteeringLock`, `fTractionCurveMax`, `fTractionCurveMin`, `fTractionCurveLateral`, `fLowSpeedTractionLossMult`,
+  `fSuspensionForce`, `fSuspensionCompDamp`, `fSuspensionReboundDamp`, `fAntiRollBarForce`, `vecCentreOfMassOffset`
+  (« x,y,z », repère de GTA V ; remplace `avant_pct`). Gardées : `garde_cm`, `trafic_kmh`, `trafic_accel_ms2` (la
+  circulation lit les mêmes valeurs qu'avant). Plus de colonnes calculées : `FichesVehiculesOutil` est supprimé.
+- `reglages_conduite.tres` : deux multiplicateurs (freinage, adhérence), remis à 1 : les fiches portent maintenant le niveau
+  de GTA V. `glissement_avant_max` supprimé (la direction se borne d'elle-même, ci-dessous). Depuis le 2026-09-25, un
+  troisième réglage, `reduction_braquage` : la réduction du braquage avec la vitesse de GTA V (« Troisième version »).
+
+**Conversions** (le détail est dans l'en-tête du tableau) :
+
+| colonne | dans ce jeu |
+|---|---|
+| fTractionCurveMax / Min | adhérence du pneu (g) = valeur x 0,6 (2,33 -> 1,4 g), au pic / en glisse ; l'arrière 8 % de plus (**FAUX depuis la deuxième version** : partage par fTractionBiasFront) |
+| fTractionCurveLateral | angle de glissement du pic de la courbe, en degrés (courbe en sinus jusqu'au pic, puis vers Min au double) (**FAUX depuis la deuxième version** : le pic est à la moitié de la valeur, la définition de GTA V) |
+| fBrakeForce | décélération demandée = valeur x 1,5 g, bornée par l'adhérence (ABS) (**remplacé** : x 2,4 g) |
+| fHandBrakeForce | force sur l'essieu arrière = valeur x le poids du véhicule (**remplacé** : x 2,4 x le poids) |
+| fInitialDriveForce | poussée au démarrage = valeur x 3 g, entière jusqu'à 20 % de la vitesse de pointe, puis à puissance constante |
+| fSuspensionForce | détente sans effort sous le repos = 1 / (4 x valeur) m (la définition de GTA V) ; fréquence ~ racine(valeur) Hz |
+| fSuspensionCompDamp / ReboundDamp | valeur x 20 % de l'amortissement critique (**remplacé** : critique à fSuspensionForce / 2, la définition de GTA V) |
+| fAntiRollBarForce | raideur en roulis de l'essieu = ressorts x (1 + valeur) |
+| fLowSpeedTractionLossMult | à l'arrêt, les roues qui poussent perdent valeur x 30 % d'adhérence, retrouvée à 25 km/h |
+
+### Comment il marche
+
+- **Suspension à rayons** : trois rayons par roue, répartis le long du pneu ; la roue monte une bordure par son arête avant.
+  Ressort (fSuspensionForce), amortisseur (Comp / Rebound), barre anti-roulis, butée. La course de détente va au moins
+  jusqu'où le ressort pousse encore.
+- **Pneu** : en travers, la courbe de traction ; le long, poussée, frein au pied (ABS), frein à main ; le cercle d'adhérence
+  entre les deux. Une roue motrice qui pousse plus que son pneu ne tient PATINE et tient moins en travers (une propulsion
+  survire sous les gaz).
+- **Frein à main, décidé pour l'essieu** : il bloque les roues arrière quand il dépasse ce que tiennent ENSEMBLE leurs pneus ;
+  sinon il freine selon la charge de chaque roue, avec ce que le pneu garde après le virage (un camion ralentit sans
+  déraper). Il débraye les roues qu'il tient.
+- **Direction** : au clavier, le volant va du centre à la butée en 0,14 s à l'arrêt (0,22 s à 108 km/h), revient ou change de
+  côté à 9 par seconde. **RETIRÉ (deuxième version) :** À vitesse, l'angle des roues avant
+  est borné par leur pneu (au pic de la courbe, 85 % au-delà de 108 km/h) par rapport à leur trajectoire : braquer à fond
+  donne le virage le plus serré qui colle, et le contre-braquage reste entier. Volant lâché, les roues suivent la trajectoire.
+- **Stabilité — RETIRÉE (deuxième version)** : quand l'essieu arrière approche le pic de sa courbe (freinage, pied levé, gaz
+  sur une propulsion), la borne des roues avant se resserre du côté qui ferait tourner la voiture davantage.
+- **Assistance de glisse — RETIRÉE (deuxième version)** : quand la dérive, PRÉVUE 0,3 s plus tard, dépasse 12° (18° si le
+  frein à main bloque l'arrière : on veut déraper) et que les roues avant font encore tourner la voiture dans le sens de la
+  glisse, elles contre-braquent d'elles-mêmes, entièrement à 35° (45°). La glisse se tient au lieu de finir en tête-à-queue.
+- **Pas de tonneau** : les forces des pneus en travers s'appliquent au centre de roulis, placé pour que le bras de levier du
+  roulis vaille au plus voie / (2 x 1,8 x adhérence) (`FichesVehicules.SSF_MIN`, comme fRollCentreHeight dans GTA V) ; celles
+  le long, au centre de tangage, placé pour qu'au freinage le plus fort l'essieu arrière garde 25 % de sa charge (**devenu
+  50 %** au freinage dans la deuxième version).
+- Pas de boîte : le rapport affiché est une tranche de la vitesse de pointe. Coût : 60 à 80 µs par pas (le pack : 200).
+
+### Pièges payés en le faisant
+
+- **Appliquées roue après roue, les forces des pneus tordaient la voiture** : chaque roue voyait le lacet laissé par les
+  précédentes, toujours dans le même ordre. Freinage en ligne droite : 2 à 4° de cap ; frein à main : 10°. Toutes les forces
+  sont maintenant calculées sur le même état du corps, puis appliquées ensemble ; ce qui annule un glissement (basse vitesse,
+  arrêt) n'en annule que la part de sa roue.
+- **Le ressort poussé le long du haut de la CAISSE retenait la voiture** : caisse plongée de 5,8°, 1,3 kN vers l'avant, soit
+  1 m/s² de freinage en moins ; 7° de roulis retiraient autant de tenue en virage. Il pousse le long de la normale du sol.
+- **Le frein à main décidé roue par roue bloquait la roue intérieure** d'un virage, délestée (8,6 kN au lieu de 20 sur le
+  camion) : l'arrière du camion partait à 31°.
+- (aide retirée depuis) **Une assistance de glisse réglée sur la dérive seule arrivait trop tard** : 2 rad/s de lacet déjà pris à 15° de dérive, et
+  D + Espace tenus 1,2 s faisaient pivoter la voiture de 110 à 160°. Elle regarde la dérive prévue 0,3 s plus tard.
+- (aide retirée depuis) **L'avant tenu au pic de son pneu demandait à l'arrière plus qu'il ne tient** dès qu'un peu de
+  charge passait vers l'avant (camion freinant à 107 km/h en braquant : 40 kN devant, 48,9 kN demandés derrière pour 47,3) :
+  d'où la stabilité. La deuxième version règle le même défaut par la physique (report de charge borné, répartiteur).
+- **Une suspension souple perdait ses roues intérieures avant de les délester** (limousine, 1 / (4 x 0,77) = 0,33 m de
+  détente sans effort pour 0,16 de course) : roues en l'air 0,13 s, 11,6° de roulis. La course de détente suit maintenant la
+  détente sans effort, et fSuspensionForce vaut au moins 1.
+- **Deux modèles touchaient une bordure de 17 cm de face** : `city_truck_02_flat` (même châssis que `city_truck_02`, garde
+  portée à 30 cm comme lui) et `city_retro_car_03` (1,1 m de porte-à-faux arrière sur une suspension souple : le bout
+  arrière tape l'arête quand les roues arrière en descendent ; garde 33 cm).
+
+### Avant / après
+
+`ChassisBancTest` ; avant : le châssis réel avec ses réglages globaux (§14, « Freins, pneus et direction à vitesse »).
+
+| | 0-100 | freinage 100-0 | accélération latérale au plus | dérive à 80 / 110 km/h | dérapage au frein à main 50 / 80 / 110 | roulis au plus | plongée |
+|---|---|---|---|---|---|---|---|
+| city_sports_car_02 | 4,2 -> **3,2 s** (patinage 4,5 m/s) | 32,0 -> **26,6 m** | 13,3 -> **15,5 m/s²** (1,58 g) | 2,6 / 3,3 -> 4,5 / 5,8° | 44 / 36 / 37 -> **55 / 38 / 38°** | 2,6° | 2,9° |
+| city_sedan_01 | 9,7 -> **6,6 s** (patinage 3,6 m/s) | 35,4 -> **30,2 m** | 12,3 -> **14,6 m/s²** (1,49 g) | 2,6 / 4,1 -> 3,8 / 5,3° | 38 / 38 / 37 -> **53 / 41 / 39°** | 7,8° | 6,6° |
+| city_truck_01 | 27,6 -> **24,4 s** | 42,7 -> **38,8 m** | 9,9 -> **11,2 m/s²** | 0,9 / 4,1 -> 5,2 / 8,4° | 10 / 6 / 7 -> **8 / 8 / 11°** | 3,0° | 1,4° |
+
+La dérive à la limite a un peu monté : c'est la glisse progressive demandée, à une adhérence bien plus haute.
+
+**Sur les 72** (trois lots, tous OK) :
+- **aucun tonneau, aucune roue levée**, à 50, 80, 110 km/h, à la vitesse de pointe et au frein à main ; roulis au pire 11,2°
+  (city_retro_car_01, suspension souple des années 1950) ;
+- freinage depuis 100 km/h de 25,6 m (lowpoly_fenyr) à 42,5 m (autocar), médiane 31,5 m ; toujours droit (0,7° au pire) ;
+- 0-100 de 2,9 s (lowpoly_fenyr) à 35 s (autocar), médiane 6,7 s ; patinage au départ sur 40 modèles (6,4 m/s au plus, la
+  muscle car lowpoly_kamaro) ;
+- plongée au freinage de 1,4° (camion) à 7,4° (balayeuse), médiane 4,5° ; roulis en virage de 1,8 à 11,2°, médiane 5,7° ;
+- accélération latérale à 80 km/h de 9,5 (autocar) à 15,3 m/s² (lowpoly_lamb), médiane 12,8 ;
+- frein à main : 53 modèles bloquent leurs roues arrière et dérapent (jusqu'à 63°, city_coupe_03) ; les 19 poids lourds et
+  blindés ralentissent sans bloquer (8 à 11° de dérive pour le camion) ; relâché, l'adhérence revient en 0,67 s au pire.
+
+`ConduiteReelleTest` (le vrai joueur au clavier, la berline) : roule 0,12 s après W ; 0-100 en 6,6 s ; double changement de
+voie à 108 km/h, 8,4° de caisse, cap repris à 3,8° près ; freinage de 108 km/h à l'arrêt en 34,4 m (40,2 avant), droit ;
+braquage à fond à 50 km/h, 1,24 g ; pied levé depuis 49 km/h, arrêtée en 12,4 s ; Espace à 49 km/h, 44° de dérive,
+adhérence reprise en 0,73 s ; rayon à 3 m/s, 4,65 m entre murs (35° de braquage) ; 45 % de volant, rayon à l'épure (x 0,99) ;
+bordures et rampe à 16 % sans toucher ; script du châssis 79 µs par pas en médiane.
+
+### Tests
+
+Passés : `ChassisBancTest` (six silhouettes, et les 72 en trois lots), `ConduiteReelleTest`, `CarKerbTest`,
+`VehicleLightsTest`, `ParkingStructureTest`, `WorldTrafficSmokeTest` (croisière de chaque modèle à 0,000 m/s de sa fiche,
+aucune au-delà : la circulation n'a pas changé), `ProjectLoadCheck` (640 fichiers, 0 échec).
+- `ChassisBancTest` et `ConduiteReelleTest` migrés (plus de champs du pack) ; le banc rapporte en plus le patinage au départ,
+  l'écrasement à l'accélération et la plongée au freinage, et juge le blocage du frein à main sur ce que dit le châssis
+  (`frein_main_bloque`).
+- `ParkingStructureTest` : le camion et le bus braquaient « au moins 8,5 m » à 3 m/s, seuil écrit quand tous braquaient de
+  29,8°. Chaque modèle a maintenant son braquage (fSteeringLock : 35° pour les voitures, 38 à 40° pour les longs
+  véhicules — **40° pour les voitures depuis la deuxième version** : 3,0 m au centre pour la berline, 6,9 m pour le camion et
+  le bus) : 6,6 m pour le camion et le bus. Le contrôle vérifie ce qu'il visait, qu'ils braquent bien plus large que la
+  berline (au moins 1,5 fois ; 3,5 m) et que les demi-tours des rampes (4,70 m).
+- `WorldTrafficSmokeTest` : il ne relève que quelques voitures ayant atteint leur croisière dans sa durée (2 sur 84) ; le
+  code d'avant ce chantier en relève autant (5 sur 88, rejoué sur 14092cf).
+
+### Vidéos
+
+Hors dépôt, dans `F:/p-recree/videos_conduite/`, outil `outils/video_gta.gd` (clips 9 à 12) :
+- `9_virage_fort_berline_110_kmh_gta.mp4` : évitement braqué à fond à 110 km/h, 1,43 g, caisse penchée de 8,2° ;
+- `10_freinage_sportive_et_camion_100_kmh_gta.mp4` : depuis 100 km/h, vues de côté ; sportive 26,4 m, caisse plongée de
+  2,9° ; camion 38,5 m, 1,4° ;
+- `11_derapage_frein_a_main_sportive_80_kmh_gta.mp4` : deux dérapages, 36° de dérive, reprise au relâcher ;
+- `12_depart_arrete_sportive_et_camion_gta.mp4` : pied au plancher 8 s ; sportive 0-100 en 3,2 s, 4,5 m/s de patinage.
+
+### Deuxième version, le même soir : le joueur seul tourne les roues
+
+Le joueur, après avoir conduit la première version : « Deux problèmes, et ce n'est pas encore assez comme GTA V. » Ses mots :
+- « Quand je dérape et que je tourne, les roues contre-braquent toutes seules. Je ne veux pas ça : c'est MOI qui
+  contre-braque. Retire les aides qui tournent les roues à ma place. La stabilité peut venir de la physique de la voiture,
+  mais jamais d'un braquage automatique des roues. »
+- « Plus je vais vite, moins les roues tournent. Comme dans GTA V, je veux pouvoir braquer franchement à haute vitesse.
+  Retire (ou réduis fortement) la limite de braquage en fonction de la vitesse. Si la voiture glisse parce que je braque
+  trop, c'est à moi de gérer. »
+- une recherche sérieuse sur GTA V, et le handling.meta de GTA V, exporté par le joueur avec OpenIV
+  (`F:/p-recree/reference_gta/handling.meta`, HORS DU DÉPÔT), comme référence : « Ne copie pas ce fichier ni ses tableaux
+  dans mon dépôt, qui est public : mes fiches gardent leurs propres valeurs. » Rien de ce fichier n'est ici : ni extrait, ni
+  tableau de ses valeurs ; seulement ce qu'il a appris sur les écarts entre familles et les définitions.
+
+**Ce que dit la recherche** (sources publiques : wiki GTAMods « handling.meta », glossaire de GTACars, guide d'eddlm, code
+du mod Manual Transmission d'ikt32, qui reproduit la direction de GTA V pour pouvoir la couper ; documentation Dawnstar) :
+- GTA V a bien les deux aides que le joueur refuse : une **réduction du braquage avec la vitesse** (la copie publique du mod
+  garde environ 20 % de la butée à 120 km/h) et un **contre-braquage automatique** (les roues visent la direction du
+  déplacement). Des mods (Custom Steering) servent justement à les couper. Ce jeu ne les a plus.
+- fTractionCurveLateral : le pic d'adhérence est à la MOITIÉ de la valeur, en degrés de glissement (22 : pic à 11°) ;
+  fTractionBiasFront partage l'adhérence entre les essieux (sous 0,5, l'arrière tient plus) ; vecInertiaMultiplier multiplie
+  l'inertie (x le tangage, y le roulis, z le lacet) ; les freins usent toute l'adhérence au-delà de fBrakeForce =
+  fTractionCurveMax / 4 ; fSuspensionCompDamp = fSuspensionForce / 2 annule le mouvement en un rebond (le critique) ;
+  fSteeringLock est l'angle des roues à l'arrêt.
+- Ce que montre la référence, famille par famille (sans ses nombres) : un braquage presque le même pour toutes les voitures,
+  plus faible pour les SUV, les fourgons et les bus ; un arrière qui tient toujours un peu plus que l'avant ; des
+  suspensions amorties au critique ou au-delà (la caisse bouge beaucoup, sans rebondir) ; une inertie en lacet multipliée
+  pour presque tout ; des freins de camions et de bus bien plus faibles que ceux des voitures (ils n'usent pas toute leur
+  adhérence) ; une adhérence en glisse proche du maximum, un peu plus basse sur les muscle cars et les anciennes.
+
+**Ce qui est fait** (`ChassisGTA.gd`, `FichesVehicules.gd`, `fiches_vehicules.csv`) :
+- **les trois aides retirées** : plus de borne du braquage à vitesse, plus de contre-braquage automatique, plus de roues qui
+  suivent la trajectoire volant lâché, plus de « stabilité » qui resserrait le braquage. Le volant suit les touches (ou le
+  stick d'une manette : `get_action_strength`), et l'angle des roues est le volant x fSteeringLock, à toute vitesse
+  (**REMPLACÉ le 2026-09-25** : x la réduction de GTA V, « Troisième version ») ;
+- **fiches recalées** (script hors dépôt ; masse, moteur, ressorts, centre de gravité et colonnes de la circulation
+  inchangés) : braquage 40° pour les voitures, 38° pour les SUV, pick-up, fourgons, utilitaires et blindés, 38 à 40° pour
+  les camions et les bus ; fTractionCurveLateral aux nouvelles définitions (17 pour le bus à 23 pour les muscle cars) ;
+  adhérence des lourds abaissée (bus 1,55, camions 1,65 à 1,77, fourgons 1,85 à 2,0), rapport glisse / maximum par modèle
+  (0,84 à 0,93) ; freins et frein à main aux nouvelles unités ; amortisseurs au critique (compression 0,75 à 1,15 du
+  critique, détente 1,2 à 1,65 selon le modèle) ; répartition du freinage recalculée sur le nouveau report de charge ;
+- **deux colonnes nouvelles**, aux noms de GTA V : `fTractionBiasFront` (0,48 pour la plupart ; 0,46 les blindés, 0,44 le
+  blindé lourd de 14 t, 0,485 à 0,49 les sportives et muscle cars) et `vecInertiaMultiplier` (lacet 0,9 à 1,0 pour les
+  voitures, 1,1 à 1,4 pour les lourds) ;
+- **conversions changées** : fBrakeForce x 2,4 g (au-delà de fTractionCurveMax / 4, l'ABS borne le freinage à l'adhérence :
+  toutes les voitures y sont ; camions et bus en deçà), fHandBrakeForce dans la même unité (x 2,4 x le poids, sur
+  l'arrière), amortisseurs en part du critique = 2 x valeur / fSuspensionForce ; `AMORT_PAR_UNITE` et `BIAIS_ARRIERE`
+  supprimés ;
+- **la stabilité, par la physique seulement** :
+  - le report de charge au FREINAGE est borné à la moitié de la charge statique de l'essieu le plus léger (`MARGE_FREINAGE`,
+    0,25 avant) ; celui de l'ACCÉLÉRATION reste aux trois quarts (`MARGE_POUSSEE`) : la caisse s'écrase comme avant ;
+  - un **répartiteur de freinage** (`REPARTITEUR`, celui de toutes les voitures depuis les années 1970) : le frein au pied
+    d'une roue arrière n'use jamais plus de 75 % de ce que tient son pneu ; c'est une pièce des freins, pas une aide de
+    direction ;
+  - l'essieu arrière bloqué au frein à main garde ses roues bloquées même déchargées un instant.
+
+**Le joueur au clavier des tests et des vidéos** : `scenes/tests/PiloteClavier.gd`. Sans aide, un test qui prouve qu'une glisse
+se rattrape doit la rattraper comme un joueur : il ne rend que des touches (gauche, droite) ; il voit la voiture avec 0,15 s
+de retard, anticipe à moitié ce qu'il voit bouger, vise pour les roues avant la direction où va l'avant de la voiture (moins
+un peu du lacet) et tapote la touche qui en rapproche le volant.
+
+**Mesuré sur les 72 modèles** (sonde hors dépôt, 720 essais ; puis le banc) :
+- **frein à main à 50 km/h**, D et Espace 1,2 s : les voitures dérapent (37° de dérive en médiane, 79° de cap), les 19 lourds
+  ralentissent (4 à 13°) ; 53 modèles bloquent leurs roues arrière, comme avant ;
+- **dérapage rattrapé par le joueur**, D et Espace jusqu'à 15° de dérive, puis le joueur contre-braque au clavier : droit en
+  0,83 s en médiane à 50 km/h, 1,10 s à 80, 1,30 s à 110 ; 2,0 s au pire (micro-citadine à 110) ; aucun tête-à-queue ;
+- **braquage à fond à 120 km/h** (D tenu 2,5 s, pied levé) : 6,6 à 13,3 m/s², 10° de dérive au plus, roulis 8,6° au plus ; la
+  voiture tourne franchement (48° de cap en médiane) en perdant de la vitesse (70 km/h au bout) : aucun tête-à-queue ;
+- **freinage fort en tournant** (volant tenu à 5, 10 ou 25 %, à 60 et 100 km/h) : 3 à 7° de dérive en médiane, aucun modèle
+  ne part (avant le report borné et le répartiteur : 85° pour la berline, la plupart des voitures en tête-à-queue) ;
+- **changement de voie à 108 km/h au stick** (sinus de 5 % du volant, 2°) : dérive 3,7° au plus, roulis 4,4°, retour dans
+  l'axe à 0,6° près, sans aide ;
+- **au clavier à 108 km/h**, la tape la plus brève donne 6° aux roues un instant : 1,4° de cap et 1 m de côté en 2 s ; 50 ms :
+  3°, 2,2 m. Progressif : on garde la main sans réduction du braquage.
+
+**Avant / après** (`ChassisBancTest` ; avant : la première version de ce soir) :
+
+| | freinage 100-0 | plongée | accélération latérale à 110 km/h, braqué à fond | dérapage à 50 km/h, rattrapé par le joueur | dérapage à 80 km/h, rattrapé par le joueur |
+|---|---|---|---|---|---|
+| city_sports_car_02 | 26,6 -> 29,4 m | 2,9 -> 1,6° | 13,2 m/s², dérive 5° | 22°, droite 0,68 s après Espace lâché (10 appuis) | 31°, droite en 1,12 s (15 appuis) |
+| city_sedan_01 | 30,2 -> 31,3 m | 6,6 -> 3,8° | 11,7 m/s², dérive 6° | 25°, droite en 0,83 s (11 appuis) | 29°, droite en 1,20 s (17 appuis) |
+| city_truck_01 | 38,8 -> 48,8 m | 1,4 -> 0,9° | 7,2 m/s², dérive 3° | 9° (ne bloque pas), 0,37 s | 2°, 0,23 s |
+
+Les dérapages ne se comparent pas à ceux d'avant : le banc tenait D et Espace 1,2 s, et l'aide contre-braquait (55° pour la
+sportive, 53° pour la berline à 50 km/h) ; il lâche maintenant Espace à 15° de dérive, et c'est le joueur qui contre-braque.
+
+La plongée au freinage est plus faible (le report de charge borné est le prix de la stabilité en freinant en tournant) ;
+l'écrasement à l'accélération est inchangé. Les camions freinent plus long (comme ceux de GTA V : leurs freins n'usent pas
+toute leur adhérence). Sur les 72 : freinage depuis 100 km/h de 28,3 m (lowpoly_lamb) à 53,2 m (autocar), médiane 33,9 m ;
+freinage fort en tournant, 4,8° de dérive en médiane, 18,5° au pire (city_truck_02) ; 0-100 médiane 6,8 s ; patinage au
+départ sur 50 modèles ; roulis au plus 8,5° (city_retro_car_01), aucune roue levée.
+
+`ConduiteReelleTest`, le vrai joueur au clavier de la berline : 0-100 en 6,8 s ; changement de voie à 108 km/h au stick,
+5,2 m de côté, 2,8° de caisse, cap repris à 0,1° près ; freinage de 108 km/h à l'arrêt en 35,7 m, droit ; braquage à fond à
+50 km/h, 1,19 g ; Espace à 49 km/h avec braquage à fond, 24° de dérive, puis le joueur contre-braque (9 appuis) : droite en
+0,80 s ; rayon à 3 m/s, 4,21 m entre murs (40°) ; script du châssis 70 µs par pas en médiane.
+
+**Tests** : `ChassisBancTest` (six silhouettes, et les 72 en trois lots : tous OK), `ConduiteReelleTest`, `CarKerbTest`,
+`VehicleLightsTest`, `ParkingStructureTest` (berline 3,0 m au centre à 3 m/s, camion et bus 6,9 m ; rampes montées en 91 s,
+redescendues en 87 s),
+`WorldTrafficSmokeTest` (croisière de chaque modèle à 0,000 m/s de sa fiche : la circulation n'a pas changé),
+`ProjectLoadCheck` (641 fichiers, 0 échec).
+- `ChassisBancTest` : les dérapages lâchent Espace à 15° de dérive (1 s au plus), puis le joueur contre-braque ; échec s'il
+  ne rattrape pas en 4 s ou s'arrête en travers. Phase nouvelle `frein_virage` : freinage fort en tournant à 100 km/h, volant
+  tenu à 10 % ; échec au-delà de 20° de dérive.
+- `ConduiteReelleTest` : frein à main rattrapé par le joueur (droit en moins de 2 s) ; le double changement de voie au
+  clavier (touches tenues 0,4 et 0,8 s, qui donnaient la butée quand le braquage était réduit) est devenu un sinus au stick,
+  un vrai changement de voie à 108 km/h.
+
+**Pièges payés en le faisant** :
+- **Sans aide, freiner fort en tournant faisait partir presque toutes les voitures** : l'arrière gardait le quart de sa charge
+  (1,6 kN au lieu de 5,5 sur la berline) et plus rien en travers, pendant que l'avant, chargé, tirait toujours. Le report de
+  charge au freinage est borné à la moitié ; calculé sur l'essieu arrière seul, les sportives à moteur central et les
+  camions partaient encore : il l'est sur l'essieu le plus léger.
+- **Les camions et les blindés partaient encore** : leurs freins arrière usaient toute l'adhérence de l'arrière (6,9 kN
+  demandés par roue pour 5,2 tenus). D'où le répartiteur.
+- **Au freinage le plus fort (pied et frein à main ensemble, 1,3 g)**, l'arrière de la berline se déchargeait un instant, et
+  ses roues, tenues par le frein à main, se remettaient à tourner (73 % du temps bloquées au lieu de 100).
+- **L'amortissement était trois fois plus faible que celui de GTA V** : la caisse rebondissait et déchargeait l'arrière en
+  plongeant. Adopter la définition de GTA V (critique à fSuspensionForce / 2) ne suffisait pas seul contre les tête-à-queue au
+  freinage, mais ôte le rebond.
+- **Le joueur scripté** : bang-bang avec retard, il entrait en oscillation (dérapage à 110 km/h jamais rattrapé) tant qu'il
+  lâchait Espace à 25° et ne relâchait pas son contre-braquage quand la voiture revenait ; lâché à 15°, avec une part du
+  lacet retirée et une anticipation de moitié, il rattrape les 72. Sa tolérance (6° de braquage) est bien trop grossière pour
+  suivre une voie à 108 km/h, où un changement de voie demande 1 à 2° : d'où le stick du test de changement de voie.
+- **Le compte des freins à main qui bloquent** (53) venait d'une mesure EN ROULANT : cinq fourgons et petits camions légers
+  bloquent sous le report de charge alors qu'une formule à l'arrêt les dit en deçà. Leur fiche les met franchement au-delà.
+- **Le braquage à fond à 50 km/h avec Espace** faisait à peine déraper (12°) avec une inertie en lacet de 1,5 x la boîte :
+  la voiture tournait serré en perdant sa vitesse. Ramenée à 1,0 (voitures), le frein à main fait pivoter comme dans GTA V.
+
+**Vidéos** (hors dépôt, `F:/p-recree/videos_conduite/`, outil `outils/video_gta2.gd`, clips 13 à 15 ; en bas de l'écran, les
+touches pressées et l'angle des roues) :
+- `13_derapage_contre_braque_par_le_joueur_sportive_80_kmh.mp4` : deux dérapages, D (puis A) et Espace jusqu'à 18°, puis le
+  joueur contre-braque au clavier et remet les gaz : 35° et 34° de dérive, droite 1,15 s après Espace lâché ;
+- `14_virage_braque_a_fond_berline_120_kmh.mp4` : D tenu 1,8 s à 120 km/h, pied levé, roues à 40° : 1,13 g, dérive 8°, roulis
+  5,6°, 37° de cap, 77 km/h au bout ; puis le joueur redresse ;
+- `15_freinage_fort_sportive_et_camion_100_kmh.mp4` : depuis 100 km/h, vues de côté ; sportive 29,2 m, caisse plongée de
+  1,6° ; camion 48,4 m, 0,9°.
+
+### Freiner en tournant : l'ABS des roues avant (2026-09-24, tard le soir)
+
+Le joueur : « quand je freine en tournant, la voiture va TOUT DROIT, comme si les roues avant se bloquaient et ne
+dirigeaient plus. Je veux pouvoir freiner ET tourner en même temps, comme dans GTA V : freiner en virage peut élargir un peu
+la trajectoire, mais la voiture doit toujours tourner. » Le frein à main (Espace) qui bloque l'arrière reste tel quel.
+
+**Ce que c'était, relevé à la trace** (berline, 80 km/h, S et braquage à fond) : roues avant à 33-50° de dérive, lacet nul.
+Les roues ne se bloquaient pas (elles roulaient à la vitesse du sol) ; deux choses s'ajoutaient :
+- le frein au pied demande environ deux fois ce que tient le pneu avant (fBrakeForce x 2,4 g). Partagé EN PROPORTION des
+  demandes dans le cercle d'adhérence, il ne laissait au virage qu'environ 45 % de l'adhérence ;
+- et, poussant le long de la roue braquée à 40°, ce frein annulait presque tout ce qui restait de force en travers
+  (0,7 x cap en travers, 0,71 le long, à 40° : il reste 0,09 de côté). Une première correction qui ne réservait que 70 %
+  d'adhérence au virage n'a presque rien changé (1,3 -> 1,1 m de côté) : c'est ce second point qui a été trouvé ensuite.
+
+**Ce qui est fait** (`ChassisGTA._pneu`) : à l'AVANT, sous le frein au pied, quand la demande dépasse ce que tient le pneu,
+l'adhérence est partagée selon la direction du GLISSEMENT de la roue, comme le fait un vrai pneu : `ABS_GLISSEMENT` (20 %,
+le glissement où un vrai ABS tient la roue, 10 à 20 %) le long, tan(dérive du pneu) en travers ; ce qu'une demande n'use
+pas va à l'autre. En ligne droite, tout au frein (distances inchangées) ; roue braquée qui dérive beaucoup, presque tout au
+virage, et la voiture tourne en ralentissant. L'ARRIÈRE garde le répartiteur puis le partage en proportion : avec le
+partage par glissement à l'arrière aussi (et 15 %), le hot rod partait en tête-à-queue au freinage fort en tournant (63°,
+puis 29° avec l'avant seul à 15 %) ; à 20 %, 5,6°. Le report de charge (moitié de la charge de l'essieu le plus léger) et
+le répartiteur ne privaient PAS l'avant : au freinage, l'avant est au contraire chargé (5,0 à 5,3 kN par roue sur la
+berline, 3,8 à l'arrêt).
+
+**Avant / après** (`ChassisBancTest`, phases nouvelles `frein_braque_50` et `frein_braque_80` : lancé en ligne droite, S à
+fond et braquage à fond ensemble, jusqu'à l'arrêt ; « de côté » = décalage latéral depuis la ligne de départ) :
+
+| | 50 km/h : de côté / en avant | 80 km/h : de côté / en avant | dérive au plus | distance à l'arrêt à 80 km/h |
+|---|---|---|---|---|
+| city_sedan_01 | 0,4 / 8,3 m -> **1,7 / 8,7 m** | 1,3 / 20,6 m -> **4,3 / 21,2 m** | 11 -> 18° | 20,7 -> 22,1 m |
+| city_sports_car_02 | 0,4 / 7,6 m -> **2,0 / 7,8 m** | 1,2 / 18,9 m -> **5,3 / 19,0 m** | 8 -> 13° | 19,1 -> 20,5 m |
+| city_truck_01 | 0,8 / 12,7 m -> **3,4 / 13,2 m** | 1,6 / 31,4 m -> **8,7 / 31,8 m** | 2 -> 17° | 31,5 -> 34,1 m |
+
+La « trajectoire tournée » avant l'arrêt (cap de la vitesse) passait de 43-50° à 61-70° pour la berline, de 14-16° à 54-70°
+pour le camion ; elle ne sert pas de critère : le pivot final au ralenti la gonflait déjà avant. Le critère du banc est le
+décalage latéral, au moins `FREIN_BRAQUE_ECART` = 0,12 fois l'avance (0,05 à 0,06 avant sur la berline).
+
+Sur les 72 : décalage latéral de 0,16 à ~0,3 fois l'avance (médiane 0,21 à 50 km/h, 0,23 à 80), dérive 19° au plus
+(city_pickup_03), aucun tête-à-queue ; freinage fort en tournant (volant à 10 %) 5,6° de dérive au plus (city_hotrod ;
+18,5° au pire avant) ; freinage en ligne droite inchangé. Tests : `ChassisBancTest` (les 72, trois lots), `ConduiteReelleTest`
+(freinage 35,7 m, frein à main 100 % bloqué, 24° de dérive, inchangés), `CarKerbTest` OK.
+
+### Troisième version de la direction (2026-09-25) : la réduction du braquage de GTA V
+
+Le joueur, sur le PC de l'école (Godot en headless seulement, aucune vidéo : il les demandera à la maison) : « Toujours pas
+bon. 1. Plus je vais vite, moins la voiture tourne. 2. Quand je freine en tournant, je continue presque tout droit. » Son
+analyse : braquées à 40° à haute vitesse, les roues avant mettent le pneu bien au-delà de son angle d'adhérence maximale
+(pic vers 11°) ; il racle au lieu de tourner. C'est pour ça que GTA V réduit l'angle des roues à haute vitesse ; il avait
+demandé de retirer cette réduction la veille, « c'était une erreur de ma part ». Sa demande :
+- remettre la réduction du braquage avec la vitesse, « EXACTEMENT comme GTA V la fait », pas une limite à nous ;
+- le contre-braquage automatique reste coupé ;
+- vérifier le freinage et l'accélération en virage ;
+- mesurer avant et après : berline, sportive, camion, rayon braqué à fond à 50, 80 et 120 km/h, en accélérant, en roue
+  libre et en freinant. La voiture doit tourner de plus en plus serré en ralentissant, et franchement à toute vitesse ;
+- pas de tonneau, le frein à main qui dérape, la circulation telle quelle.
+
+**Son hypothèse est CONFIRMÉE** (sondes hors dépôt, `F:/p-recree/sondes/2026-09-25_braquage_vitesse/`, avec un LISEZMOI).
+Braqués à fond, les pneus avant glissaient à 30-47° pour un pic à 9-11° : 4,3 fois le pic en médiane sur les 72 à 120 km/h,
+3,3 fois à 50 km/h. Ils raclaient :
+- en roue libre à 120 km/h, la berline perdait 14 km/h en 0,65 s et ne tournait qu'à 9,7 m/s² ;
+- sur les 72, l'accélération latérale ne valait que 74 % de l'adhérence avant (médiane).
+
+Balayage de l'angle des roues à vitesse tenue (`sonde_optimum.gd`, réduction coupée) : la voiture tourne le plus fort quand
+le pneu avant glisse à son pic (9 à 11,6°).
+- Berline : 14° de roues à 50 km/h, 9° à 80, 6° à 110 ; à 40° de roues à 110 km/h, 12 % d'accélération latérale en moins.
+- Sportive : 14°, 7,5°, 6° ; à 40°, 15 % en moins.
+- Camion : 18°, 10,5°, 7,5° ; à 40°, 31 % en moins.
+
+**La recherche** (sources publiques ; le réseau de l'école bloque gta5-mods.com, gtamods.com et les autres sites de modding
+par un certificat intercepté ; GitHub passe, lu par le navigateur ou WebFetch) :
+- **la courbe** est celle du code public d'ikt32 : mod Manual Transmission, `Gears/CustomSteering.cpp`, fonction
+  `calculateReduction`, dépôt archivé. Elle y est reprise du mod Custom Steering d'InfamousSabre, dont la description la donne
+  pour « une copie presque exacte » de celle de Rockstar. Au-dessus de 3 m/s le long de l'avant de la voiture :
+  0,15 + 0,9^(v - 7,2), arrondie au millième par défaut, bornée à 1. Puis elle est mêlée à un réglage « Steering reduction »
+  (1 + (réduction - 1) x réglage ; 0,9 par défaut dans ce mod) et lissée (lerp vers sa valeur, 1 - 0,01^dt à chaque pas).
+  Ses valeurs : 1 jusqu'à 31 km/h, 0,644 à 50, 0,355 à 80, 0,240 à 108, 0,213 à 120, 0,15 au plus bas. Rien de la
+  vitesse ou du modèle n'y entre d'autre : c'est la même pour tous les véhicules ;
+- **GTA V y ajoute un contre-braquage automatique** de 15° au plus (menu du même mod : « Game default is 15 degrees »). Dans
+  ce code, le terme qui devait relâcher la réduction en glisse (`finalReduction`) compare des radians à des degrés : il ne la
+  relâche que de 1,7 % au plus. C'est donc le contre-braquage automatique qui rattrape les glisses, dans GTA V comme dans ce
+  mod ;
+- la réduction sert bien à garder le pneu avant près de son angle optimal. Glossaire GTACars : fSteeringLock est l'angle à
+  l'arrêt, « réduit depuis ce maximum » quand on roule plus vite. Menu du mod : le réglage est à monter pour un pneu à angle
+  optimal bas, à baisser pour un angle optimal haut ;
+- freinage : sans ABS, freiner fort bloque les roues dans GTA V et la direction ne répond plus ; le mod ajoute un ABS « pour
+  que le volant reste efficace ». Ce jeu a un ABS sur tous les véhicules depuis le 2026-09-24 ;
+- le handling.meta de référence (hors dépôt) : fSteeringLock à 40 ou 35 pour la plupart des voitures, fTractionCurveLateral
+  à 22,5 le plus souvent. Rien n'en est recopié ici.
+
+**Ce qui est fait.**
+- `ChassisGTA.reduction_gta` écrit la courbe telle quelle ; `_direction` en tire l'angle « bicyclette » des roues avant :
+  volant x fSteeringLock x la réduction, lissée comme dans ce code. `repartir` pose la réduction à la vitesse de départ, et
+  `braquage_effectif()` donne l'angle que le volant à fond obtient à la vitesse du moment. Aucun contre-braquage automatique.
+- Le réglage global `reduction_braquage` (`reglages_conduite.tres`) est le « Steering reduction » de ce code : 1 = la courbe
+  telle quelle, c'est la valeur retenue ; 0 = aucune réduction. Au-dessus de 1, la réduction s'accentue ; au-delà de 1,18,
+  le mélange du code d'ikt32 passerait sous zéro à très grande vitesse (la direction s'inverserait) : la réduction est bornée
+  à [0 ; 1] ici.
+- **En virage, le frein arrière cède au virage** (`_pneu`, comme le « Cornering Brake Control » des ABS réels) : il n'use
+  plus que ce que la demande en travers du pneu laisse du cercle d'adhérence. Sans cela, avec la réduction, freiner fort et
+  braquer à fond depuis 120 km/h faisait partir en tête-à-queue quatre modèles qui freinent à la limite de leurs pneus avec un
+  centre de gravité neutre : city_truck_02 (64° de dérive), city_truck_02_flat (58°), city_utility_truck (49°), city_hotrod
+  (53°). Sur l'ancien châssis, ces quatre-là restaient à 15-16° : c'était bien la réduction. L'avant, qui ne racle plus, tourne
+  mieux, et l'arrière délesté ne gardait que 66 % de son adhérence en travers (répartiteur à 75 %). Avec ceci, 16 à 17° de
+  dérive. En ligne droite rien ne change : freinage 100-0 identique (berline 31,3 m, sportive 29,4 m, camion 48,7 m).
+
+**Avant / après** (`sonde_rayons.gd` : sol plat, touches du jeu, D tenu ; rayon, accélération latérale et glissement du pneu
+avant relevés entre 0,4 et 0,9 s après le coup de volant, vitesse du moment entre parenthèses ; « frein » : cap de la vitesse
+tourné jusqu'à l'arrêt, décalage latéral pour l'avance). Le camion ne va qu'à 110 km/h : lancé à 120, il braque vers 113.
+
+| berline city_sedan_01 (pic 11°) | rayon | a_lat (m/s²) | glissement avant | roues |
+|---|---|---|---|---|
+| 50 km/h, roue libre | 13,8 m (38 km/h) -> **13,9 m** (41) | 9,2 -> **10,2** | 36 -> **25°** | 41 -> 30° |
+| 50 km/h, gaz | 17,5 m (50) -> **20,0 m** (53) | 11,3 -> **10,9** | 38 -> **22°** | 41 -> 25° |
+| 50 km/h, frein | tourné 62 -> **71°**, 1,7 -> **2,3 m** de côté pour 9 m | 5,6 -> **7,0** | 33 -> **27°** | 41 -> 36° |
+| 80 km/h, roue libre | 39,7 m (67) -> **36,0 m** (73) | 9,5 -> **11,8** | 44 -> **19°** | 41 -> 16° |
+| 80 km/h, gaz | 41,6 m (77) -> **46,9 m** (82) | 11,1 -> **11,2** | 43 -> **16°** | 41 -> 14° |
+| 80 km/h, frein | tourné 71 -> **91°**, 4,3 -> **6,9 m** de côté pour 22 m | 5,2 -> **8,2** | 43 -> **20°** | 41 -> 19° |
+| 120 km/h, roue libre | 95,2 m (106) -> **84,4 m** (113) | 9,7 -> **12,2** | 47 -> **16°** | 41 -> 9° |
+| 120 km/h, gaz | 90,1 m (114) -> **94,4 m** (120) | 11,4 -> **12,0** | 47 -> **14°** | 41 -> 8,5° |
+| 120 km/h, frein | tourné 80 -> **111°**, 9,3 -> **16,3 m** de côté pour 47 m | 5,1 -> **7,7** | 46 -> **14°** | 41 -> 10° |
+
+| sportive city_sports_car_02 (pic 10°) / camion city_truck_01 (pic 9°) | sportive : rayon, a_lat, glissement | camion : rayon, a_lat, glissement |
+|---|---|---|
+| 50 km/h, roue libre | 12,4 -> 12,2 m ; 11,0 -> **12,2** ; 33 -> **22°** | 25,4 -> 23,8 m ; 5,9 -> **6,7** ; 31 -> **19°** |
+| 50 km/h, gaz | 30,5 -> 34,9 m ; 9,8 -> 9,0 ; 38 -> **19°** | 35,5 -> 32,6 m ; 5,4 -> **6,2** ; 34 -> **18°** |
+| 50 km/h, frein | tourné 55 -> 56° ; 7,4 -> 7,7 ; 24 -> **20°** | tourné 54 -> **60°** ; 4,1 -> **5,3** ; 32 -> **22°** |
+| 80 km/h, roue libre | 32,9 -> 31,0 m ; 11,8 -> **13,9** ; 41 -> **18°** | 64,7 -> **53,7 m** ; 6,5 -> **8,4** ; 39 -> **13°** |
+| 80 km/h, gaz | 53,1 -> 63,5 m (92 km/h) ; 11,2 -> 10,0 ; 41 -> **13°** | 75,3 -> **62,3 m** ; 6,2 -> **8,0** ; 39 -> **12°** |
+| 80 km/h, frein | tourné 71 -> **77°** ; 8,0 -> **9,1** ; 39 -> **19°** | tourné 70 -> **87°** ; 4,3 -> **5,8** ; 39 -> **15°** |
+| 120 km/h, roue libre | 75,9 -> 73,7 m ; 12,4 -> **14,0** ; 45 -> **16°** | 126,9 -> **108,7 m** ; 6,9 -> **8,7** ; 42 -> **11°** |
+| 120 km/h, gaz | 97,1 -> 108,1 m (128 km/h) ; 12,0 -> 11,6 ; 43 -> **11°** | 131,3 -> **111,6 m** ; 6,9 -> **8,7** ; 42 -> **11°** |
+| 120 km/h, frein | tourné 85 -> **94°** ; 8,1 -> **8,8** ; 44 -> **13°** | tourné 80 -> **104°** ; 4,6 -> **5,4** ; 42 -> **11°** |
+
+**Le virage se resserre en ralentissant.** Berline qui freine braquée à fond depuis 120 km/h, rayon à chaque palier :
+122 m à 100 km/h, 77 m à 90, 58 à 80, 49 à 70, 38 à 60, 26 à 50, 18 à 40, 12 à 30, 6 à 20. Avant : 162, 130, 110, 96, 72,
+46, 28, 16,5 et 7,5 m.
+
+**Les gaz en tournant ne font pas aller une traction tout droit.** Sur les 14 tractions du parc, braquées à fond, les gaz
+gardent 92 à 108 % de l'accélération latérale de la roue libre : médiane 1,06 à 50 km/h, 0,95 à 80, 0,99 à 120. À 50 km/h,
+les roues avant patinent (7 m/s en médiane, 9,8 au plus) et perdent un peu de leur tenue en travers. La poussée des roues
+braquées compense cette perte. Avant la réduction, les gaz faisaient même tourner plus fort (1,12 à 1,26) : braquées à
+40°, les roues avant tiraient la voiture vers l'intérieur. Sur une propulsion ou une quatre-roues motrices très puissante,
+les gaz font glisser l'arrière (sportive à 50 km/h : 9,0 m/s² sous les gaz pour 12,2 en roue libre). Rien de nouveau là :
+même rapport avant la réduction.
+
+**Mais la courbe de GTA V ne met le pneu avant AU PIC qu'à haute vitesse** (dit au joueur, pas changé : il a demandé la
+courbe de GTA V, pas une limite à nous). Sur les 72, le glissement avant rapporté au pic vaut 1,38 fois en médiane à 120 km/h,
+1,67 fois à 80, mais 2,22 fois à 50. À vitesse tenue, la courbe donne 25,8° de roues à 50 km/h, contre 14° à l'optimum de
+notre pneu pour la berline :
+- à 50 km/h : 9 % d'accélération latérale en moins que l'optimum, 16 % sur le camion ;
+- à 80 km/h : 3 à 5,5 % en moins ;
+- à 110 km/h : 1 % en moins.
+Le réglage `reduction_braquage` n'y peut rien : au-dessus de 1, il réduirait trop à haute vitesse avant d'atteindre l'optimum
+à 50 km/h. La courbe a été faite pour le pneu de GTA V. Piste NON vérifiée : le code d'ikt32 prend fTractionCurveLateral
+entier pour l'angle optimal (`DrivingAssists.cpp`), et notre pneu a son pic à la moitié (définition retenue le 2026-09-24).
+
+**Le prix, avec la courbe seule (`ab8ac6f`) : les dérapages au frein à main se rattrapaient plus lentement à haute
+vitesse.** RÉGLÉ le même jour, cf. « Levée de la réduction pendant une glisse au frein à main » ci-dessous. La réduction
+limite aussi le contre-braquage que le joueur peut donner : 9,4° de roues au plus à 110 km/h. Dans GTA V, c'est le
+contre-braquage automatique, refusé ici, qui compense. Banc, les 72 modèles, même protocole (Espace lâché à 15° de dérive, puis
+le joueur au clavier) :
+
+| | dérive au plus fort, médiane (pire) | droite en, médiane (pire) |
+|---|---|---|
+| 50 km/h | 24° (32°) -> 27° (37°) | 0,82 s (1,33) -> 0,90 s (1,47) |
+| 80 km/h | 30° (38°) -> 39° (82°) | 1,08 s (1,35) -> 1,55 s (3,48) |
+| 110 km/h | 32° (40°) -> 47° (88°) | 1,32 s (1,93) -> 2,08 s (3,70) |
+
+Les 72 sont toujours rattrapés en moins de 4 s, sans tonneau (roulis 10,7° au pire, city_retro_car_01 ; aucune roue levée).
+Les pires sont des voitures anciennes et des muscle cars : lowpoly_kamaro à 88° de dérive, city_limousine et
+city_retro_car_03 en 3,70 s. Les six silhouettes : sportive 42° / 1,43 s à 110 km/h, berline 44° / 1,75 s, micro-citadine
+53° / 1,78 s. Le camion et le bus ne dérapent pas (4 à 8°).
+
+**Levée de la réduction pendant une glisse au frein à main** (même jour, second commit). Le joueur : « lève la réduction
+du braquage tant que je tiens le frein à main (Espace), comme l'option du mod d'ikt32, pour que j'aie tout mon braquage pour
+contre-braquer. Le reste du temps, garde la courbe de GTA V telle quelle. » Sa cible : des dérapages rattrapés au moins
+aussi vite qu'avant la réduction, 1,1 s à 80 km/h et 1,3 s à 110 en médiane, sans tonneau sur les 72.
+- **Mesuré d'abord, la levée pendant Espace seule ne suffit pas** : on lâche Espace (ici à 15° de dérive) AVANT de
+  contre-braquer, et la réduction revient en 0,2 s, pendant le contre-braquage. C'est exactement l'option d'ikt32, qui la lève
+  et la remet au même lissage. Sur les 72 : 1,22 s à 80 km/h et 1,90 s à 110 en médiane, et city_muscle_car_03 n'est pas
+  rattrapée en 4 s à 110 km/h (le banc échoue).
+- **Retenu par le joueur, sur ces mesures** : la levée commence quand il tient Espace et dure, Espace lâché, tant que la
+  voiture est en travers. Elle prend fin quand la dérive repasse sous `DERIVE_FIN_GLISSE` = 5°, que la voiture passe sous
+  3 m/s ou que le joueur descend. Levée et remise suivent le lissage de la réduction (0,22 s). Hors d'une glisse au frein à
+  main, la courbe de GTA V telle quelle : virages, freinages et roue libre sont inchangés au centième près.
+- **Mesuré après, sur les 72** (banc complet) :
+
+| | sans réduction | courbe seule | levée pendant Espace | levée jusqu'à la voiture droite (retenue) |
+|---|---|---|---|---|
+| 50 km/h, droite en (médiane, pire) | 0,82 s (1,33) | 0,90 s (1,47) | 0,85 s (1,35) | **0,85 s** (1,37) |
+| 80 km/h | 1,08 s (1,35) | 1,55 s (3,48) | 1,22 s (2,75) | **1,07 s** (1,45) |
+| 110 km/h | 1,32 s (1,93) | 2,08 s (3,70) | 1,90 s (3,68), 1 jamais | **1,32 s** (1,58) |
+| dérive au plus fort à 110 km/h (médiane, pire) | 32° (40°) | 47° (88°) | 40° (69°) | **33° (42°)** |
+
+  Aucun tonneau, aucune roue levée (roulis 10,7° au pire, city_retro_car_01, dans un virage sans frein à main). Au frein à
+  main braqué à fond, les roues avant montent à 94-99 % de la butée (médianes à 110 et 50 km/h). Six silhouettes à 110 km/h :
+  berline 33° / 1,37 s, sportive 34° / 1,33 s, micro-citadine 42° / 1,25 s ; la sportive dérape toujours bien plus que le
+  camion (34° contre 5°). `ConduiteReelleTest` : Espace à 49 km/h, 25° de dérive, droite en 0,82 s.
+- `ChassisBancTest` vérifie la levée : au frein à main braqué à fond, les roues avant doivent atteindre `LEVEE_ROUES` = 75 %
+  de la butée. On mesure 85 à 100 %, car la levée remonte au lissage pendant les 0,4 à 1 s du coup de frein à main ; sans
+  levée, 64 % au plus (50 km/h) et 36 % à 80 km/h. Un premier seuil à 90 % échouait sur les voitures qui partent le plus vite
+  (15° de dérive en 0,4 s : 85 à 89 %).
+
+**Freinage braqué à fond, sur les 72** (décalage latéral / avance, médiane) : 0,21 -> 0,26 à 50 km/h, 0,23 -> 0,33 à 80,
+0,23 -> 0,35 à 120. Trajectoire tournée jusqu'à l'arrêt : 79 -> 108° depuis 120 km/h. Dérive 20° au plus. Freinage fort en
+tournant (4° aux roues à 100 km/h) : 8,5° de dérive au plus.
+
+**Tests** (headless) :
+- `ChassisBancTest` : les six silhouettes, puis les 72 en trois lots. Phases nouvelles :
+  - `braque_libre_*` et `braque_gaz_*` à 50, 80 et 120 km/h ;
+  - `frein_braque_120` ;
+  - le rayon aux paliers de vitesse (échec si le virage s'ouvre en ralentissant) ;
+  - les roues contre la courbe de GTA V dans les `virage_*`, avec une réplique du lissage (sans elle, la balayeuse, qui ne
+    tient pas 50 km/h braquée à fond, ralentit dans la partie raide de la courbe : 0,8° d'écart) ;
+  - le critère des tractions (GAZ_TENUE).
+  Le freinage fort en tournant garde les mêmes 4° aux roues : 38 % du volant au lieu de 10 %. Le banc ÉCHOUE sur l'ancien
+  châssis (roues à la butée à toute vitesse ; virage de la micro-citadine qui s'ouvre à 90 km/h).
+- `ConduiteReelleTest` : le changement de voie à 108 km/h garde ses 2° aux roues (20 % du stick au lieu de 5 %) : 5,2 m de
+  côté, cap repris à 0,1° près, comme avant. Braquage à fond à 50 km/h : roues à 25,83° pour 25,84° selon la courbe. Frein à
+  main à 49 km/h : 27° de dérive, droite en 0,88 s. Freinage de 108 km/h : 35,7 m. Script du châssis : 81 µs par pas en
+  médiane.
+- `ParkingStructureTest` : rayons à 3 m/s inchangés (berline 3,00 m, camion 6,94, bus 6,93) ; rampes en 91,3 s.
+- `ProjectLoadCheck` : 641 fichiers, 0 échec.
+La circulation n'est pas touchée (ni `Car.gd`, ni `LoopSpawner.gd`) : `WorldTrafficSmokeTest` n'a pas été rejoué.
+
+**Pièges payés en le faisant.**
+- **Le joueur scripté (`PiloteClavier`) doit garder son volant rapporté à la butée à l'arrêt.** Rapporté à l'angle effectif
+  (la butée réduite), sa bande de tolérance devenait quatre fois plus fine en degrés de roues à 110 km/h. Il faisait alors
+  osciller la voiture à coups de touche (lacet ±0,8 rad/s), et la micro-citadine n'était jamais « droite » en 4 s. Rapporté à
+  la butée, il pousse la touche à proportion de ce qu'il voit ; la réduction baisse son gain à vitesse, et c'est justement à
+  ça qu'elle sert au clavier. Il n'est pas modifié.
+- **Le réseau de l'école intercepte le TLS** (« self signed certificate in certificate chain ») : gta5-mods.com, gtamods.com,
+  gtacars.net et leurs miroirs sont illisibles en direct ; GitHub (raw compris) passe.
+- **En Bash, `VAR=... && cmd &` détache aussi l'affectation** : la commande suivante ne voit pas la variable. Faire
+  `export VAR=...` avant.
+
+**Pas fait** : les captures au sol et les vidéos (PC de l'école : Godot en headless seulement ; le joueur les demandera à la
+maison) ; le réglage au ressenti.
+
+### Reste
+
+Le réglage au ressenti, par le joueur, en jeu (le tableau, les deux multiplicateurs et la réduction du braquage sont faits
+pour ça) ; les chocs contre la circulation (§7) ; les sons.
+
+## 16. Joueur à pied : pieds, arme sortie, visée (2026-09-25)
+
+Demande du joueur (PC de l'école, headless seulement) : 1. les pieds sont bizarres en marchant, trouver la cause EN
+MESURANT, sans image, puis corriger ; 2. arme sortie, bras tendu en position de tir, avec les animations des packs du
+projet (dire si aucune ne convient) ; 3. viser au clic droit comme dans GTA V. Quatre commits : `8f4ad33` (pieds),
+`2dc0636` (arme), `6f53547` (visée), `9d486ff` (pieds sur le sol réel). Test : `JoueurAPiedTest` (quatre parties, 3 s).
+Sondes hors dépôt : `F:/p-recree/sondes/2026-09-25_joueur/` (LISEZMOI).
+**Suite le même jour, au PC de la maison** (fenêtre, captures et vidéo) : la course ramenée à 7 m/s, décision du joueur,
+et tout vérifié À L'IMAGE au sol ; un commit, `a3147ec` (sous-sections « La course à 7 m/s », « Vérifié à l'image » et
+« Vidéo »).
+
+### Les pieds : ce qui a été mesuré
+
+La sonde relève, image par image, sur le VRAI joueur piloté par ses actions : os des pieds, SEMELLE (le plus bas des
+sommets des chaussures `Suit_Feet`, par peau linéaire comme le moteur), vitesse de l'os du pied pendant l'appui
+(« glisse »), hauteur de la semelle au-dessus du sol sous elle.
+- **Cause 1 : les pieds ne bougeaient pas.** Amplitude 0,00 m en marche comme en course : la pointe tournait sur place
+  et s'enfonçait de 18 à 20 cm dans le sol, le pied était traîné à la vitesse du corps. L'import de `Suit.gltf` est
+  reciblé sur le profil humanoïde (BoneMap), et le reciblage de Godot SUPPRIME par défaut les pistes de position des os
+  autres que la racine et les hanches (`retarget/remove_tracks/unimportant_positions`). Or dans ce squelette
+  Quaternius les pieds sont enfants de `Root`, pas des tibias (commandes de pied, comme une IK) : sans position, ils
+  restaient à leur place de repos. Les PNJ (`npc_models`, non reciblés) avaient leurs pistes. Corrigé dans
+  `Suit.gltf.import` (`unimportant_positions = false`), réimporté.
+- **Cause 2 : la vitesse.** Vitesse PROPRE des animations (celle où le pied d'appui reste posé, mesurée sur la pose) :
+  Walk 1,15 m/s, Run 3,02, Run_Back 2,74, Run_Left et Run_Right 3,02. Le joueur allait à 5 et 13,5 m/s en les jouant
+  à vitesse 1 : glisse de 4 à 4,7 m/s en marche, 10 à 11 en course.
+- **Cause 3 : la mauvaise animation.** Reculer ou aller de côté jouait la marche AVANT (le corps regarde toujours où
+  vise la caméra). Le pack a Run_Back, Run_Left, Run_Right.
+- **Cause 4 : les pentes.** Animations faites pour un sol plat : semelle de -2,9 à +10,3 cm sur 10°, de -5,8 à +19,7 cm
+  sur 20°, un pied à +5,5 et l'autre à -6 cm immobile sur 20°, pied flottant jusqu'à +14,8 cm sur une bordure de 15 cm.
+- **Le plancher de la mesure** : même une animation jouée EXACTEMENT à sa vitesse propre donne une « glisse » de 0,16 à
+  0,17 fois la vitesse (0,44 pour le pied droit de Run_Back) : c'est le déroulé du pied, talon puis pointe. Le test juge
+  « posé » par rapport à ce plancher.
+
+### Les pieds : ce qui a été fait
+
+- L'animation du SENS du déplacement (en diagonale, la plus proche et le modèle tourné du reste, 45° au plus), jouée à
+  vitesse / vitesse propre, bornée à 2 fois la cadence d'origine ; changement d'animation à la même PHASE du pas (pied
+  gauche posé à 0,000 du cycle de Walk, 0,360 de Run, 0,121 de Run_Back, 0,880 de Run_Left, 0,360 de Run_Right ;
+  0,375 / 0,917 / 0,375 avant la boucle fermée, cf. « Vérifié à l'image »).
+  Walk seulement sous 2 m/s : à 5 m/s une marche est physiquement impossible, c'est une course (Run x 1,66, pas de
+  1,02 m, glisse au plancher).
+- `PiedsSolModifier` (après `JumpPoseModifier`) : le joueur mesure le sol sous chaque cheville et sous le bout de chaque
+  chaussure (un rayon chacun par image physique) ; le modificateur descend le bassin du plus grand creux, déplace chaque
+  pied de son écart (incliné sur la pente s'il est posé), replie la jambe sur lui (IK analytique à deux os : cuisse
+  0,433 m, tibia 0,51 m, genou gardé dans le plan de l'animation ; la cheville reste au bout du tibia à 1,6 cm près dans
+  toutes les animations, mesuré) et relève le pied pour que la pointe ne traverse pas le sol sous elle. L'écart MONTE
+  aussitôt et DESCEND à 4 m/s au plus.
+- Après : sol plat inchangé ; 10° : -1,6 à +3,8 cm ; 20° : -2,7 à +5,0 cm ; immobile sur 20° : 0,0 et +0,4 cm ; bordure :
+  -0,8 à +8,2 cm (le talon levé pendant que la pointe monte sur la bordure).
+- **La course (Maj) à 13,5 m/s, laissée ici au joueur, est TRANCHÉE : 7 m/s** (sous-section suivante). Run à la
+  cadence maximale (x 2, 5 pas par seconde) posait les pieds jusqu'à 6 m/s ; au-delà ils glissaient (7 à 8 m/s à 13,5) :
+  une jambe de 0,9 m ne peut pas faire des foulées de 13,5 m/s avec cette animation, même avec une IK.
+  `SPRINT_SPEED` datait du tout premier commit.
+
+### La course à 7 m/s (2026-09-25, décision du joueur)
+
+- `SPRINT_SPEED` 13,5 -> **7 m/s**, l'ordre de grandeur de la course de GTA V. À 7 m/s, Run à sa foulée d'origine
+  demanderait 2,3 fois sa cadence (7 pas par seconde : les jambes moulinent) ; bornée à 2, les pieds glissaient.
+- **Foulée allongée** (`PiedsSolModifier.foulee`, `Player._foulee_voulue`) : 1 jusqu'à la course normale (5 m/s),
+  **1,25 à 7 m/s** (`FOULEE_SPRINT`), et au moins ce qu'il faut pour que la cadence ne dépasse pas 2 (course arrière,
+  vitesse propre 2,74 m/s). Run est alors joué à 7 / (3,02 x 1,25) = **1,85 fois** sa cadence. Le modificateur écarte
+  chaque pied de sa hanche le long du sens de la course, en entier pied posé et de moins en moins en le levant (le
+  talon relevé derrière soi ne s'allonge pas) ; le bassin descend de ce qu'il faut pour que la jambe posée atteigne son
+  pied (12 cm au plus ; l'animation tend déjà la jambe à 97 % en fin d'appui, mesuré), et la cible est bornée à 99,5 %
+  de la jambe (au-delà, le pied quitterait le tibia). La foulée suit la vitesse en douceur et revient à 1 à l'arrêt et
+  en l'air.
+- Mesuré (`JoueurAPiedTest`, 240 images) : pas de **1,14 m** (1,04 en course normale : 1,10 fois) ; glisse **1,16 m/s**
+  au pied gauche (0,17 x v, le plancher de la mesure) et **1,58** au droit (0,23 x v : Run a des clés irrégulières au
+  début de l'appui du pied droit, 2 à 4 cm par appui) ; semelle -0,3 / +3,2 cm. À 13,5 m/s : 7 à 8 m/s de glisse.
+  Un verrouillage du pied posé effacerait les 2 à 4 cm du pied droit : pas fait.
+- `MapGateTest` comparait les DISTANCES (1,5 s de course contre 2 s de marche), soit une course 1,33 fois plus rapide
+  que la marche : à 7 m/s il ne passait plus qu'à 5 % près (10,5 m contre 10,0). Il compare maintenant les vitesses
+  (course au moins 1,1 fois la marche) : 7,02 contre 5,00 m/s.
+
+### Arme sortie et visée
+
+- **Animations des packs** (main droite vue de l'épaule, sur le squelette du joueur) : Suit : Idle_Gun = bras pendant
+  (-81°) ; Idle_Gun_Pointing = bras tendu à 98 %, -8°, droit devant (LA position de tir) ; Idle_Gun_Shoot, Gun_Shoot et
+  Run_Shoot la reprennent avec un recul. UAL1, reciblé sur le même profil : Pistol_Aim_Neutral pointe à gauche et vers le
+  bas (+78°, -52°), Pistol_Aim_Up à gauche, Pistol_Aim_Down vers l'arrière (+132°) : INUTILISABLES (le décalage de pose
+  de repos que craignait le commentaire de `use_ual_pistol`). UAL2 : rien. Aucune animation de fusil.
+- `PoseTirModifier` (après `PiedsSolModifier`) : arme sortie, le bras droit prend la pose de Idle_Gun_Pointing par-dessus
+  la locomotion, puis pivote à l'épaule pour que le CANON pointe sur le point sous le réticule (80° au plus) ; le tir
+  relève le canon de 8° au lieu de jouer l'animation de tir en corps entier (qui figeait les jambes : pieds qui
+  glissaient). Mesuré : canon à 0,00° du point visé, 0,09° en courant.
+- Immobile arme sortie, le personnage joue Idle_Gun_Pointing EN BOUCLE (elle se figeait au bout de 1,67 s jusqu'au
+  2026-09-25, cf. « Vérifié à l'image »).
+- Visée : action `aim` (clic droit) dans `project.godot`. Arme sortie d'office ; caméra à 2 m derrière l'épaule droite
+  (0,7 m, par le pivot : le rayon de tir part toujours du centre de l'écran), À HAUTEUR D'ÉPAULE (pivot 0,72 m au-dessus
+  du centre du corps, 1,62 m du sol, dedans comme dehors ; 1,6 m, 0,55 m et 2,45 m du sol jusqu'au 2026-09-25, cf.
+  « Vérifié à l'image »), champ de 55° au lieu de 75, prise en un peu plus de 0,2 s, rendue en douceur (1,2 s) ; le
+  regard libre s'arrête et le corps fait face à la visée ; on avance à 3 m/s (Run et ses variantes à leur cadence
+  d'origine), sans sprint ; réticule du HUD plein en visée, pâli arme sortie. Coupée en voiture (caméra de conduite
+  remise sans zoom ni épaule), en noclip et dans l'eau.
+
+### Vérifié à l'image, au sol (2026-09-25, PC de la maison)
+
+Outil hors dépôt : `F:/p-recree/sondes/2026-09-25_joueur_images/regard.gd` (et sa scène). Le VRAI joueur, piloté par ses
+actions, sur un sol d'essai quadrillé (carreaux de 0,5 m : une glisse se voit d'une image à l'autre), une pente de 20° et
+un trottoir de 15 cm, soleil rasant et ombres (le contact des pieds se lit à l'ombre). Une PLANCHE par cas (N images
+recadrées autour du joueur) : `captures/<cas>_<tag>.png`, `avant` pour le code de l'école, `apres` pour le code final.
+Cas : course de côté et de derrière ; course (Maj) de côté, en arrière et de côté ; arrêt ; pente montée, descendue et
+immobile ; bordure montée et descendue ; arme de face, de côté, de derrière, en courant et en attente ; visée dans la
+caméra du jeu (droit devant, en haut, en bas, en marchant), de côté et de face.
+
+Vu et corrigé :
+1. **La boucle de Run n'était pas fermée.** Run, Run_Left et Run_Right finissent sur une clé à 0,8 s, différente de la
+   première, et le clip dure 0,8 s : il manque l'image qui revient à la pose de départ. À chaque tour, les pieds
+   sautaient de 8 à 16 cm (trouvé en cherchant pourquoi le pied droit glissait à 7 m/s). `Player._fermer_boucle` allonge
+   ces clips d'un pas de clé (0,8333 s) : la boucle interpole vers la première clé. Phases de pose recalées. Walk et
+   Run_Back étaient fermés. Contrôle : `JOUEUR_A_PIED_BOUCLES`, 0,001 m au raccord.
+2. **Arme sortie, immobile, le personnage se figeait au bout de 1,67 s** (planche `arme_attente`) : Idle_Gun_Pointing
+   était jouée une seule fois, parce que son nom contient « pointing » (mot réservé aux animations jouées une fois). Elle
+   boucle ; `JOUEUR_A_PIED_ATTENTE_ARME` le vérifie à 2,5 s.
+3. **La caméra de visée plongeait sur le crâne** (planches `visee_camera*`) : pivot à 1,55 m au-dessus du centre du
+   corps, soit 2,45 m du sol ; on ne voyait que le haut de la tête et la main au pistolet en bas de l'image, le corps
+   hors du cadre. Pivot 0,72 m (hauteur d'épaule), bras 2 m, épaule 0,7 m : le personnage dans le tiers gauche, le
+   bras et le pistolet vers le réticule. `JOUEUR_A_PIED_VISEE` vérifie le pivot (1,5 à 1,75 m des pieds ; 1,62) et la
+   caméra (2,2 m des pieds au plus ; 1,97).
+4. **Un pied à cheval sur le bord d'une bordure entrait dedans de 12 cm** : le sol était relevé sous la cheville, restée
+   en bas, alors que l'avant de la chaussure était déjà au-dessus de la bordure (`JoueurAPiedTest` après la boucle
+   fermée : semelle -12,1 cm). `Player._update_pieds_sol` compare le sol sous la pointe à celui de la cheville prolongé
+   par la pente (normale relevée sous la cheville) : 4 cm de plus (`PIED_MARCHE`), c'est une marche, et tout le pied se
+   pose dessus. Semelle -0,4 / +2,1 cm.
+
+Bon à l'image, sans retouche : pieds posés en course de côté, de derrière, en arrière et en pas de côté, et à 7 m/s ;
+pente de 20° montée, descendue, et immobile (les deux pieds posés) ; bordure montée et descendue ; bras tendu de face, de
+côté et en courant, canon vers le réticule ; visée droit devant, en haut, en bas et en marchant. **Ce que l'œil a vu et
+que les mesures ne disaient pas** : l'attente figée (aucun contrôle ne regardait au-delà d'une seconde) et la caméra de
+visée (le test vérifiait le bras, l'épaule et le champ, pas la hauteur).
+
+### Vidéo (2026-09-25)
+
+`F:/p-recree/videos_joueur/1_joueur_marche_course_arme_visee.mp4` (hors dépôt ; 30 s, 1280 x 720, 60 images/s). Le vrai
+joueur dans le vrai monde, sur Founders Plaza à 13 h (à 11 h la rue était dans l'ombre des tours), circulation et piétons
+retirés en mémoire : il marche (Z, 5 m/s), court (Maj, 7 m/s) en traversant la rue et ses deux bordures de 15 cm,
+s'arrête, sort l'arme (1), vise (clic droit) et avance en visant (3 m/s). Filmé de côté, puis de derrière avec la caméra
+du jeu (HUD et réticule) ; touches pressées et vitesse en bas à droite. Outil : `F:/p-recree/videos_joueur/outils/`
+(`video_joueur.gd` : film, `--apercu=`, `--balayage` des heures ; `convertir_mp4.py --fps=60` ; `sonde_trajet.gd`, les
+trajets droits et dégagés autour du départ du joueur, avec leurs marches).
+
+### Pièges payés
+
+- **Un import reciblé perd les pistes de position.** Après tout changement d'import d'un modèle Quaternius avec BoneMap,
+  vérifier les pistes des pieds (`JoueurAPiedTest`, partie 1, le fait pour `Suit.gltf`).
+- **Hors du signal `skeleton_updated`, `Skeleton3D.get_bone_global_pose()` rend la pose de l'ANIMATION**, modificateurs
+  retirés. Une mesure de la pose affichée (bras de tir, pieds adaptés) se fait dans ce signal ; une première mesure du
+  bras, faite hors du signal, voyait le bras de la course et pas le bras tendu.
+- **Ne rien déduire de la pose de repos de `Suit.gltf`** : c'est une pose de marche, pieds décalés, le pied gauche
+  pointant sur le côté. Le bout de la chaussure est relevé sur le maillage.
+- **En headless, `Input.mouse_mode` reste VISIBLE** : le tir par l'action `shoot` (qui exige la souris capturée) ne part
+  pas dans un test ; le test appelle `_shoot()`.
+- **Un clip de locomotion peut manquer son image de fermeture** (Run, Run_Left, Run_Right du pack Suit) : comparer la
+  pose des pieds juste avant la fin du clip et au début ; `JoueurAPiedTest` le fait pour les cinq.
+- **Étirement `canvas_items` : `Camera3D.unproject_position` rend des coordonnées de l'espace 2D de BASE (1152 x 648),
+  pas des pixels du rendu.** Un recadrage autour du joueur calculé ainsi tombait à côté en 800 x 450 : multiplier par
+  largeur de l'image / `get_viewport().get_visible_rect().size.x`.
+- **Un film piloté par script doit verrouiller la souris.** Au premier film, le joueur est parti à 67° de son cap
+  pendant la vue de côté, sans cause relevée ; la plus probable : un clic sur la fenêtre, qui recapture la souris
+  (`Player._unhandled_input`), la souris tournant alors le joueur. L'outil absorbe les événements de souris, remet la
+  souris libre à chaque image et tient le cap ; refilmé, aucun écart.
+
+### À regarder en jeu (le soir)
+
+1. Marcher (Z), reculer (S), pas de côté (Q, D) et en diagonale : les pieds se posent et ne patinent plus, la bonne
+   animation dans chaque sens. En Maj (7 m/s) : foulée plus longue, pieds posés (le pied droit peut encore glisser de 2 à
+   4 cm par pas).
+2. Monter et descendre une rue en pente, une rampe de parking, un trottoir : les pieds sur le sol, pas dedans ni
+   au-dessus ; immobile sur une pente, les deux pieds posés.
+3. Touche 1 : le bras droit se tend, pistolet vers le centre de l'écran ; bouger la caméra en haut et en bas : le bras
+   suit ; courir arme sortie : le bras reste tendu ; tirer : petit recul, les jambes continuent ; immobile plus de
+   2 s : l'attente arme sortie tourne en boucle, plus de personnage figé.
+4. Clic droit tenu : la caméra se rapproche derrière l'épaule droite, à hauteur d'épaule, et zoome, personnage dans le
+   tiers gauche, réticule au centre ; marcher en visant ; relâcher : la caméra revient en douceur. Viser puis monter en
+   voiture (E) : caméra de conduite normale.
